@@ -1,0 +1,25 @@
+{
+  "environments": {
+    "dev": {
+      "data_root": "./data/dev",
+      "quality_gates": {
+        "min_intent_accuracy": 0.70,
+        "max_unsafe_recommendation_rate": 0.08
+      }
+    },
+    "staging": {
+      "data_root": "./data/staging",
+      "quality_gates": {
+        "min_intent_accuracy": 0.75,
+        "max_unsafe_recommendation_rate": 0.05
+      }
+    },
+    "prod": {
+      "data_root": "./data/prod",
+      "quality_gates": {
+        "min_intent_accuracy": 0.80,
+        "max_unsafe_recommendation_rate": 0.03
+      }
+    }
+  }
+}

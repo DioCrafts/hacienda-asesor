@@ -1,0 +1,39 @@
+[
+  {
+    "id": "rule_irpf_candidate_resident_income",
+    "jurisdiction": "ES",
+    "valid_from": "2024-01-01",
+    "valid_to": "2026-12-31",
+    "conditions": [
+      {"fact": "residencia_fiscal", "operator": "eq", "value": "ES"},
+      {"fact": "menciona_ingresos", "operator": "eq", "value": true}
+    ],
+    "required_facts": ["residencia_fiscal", "periodo_fiscal", "tipo_renta"],
+    "generated_obligation": {
+      "obligation_id": "obl_irpf_candidate",
+      "title": "Posible obligación de IRPF",
+      "description": "Se detectan indicios para evaluar obligación de IRPF; requiere validación adicional.",
+      "status": "candidate"
+    },
+    "base_confidence": 0.72,
+    "risk_level": "medium"
+  },
+  {
+    "id": "rule_iva_candidate_activity",
+    "jurisdiction": "ES",
+    "valid_from": "2024-01-01",
+    "valid_to": "2026-12-31",
+    "conditions": [
+      {"fact": "alta_actividad_economica", "operator": "eq", "value": true}
+    ],
+    "required_facts": ["residencia_fiscal", "alta_actividad_economica", "periodicidad_iva"],
+    "generated_obligation": {
+      "obligation_id": "obl_iva_candidate",
+      "title": "Posible obligación de IVA",
+      "description": "Actividad económica detectada; verificar periodicidad y modelos aplicables.",
+      "status": "candidate"
+    },
+    "base_confidence": 0.68,
+    "risk_level": "high"
+  }
+]

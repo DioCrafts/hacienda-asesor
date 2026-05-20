@@ -1,0 +1,47 @@
+{
+  "title": "Decision Assistant Observability",
+  "panels": [
+    {
+      "title": "Latencia por etapa (ms)",
+      "type": "timeseries",
+      "query": "latency_by_stage_ms"
+    },
+    {
+      "title": "Tasa de incertidumbre",
+      "type": "stat",
+      "query": "uncertainty_rate"
+    },
+    {
+      "title": "Tasa de derivación a humano",
+      "type": "stat",
+      "query": "human_handoff_rate"
+    },
+    {
+      "title": "Errores por módulo",
+      "type": "table",
+      "query": "errors_by_module"
+    }
+  ],
+  "alerts": [
+    {
+      "name": "High uncertainty rate",
+      "condition": "uncertainty_rate > 0.35",
+      "severity": "warning"
+    },
+    {
+      "name": "High human handoff rate",
+      "condition": "human_handoff_rate > 0.25",
+      "severity": "warning"
+    },
+    {
+      "name": "Module errors spike",
+      "condition": "errors_by_module.* > 10",
+      "severity": "critical"
+    },
+    {
+      "name": "Rules stage latency high",
+      "condition": "latency_by_stage_ms{stage='rules_engine'} p95 > 1500",
+      "severity": "critical"
+    }
+  ]
+}

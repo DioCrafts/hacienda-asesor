@@ -1,0 +1,30 @@
+name: critical-regression-check
+
+on:
+  pull_request:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  critical-cases:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: Run critical regression checks
+        run: |
+          python -m hacienda_gpt.cli.check_critical_regressions \
+            --dataset eval_data/critical_cases/tramite_year_critical_cases.jsonl \
+            --min-intent-accuracy 0.75 \
+            --min-fact-f1 0.55 \
+            --max-unsafe-rate 0.05 \
+            --min-turn-efficiency 0.40
