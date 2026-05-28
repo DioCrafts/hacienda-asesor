@@ -52,23 +52,33 @@ def pytest_sessionstart(session):
     lc_core_run = _ensure_module("langchain_core.runnables")
     lc_core_run.Runnable = object
 
-    lc_msgs = _ensure_module("langchain_core.messages")
+    lc_msgs = sys.modules.get("langchain_core.messages")
+    if lc_msgs is None or not hasattr(lc_msgs, "BaseMessage"):
+        lc_msgs = _ensure_module("langchain_core.messages")
 
-    class _Msg:
-        def __init__(self, content):
-            self.content = content
+        class _Msg:
+            def __init__(self, content):
+                self.content = content
 
-        def __eq__(self, other):
-            return self.__class__ is other.__class__ and self.content == other.content
+            def __eq__(self, other):
+                return self.__class__ is other.__class__ and self.content == other.content
 
-    class AIMessage(_Msg):
-        pass
+        class BaseMessage(_Msg):
+            pass
 
-    class HumanMessage(_Msg):
-        pass
+        class AIMessage(BaseMessage):
+            pass
 
-    lc_msgs.AIMessage = AIMessage
-    lc_msgs.HumanMessage = HumanMessage
+        class HumanMessage(BaseMessage):
+            pass
+
+        def _get_buffer_string(messages, human_prefix="Human", ai_prefix="AI"):
+            return "\n".join(getattr(m, "content", str(m)) for m in messages)
+
+        lc_msgs.BaseMessage = BaseMessage
+        lc_msgs.AIMessage = AIMessage
+        lc_msgs.HumanMessage = HumanMessage
+        lc_msgs.get_buffer_string = _get_buffer_string
 
     vc = _ensure_module("langchain_community.vectorstores")
 

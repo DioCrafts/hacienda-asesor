@@ -16,6 +16,7 @@ from hacienda_gpt.decision.rules_engine import evaluate_rules
 from hacienda_gpt.decision.schemas import CaseState, Fact, MissingFact
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.decision.taxonomy import SupportedIntent
+from hacienda_gpt.llm.grounding import AnswerEnvelope
 
 app = FastAPI(title="HaciendaGPT Decision API", version="1.0.0")
 
@@ -161,6 +162,32 @@ def post_turn(
         candidate_obligation_ids=[o.obligation_id for o in updated.obligation_candidates],
         next_questions=[q.question_text for q in selected_questions],
     )
+
+
+class QARequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    query: str = Field(min_length=1)
+    chat_history: list[dict] = Field(default_factory=list)
+
+
+def get_qa_chain():
+    """Lazily build the retrieval chain.
+
+    Declared as a FastAPI dependency so tests can override it without
+    needing OpenAI credentials or a real FAISS index.
+    """
+    from hacienda_gpt.llm.chain import create_openai_chain
+    from hacienda_gpt.utils import get_openai_api_key
+
+    return create_openai_chain(openai_api_key=get_openai_api_key())
+
+
+@app.post("/qa", response_model=AnswerEnvelope)
+def post_qa(payload: QARequest, chain=Depends(get_qa_chain)) -> AnswerEnvelope:
+    from hacienda_gpt.llm.chain import answer_with_grounding
+
+    return answer_with_grounding(chain, query=payload.query, chat_history=payload.chat_history)
 
 
 @app.get("/cases/{case_id}/audit/export")

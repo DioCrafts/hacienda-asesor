@@ -10,7 +10,8 @@ from hacienda_gpt.decision.interpreter_light import detect_facts_and_missing
 from hacienda_gpt.decision.rules_engine import evaluate_rules
 from hacienda_gpt.decision.schemas import CaseState
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
-from hacienda_gpt.llm.chain import create_openai_chain
+from hacienda_gpt.llm.chain import answer_with_grounding, create_openai_chain
+from hacienda_gpt.llm.grounding import AnswerEnvelope, AnswerMode
 from hacienda_gpt.settings import API_BASE_URL, DECISION_DEBUG_MODE, DECISION_STATE_DB_PATH, UI_USE_API
 from hacienda_gpt.utils import MissingOpenAIAPIKeyError, configure_logging, get_openai_api_key
 
@@ -126,6 +127,45 @@ def _render_obligation_cards(case_state: CaseState) -> None:
             st.markdown(f"**Dato faltante para confirmar:** {card['missing']}")
 
 
+_GROUNDING_BANNER = {
+    AnswerMode.CITED: ("success", "✅ Respuesta con citas normativas"),
+    AnswerMode.UNCITED: (
+        "warning",
+        "⚠️ Sin citas normativas verificadas: trata esta respuesta como orientativa.",
+    ),
+    AnswerMode.ABSTAINED: (
+        "info",
+        "🛑 Abstención: no hay contexto normativo suficiente para responder con seguridad.",
+    ),
+}
+
+
+def _render_grounding_banner(envelope: AnswerEnvelope) -> None:
+    kind, message = _GROUNDING_BANNER[envelope.mode]
+    if kind == "success":
+        st.success(message)
+    elif kind == "warning":
+        st.warning(message)
+    else:
+        st.info(message)
+    if envelope.reason:
+        st.caption(envelope.reason)
+
+
+def _render_citations(envelope: AnswerEnvelope) -> None:
+    if not envelope.citations:
+        return
+    with st.expander(f"Fuentes citadas ({len(envelope.citations)})", expanded=envelope.mode is AnswerMode.CITED):
+        for citation in envelope.citations:
+            header = citation.title
+            if citation.section:
+                header = f"{header} — {citation.section}"
+            st.markdown(f"**{header}**")
+            st.markdown(f"`{citation.locator}`")
+            if citation.snippet:
+                st.caption(citation.snippet)
+
+
 def _render_debug(case_state: CaseState) -> None:
     if not DECISION_DEBUG_MODE:
         return
@@ -167,15 +207,16 @@ def main():
         with st.chat_message("assistant", avatar=bot_logo):
             message_placeholder = st.empty()
             history = _build_chat_history(st.session_state.messages[:-1])
-            result = chain.invoke({"input": query, "chat_history": history})
-            raw_answer = result.get("answer") if isinstance(result, dict) else None
-            response = raw_answer if isinstance(raw_answer, str) else ""
+            envelope = answer_with_grounding(chain, query=query, chat_history=history)
+            response = envelope.answer
             full_response = ""
             for chunk in response.split():
                 full_response += chunk + " "
                 time.sleep(0.05)
                 message_placeholder.markdown(full_response + "▌")
             message_placeholder.markdown(full_response)
+            _render_grounding_banner(envelope)
+            _render_citations(envelope)
 
         st.session_state.messages.append({"role": "assistant", "content": response})
 

@@ -19,3 +19,6 @@ DECISION_DEBUG_MODE = _env_bool("DECISION_DEBUG_MODE", default=False)
 DECISION_STATE_DB_PATH = os.environ.get("DECISION_STATE_DB_PATH", "./data/decision_state.sqlite3")
 UI_USE_API = _env_bool("UI_USE_API", default=False)
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000")
+
+GROUNDING_MIN_CITATIONS = int(os.environ.get("GROUNDING_MIN_CITATIONS", "1"))
+GROUNDING_SNIPPET_CHARS = int(os.environ.get("GROUNDING_SNIPPET_CHARS", "240"))
