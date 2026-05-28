@@ -1,0 +1,14 @@
+# CENDOJ seed URLs — sentencias y autos en materia tributaria.
+#
+# Líneas con `#` o vacías se ignoran. El crawler scrapy de CENDOJ
+# (`hacienda_gpt.cli.crawler --crawler cendoj`) acepta este archivo vía
+# `--cendoj-urls-file`. Mantén la lista corta y representativa: STS / AN /
+# TSJ relevantes. Las URLs deben apuntar al detalle del documento, no a la
+# búsqueda.
+#
+# Para añadir nuevas: buscar en https://www.poderjudicial.es/search/,
+# abrir el resultado y copiar la URL de la barra (suele ser de la forma
+# https://www.poderjudicial.es/search/openCDocument/<hash>).
+#
+# Esta lista es un seed mínimo; expandirla es la forma intencionada de
+# enriquecer la cobertura jurisprudencial del corpus.

@@ -92,6 +92,62 @@ del corpus HTML.
 
 ---
 
+## 🏛️ 1.c) TEAC (Doctrina del Tribunal Económico-Administrativo Central)
+
+DYCTEA usa identificadores compuestos para sus criterios
+(`54/00218/2024/00/0/1`, no enteros). El CLI `teac_seed` recorre el
+buscador real por rango de fechas y baja cada criterio individualmente:
+
+```bash
+poetry run python -m hacienda_gpt.cli.teac_seed --from-date 2024-01-01 --to-date 2024-12-31
+# previsualización (sin descargar los detalles):
+poetry run python -m hacienda_gpt.cli.teac_seed --from-date 2024-01-01 --to-date 2024-06-30 --dry-run
+```
+
+Salida: `data/html/<snapshot>/teac/<safe_id>.html` + `.json` por
+criterio, más un `teac-seed-manifest.json` por snapshot. La estrategia
+de paginación se detiene en cuanto una página vuelve sin enlaces
+nuevos.
+
+> Nota: la spider scrapy `TEACCrawler` original itera `range(start_id, end_id)`
+> sobre enteros, lo cual nunca encajó con el esquema real de DYCTEA. Se
+> mantiene para no romper sus tests pero `teac_seed` es el camino
+> recomendado.
+
+## ⚖️ 1.d) CENDOJ (jurisprudencia)
+
+CENDOJ se consume con la spider scrapy existente (`--crawler cendoj`),
+que acepta una lista de URLs vía `--cendoj-urls-file`. La plantilla
+versionada vive en
+[hacienda_gpt/cli/cendoj_seed_urls.txt](hacienda_gpt/cli/cendoj_seed_urls.txt) —
+añade ahí las URLs a sentencias relevantes y lanza:
+
+```bash
+poetry run python -m hacienda_gpt.cli.crawler \
+  --crawler cendoj --folder ./data/cendoj \
+  --cendoj-urls-file hacienda_gpt/cli/cendoj_seed_urls.txt
+```
+
+> El descubrimiento automatizado de URLs vía el buscador de
+> [poderjudicial.es](https://www.poderjudicial.es/search/) queda como
+> follow-up: requiere driving JS dinámico con paginación y cookies.
+
+## 📄 1.e) PDFs
+
+La AEAT migró sus folletos y manuales prácticos a HTML interactivo, así
+que el crawler PDF (`--crawler pdf`) sobre `sede.agenciatributaria.gob.es`
+casi siempre devuelve cero resultados (depth=2 desde la raíz ya no
+encuentra `.pdf` enlazados). El crawler sigue siendo útil para fuentes
+externas con PDF estable; para AEAT, indexa el corpus HTML que sí
+expone la sede.
+
+Para PDFs autonómicos del BOE (códigos consolidados por CCAA) usa el
+crawler ya integrado:
+
+```bash
+poetry run python -m hacienda_gpt.cli.crawler --crawler boe-ccaa --folder ./data/boe --skip-unknown-ccaa
+```
+
 ## 🕸️ 1) Crawling de contenidos
 
 ### HTML (sitio AEAT)
