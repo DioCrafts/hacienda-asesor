@@ -12,6 +12,8 @@ from scrapy.http import Response
 from scrapy.linkextractors import LinkExtractor
 from scrapy_playwright.page import PageMethod
 
+from hacienda_gpt.crawler.teac import TEACCrawler  # re-export
+
 
 class AgenciaTributariaWebCrawler(scrapy.Spider):
     name = "AgenciaTributariaWebCrawler"
