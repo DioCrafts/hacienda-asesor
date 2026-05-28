@@ -29,16 +29,22 @@ class AgenciaTributariaWebCrawler(scrapy.Spider):
         "https://sede.agenciatributaria.gob.es/Sede/recaudacion/aplazamientos-fraccionamientos-deudas-tributarias.html",
         "https://sede.agenciatributaria.gob.es/Sede/colaborar-agencia-tributaria/calendario-contribuyente.html",
         "https://sede.agenciatributaria.gob.es/Sede/ayuda/manuales-videos-folletos/manuales-practicos.html",
+        "https://sede.agenciatributaria.gob.es/Sede/no-residentes.html",
+        "https://sede.agenciatributaria.gob.es/Sede/declaraciones-informativas.html",
+        "https://sede.agenciatributaria.gob.es/Sede/declaraciones-informativas-otros-impuestos-tasas.html",
     ]
     allowed_paths = [
         r"/Sede/irpf",
         r"/Sede/iva",
+        r"/Sede/no-residentes",
         r"/Sede/censos-nif-domicilio-fiscal",
         r"/Sede/colaborar-agencia-tributaria/modelos",
         r"/Sede/recaudacion/aplazamientos-fraccionamientos-deudas-tributarias",
         r"/Sede/colaborar-agencia-tributaria/calendario-contribuyente",
         r"/Sede/ayuda/manuales-videos-folletos",
         r"/Sede/informacion-administrativa/sanciones",
+        r"/Sede/declaraciones-informativas",
+        r"/Sede/declaracion-informativa",
     ]
 
     def __init__(self, folder: str = "./data/html", mode: str = "flat", *args: Any, **kwargs: Any) -> None:

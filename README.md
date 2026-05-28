@@ -123,6 +123,60 @@ poetry run streamlit run hacienda_gpt/ui/app.py
 poetry run uvicorn hacienda_gpt.api.api:app --reload --host 127.0.0.1 --port 8000
 ```
 
+### Endpoints: `/qa` vs `/cases`
+
+La API expone **dos pipelines distintos** con capacidades muy diferentes.
+
+#### `/qa` — Q&A retrieval-augmented (madura)
+
+RAG completo: FAISS + LLM + grounding gate.
+
+- Query libre en español.
+- Recupera top-K chunks del índice FAISS y compone la respuesta citando
+  documentos AEAT (`mode: cited`).
+- Abstención automática (`mode: abstained`) si no hay citas suficientes o
+  el modelo expresa duda.
+- Resistente a prompt injection y preguntas fuera de dominio.
+
+Úsalo para **consultas explicativas** sobre normativa tributaria.
+
+```bash
+curl -X POST http://127.0.0.1:8000/qa \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "¿Tengo que declarar IRPF si soy residente?"}'
+```
+
+#### `/cases` + `/cases/{id}/turn` — Decision engine (en desarrollo)
+
+Motor de decisión conversacional con estado (case + facts + obligations).
+
+- Cada `/turn` extrae hechos del usuario vía `OpenAIFactExtractor`
+  (structured output con JSON-schema; ver `decision/fact_extractor.py`).
+- Mantiene `missing_facts` y `next_questions`. La `QuestionPolicy`
+  reformula la pregunta después de 1-2 intentos sin respuesta.
+- Tras `MAX_ASKS_PER_FACT = 3` intentos seguidos sin que el usuario aporte
+  el hecho, el campo se añade a `gave_up_facts` y la respuesta marca
+  `degraded: true`, evitando bucles.
+- Evalúa `rules_engine.py` y devuelve `candidate_obligation_ids`.
+
+Úsalo para **resolución estructurada** de obligaciones fiscales por
+contribuyente.
+
+```bash
+CASE=$(curl -sS -X POST http://127.0.0.1:8000/cases \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"demo","jurisdiction":"ES","tax_period":"2024"}' \
+  | python -c "import sys,json; print(json.load(sys.stdin)['case_id'])")
+curl -X POST "http://127.0.0.1:8000/cases/$CASE/turn" \
+  -H 'Content-Type: application/json' \
+  -d '{"user_input":"Soy autónomo en Madrid, facturo 45000€"}'
+```
+
+> ⚠️ **Capacidad actual**: el motor de decisión es más reciente que `/qa`
+> y aún no cubre todas las obligaciones tributarias — las reglas en
+> `rules/` cubren IRPF residencia, IVA básico y autónomos. Para preguntas
+> fuera de ese alcance, `/qa` es hoy la opción más sólida.
+
 ---
 
 ## 🛡️ Grounding gate (abstención por defecto)

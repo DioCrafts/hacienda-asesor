@@ -28,11 +28,19 @@ _PARAM_FREE_CRAWLERS = {AgenciaTributariaPDFCrawler, AgenciaTributariaWebCrawler
 SETTINGS = {
     "ROBOTSTXT_OBEY": True,
     "HTTPCACHE_ENABLED": True,
+    # `scrapy-fake-useragent` 1.4.4 (the version pinned in poetry.lock) reaches
+    # for `self.EXCEPTIONS_TO_RETRY` on Scrapy's `RetryMiddleware`, but that
+    # attribute was removed in Scrapy 2.11+. Hitting it blows up the very
+    # first request (typically the robots.txt fetch) and the crawl ends with
+    # zero items. We therefore disable the fake-UA retry shim and let the
+    # stock Scrapy retry path stay in charge. We still randomize the User
+    # Agent per request via `RandomUserAgentMiddleware`, which is unaffected.
     "DOWNLOADER_MIDDLEWARES": {
         "scrapy.downloadermiddlewares.useragent.UserAgentMiddleware": None,
-        "scrapy.downloadermiddlewares.retry.RetryMiddleware": None,
         "scrapy_fake_useragent.middleware.RandomUserAgentMiddleware": 400,
-        "scrapy_fake_useragent.middleware.RetryUserAgentMiddleware": 401,
+        # Route every HTTPS request through scrapy-playwright so we sidestep
+        # the X509/pyOpenSSL incompatibility on the stock Scrapy downloader.
+        "hacienda_gpt.crawler.middlewares.ForcePlaywrightMiddleware": 543,
     },
     "DOWNLOAD_HANDLERS": {
         "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
