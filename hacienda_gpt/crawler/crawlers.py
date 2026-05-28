@@ -12,6 +12,11 @@ from scrapy.http import Response
 from scrapy.linkextractors import LinkExtractor
 from scrapy_playwright.page import PageMethod
 
+from hacienda_gpt.crawler.boe_consolidado import BOECCAACrawler  # re-export
+from hacienda_gpt.crawler.boletin_autonomico import RegionalBoletinCrawler  # re-export
+from hacienda_gpt.crawler.cendoj import CENDOJCrawler  # re-export
+from hacienda_gpt.crawler.teac import TEACCrawler  # re-export
+
 
 class AgenciaTributariaWebCrawler(scrapy.Spider):
     name = "AgenciaTributariaWebCrawler"

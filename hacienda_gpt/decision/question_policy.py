@@ -24,9 +24,7 @@ class QuestionPolicy:
     ) -> QuestionPolicyResult:
         critical = set(blocking_facts_for_intent(intent))
         known_facts = {fact.name for fact in case_state.facts}
-
-        # Track already asked facts from audit if available in-memory metadata field.
-        asked_facts = set(case_state.model_extra.get("asked_facts", [])) if case_state.model_extra else set()
+        asked_facts = set(case_state.asked_facts)
 
         available = [
             q

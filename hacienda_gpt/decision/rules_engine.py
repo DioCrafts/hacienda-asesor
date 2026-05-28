@@ -9,7 +9,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from hacienda_gpt.decision.rules import ConditionOperator, DecisionRule, RuleCondition, RuleSet, load_rules_from_directory
-from hacienda_gpt.decision.schemas import CaseState, Fact, ObligationCandidate
+from hacienda_gpt.decision.schemas import CaseState, Fact, ObligationCandidate, parse_fiscal_year
 
 
 class ConditionTrace(BaseModel):
@@ -78,7 +78,8 @@ class RulesEngine:
         )
 
     def _fiscal_year_from_case(self, case_state: CaseState) -> int:
-        return int(case_state.tax_period)
+        year = parse_fiscal_year(case_state.tax_period)
+        return year if year is not None else datetime.now(UTC).year
 
     def _select_applicable_rules(self, fiscal_year: int) -> list[DecisionRule]:
         anchor = date(fiscal_year, 12, 31)
@@ -142,9 +143,15 @@ class RulesEngine:
         if op is ConditionOperator.IN:
             return isinstance(expected, list) and actual_value in expected
         if op is ConditionOperator.GTE:
-            return float(actual_value) >= float(expected)
+            try:
+                return float(actual_value) >= float(expected)
+            except (TypeError, ValueError):
+                return False
         if op is ConditionOperator.LTE:
-            return float(actual_value) <= float(expected)
+            try:
+                return float(actual_value) <= float(expected)
+            except (TypeError, ValueError):
+                return False
         return False
 
     def _build_candidate_obligation(self, rule: DecisionRule, case_state: CaseState, missing_facts: list[str]) -> ObligationCandidate:

@@ -168,7 +168,8 @@ def main():
             message_placeholder = st.empty()
             history = _build_chat_history(st.session_state.messages[:-1])
             result = chain.invoke({"input": query, "chat_history": history})
-            response = result["answer"]
+            raw_answer = result.get("answer") if isinstance(result, dict) else None
+            response = raw_answer if isinstance(raw_answer, str) else ""
             full_response = ""
             for chunk in response.split():
                 full_response += chunk + " "
