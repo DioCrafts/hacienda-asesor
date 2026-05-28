@@ -47,6 +47,30 @@ def pytest_sessionstart(session):
 
     multiq.MultiQueryRetriever = MultiQueryRetriever
 
+    # langchain 1.x moved the legacy chains to `langchain_classic`. The
+    # production code now imports from there, so stub the mirror modules
+    # to keep the CI-lite environment self-contained.
+    lc_classic = _ensure_module("langchain_classic")
+    lc_classic_chains = _ensure_module("langchain_classic.chains")
+    lc_classic_chains.create_history_aware_retriever = lambda *a, **k: object()
+    lc_classic_chains.create_retrieval_chain = lambda *a, **k: object()
+    lc_classic_combine = _ensure_module("langchain_classic.chains.combine_documents")
+    lc_classic_combine.create_stuff_documents_chain = lambda *a, **k: object()
+    lc_classic_ret = _ensure_module("langchain_classic.retrievers")
+    lc_classic_ret.ContextualCompressionRetriever = object
+    lc_classic_doc_comp = _ensure_module(
+        "langchain_classic.retrievers.document_compressors"
+    )
+    lc_classic_doc_comp.EmbeddingsFilter = object
+    lc_classic_multiq = _ensure_module("langchain_classic.retrievers.multi_query")
+    lc_classic_multiq.MultiQueryRetriever = MultiQueryRetriever
+
+    # `chain.py` now also reads ChatPromptTemplate / MessagesPlaceholder
+    # directly from langchain_core.prompts.
+    lc_core_prompts = _ensure_module("langchain_core.prompts")
+    lc_core_prompts.ChatPromptTemplate = ChatPromptTemplate
+    lc_core_prompts.MessagesPlaceholder = MessagesPlaceholder
+
     lc_core_ret = _ensure_module("langchain_core.retrievers")
     lc_core_ret.BaseRetriever = object
     lc_core_run = _ensure_module("langchain_core.runnables")

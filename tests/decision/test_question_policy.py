@@ -6,7 +6,7 @@ from hacienda_gpt.decision.schemas import CaseState, Fact, FactValueType, RiskLe
 from hacienda_gpt.decision.taxonomy import SupportedIntent
 
 
-def _case_with_known_and_asked() -> CaseState:
+def _case_with_known_and_gave_up() -> CaseState:
     now = datetime.now(UTC)
     return CaseState(
         case_id="c1",
@@ -23,15 +23,15 @@ def _case_with_known_and_asked() -> CaseState:
                 confidence=0.9,
             )
         ],
-        asked_facts=["tipo_renta"],
+        gave_up_facts=["tipo_renta"],
         created_at=now,
         updated_at=now,
     )
 
 
-def test_question_policy_avoids_redundant_and_non_critical_questions() -> None:
+def test_question_policy_avoids_known_and_gave_up_facts() -> None:
     policy = QuestionPolicy()
-    case = _case_with_known_and_asked()
+    case = _case_with_known_and_gave_up()
 
     questions = [
         QuestionPrompt(
@@ -57,10 +57,12 @@ def test_question_policy_avoids_redundant_and_non_critical_questions() -> None:
         ),
     ]
 
-    result = policy.select_next_questions(case, SupportedIntent.DECLARACION_IRPF, questions, max_questions=2)
+    result = policy.select_next_questions(
+        case, SupportedIntent.DECLARACION_IRPF, questions, max_questions=2
+    )
 
-    # residencia already known, tipo_renta already asked -> filtered out
     assert [q.question_id for q in result.selected_questions] == ["q3"]
+    assert result.newly_gave_up == []
 
 
 def test_question_policy_reduces_turns_by_picking_highest_gain_first() -> None:
@@ -101,3 +103,72 @@ def test_question_policy_reduces_turns_by_picking_highest_gain_first() -> None:
 
     assert len(result.selected_questions) == 1
     assert result.selected_questions[0].question_id == "q_high"
+
+
+def test_question_policy_rephrases_after_first_ask() -> None:
+    now = datetime.now(UTC)
+    case = CaseState(
+        case_id="c3",
+        user_id="u3",
+        jurisdiction="ES",
+        tax_period="2025",
+        facts=[],
+        ask_counts={"tipo_renta": 1},
+        created_at=now,
+        updated_at=now,
+    )
+
+    questions = [
+        QuestionPrompt(
+            question_id="q_tipo_renta",
+            question_text="¿Qué tipo de ingresos has tenido (trabajo, actividad económica, capital u otros)?",
+            target_fact="tipo_renta",
+            reason="critical",
+            priority=RiskLevel.HIGH,
+        )
+    ]
+
+    result = QuestionPolicy().select_next_questions(
+        case, SupportedIntent.DECLARACION_IRPF, questions, max_questions=1
+    )
+
+    assert len(result.selected_questions) == 1
+    rephrased = result.selected_questions[0]
+    assert rephrased.target_fact == "tipo_renta"
+    # The text must be one of the alternatives, not the original phrasing.
+    assert (
+        rephrased.question_text
+        != "¿Qué tipo de ingresos has tenido (trabajo, actividad económica, capital u otros)?"
+    )
+    assert rephrased.question_text in QuestionPolicy.REPHRASING_TABLE["tipo_renta"]
+
+
+def test_question_policy_gives_up_after_max_asks() -> None:
+    now = datetime.now(UTC)
+    case = CaseState(
+        case_id="c4",
+        user_id="u4",
+        jurisdiction="ES",
+        tax_period="2025",
+        facts=[],
+        ask_counts={"tipo_renta": QuestionPolicy.MAX_ASKS_PER_FACT},
+        created_at=now,
+        updated_at=now,
+    )
+
+    questions = [
+        QuestionPrompt(
+            question_id="q_tipo_renta",
+            question_text="¿Qué tipo de ingresos has tenido?",
+            target_fact="tipo_renta",
+            reason="critical",
+            priority=RiskLevel.HIGH,
+        )
+    ]
+
+    result = QuestionPolicy().select_next_questions(
+        case, SupportedIntent.DECLARACION_IRPF, questions, max_questions=1
+    )
+
+    assert result.selected_questions == []
+    assert result.newly_gave_up == ["tipo_renta"]

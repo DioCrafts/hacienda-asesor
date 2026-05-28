@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-import re
 from datetime import UTC, datetime
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from hacienda_gpt.decision.schemas import CaseState, Fact, FactValueType, MissingFact, RiskLevel
+from hacienda_gpt.decision.fact_extractor import (
+    FactExtractor,
+    RegexFactExtractor,
+)
+from hacienda_gpt.decision.schemas import CaseState, Fact, MissingFact, RiskLevel
 
 
 class Intent(str, Enum):
@@ -57,80 +60,59 @@ class InterpretationResult(BaseModel):
         return self
 
 
-def _detect_intent(text: str) -> tuple[Intent, float]:
-    if re.search(r"\birpf\b|\brenta\b|declaraci[oó]n de la renta", text):
-        return Intent.DECLARACION_IRPF, 0.84
-    if re.search(r"\biva\b|modelo\s+303|modelo\s+390", text):
-        return Intent.IVA, 0.84
-    if re.search(r"aut[oó]nomo|autonoma|autónoma|alta en reta|cuota de autónomos", text):
-        return Intent.AUTONOMO, 0.81
-    if re.search(r"impuesto|hacienda|aeat|tribut", text):
-        return Intent.GENERIC_TRIBUTARY, 0.62
-    return Intent.UNKNOWN, 0.3
+# Question templates used when an extractor surfaces a missing fact. The
+# QuestionPolicy may reformulate them based on how many times the fact has
+# already been asked.
+_QUESTION_TEMPLATES: dict[str, tuple[str, str]] = {
+    "tipo_renta": (
+        "q_tipo_renta",
+        "¿Qué tipo de ingresos has tenido (trabajo, actividad económica, capital u otros)?",
+    ),
+    "residencia_fiscal": (
+        "q_residencia",
+        "¿Cuál es tu residencia fiscal actual?",
+    ),
+    "periodo_fiscal": (
+        "q_periodo",
+        "¿A qué ejercicio fiscal (año) se refiere tu consulta?",
+    ),
+}
 
 
-def _extract_facts(text: str, current_case_state: CaseState | None) -> list[Fact]:
-    facts: dict[str, Fact] = {}
+def _merge_facts(new_facts: list[Fact], current: CaseState | None) -> list[Fact]:
+    """Merge facts coming from this turn with those already on the case.
 
-    if current_case_state is not None:
-        for fact in current_case_state.facts:
-            facts[fact.fact_id] = fact
-
-    if any(token in text for token in ["residente en españa", "residencia fiscal en españa", "vivo en españa"]):
-        facts["fact_residencia_fiscal"] = Fact(
-            fact_id="fact_residencia_fiscal",
-            name="residencia_fiscal",
-            value="ES",
-            value_type=FactValueType.STRING,
-            source="user_input",
-            confidence=0.82,
-        )
-
-    year_match = re.search(r"\b(20\d{2})\b", text)
-    if year_match:
-        facts["fact_tax_year"] = Fact(
-            fact_id="fact_tax_year",
-            name="periodo_fiscal",
-            value=year_match.group(1),
-            value_type=FactValueType.STRING,
-            source="user_input",
-            confidence=0.77,
-        )
-
-    if "ingres" in text or "rendimiento" in text:
-        facts["fact_income_mentioned"] = Fact(
-            fact_id="fact_income_mentioned",
-            name="menciona_ingresos",
-            value=True,
-            value_type=FactValueType.BOOLEAN,
-            source="user_input",
-            confidence=0.75,
-        )
-
-    return list(facts.values())
-
-
-def interpret_turn(
-    user_input: str,
-    chat_history: list[dict[str, str]] | list[str],
-    current_case_state: CaseState | None,
-) -> InterpretationResult:
-    """Interpret user turn into structured intent/facts/uncertainties/questions.
-
-    This component does not emit final fiscal recommendations.
+    New facts win when they target the same logical name (same `fact_id` or
+    same `name`). Anything not overridden is preserved.
     """
 
-    del chat_history  # reserved for future context-aware extraction
-    text = user_input.lower().strip()
-    intent, intent_conf = _detect_intent(text)
-    facts = _extract_facts(text, current_case_state)
+    merged: dict[str, Fact] = {}
+    if current is not None:
+        for fact in current.facts:
+            merged[fact.fact_id] = fact
 
+    by_name = {fact.name: fact for fact in merged.values()}
+
+    for fact in new_facts:
+        prior = by_name.get(fact.name)
+        if prior is not None and prior.fact_id != fact.fact_id:
+            # Replace the previous entry that used a different id but represents
+            # the same logical fact.
+            merged.pop(prior.fact_id, None)
+        merged[fact.fact_id] = fact
+        by_name[fact.name] = fact
+
+    return list(merged.values())
+
+
+def _build_missing_and_questions(
+    intent: Intent,
+    fact_names: set[str],
+) -> tuple[list[MissingFact], list[QuestionPrompt]]:
     missing_facts: list[MissingFact] = []
-    uncertainties: list[Uncertainty] = []
     next_questions: list[QuestionPrompt] = []
 
-    fact_names = {fact.name for fact in facts}
-    if "menciona_ingresos" not in fact_names:
+    if "menciona_ingresos" not in fact_names and "tipo_renta" not in fact_names:
         missing_facts.append(
             MissingFact(
                 fact_name="tipo_renta",
@@ -138,10 +120,11 @@ def interpret_turn(
                 priority=RiskLevel.HIGH,
             )
         )
+        qid, text = _QUESTION_TEMPLATES["tipo_renta"]
         next_questions.append(
             QuestionPrompt(
-                question_id="q_tipo_renta",
-                question_text="¿Qué tipo de ingresos has tenido (trabajo, actividad económica, capital u otros)?",
+                question_id=qid,
+                question_text=text,
                 target_fact="tipo_renta",
                 reason="requerido_para_analisis_fiscal",
                 priority=RiskLevel.HIGH,
@@ -156,16 +139,73 @@ def interpret_turn(
                 priority=RiskLevel.HIGH,
             )
         )
+        qid, text = _QUESTION_TEMPLATES["residencia_fiscal"]
         next_questions.append(
             QuestionPrompt(
-                question_id="q_residencia",
-                question_text="¿Cuál es tu residencia fiscal actual?",
+                question_id=qid,
+                question_text=text,
                 target_fact="residencia_fiscal",
                 reason="requerido_para_determinar_jurisdiccion",
                 priority=RiskLevel.HIGH,
             )
         )
 
+    if intent is not Intent.UNKNOWN and "periodo_fiscal" not in fact_names:
+        # Soft missing: we won't always block on this, but signal it so the
+        # policy can choose to ask after the higher-priority facts.
+        missing_facts.append(
+            MissingFact(
+                fact_name="periodo_fiscal",
+                reason="periodo_fiscal_no_identificado",
+                priority=RiskLevel.MEDIUM,
+            )
+        )
+        qid, text = _QUESTION_TEMPLATES["periodo_fiscal"]
+        next_questions.append(
+            QuestionPrompt(
+                question_id=qid,
+                question_text=text,
+                target_fact="periodo_fiscal",
+                reason="necesario_para_contextualizar_normativa",
+                priority=RiskLevel.MEDIUM,
+            )
+        )
+
+    return missing_facts, next_questions
+
+
+def interpret_turn(
+    user_input: str,
+    chat_history: list[dict[str, str]] | list[str],
+    current_case_state: CaseState | None,
+    extractor: FactExtractor | None = None,
+) -> InterpretationResult:
+    """Interpret user turn into structured intent/facts/uncertainties/questions.
+
+    The actual fact extraction is delegated to a `FactExtractor`. When no
+    extractor is provided we fall back to the deterministic regex extractor so
+    that existing tests and offline development keep working without
+    contacting the LLM.
+    """
+
+    active_extractor = extractor or RegexFactExtractor()
+    payload = active_extractor.extract(user_input, chat_history, current_case_state)
+
+    try:
+        intent = Intent(payload.intent)
+    except ValueError:
+        intent = Intent.UNKNOWN
+
+    facts = _merge_facts(payload.extracted_facts, current_case_state)
+    fact_names = {fact.name for fact in facts}
+
+    missing_facts, next_questions = _build_missing_and_questions(intent, fact_names)
+    gave_up = set(getattr(current_case_state, "gave_up_facts", []) or [])
+    if gave_up:
+        missing_facts = [m for m in missing_facts if m.fact_name not in gave_up]
+        next_questions = [q for q in next_questions if q.target_fact not in gave_up]
+
+    uncertainties: list[Uncertainty] = []
     if intent is Intent.UNKNOWN:
         uncertainties.append(
             Uncertainty(
@@ -175,7 +215,7 @@ def interpret_turn(
             )
         )
 
-    if not re.search(r"\b(20\d{2})\b", text):
+    if "periodo_fiscal" not in fact_names:
         uncertainties.append(
             Uncertainty(
                 code="tax_period_missing",
@@ -186,7 +226,7 @@ def interpret_turn(
 
     return InterpretationResult(
         intent=intent,
-        confidence=intent_conf,
+        confidence=payload.intent_confidence,
         extracted_facts=facts,
         uncertainties=uncertainties,
         missing_facts=missing_facts,

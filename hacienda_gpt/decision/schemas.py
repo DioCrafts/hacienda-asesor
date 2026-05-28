@@ -155,6 +155,8 @@ class CaseState(BaseModel):
     facts: list[Fact] = Field(default_factory=list)
     missing_facts: list[MissingFact] = Field(default_factory=list)
     asked_facts: list[str] = Field(default_factory=list)
+    ask_counts: dict[str, int] = Field(default_factory=dict)
+    gave_up_facts: list[str] = Field(default_factory=list)
     obligation_candidates: list[ObligationCandidate] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
