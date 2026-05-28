@@ -135,6 +135,11 @@ def post_turn(
         max_questions=1,
     ).selected_questions
 
+    if selected_questions:
+        merged_asked = list(dict.fromkeys([*updated.asked_facts, *(q.target_fact for q in selected_questions)]))
+        updated = updated.model_copy(update={"asked_facts": merged_asked})
+        store.save_case(updated)
+
     # execute planner for side effect of validation and auditability
     Planner().plan(updated, rules_result.candidate_obligations)
 

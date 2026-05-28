@@ -8,7 +8,7 @@ from hacienda_gpt.decision.taxonomy import SupportedIntent
 
 def _case_with_known_and_asked() -> CaseState:
     now = datetime.now(UTC)
-    case = CaseState(
+    return CaseState(
         case_id="c1",
         user_id="u1",
         jurisdiction="ES",
@@ -23,12 +23,10 @@ def _case_with_known_and_asked() -> CaseState:
                 confidence=0.9,
             )
         ],
+        asked_facts=["tipo_renta"],
         created_at=now,
         updated_at=now,
     )
-    # emulate asked facts memory managed by orchestrator layer
-    case.__pydantic_extra__ = {"asked_facts": ["tipo_renta"]}
-    return case
 
 
 def test_question_policy_avoids_redundant_and_non_critical_questions() -> None:

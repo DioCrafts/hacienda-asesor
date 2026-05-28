@@ -7,6 +7,8 @@ from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import EmbeddingsFilter
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain_community.vectorstores import FAISS
+from langchain_core.callbacks import AsyncCallbackManagerForRetrieverRun, CallbackManagerForRetrieverRun
+from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -88,21 +90,24 @@ def _create_retriever(embeddings: OpenAIEmbeddings, llm: ChatOpenAI, *, profile_
     multi_query_retriever = MultiQueryRetriever.from_llm(retriever=base_retriever, llm=llm)
     embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=profile.similarity_threshold)
     compressed = ContextualCompressionRetriever(base_retriever=multi_query_retriever, base_compressor=embeddings_filter)
-    return SanitizingRetriever(compressed)
+    return SanitizingRetriever(inner=compressed)
 
 
 
 
-class SanitizingRetriever:
-    def __init__(self, inner):
-        self.inner = inner
+class SanitizingRetriever(BaseRetriever):
+    inner: BaseRetriever
 
-    def get_relevant_documents(self, query: str):
-        docs = self.inner.get_relevant_documents(query)
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> list[Document]:
+        docs = self.inner.invoke(query, config={"callbacks": run_manager.get_child()})
         return _sanitize_context_documents(docs)
 
-    async def aget_relevant_documents(self, query: str):
-        docs = await self.inner.aget_relevant_documents(query)
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> list[Document]:
+        docs = await self.inner.ainvoke(query, config={"callbacks": run_manager.get_child()})
         return _sanitize_context_documents(docs)
 
 def create_openai_chain(openai_api_key: str) -> Runnable:

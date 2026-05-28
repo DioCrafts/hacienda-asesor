@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from langchain_core.retrievers import BaseRetriever
 
 from hacienda_gpt.llm import chain
 
@@ -19,7 +20,7 @@ def test_create_retriever_builds_compressed_retriever(monkeypatch: pytest.Monkey
 
     fake_multi_query_retriever = MagicMock(name="multi_query_retriever")
     fake_embeddings_filter = MagicMock(name="embeddings_filter")
-    fake_compressed_retriever = MagicMock(name="compressed_retriever")
+    fake_compressed_retriever = MagicMock(name="compressed_retriever", spec=BaseRetriever)
 
     monkeypatch.setattr(chain, "FAISS_TRUSTED_INDEX", True)
     monkeypatch.setattr(chain.FAISS, "load_local", MagicMock(return_value=fake_faiss))

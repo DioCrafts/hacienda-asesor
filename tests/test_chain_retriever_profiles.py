@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock
 
+from langchain_core.retrievers import BaseRetriever
+
 from hacienda_gpt.llm import chain
 
 
@@ -14,7 +16,7 @@ def test_create_retriever_applies_profile_filter_and_threshold(monkeypatch) -> N
 
     emb_filter = MagicMock()
     monkeypatch.setattr(chain, "EmbeddingsFilter", MagicMock(return_value=emb_filter))
-    monkeypatch.setattr(chain, "ContextualCompressionRetriever", MagicMock(return_value=MagicMock()))
+    monkeypatch.setattr(chain, "ContextualCompressionRetriever", MagicMock(return_value=MagicMock(spec=BaseRetriever)))
 
     chain._create_retriever(MagicMock(), MagicMock(), profile_name="decision", fiscal_year=2025, metadata_filter={"scope": "nacional"})
 
