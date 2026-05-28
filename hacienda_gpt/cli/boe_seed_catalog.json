@@ -18,6 +18,36 @@
       "topic": "modelo_720",
       "label": "Orden HAP/72/2013 — aprueba el Modelo 720 y fija lugar, forma, plazo y procedimiento de presentación",
       "subdir": "boe-modelo-720"
+    },
+    {
+      "id": "BOE-A-2017-6855",
+      "topic": "jurisprudencia_tc_iivtnu",
+      "label": "STC 59/2017 — nulidad parcial del IIVTNU (plusvalía municipal) cuando no existe incremento de valor",
+      "subdir": "boe-jurisprudencia-tc"
+    },
+    {
+      "id": "BOE-A-2017-8344",
+      "topic": "jurisprudencia_tc_iivtnu",
+      "label": "STC 72/2017 — IIVTNU régimen foral de Navarra; nulidad por inexistencia de incremento de valor",
+      "subdir": "boe-jurisprudencia-tc"
+    },
+    {
+      "id": "BOE-A-2017-8345",
+      "topic": "jurisprudencia_tc_amnistia",
+      "label": "STC 73/2017 — nulidad de la disposición adicional 1ª del RD-ley 12/2012 (amnistía fiscal)",
+      "subdir": "boe-jurisprudencia-tc"
+    },
+    {
+      "id": "BOE-A-2019-17639",
+      "topic": "jurisprudencia_tc_iivtnu",
+      "label": "STC 126/2019 — IIVTNU inconstitucional cuando la cuota supera el incremento patrimonial real",
+      "subdir": "boe-jurisprudencia-tc"
+    },
+    {
+      "id": "BOE-A-2021-19511",
+      "topic": "jurisprudencia_tc_iivtnu",
+      "label": "STC 182/2021 — IIVTNU declaración integral de inconstitucionalidad del método objetivo (cierra la saga plusvalía)",
+      "subdir": "boe-jurisprudencia-tc"
     }
   ]
 }
