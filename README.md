@@ -58,6 +58,14 @@ export DECISION_DEBUG_MODE="false"
 export DECISION_STATE_DB_PATH="./data/decision_state.sqlite3"
 ```
 
+> 🍎 **macOS**: si al primer request a `/qa` (uvicorn) o a la UI
+> (Streamlit) el proceso muere con
+> `OMP: Error #15: Initializing libomp.dylib, but found libomp.dylib
+> already initialized`, exporta `KMP_DUPLICATE_LIB_OK=TRUE` antes de
+> lanzar el servicio. La causa es que `faiss-cpu` y las dependencias de
+> `gpt4all`/`unstructured` enlazan dos copias de libomp en el mismo
+> proceso.
+
 ---
 
 ## 🕸️ 1) Crawling de contenidos
@@ -80,16 +88,23 @@ poetry run python -m hacienda_gpt.cli.crawler --crawler pdf --folder ./data/pdf 
 
 ## 🧩 2) Construcción del índice FAISS
 
-Con embeddings locales (GPT4All):
+> ⚠️ La cadena de retrieval en `hacienda_gpt/llm/chain.py` usa
+> `OpenAIEmbeddings` para embeddear la query, por lo que **el índice que
+> sirva a la UI/API debe construirse con `--embedder openai`**. Usar
+> `gpt4all` produce un mismatch de dimensiones (384 vs 1536) y los
+> retrievals fallan o devuelven ruido.
 
-```bash
-poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --embedder gpt4all --overwrite-output
-```
-
-Con embeddings de OpenAI:
+Con embeddings de OpenAI (recomendado, requerido para la UI/API):
 
 ```bash
 poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --embedder openai --overwrite-output
+```
+
+Con embeddings locales (solo experimentación offline; **no compatible con
+la chain en runtime tal cual está hoy**):
+
+```bash
+poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --embedder gpt4all --overwrite-output
 ```
 
 ---
