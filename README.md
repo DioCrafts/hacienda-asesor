@@ -116,21 +116,34 @@ nuevos.
 
 ## ⚖️ 1.d) CENDOJ (jurisprudencia)
 
-CENDOJ se consume con la spider scrapy existente (`--crawler cendoj`),
-que acepta una lista de URLs vía `--cendoj-urls-file`. La plantilla
-versionada vive en
-[hacienda_gpt/cli/cendoj_seed_urls.txt](hacienda_gpt/cli/cendoj_seed_urls.txt) —
-añade ahí las URLs a sentencias relevantes y lanza:
+> ⚠️ **Aviso legal CENDOJ.** El portal poderjudicial.es publica un
+> aviso legal vinculante antes de cada búsqueda:
+> *"El usuario de la base de datos podrá consultar los documentos
+> siempre que lo haga para su uso particular. No está permitida la
+> utilización de la base de datos para usos comerciales, ni la
+> descarga masiva de información. La reutilización de esta información
+> para la elaboración de bases de datos o con fines comerciales debe
+> seguir el procedimiento y las condiciones establecidas por el CGPJ
+> a través de su Centro de Documentación Judicial."*
+>
+> Por eso este repo **no incluye** un crawler automatizado de CENDOJ.
+> Construir uno y volcar resultados en este índice FAISS sería
+> "elaboración de base de datos" y, salvo autorización expresa del
+> CGPJ, infringiría las condiciones. Si necesitas cobertura de
+> jurisprudencia a escala, gestiona la autorización con el Centro de
+> Documentación Judicial antes de tocar código.
+
+Para usos individuales y selectivos (consultas puntuales en el
+contexto de tu propio análisis), la spider scrapy existente
+(`--crawler cendoj`) sigue valiendo: tú aportas las URLs
+explícitamente. La plantilla versionada está en
+[hacienda_gpt/cli/cendoj_seed_urls.txt](hacienda_gpt/cli/cendoj_seed_urls.txt):
 
 ```bash
 poetry run python -m hacienda_gpt.cli.crawler \
   --crawler cendoj --folder ./data/cendoj \
   --cendoj-urls-file hacienda_gpt/cli/cendoj_seed_urls.txt
 ```
-
-> El descubrimiento automatizado de URLs vía el buscador de
-> [poderjudicial.es](https://www.poderjudicial.es/search/) queda como
-> follow-up: requiere driving JS dinámico con paginación y cookies.
 
 ## 📄 1.e) PDFs
 
