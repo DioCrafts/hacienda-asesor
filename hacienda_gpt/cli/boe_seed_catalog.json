@@ -1,0 +1,23 @@
+{
+  "description": "Curated list of BOE consolidated documents to download via `python -m hacienda_gpt.cli.boe_seed`. Add new entries here whenever a topic surfaces as a corpus gap in /qa smoke runs.",
+  "documents": [
+    {
+      "id": "BOE-A-2012-13416",
+      "topic": "modelo_720",
+      "label": "Ley 7/2012 — anti-fraude; introduce la obligación de información sobre bienes y derechos situados en el extranjero (disposición adicional 18ª de la LGT)",
+      "subdir": "boe-modelo-720"
+    },
+    {
+      "id": "BOE-A-2012-14452",
+      "topic": "modelo_720",
+      "label": "Real Decreto 1558/2012 — desarrolla la obligación informativa (arts. 42 bis / 42 ter / 54 bis del RGGI)",
+      "subdir": "boe-modelo-720"
+    },
+    {
+      "id": "BOE-A-2013-954",
+      "topic": "modelo_720",
+      "label": "Orden HAP/72/2013 — aprueba el Modelo 720 y fija lugar, forma, plazo y procedimiento de presentación",
+      "subdir": "boe-modelo-720"
+    }
+  ]
+}

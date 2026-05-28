@@ -68,6 +68,30 @@ export DECISION_STATE_DB_PATH="./data/decision_state.sqlite3"
 
 ---
 
+## 📜 1.b) Documentos BOE dirigidos (seed catalog)
+
+Para temas concretos cuya página AEAT no es accesible o que necesitan la
+base normativa oficial (ej. Modelo 720), la lista canónica vive en
+[hacienda_gpt/cli/boe_seed_catalog.json](hacienda_gpt/cli/boe_seed_catalog.json).
+Cada entrada referencia un ID de BOE, su tema y el subdirectorio destino
+dentro del snapshot. Vive junto al CLI a propósito: si lo dejásemos bajo
+`rules/`, `load_rules_from_directory` lo intentaría parsear como reglas
+de decisión.
+
+```bash
+poetry run python -m hacienda_gpt.cli.boe_seed
+# o, para previsualizar sin descargar:
+poetry run python -m hacienda_gpt.cli.boe_seed --dry-run
+```
+
+El CLI escribe los HTML consolidados (`/buscar/act.php?id=...`) en
+`data/html/<snapshot_date>/<subdir>/<ID>.html` junto a un
+`boe-seed-manifest.json` con los tamaños descargados. El reindexado
+posterior (`hacienda_gpt.cli.processor`) los recoge igual que el resto
+del corpus HTML.
+
+---
+
 ## 🕸️ 1) Crawling de contenidos
 
 ### HTML (sitio AEAT)
