@@ -16,7 +16,24 @@
       "status": "candidate"
     },
     "base_confidence": 0.72,
-    "risk_level": "medium"
+    "risk_level": "medium",
+    "last_reviewed_at": "2024-12-01",
+    "source_refs": [
+      {
+        "source_id": "BOE-A-2006-20764",
+        "locator": "boe://BOE-A-2006-20764",
+        "content_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "last_reviewed_at": "2024-12-01",
+        "notes": "Ley 35/2006 IRPF - artículos sobre residencia fiscal y obligación de declarar"
+      },
+      {
+        "source_id": "AEAT-irpf-residencia",
+        "locator": "aeat://Sede/Ciudadanos/IRPF/Residencia",
+        "content_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "last_reviewed_at": "2024-12-01",
+        "notes": "Página de la Sede AEAT sobre residencia fiscal del IRPF"
+      }
+    ]
   },
   {
     "id": "rule_iva_candidate_activity",
@@ -34,6 +51,16 @@
       "status": "candidate"
     },
     "base_confidence": 0.68,
-    "risk_level": "high"
+    "risk_level": "high",
+    "last_reviewed_at": "2024-12-01",
+    "source_refs": [
+      {
+        "source_id": "BOE-A-1992-28740",
+        "locator": "boe://BOE-A-1992-28740",
+        "content_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "last_reviewed_at": "2024-12-01",
+        "notes": "Ley 37/1992 IVA - hecho imponible y sujeto pasivo"
+      }
+    ]
   }
 ]

@@ -10,6 +10,8 @@ HaciendaGPT combina recuperación semántica (RAG), reglas de decisión fiscal y
 
 - 📚 **RAG sobre contenido fiscal** (HTML/PDF) con FAISS.
 - 🧠 **Motor de reglas** para evaluación de obligaciones y casos.
+- 🛡️ **Grounding gate**: abstención forzada cuando no hay citas normativas suficientes (modos `cited` / `uncited` / `abstained`).
+- 🧭 **Detector de drift normativo**: cada regla declara las fuentes BOE/AEAT que la sustentan; un CLI compara los hashes contra el último snapshot.
 - 🔐 **Hardening de seguridad** frente a prompt injection en contexto recuperado.
 - 🖥️ **Interfaz Streamlit** para uso interactivo.
 - ⚡ **API FastAPI** para integración en servicios.
@@ -105,6 +107,82 @@ poetry run streamlit run hacienda_gpt/ui/app.py
 ```bash
 poetry run uvicorn hacienda_gpt.api.api:app --reload --host 127.0.0.1 --port 8000
 ```
+
+---
+
+## 🛡️ Grounding gate (abstención por defecto)
+
+La cadena de respuesta envuelve la salida del LLM en un `AnswerEnvelope` con
+modo `cited`, `uncited` o `abstained`. El gate decide en función del contexto
+recuperado:
+
+- **`cited`**: al menos `GROUNDING_MIN_CITATIONS` documentos exponen `title` +
+  `source_url` citables. Se muestran las fuentes.
+- **`uncited`**: hay contexto pero sin metadata válida. Se marca como
+  orientativo.
+- **`abstained`**: no hay contexto, o el modelo emitió expresiones de duda
+  ("no estoy seguro", "no tengo información…"). Se sustituye por un mensaje
+  de abstención.
+
+Variables de entorno:
+
+```bash
+export GROUNDING_MIN_CITATIONS="1"
+export GROUNDING_SNIPPET_CHARS="240"
+```
+
+Uso programático:
+
+```python
+from hacienda_gpt.llm.chain import answer_with_grounding, create_openai_chain
+
+chain = create_openai_chain(openai_api_key=...)
+envelope = answer_with_grounding(chain, query="¿Tengo que declarar IRPF?")
+print(envelope.mode, envelope.citations)
+```
+
+Endpoint API equivalente:
+
+```bash
+curl -X POST http://127.0.0.1:8000/qa \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "¿Tengo que declarar IRPF si soy residente?"}'
+```
+
+---
+
+## 🧭 Gobernanza normativa (drift detector)
+
+Cada `DecisionRule` puede declarar las fuentes BOE/AEAT que la sustentan:
+
+```json
+"source_refs": [
+  {
+    "source_id": "BOE-A-2006-20764",
+    "locator": "boe://BOE-A-2006-20764",
+    "content_hash": "<sha256 al último review>",
+    "last_reviewed_at": "2024-12-01",
+    "notes": "Ley 35/2006 IRPF - residencia fiscal"
+  }
+]
+```
+
+El detector de drift recalcula los hashes contra el snapshot actual y emite un
+reporte con findings clasificados (`ok`, `changed`, `missing`, `unverified`):
+
+```bash
+poetry run python -m hacienda_gpt.cli.drift_check \
+  --rules-dir rules \
+  --snapshot-root ./data \
+  --output reports/drift.json \
+  --fail-on-changed
+```
+
+Con `--fail-on-changed`, el comando sale con código `2` cuando hay drift
+crítico — ideal para gates de CI antes de promover un snapshot.
+
+Convención de locators: `scheme://relative/path`, donde el `scheme` es el
+nombre del crawler (`boe`, `aeat`, `teac`, …) y se mapea a `<snapshot-root>/<scheme>/<path>`.
 
 ---
 

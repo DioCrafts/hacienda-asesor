@@ -13,12 +13,15 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
+from hacienda_gpt.llm.grounding import AnswerEnvelope, GroundingGate
 from hacienda_gpt.llm.security import sanitize_retrieved_context
 
 from hacienda_gpt.llm.retrieval_profiles import build_decision_profile, build_explain_profile
 from hacienda_gpt.settings import (
     FAISS_INDEX_PATH,
     FAISS_TRUSTED_INDEX,
+    GROUNDING_MIN_CITATIONS,
+    GROUNDING_SNIPPET_CHARS,
     OPENAI_MODEL,
     OPENAI_TEMPERATURE,
     TOP_K,
@@ -134,3 +137,34 @@ def create_openai_chain(openai_api_key: str) -> Runnable:
     )
     qa_chain = create_stuff_documents_chain(llm, qa_prompt)
     return create_retrieval_chain(history_aware_retriever, qa_chain)
+
+
+def default_grounding_gate() -> GroundingGate:
+    return GroundingGate(min_citations=GROUNDING_MIN_CITATIONS, snippet_chars=GROUNDING_SNIPPET_CHARS)
+
+
+def answer_with_grounding(
+    chain: Runnable,
+    *,
+    query: str,
+    chat_history: list | None = None,
+    gate: GroundingGate | None = None,
+) -> AnswerEnvelope:
+    """Invoke the RAG chain and wrap the result in an :class:`AnswerEnvelope`.
+
+    The gate enforces abstention when the retrieved context does not pass
+    the citation threshold, so callers never receive an unverified
+    statement passed off as authoritative.
+    """
+    gate = gate or default_grounding_gate()
+    result = chain.invoke({"input": query, "chat_history": chat_history or []})
+    raw_answer = ""
+    documents: list[Document] = []
+    if isinstance(result, dict):
+        candidate = result.get("answer")
+        if isinstance(candidate, str):
+            raw_answer = candidate
+        context = result.get("context")
+        if isinstance(context, list):
+            documents = [doc for doc in context if isinstance(doc, Document)]
+    return gate.evaluate(answer=raw_answer, documents=documents)

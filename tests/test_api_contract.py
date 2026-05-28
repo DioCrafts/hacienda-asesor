@@ -1,9 +1,18 @@
 from fastapi.testclient import TestClient
+from langchain_core.documents import Document
 
-from hacienda_gpt.api.api import app
+from hacienda_gpt.api.api import app, get_qa_chain
 
 
 client = TestClient(app)
+
+
+class _StubQAChain:
+    def __init__(self, payload: dict) -> None:
+        self.payload = payload
+
+    def invoke(self, inputs: dict) -> dict:
+        return self.payload
 
 
 def test_health() -> None:
@@ -57,3 +66,39 @@ def test_post_turn_updates_case_tax_period_from_extracted_fact() -> None:
 def test_not_found_case() -> None:
     r = client.get('/cases/does-not-exist')
     assert r.status_code == 404
+
+
+def test_qa_returns_envelope_with_citations() -> None:
+    docs = [
+        Document(
+            page_content="Residencia fiscal en España...",
+            metadata={"title": "Residencia fiscal IRPF", "source_url": "https://sede/x"},
+        )
+    ]
+    app.dependency_overrides[get_qa_chain] = lambda: _StubQAChain(
+        {"answer": "Si eres residente, declaras IRPF.", "context": docs}
+    )
+    try:
+        r = client.post("/qa", json={"query": "¿IRPF?", "chat_history": []})
+    finally:
+        app.dependency_overrides.pop(get_qa_chain, None)
+
+    assert r.status_code == 200
+    body = r.json()
+    assert body["mode"] == "cited"
+    assert body["citations"][0]["locator"] == "https://sede/x"
+    assert "Si eres residente" in body["answer"]
+
+
+def test_qa_abstains_when_no_context() -> None:
+    app.dependency_overrides[get_qa_chain] = lambda: _StubQAChain({"answer": "respuesta", "context": []})
+    try:
+        r = client.post("/qa", json={"query": "¿Y esto?", "chat_history": []})
+    finally:
+        app.dependency_overrides.pop(get_qa_chain, None)
+
+    assert r.status_code == 200
+    body = r.json()
+    assert body["mode"] == "abstained"
+    assert body["raw_answer"] == "respuesta"
+    assert body["citations"] == []

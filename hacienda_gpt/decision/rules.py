@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
 from enum import Enum
 from pathlib import Path
@@ -8,6 +9,8 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from hacienda_gpt.decision.schemas import ObligationStatus, RiskLevel
+
+_SHA256_HEX_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 class ConditionOperator(str, Enum):
@@ -46,6 +49,27 @@ class GeneratedObligationSpec(BaseModel):
     status: ObligationStatus = ObligationStatus.CANDIDATE
 
 
+class RuleSourceRef(BaseModel):
+    """Normative source backing a rule, used by the drift detector.
+
+    `content_hash` is the SHA-256 of the source bytes at `last_reviewed_at`.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    source_id: str = Field(min_length=1)
+    locator: str = Field(min_length=1)
+    content_hash: str = Field(min_length=64, max_length=64)
+    last_reviewed_at: date
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def validate_hash_format(self) -> RuleSourceRef:
+        if not _SHA256_HEX_RE.match(self.content_hash):
+            raise ValueError("content_hash must be a lowercase SHA-256 hex digest")
+        return self
+
+
 class DecisionRule(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -58,6 +82,8 @@ class DecisionRule(BaseModel):
     generated_obligation: GeneratedObligationSpec
     base_confidence: float = Field(ge=0.0, le=1.0)
     risk_level: RiskLevel
+    source_refs: list[RuleSourceRef] = Field(default_factory=list)
+    last_reviewed_at: date | None = None
 
     @model_validator(mode="after")
     def validate_rule_integrity(self) -> DecisionRule:
@@ -67,6 +93,9 @@ class DecisionRule(BaseModel):
             raise ValueError("required_facts contains duplicates")
         if any(not fact for fact in self.required_facts):
             raise ValueError("required_facts cannot contain empty values")
+        source_ids = [ref.source_id for ref in self.source_refs]
+        if len(source_ids) != len(set(source_ids)):
+            raise ValueError("source_refs must have unique source_id")
         return self
 
 
