@@ -6,7 +6,7 @@ from datetime import UTC, date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from hacienda_gpt.decision.schemas import ActionItem, CaseState, ObligationCandidate, RiskLevel
+from hacienda_gpt.decision.schemas import ActionItem, CaseState, ObligationCandidate, RiskLevel, parse_fiscal_year
 
 
 def _env_float(name: str, default: float) -> float:
@@ -73,13 +73,14 @@ class Planner:
                 + self.weights.compliance_impact * impact
             )
 
+            year = parse_fiscal_year(obligation.tax_period)
             action = ActionItem(
                 action_id=f"action_{obligation.obligation_id}",
                 title=f"Revisar obligación: {obligation.title}",
                 description=obligation.description,
                 priority=1,
                 risk_level=obligation.risk_level,
-                due_date=date(int(obligation.tax_period), 12, 31),
+                due_date=date(year, 12, 31) if year is not None else None,
                 depends_on=[],
                 expected_outcome=f"Confirmar o descartar {obligation.obligation_id}",
                 confidence=obligation.confidence,
@@ -144,7 +145,8 @@ class Planner:
 
     def _urgency_score(self, tax_period: str) -> float:
         now_year = datetime.now(UTC).year
-        delta = max(0, now_year - int(tax_period))
+        year = parse_fiscal_year(tax_period)
+        delta = max(0, now_year - year) if year is not None else 0
         return min(1.0, 0.4 + delta * 0.2)
 
     def _user_effort_score(self, obligation: ObligationCandidate) -> float:

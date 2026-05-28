@@ -8,6 +8,20 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 SCHEMA_VERSION = "1.0.0"
 
 
+def parse_fiscal_year(tax_period: str) -> int | None:
+    """Extract a 4-digit fiscal year from `tax_period`.
+
+    Returns None if the value cannot be interpreted as a valid year in date()'s
+    supported range. Accepts forms like "2024", "2024-Q1", "2024/12".
+    """
+    if len(tax_period) < 4 or not tax_period[:4].isdigit():
+        return None
+    year = int(tax_period[:4])
+    if not 1 <= year <= 9999:
+        return None
+    return year
+
+
 class CaseStatus(str, Enum):
     OPEN = "open"
     IN_REVIEW = "in_review"
