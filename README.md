@@ -147,19 +147,26 @@ poetry run python -m hacienda_gpt.cli.crawler \
 
 ## 📄 1.e) PDFs
 
-La AEAT migró sus folletos y manuales prácticos a HTML interactivo, así
-que el crawler PDF (`--crawler pdf`) sobre `sede.agenciatributaria.gob.es`
-casi siempre devuelve cero resultados (depth=2 desde la raíz ya no
-encuentra `.pdf` enlazados). El crawler sigue siendo útil para fuentes
-externas con PDF estable; para AEAT, indexa el corpus HTML que sí
-expone la sede.
+> AEAT ha completado la migración de folletos, manuales y guías a HTML
+> interactivo. Probamos `--crawler pdf` con `depth=2` desde la raíz de
+> Sede y desde `www.agenciatributaria.es`, y los puntos típicamente
+> ricos en PDF (calendario contribuyente, manual Renta, manual
+> actividades económicas, modelos y formularios) — **cero PDFs
+> encontrados en ninguno**. La spider `AgenciaTributariaPDFCrawler` no
+> es funcional contra AEAT hoy; se mantiene en el código para no
+> romper sus tests pero **no se debe esperar que produzca corpus**.
 
-Para PDFs autonómicos del BOE (códigos consolidados por CCAA) usa el
-crawler ya integrado:
+Las únicas fuentes PDF que sí funcionan integradas en el repo son:
 
 ```bash
+# Códigos consolidados autonómicos del BOE (4 PDFs verificados):
 poetry run python -m hacienda_gpt.cli.crawler --crawler boe-ccaa --folder ./data/boe --skip-unknown-ccaa
 ```
+
+Si necesitas ingerir PDFs externos (manuales de despacho propio,
+boletines forales, etc.), añade su URL al spider que corresponda
+o crea una mini-CLI siguiendo el patrón de
+[hacienda_gpt/cli/boe_seed.py](hacienda_gpt/cli/boe_seed.py).
 
 ## 🕸️ 1) Crawling de contenidos
 
