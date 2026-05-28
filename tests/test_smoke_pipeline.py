@@ -10,13 +10,16 @@ from hacienda_gpt.llm import chain
 def test_smoke_pipeline_crawler_to_index_to_question(monkeypatch) -> None:
     calls: dict[str, object] = {}
 
-    def fake_start_crawler(crawler_class, settings, folder, mode, snapshot_date):
+    def fake_start_crawler(
+        crawler_class, settings, folder, mode, snapshot_date, extra_kwargs=None
+    ):
         calls["crawler"] = {
             "crawler_class": crawler_class.__name__,
             "depth": settings["DEPTH_LIMIT"],
             "folder": folder,
             "mode": mode,
             "snapshot_date": snapshot_date,
+            "extra_kwargs": extra_kwargs or {},
         }
 
     def fake_process_with_gpt4all(args):

@@ -72,7 +72,18 @@ def pytest_sessionstart(session):
     lc_core_prompts.MessagesPlaceholder = MessagesPlaceholder
 
     lc_core_ret = _ensure_module("langchain_core.retrievers")
-    lc_core_ret.BaseRetriever = object
+
+    class _StubBaseRetriever:
+        """Accepts arbitrary kwargs, matching the Pydantic constructor that
+        real `BaseRetriever` exposes. `SanitizingRetriever(inner=...)` relies
+        on this contract.
+        """
+
+        def __init__(self, **kwargs):
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+
+    lc_core_ret.BaseRetriever = _StubBaseRetriever
     lc_core_run = _ensure_module("langchain_core.runnables")
     lc_core_run.Runnable = object
 

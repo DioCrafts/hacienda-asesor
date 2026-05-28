@@ -21,26 +21,29 @@ from hacienda_gpt.decision.schemas import CaseState, Fact, FactValueType
 logger = logging.getLogger(__name__)
 
 
-# Canonical fact vocabulary surfaced to the LLM. Kept aligned with
-# `hacienda_gpt.decision.taxonomy` plus a few common extras the interpreter
-# can use to drive richer flows.
-KNOWN_FACT_NAMES = (
-    "residencia_fiscal",
-    "periodo_fiscal",
-    "tipo_renta",
-    "menciona_ingresos",
-    "importe_renta_aproximado",
-    "categoria_contribuyente",
-    "regimen_tributario",
-    "volumen_facturacion",
-    "actividad_economica",
-    "plantilla",
-    "alta_actividad_economica",
-    "fecha_inicio_actividad",
-    "regimen_cotizacion",
-    "periodicidad_iva",
-    "tema_tributario",
-)
+# Canonical fact vocabulary surfaced to the LLM, paired with the value type
+# we expect to receive. Anything the LLM emits in a non-matching slot is
+# either coerced when safe (e.g. "45000" → 45000.0) or dropped, so we never
+# persist a `categoria_contribuyente = True` style of nonsense fact.
+EXPECTED_FACT_TYPE: dict[str, FactValueType] = {
+    "residencia_fiscal": FactValueType.STRING,
+    "periodo_fiscal": FactValueType.STRING,
+    "tipo_renta": FactValueType.STRING,
+    "menciona_ingresos": FactValueType.BOOLEAN,
+    "importe_renta_aproximado": FactValueType.NUMBER,
+    "categoria_contribuyente": FactValueType.STRING,
+    "regimen_tributario": FactValueType.STRING,
+    "volumen_facturacion": FactValueType.NUMBER,
+    "actividad_economica": FactValueType.STRING,
+    "plantilla": FactValueType.NUMBER,
+    "alta_actividad_economica": FactValueType.BOOLEAN,
+    "fecha_inicio_actividad": FactValueType.STRING,
+    "regimen_cotizacion": FactValueType.STRING,
+    "periodicidad_iva": FactValueType.STRING,
+    "tema_tributario": FactValueType.STRING,
+}
+
+KNOWN_FACT_NAMES: tuple[str, ...] = tuple(EXPECTED_FACT_TYPE.keys())
 
 
 KNOWN_INTENTS = (
@@ -169,22 +172,56 @@ un objeto JSON con dos partes:
 2. `facts`: lista de hechos estructurados que el usuario menciona explícita
    o inequívocamente. NUNCA inventes valores. Si dudas, NO incluyas el hecho.
 
-Reglas clave:
-- "vivo en Madrid", "soy de Sevilla", "estoy en Bilbao" → residencia_fiscal=ES.
-- "vivo en Berlín", "soy residente en Portugal" → residencia_fiscal=OTHER.
-- "renta 2024", "IRPF 2025", "campaña de 2023" → periodo_fiscal=AÑO.
-- "soy autónomo" / "autónoma" → categoria_contribuyente=autonomo.
-- "soy asalariado" / "tengo nómina" → categoria_contribuyente=asalariado.
-- "facturo 45.000€" / "ingreso 60k al año" → volumen_facturacion (número en euros) Y menciona_ingresos=true.
-- "estimación directa" / "directa simplificada" / "módulos" / "estimación objetiva" → regimen_tributario.
-- "no tengo empleados" / "trabajo solo" → plantilla=0.
-- "consultoría informática", "tengo un bar" → actividad_economica (texto breve).
-- "tengo ingresos del trabajo / capital / actividad económica / ganancias" → tipo_renta.
-- Si el usuario inicia o ha iniciado una actividad: "alta en autónomos en enero de 2024" → fecha_inicio_actividad (YYYY-MM-DD si claro), alta_actividad_economica=true.
-- No repitas hechos que ya estén en el `current_case_state.facts` salvo que el usuario los corrija.
+REGLA DE SLOT (crítica). Cada hecho tiene UN ÚNICO campo de valor permitido,
+y el resto deben ir a `null`. Si te equivocas de slot el hecho se descarta.
 
-Si el turno es vacío, off-topic o no aporta hechos nuevos, devuelve `facts: []`
-e `intent` con el valor más cercano (o `unknown`)."""
+  value_string  (texto/categoría/fecha):
+    residencia_fiscal           → "ES" | "OTHER" | código ISO ("PT", "DE"…)
+    periodo_fiscal              → año en 4 dígitos como texto, ej. "2024"
+    tipo_renta                  → "trabajo" | "actividad_economica" | "capital_mobiliario" | "capital_inmobiliario" | "ganancias_patrimoniales" | "otros"
+    categoria_contribuyente     → "autonomo" | "asalariado" | "sociedad" | "pensionista" | "estudiante" | "desempleado"
+    regimen_tributario          → "estimacion_directa_normal" | "estimacion_directa_simplificada" | "estimacion_objetiva" | "modulos"
+    actividad_economica         → texto libre breve ("consultoría informática", "bar de tapas"…)
+    fecha_inicio_actividad      → fecha ISO ("2024-01-15" si día explícito, "2024-01" si solo mes y año, "2024" si solo año)
+    regimen_cotizacion          → "RETA" | "general" | "asimilado" | etc.
+    periodicidad_iva            → "mensual" | "trimestral"
+    tema_tributario             → texto libre breve
+
+  value_number  (numérico):
+    importe_renta_aproximado    → euros, ej. 45000
+    volumen_facturacion         → euros anuales facturados
+    plantilla                   → número entero de empleados
+
+  value_boolean  (sí/no):
+    menciona_ingresos           → true si el usuario menciona ingresos/rendimientos
+    alta_actividad_economica    → true si el usuario está dado de alta en actividad económica
+
+EJEMPLOS de mapeo concreto (sigue el mismo patrón):
+
+  Usuario: "soy autónomo y facturo 45.000€ haciendo consultoría informática"
+    → categoria_contribuyente value_string="autonomo"
+    → volumen_facturacion       value_number=45000
+    → menciona_ingresos         value_boolean=true
+    → actividad_economica       value_string="consultoría informática"
+    → alta_actividad_economica  value_boolean=true
+
+  Usuario: "vivo en Madrid, empecé la actividad en enero de 2024, ejercicio 2024"
+    → residencia_fiscal         value_string="ES"
+    → fecha_inicio_actividad    value_string="2024-01"
+    → periodo_fiscal            value_string="2024"
+    → alta_actividad_economica  value_boolean=true
+
+  Usuario: "tributo en estimación directa simplificada y no tengo empleados"
+    → regimen_tributario        value_string="estimacion_directa_simplificada"
+    → plantilla                 value_number=0
+
+REGLAS GENERALES:
+- "vivo en Madrid", "soy de Sevilla", "estoy en Bilbao" → residencia_fiscal=ES.
+- "vivo en Berlín", "soy residente en Portugal" → residencia_fiscal=OTHER (o el código ISO si claro).
+- Solo emite `periodo_fiscal` cuando el usuario habla del **ejercicio fiscal** de la consulta (renta 2024, IRPF 2025, campaña 2023). No lo confundas con `fecha_inicio_actividad`.
+- Si un dato es ambiguo no lo emitas. Mejor ningún hecho que un hecho incorrecto.
+- No repitas hechos que ya estén en `current_case_state.facts` salvo que el usuario los corrija explícitamente.
+- Si el turno es vacío, off-topic o no aporta hechos nuevos, devuelve `facts: []` e `intent` con el valor más cercano (o `unknown`)."""
 
 
 _RESPONSE_SCHEMA: dict[str, Any] = {
@@ -320,24 +357,22 @@ class OpenAIFactExtractor:
         facts: list[Fact] = []
         for raw in raw_facts:
             name = raw.get("name")
-            if name not in KNOWN_FACT_NAMES:
+            if name not in EXPECTED_FACT_TYPE:
                 continue
-            value_string = raw.get("value_string")
-            value_number = raw.get("value_number")
-            value_boolean = raw.get("value_boolean")
 
-            value: Any
-            if value_number is not None:
-                value = value_number
-                vtype = FactValueType.NUMBER
-            elif value_boolean is not None:
-                value = value_boolean
-                vtype = FactValueType.BOOLEAN
-            elif value_string is not None and value_string != "":
-                value = value_string
-                vtype = FactValueType.STRING
-            else:
-                # Skip facts with no concrete value.
+            expected = EXPECTED_FACT_TYPE[name]
+            value = _coerce_value(
+                expected=expected,
+                value_string=raw.get("value_string"),
+                value_number=raw.get("value_number"),
+                value_boolean=raw.get("value_boolean"),
+            )
+            if value is None:
+                logger.debug(
+                    "Dropping fact %s: extractor did not emit a value matching %s",
+                    name,
+                    expected.value,
+                )
                 continue
 
             try:
@@ -351,7 +386,7 @@ class OpenAIFactExtractor:
                     fact_id=f"fact_{name}",
                     name=name,
                     value=value,
-                    value_type=vtype,
+                    value_type=expected,
                     source="llm_extractor",
                     confidence=confidence,
                 )
@@ -364,6 +399,71 @@ class OpenAIFactExtractor:
             if existing is None or fact.confidence > existing.confidence:
                 by_name[fact.name] = fact
         return list(by_name.values())
+
+
+# --------------------------------------------------------------------------- #
+# Value coercion helpers (module-level for unit-testability)
+# --------------------------------------------------------------------------- #
+
+
+_NUMERIC_RE = re.compile(r"-?\d+(?:[\.,]\d+)?")
+
+
+def _coerce_value(
+    *,
+    expected: FactValueType,
+    value_string: Any,
+    value_number: Any,
+    value_boolean: Any,
+) -> Any:
+    """Return a value matching `expected`, or None if no safe coercion exists.
+
+    This is the line of defense against the LLM emitting `value_boolean=true`
+    for a fact that semantically requires a string (e.g. ``categoria_contribuyente``).
+    We accept the slot that matches `expected`; if it is empty we attempt a
+    narrow, *safe* coercion from a sibling slot. Anything ambiguous returns
+    None so the caller drops the fact.
+    """
+
+    if expected is FactValueType.STRING:
+        if isinstance(value_string, str) and value_string.strip():
+            return value_string.strip()
+        # Numbers can be rendered as strings safely (e.g. "2024" for periodo_fiscal).
+        if isinstance(value_number, (int, float)) and not isinstance(value_number, bool):
+            if float(value_number).is_integer():
+                return str(int(value_number))
+            return str(value_number)
+        return None
+
+    if expected is FactValueType.NUMBER:
+        if isinstance(value_number, (int, float)) and not isinstance(value_number, bool):
+            return float(value_number)
+        if isinstance(value_string, str):
+            match = _NUMERIC_RE.search(value_string.replace(".", "").replace(",", "."))
+            # The replace dance above handles "45.000,50" → "45000.50"; for
+            # plain "45000" or "12,5" it still extracts the right token.
+            if match:
+                try:
+                    return float(match.group(0))
+                except ValueError:
+                    return None
+        return None
+
+    if expected is FactValueType.BOOLEAN:
+        if isinstance(value_boolean, bool):
+            return value_boolean
+        if isinstance(value_string, str):
+            lowered = value_string.strip().lower()
+            if lowered in {"true", "si", "sí", "yes", "1"}:
+                return True
+            if lowered in {"false", "no", "0"}:
+                return False
+        if isinstance(value_number, (int, float)) and not isinstance(value_number, bool):
+            return bool(value_number)
+        return None
+
+    # Other FactValueType members are not surfaced by the schema yet.
+    return None
 
 
 # --------------------------------------------------------------------------- #
