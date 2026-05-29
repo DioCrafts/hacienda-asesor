@@ -5,18 +5,19 @@ from langchain_classic.chains.combine_documents import create_stuff_documents_ch
 from langchain_classic.retrievers import ContextualCompressionRetriever
 from langchain_classic.retrievers.document_compressors import EmbeddingsFilter
 from langchain_classic.retrievers.multi_query import MultiQueryRetriever
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.vectorstores import FAISS
 from langchain_core.callbacks import AsyncCallbackManagerForRetrieverRun, CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
 
+from hacienda_gpt.llm.embeddings import create_embeddings
 from hacienda_gpt.llm.grounding import AnswerEnvelope, GroundingGate
-from hacienda_gpt.llm.security import sanitize_retrieved_context
-
 from hacienda_gpt.llm.retrieval_profiles import build_decision_profile, build_explain_profile
+from hacienda_gpt.llm.security import sanitize_retrieved_context
 from hacienda_gpt.settings import (
     FAISS_INDEX_PATH,
     FAISS_TRUSTED_INDEX,
@@ -75,7 +76,7 @@ def _sanitize_context_documents(docs):
         sanitized.append(doc)
     return sanitized
 
-def _create_retriever(embeddings: OpenAIEmbeddings, llm: ChatOpenAI, *, profile_name: str = "decision", fiscal_year: int | None = None, metadata_filter: dict | None = None) -> BaseRetriever:
+def _create_retriever(embeddings: Embeddings, llm: ChatOpenAI, *, profile_name: str = "decision", fiscal_year: int | None = None, metadata_filter: dict | None = None) -> BaseRetriever:
     """Load and return a compressed FAISS retriever."""
     if not FAISS_TRUSTED_INDEX:
         raise RuntimeError(
@@ -116,7 +117,9 @@ class SanitizingRetriever(BaseRetriever):
 def create_openai_chain(openai_api_key: str) -> Runnable:
     """Create a retrieval chain using the stable Runnable/LCEL architecture."""
     llm = ChatOpenAI(temperature=OPENAI_TEMPERATURE, model=OPENAI_MODEL, api_key=openai_api_key)
-    embeddings = OpenAIEmbeddings(api_key=openai_api_key)
+    # Embedder comes from the shared factory (default: local Qwen3-Embedding).
+    # The OpenAI key is still used for the chat LLM above, not for embeddings.
+    embeddings = create_embeddings()
     retriever = _create_retriever(embeddings, llm)
 
     contextualize_prompt = ChatPromptTemplate.from_messages(

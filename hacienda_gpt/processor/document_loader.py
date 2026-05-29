@@ -1,18 +1,14 @@
 import functools
 import logging
-import re
 from pathlib import Path
+import re
 from typing import Any
 
+from langchain_community.document_loaders import DirectoryLoader
+from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_community.document_loaders import DirectoryLoader
-from langchain_community.embeddings import GPT4AllEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import HTMLHeaderTextSplitter, RecursiveCharacterTextSplitter
-
-from hacienda_gpt.utils import get_openai_api_key
 
 HEADER_SPLITTER = HTMLHeaderTextSplitter(headers_to_split_on=[("h1", "section"), ("h2", "section"), ("h3", "section")])
 
@@ -281,11 +277,24 @@ class DocumentProcessor:
         logging.info("Local FAISS index successfully saved")
 
 
-def process_with_openai(args: dict) -> None:
-    processor = DocumentProcessor(OpenAIEmbeddings(api_key=get_openai_api_key()), **args)
+def _process(args: dict, embedder: str) -> None:
+    # Lazy import keeps the processor module (and its CLI) light, and routes
+    # every backend through the single embedder factory so the index always
+    # matches the query path.
+    from hacienda_gpt.llm.embeddings import create_embeddings
+
+    processor = DocumentProcessor(create_embeddings(embedder), **args)
     processor.process_documents()
+
+
+def process_with_qwen3(args: dict) -> None:
+    """Index using the local multilingual Qwen3-Embedding model (default)."""
+    _process(args, "qwen3")
+
+
+def process_with_openai(args: dict) -> None:
+    _process(args, "openai")
 
 
 def process_with_gpt4all(args: dict) -> None:
-    processor = DocumentProcessor(GPT4AllEmbeddings(), **args)
-    processor.process_documents()
+    _process(args, "gpt4all")

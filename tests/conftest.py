@@ -199,6 +199,9 @@ def pytest_sessionstart(session):
     emb = _ensure_module("langchain_community.embeddings")
     emb.GPT4AllEmbeddings = object
 
+    hf = _ensure_module("langchain_huggingface")
+    hf.HuggingFaceEmbeddings = object
+
     ts = _ensure_module("langchain_text_splitters")
     ts.HTMLHeaderTextSplitter = lambda *a, **k: type("S", (), {"split_text": lambda self, t: []})()
     class RecursiveCharacterTextSplitter:

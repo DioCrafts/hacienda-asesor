@@ -47,16 +47,46 @@ poetry install
 Variables de entorno recomendadas:
 
 ```bash
-export OPENAI_API_KEY="sk-..."
+export OPENAI_API_KEY="sk-..."          # solo para el LLM de chat (ChatOpenAI)
 export OPENAI_MODEL="gpt-4o-mini"
 export OPENAI_TEMPERATURE="0"
 export TOP_K="3"
+
+# Embedder (mismo para indexar y consultar; ver sección "Embeddings"):
+export EMBEDDER="qwen3"                  # qwen3 (local, por defecto) | openai | gpt4all
+export EMBEDDING_MODEL="Qwen/Qwen3-Embedding-8B"
+export EMBEDDING_DEVICE="cuda"           # cuda | cpu | mps
+export EMBEDDING_NORMALIZE="true"
+# export EMBEDDING_DIM="1024"            # opcional: truncado MRL para un índice más pequeño
+
 export FAISS_INDEX_PATH="./data/faiss"
 # Seguridad: activa solo si el índice FAISS proviene de una fuente 100% confiable
 export FAISS_TRUSTED_INDEX="true"
 export DECISION_DEBUG_MODE="false"
 export DECISION_STATE_DB_PATH="./data/decision_state.sqlite3"
 ```
+
+### Embeddings
+
+El embedder se configura en un **único sitio** (`EMBEDDER` en
+`hacienda_gpt/settings.py`, consumido por `hacienda_gpt/llm/embeddings.py`).
+Tanto la indexación como la consulta lo usan, así que **no hay riesgo de
+mismatch** entre el índice y el retrieval.
+
+- **`qwen3`** (por defecto): `Qwen/Qwen3-Embedding-8B`, local y multilingüe
+  (nº1 en MMTEB, 100+ idiomas, español incluido), sin coste por llamada.
+  Vectores de 4096 dims (truncables con `EMBEDDING_DIM` vía MRL). Recomienda
+  GPU con ≥16 GB de VRAM; en CPU es lento.
+- **`openai`**: `OpenAIEmbeddings` (requiere `OPENAI_API_KEY`).
+- **`gpt4all`**: `all-MiniLM` local; muy ligero pero de baja calidad en español.
+
+> El LLM de chat sigue siendo OpenAI (`OPENAI_API_KEY`); solo los *embeddings*
+> son locales por defecto.
+>
+> ⚠️ Si cambias de embedder **reconstruye el índice FAISS** (los espacios
+> vectoriales no son intercambiables). Los umbrales de similitud en
+> `retrieval_profiles.py` (0.82 / 0.75) se calibraron para OpenAI; con Qwen3
+> (coseno normalizado) puede que necesites reajustarlos.
 
 > 🍎 **macOS**: si al primer request a `/qa` (uvicorn) o a la UI
 > (Streamlit) el proceso muere con
@@ -188,24 +218,25 @@ poetry run python -m hacienda_gpt.cli.crawler --crawler pdf --folder ./data/pdf 
 
 ## 🧩 2) Construcción del índice FAISS
 
-> ⚠️ La cadena de retrieval en `hacienda_gpt/llm/chain.py` usa
-> `OpenAIEmbeddings` para embeddear la query, por lo que **el índice que
-> sirva a la UI/API debe construirse con `--embedder openai`**. Usar
-> `gpt4all` produce un mismatch de dimensiones (384 vs 1536) y los
-> retrievals fallan o devuelven ruido.
+> ℹ️ El índice y la consulta comparten embedder a través de la variable
+> `EMBEDDER` (ver sección **Embeddings**), así que basta con indexar con el
+> mismo `--embedder` que usará el runtime. El valor por defecto es `qwen3`.
 
-Con embeddings de OpenAI (recomendado, requerido para la UI/API):
+Con el embedder local por defecto (Qwen3-Embedding, multilingüe):
+
+```bash
+poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --embedder qwen3 --overwrite-output
+```
+
+Con embeddings de OpenAI (si prefieres no ejecutar el modelo local):
 
 ```bash
 poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --embedder openai --overwrite-output
 ```
 
-Con embeddings locales (solo experimentación offline; **no compatible con
-la chain en runtime tal cual está hoy**):
-
-```bash
-poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --embedder gpt4all --overwrite-output
-```
+> El flag `--embedder` por defecto toma el valor de `EMBEDDER`. Asegúrate de
+> que coincide entre indexación y runtime, o reconstruye el índice tras
+> cambiarlo.
 
 ---
 

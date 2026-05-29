@@ -4,12 +4,12 @@ import json
 from pathlib import Path
 
 import click
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
 
 from hacienda_gpt.llm.chain import _create_retriever
+from hacienda_gpt.llm.embeddings import create_embeddings
 from hacienda_gpt.settings import OPENAI_MODEL, OPENAI_TEMPERATURE
 from hacienda_gpt.utils import get_openai_api_key
-
 
 BENCH_QUESTIONS = [
     {"query": "¿Qué norma aplica al IRPF en 2025?", "expected": ["normativa", "ley"]},
@@ -34,7 +34,7 @@ def _score_docs(docs, expected_tokens: list[str]) -> float:
 def cli(fiscal_year: int, output: str) -> None:
     key = get_openai_api_key()
     llm = ChatOpenAI(temperature=OPENAI_TEMPERATURE, model=OPENAI_MODEL, api_key=key)
-    embeddings = OpenAIEmbeddings(api_key=key)
+    embeddings = create_embeddings()
 
     decision = _create_retriever(embeddings, llm, profile_name="decision", fiscal_year=fiscal_year)
     explain = _create_retriever(embeddings, llm, profile_name="explain", fiscal_year=fiscal_year)
