@@ -21,11 +21,11 @@ filter by tributary jurisprudence.
 
 from __future__ import annotations
 
+from collections.abc import Generator
+from datetime import UTC, date, datetime
 import json
 import os
 import re
-from collections.abc import Generator
-from datetime import UTC, date, datetime
 from typing import Any
 
 import parsel
@@ -91,7 +91,11 @@ def parse_cendoj_document(html: str, *, source_url: str | None = None) -> dict[s
     sala = _normalise_sala(cleaned)
 
     return {
-        "source_authority": "TS_SALA_TERCERA" if "sala tercera" in (sala or "").lower() or "contencioso" in (sala or "").lower() else "TS",
+        "source_authority": (
+            "TS_SALA_TERCERA"
+            if "sala tercera" in (sala or "").lower() or "contencioso" in (sala or "").lower()
+            else "TS"
+        ),
         "source_hierarchy_rank": 10,
         "tribunal": "Tribunal Supremo",
         "sala": sala,
@@ -216,7 +220,7 @@ class CENDOJCrawler(scrapy.Spider):
         os.makedirs(self.folder, exist_ok=True)
         self._urls = _collect_urls(urls=urls, urls_file=urls_file)
 
-    def start_requests(self) -> Generator[scrapy.Request, None, None]:
+    def start_requests(self) -> Generator[scrapy.Request]:
         for index, url in enumerate(self._urls):
             yield scrapy.Request(url, callback=self.parse_document, cb_kwargs={"slot": index})
 
@@ -243,7 +247,7 @@ def _collect_urls(*, urls: str | None, urls_file: str | None) -> list[str]:
     if urls:
         collected.extend(part.strip() for part in urls.split(";") if part.strip())
     if urls_file:
-        with open(urls_file, "r", encoding="utf-8") as fh:
+        with open(urls_file, encoding="utf-8") as fh:
             collected.extend(line.strip() for line in fh if line.strip() and not line.startswith("#"))
     return collected
 

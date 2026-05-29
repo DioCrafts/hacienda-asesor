@@ -1,7 +1,7 @@
 from pathlib import Path
 
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from hacienda_gpt.decision.rules import (
     DecisionRule,
@@ -10,7 +10,6 @@ from hacienda_gpt.decision.rules import (
     load_rules_from_directory,
     load_rules_from_json,
 )
-
 
 _VALID_HASH = "a" * 64
 

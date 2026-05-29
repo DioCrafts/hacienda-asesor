@@ -3,9 +3,9 @@ from __future__ import annotations
 import http.server
 import json
 import os
+from pathlib import Path
 import socket
 import threading
-from pathlib import Path
 
 import pytest
 

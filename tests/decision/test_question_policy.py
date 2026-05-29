@@ -57,9 +57,7 @@ def test_question_policy_avoids_known_and_gave_up_facts() -> None:
         ),
     ]
 
-    result = policy.select_next_questions(
-        case, SupportedIntent.DECLARACION_IRPF, questions, max_questions=2
-    )
+    result = policy.select_next_questions(case, SupportedIntent.DECLARACION_IRPF, questions, max_questions=2)
 
     assert [q.question_id for q in result.selected_questions] == ["q3"]
     assert result.newly_gave_up == []
@@ -128,17 +126,14 @@ def test_question_policy_rephrases_after_first_ask() -> None:
         )
     ]
 
-    result = QuestionPolicy().select_next_questions(
-        case, SupportedIntent.DECLARACION_IRPF, questions, max_questions=1
-    )
+    result = QuestionPolicy().select_next_questions(case, SupportedIntent.DECLARACION_IRPF, questions, max_questions=1)
 
     assert len(result.selected_questions) == 1
     rephrased = result.selected_questions[0]
     assert rephrased.target_fact == "tipo_renta"
     # The text must be one of the alternatives, not the original phrasing.
     assert (
-        rephrased.question_text
-        != "¿Qué tipo de ingresos has tenido (trabajo, actividad económica, capital u otros)?"
+        rephrased.question_text != "¿Qué tipo de ingresos has tenido (trabajo, actividad económica, capital u otros)?"
     )
     assert rephrased.question_text in QuestionPolicy.REPHRASING_TABLE["tipo_renta"]
 
@@ -166,9 +161,7 @@ def test_question_policy_gives_up_after_max_asks() -> None:
         )
     ]
 
-    result = QuestionPolicy().select_next_questions(
-        case, SupportedIntent.DECLARACION_IRPF, questions, max_questions=1
-    )
+    result = QuestionPolicy().select_next_questions(case, SupportedIntent.DECLARACION_IRPF, questions, max_questions=1)
 
     assert result.selected_questions == []
     assert result.newly_gave_up == ["tipo_renta"]

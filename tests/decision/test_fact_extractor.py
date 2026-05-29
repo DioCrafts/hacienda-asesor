@@ -19,7 +19,6 @@ from hacienda_gpt.decision.fact_extractor import (
 )
 from hacienda_gpt.decision.schemas import FactValueType
 
-
 # --------------------------------------------------------------------------- #
 # _coerce_value — pure unit tests
 # --------------------------------------------------------------------------- #

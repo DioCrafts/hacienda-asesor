@@ -158,9 +158,7 @@ def post_turn(
         new_ask_counts[question.target_fact] = new_ask_counts.get(question.target_fact, 0) + 1
 
     merged_gave_up = list(dict.fromkeys([*updated.gave_up_facts, *policy_result.newly_gave_up]))
-    merged_asked = list(
-        dict.fromkeys([*updated.asked_facts, *(q.target_fact for q in selected_questions)])
-    )
+    merged_asked = list(dict.fromkeys([*updated.asked_facts, *(q.target_fact for q in selected_questions)]))
     missing_after = [m for m in updated.missing_facts if m.fact_name not in merged_gave_up]
 
     updated = updated.model_copy(

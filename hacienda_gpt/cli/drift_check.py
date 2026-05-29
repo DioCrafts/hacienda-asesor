@@ -13,8 +13,8 @@ contains changed or critical findings. Always exits 0 on success.
 
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime
+import json
 from pathlib import Path
 
 import click

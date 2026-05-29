@@ -73,8 +73,7 @@ class QuestionPolicy:
         eligible = [
             q
             for q in candidate_questions
-            if q.target_fact not in known_facts
-            and q.target_fact not in already_giving_up
+            if q.target_fact not in known_facts and q.target_fact not in already_giving_up
         ]
 
         critical_available = [q for q in eligible if q.target_fact in critical]
@@ -85,10 +84,7 @@ class QuestionPolicy:
             key=lambda q: self._information_gain_score(q, critical),
             reverse=True,
         )
-        selected = [
-            self._maybe_rephrase(q, ask_counts.get(q.target_fact, 0))
-            for q in ranked[:max_questions]
-        ]
+        selected = [self._maybe_rephrase(q, ask_counts.get(q.target_fact, 0)) for q in ranked[:max_questions]]
         return QuestionPolicyResult(selected_questions=selected, newly_gave_up=newly_gave_up)
 
     def _maybe_rephrase(self, question: QuestionPrompt, prior_ask_count: int) -> QuestionPrompt:
@@ -103,9 +99,7 @@ class QuestionPolicy:
             return question
         return question.model_copy(update={"question_text": rephrased_text})
 
-    def _information_gain_score(
-        self, question: QuestionPrompt, critical_facts: set[str]
-    ) -> float:
+    def _information_gain_score(self, question: QuestionPrompt, critical_facts: set[str]) -> float:
         base = 1.0 if question.target_fact in critical_facts else 0.0
         priority_bonus = {
             "critical": 1.0,

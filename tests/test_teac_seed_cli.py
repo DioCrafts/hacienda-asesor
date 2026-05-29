@@ -3,11 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
+import pytest
 
 from hacienda_gpt.cli import teac_seed
-
 
 _LIST_PAGE_1 = """
 <html><body>
@@ -86,9 +85,7 @@ def test_collect_dedups_when_pages_overlap():
 def test_fetch_criterio_writes_html_and_metadata(tmp_path: Path):
     target_dir = tmp_path / "teac"
     fetcher = _build_fetcher({"criterio.aspx?id=": _CRITERIO_VALID.encode()})
-    html_path, metadata_path = teac_seed.fetch_criterio(
-        "54/00218/2024/00/0/1", target_dir, fetcher=fetcher
-    )
+    html_path, metadata_path = teac_seed.fetch_criterio("54/00218/2024/00/0/1", target_dir, fetcher=fetcher)
     assert html_path.exists()
     assert metadata_path is not None and metadata_path.exists()
     metadata = json.loads(metadata_path.read_text())
@@ -99,9 +96,7 @@ def test_fetch_criterio_writes_html_and_metadata(tmp_path: Path):
 def test_fetch_criterio_drops_not_existing(tmp_path: Path):
     target_dir = tmp_path / "teac"
     fetcher = _build_fetcher({"criterio.aspx?id=": _CRITERIO_NOT_FOUND.encode()})
-    html_path, metadata_path = teac_seed.fetch_criterio(
-        "99/99999/2099/00/0/1", target_dir, fetcher=fetcher
-    )
+    html_path, metadata_path = teac_seed.fetch_criterio("99/99999/2099/00/0/1", target_dir, fetcher=fetcher)
     # Both files must be absent — we don't want to index DYCTEA's
     # "criterio no existe" placeholder.
     assert not html_path.exists()
@@ -149,9 +144,7 @@ def test_cli_end_to_end_with_mocked_http(monkeypatch: pytest.MonkeyPatch, tmp_pa
     # Compound IDs survive on disk with '/' replaced by '_'.
     assert any("54_00218_2024_00_0_1" in p.name for p in htmls)
 
-    manifest = json.loads(
-        (tmp_path / "out" / "2026-01-15" / "teac-seed-manifest.json").read_text()
-    )
+    manifest = json.loads((tmp_path / "out" / "2026-01-15" / "teac-seed-manifest.json").read_text())
     assert manifest["from_date"] == "01/01/2024"
     assert manifest["to_date"] == "31/12/2024"
     assert len(manifest["documents"]) == 3

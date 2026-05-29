@@ -18,7 +18,9 @@ def test_create_retriever_applies_profile_filter_and_threshold(monkeypatch) -> N
     monkeypatch.setattr(chain, "EmbeddingsFilter", MagicMock(return_value=emb_filter))
     monkeypatch.setattr(chain, "ContextualCompressionRetriever", MagicMock(return_value=MagicMock(spec=BaseRetriever)))
 
-    chain._create_retriever(MagicMock(), MagicMock(), profile_name="decision", fiscal_year=2025, metadata_filter={"scope": "nacional"})
+    chain._create_retriever(
+        MagicMock(), MagicMock(), profile_name="decision", fiscal_year=2025, metadata_filter={"scope": "nacional"}
+    )
 
     fake_faiss.as_retriever.assert_called_once()
     kwargs = fake_faiss.as_retriever.call_args.kwargs["search_kwargs"]

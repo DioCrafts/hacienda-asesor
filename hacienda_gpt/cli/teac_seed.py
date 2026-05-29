@@ -16,15 +16,15 @@ pure-Python pipeline:
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 import json
 import logging
+from pathlib import Path
 import re
 import time
+from urllib.error import HTTPError, URLError
 import urllib.parse
 import urllib.request
-from datetime import UTC, datetime
-from pathlib import Path
-from urllib.error import HTTPError, URLError
 
 import click
 
@@ -35,20 +35,15 @@ logger = logging.getLogger(__name__)
 
 _USER_AGENT = "hacienda-asesor/0.1 (TEAC corpus refresh; contacto@hacienda-asesor.local)"
 _LIST_URL_TMPL = (
-    "https://serviciostelematicosext.hacienda.gob.es/TEAC/DYCTEA/criterios.aspx"
-    "?s=1&fd={fd}&fh={fh}&tc=1&c=2&pg={pg}"
+    "https://serviciostelematicosext.hacienda.gob.es/TEAC/DYCTEA/criterios.aspx" "?s=1&fd={fd}&fh={fh}&tc=1&c=2&pg={pg}"
 )
-_CRITERIO_URL_TMPL = (
-    "https://serviciostelematicosext.hacienda.gob.es/TEAC/DYCTEA/criterio.aspx?id={id}"
-)
+_CRITERIO_URL_TMPL = "https://serviciostelematicosext.hacienda.gob.es/TEAC/DYCTEA/criterio.aspx?id={id}"
 
 # DYCTEA emits its markup with single quotes and entity-encoded ampersands:
 #   <a href='criterio.aspx?id=54/00218/2024/00/0/1&amp;q=...'>
 # Accept either quote style; stop the id capture at the first '&' (the
 # `&amp;q=` query suffix is search context we discard).
-_CRITERIO_LINK_RE = re.compile(
-    r"""href=['"](criterio\.aspx\?id=([^'"&]+))[^'"]*['"]""", re.IGNORECASE
-)
+_CRITERIO_LINK_RE = re.compile(r"""href=['"](criterio\.aspx\?id=([^'"&]+))[^'"]*['"]""", re.IGNORECASE)
 _DDMMYYYY_RE = re.compile(r"^\d{2}/\d{2}/\d{4}$")
 _DEFAULT_PAGE_LIMIT = 50
 

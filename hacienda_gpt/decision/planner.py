@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
+import os
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -24,7 +24,7 @@ class PlannerWeights:
     compliance_impact: float
 
     @classmethod
-    def from_env(cls) -> "PlannerWeights":
+    def from_env(cls) -> PlannerWeights:
         return cls(
             sanction_risk=_env_float("PLANNER_WEIGHT_SANCTION_RISK", 0.35),
             urgency=_env_float("PLANNER_WEIGHT_URGENCY", 0.25),

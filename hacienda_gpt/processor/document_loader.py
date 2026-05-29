@@ -26,9 +26,7 @@ _TEAC_ASUNTO_RE = re.compile(
     r"Asunto\s*:\s*(?P<asunto>.+?)\s*(?:Referencias\s+normativas|Conceptos\s*:|Texto\s+de\s+la\s+resoluci|Volver\b)",
     re.IGNORECASE | re.DOTALL,
 )
-_TEAC_CRITERIO_RE = re.compile(
-    r"de la resoluci[oó]n\s*:\s*([^\s<]+)", re.IGNORECASE
-)
+_TEAC_CRITERIO_RE = re.compile(r"de la resoluci[oó]n\s*:\s*([^\s<]+)", re.IGNORECASE)
 _WHITESPACE_RE = re.compile(r"\s+")
 
 

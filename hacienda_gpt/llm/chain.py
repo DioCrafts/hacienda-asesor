@@ -67,8 +67,6 @@ def create_system_prompt() -> str:
     return textwrap.dedent(template)
 
 
-
-
 def _sanitize_context_documents(docs):
     sanitized = []
     for doc in docs:
@@ -76,7 +74,15 @@ def _sanitize_context_documents(docs):
         sanitized.append(doc)
     return sanitized
 
-def _create_retriever(embeddings: Embeddings, llm: ChatOpenAI, *, profile_name: str = "decision", fiscal_year: int | None = None, metadata_filter: dict | None = None) -> BaseRetriever:
+
+def _create_retriever(
+    embeddings: Embeddings,
+    llm: ChatOpenAI,
+    *,
+    profile_name: str = "decision",
+    fiscal_year: int | None = None,
+    metadata_filter: dict | None = None,
+) -> BaseRetriever:
     """Load and return a compressed FAISS retriever."""
     if not FAISS_TRUSTED_INDEX:
         raise RuntimeError(
@@ -84,7 +90,11 @@ def _create_retriever(embeddings: Embeddings, llm: ChatOpenAI, *, profile_name: 
             "Set FAISS_TRUSTED_INDEX=true only for trusted local indexes."
         )
 
-    profile = build_decision_profile(fiscal_year=fiscal_year, metadata_filter=metadata_filter) if profile_name == "decision" else build_explain_profile(fiscal_year=fiscal_year, metadata_filter=metadata_filter)
+    profile = (
+        build_decision_profile(fiscal_year=fiscal_year, metadata_filter=metadata_filter)
+        if profile_name == "decision"
+        else build_explain_profile(fiscal_year=fiscal_year, metadata_filter=metadata_filter)
+    )
 
     faiss = FAISS.load_local(FAISS_INDEX_PATH, embeddings, allow_dangerous_deserialization=True)
     search_kwargs = {"k": TOP_K}
@@ -97,14 +107,10 @@ def _create_retriever(embeddings: Embeddings, llm: ChatOpenAI, *, profile_name: 
     return SanitizingRetriever(inner=compressed)
 
 
-
-
 class SanitizingRetriever(BaseRetriever):
     inner: BaseRetriever
 
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> list[Document]:
+    def _get_relevant_documents(self, query: str, *, run_manager: CallbackManagerForRetrieverRun) -> list[Document]:
         docs = self.inner.invoke(query, config={"callbacks": run_manager.get_child()})
         return _sanitize_context_documents(docs)
 
@@ -113,6 +119,7 @@ class SanitizingRetriever(BaseRetriever):
     ) -> list[Document]:
         docs = await self.inner.ainvoke(query, config={"callbacks": run_manager.get_child()})
         return _sanitize_context_documents(docs)
+
 
 def create_openai_chain(openai_api_key: str) -> Runnable:
     """Create a retrieval chain using the stable Runnable/LCEL architecture."""

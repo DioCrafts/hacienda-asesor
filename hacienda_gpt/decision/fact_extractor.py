@@ -9,11 +9,11 @@ is unavailable.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 import json
 import logging
 import os
 import re
-from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 from hacienda_gpt.decision.schemas import CaseState, Fact, FactValueType
@@ -269,8 +269,8 @@ class OpenAIFactExtractor:
 
     def __init__(self, client: Any | None = None, model: str | None = None) -> None:
         self._client = client
-        self._model = model or os.environ.get("DECISION_EXTRACTOR_MODEL") or os.environ.get(
-            "OPENAI_MODEL", "gpt-4o-mini"
+        self._model = (
+            model or os.environ.get("DECISION_EXTRACTOR_MODEL") or os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
         )
 
     def _ensure_client(self) -> Any:
@@ -326,8 +326,7 @@ class OpenAIFactExtractor:
                 "jurisdiction": current_case_state.jurisdiction,
                 "tax_period": current_case_state.tax_period,
                 "facts": [
-                    {"name": f.name, "value": f.value, "confidence": f.confidence}
-                    for f in current_case_state.facts
+                    {"name": f.name, "value": f.value, "confidence": f.confidence} for f in current_case_state.facts
                 ],
                 "missing_facts": [m.fact_name for m in current_case_state.missing_facts],
                 "gave_up_facts": list(getattr(current_case_state, "gave_up_facts", []) or []),

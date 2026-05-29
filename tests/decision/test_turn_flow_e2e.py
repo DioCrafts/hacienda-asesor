@@ -16,8 +16,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 from fastapi.testclient import TestClient
+import pytest
 
 from hacienda_gpt.api.api import app, get_case_store, get_fact_extractor
 from hacienda_gpt.decision.fact_extractor import ExtractionPayload
@@ -215,9 +215,7 @@ def test_repeated_question_is_rephrased_then_given_up(client, install_extractor)
     # We must have seen at least two different phrasings while still asking
     # (one original + at least one rephrased alternative).
     unique_phrasings = {p for p in seen_phrasings}
-    assert len(unique_phrasings) >= 2, (
-        f"expected the policy to rephrase across turns, got: {seen_phrasings!r}"
-    )
+    assert len(unique_phrasings) >= 2, f"expected the policy to rephrase across turns, got: {seen_phrasings!r}"
 
     # On the final turn the policy must have given up at least one fact and
     # the response must flag the conversation as degraded.

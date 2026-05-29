@@ -14,13 +14,13 @@ rather than the original ``/diario_boe/txt.php`` so that consolidated text
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 import json
 import logging
-import time
-import urllib.request
-from datetime import UTC, datetime
 from pathlib import Path
+import time
 from urllib.error import HTTPError, URLError
+import urllib.request
 
 import click
 

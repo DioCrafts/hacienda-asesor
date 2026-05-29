@@ -22,11 +22,11 @@ representation without re-fetching.
 
 from __future__ import annotations
 
+from collections.abc import Generator
+from datetime import UTC, date, datetime
 import json
 import os
 import re
-from collections.abc import Generator
-from datetime import UTC, date, datetime
 from typing import Any
 from urllib.parse import urlencode
 
@@ -103,13 +103,17 @@ def _extract_field(selector: Any, aliases: tuple[str, ...]) -> str | None:
             if joined:
                 return joined
         # tr/td pattern
-        value = selector.xpath(
-            f"//th[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}']/following-sibling::td[1]//text()"
-        ).getall() or selector.xpath(
-            f"//td[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}']/following-sibling::td[1]//text()"
-        ).getall() or selector.xpath(
-            f"//td[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}:']/following-sibling::td[1]//text()"
-        ).getall()
+        value = (
+            selector.xpath(
+                f"//th[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}']/following-sibling::td[1]//text()"
+            ).getall()
+            or selector.xpath(
+                f"//td[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}']/following-sibling::td[1]//text()"
+            ).getall()
+            or selector.xpath(
+                f"//td[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}:']/following-sibling::td[1]//text()"
+            ).getall()
+        )
         if value:
             joined = " ".join(part.strip() for part in value if part.strip())
             if joined:
@@ -201,7 +205,7 @@ class TEACCrawler(scrapy.Spider):
         self.base_url = (base_url or DYCTEA_BASE_URL).rstrip("/")
         os.makedirs(self.folder, exist_ok=True)
 
-    def start_requests(self) -> Generator[scrapy.Request, None, None]:
+    def start_requests(self) -> Generator[scrapy.Request]:
         # Legacy entry point for scrapy < 2.13.
         for criterio_id in range(self.start_id, self.end_id + 1):
             url = f"{self.base_url}/criterio.aspx?{urlencode({'id': criterio_id})}"

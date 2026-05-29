@@ -10,9 +10,7 @@ from hacienda_gpt.llm import chain
 def test_smoke_pipeline_crawler_to_index_to_question(monkeypatch) -> None:
     calls: dict[str, object] = {}
 
-    def fake_start_crawler(
-        crawler_class, settings, folder, mode, snapshot_date, extra_kwargs=None
-    ):
+    def fake_start_crawler(crawler_class, settings, folder, mode, snapshot_date, extra_kwargs=None):
         calls["crawler"] = {
             "crawler_class": crawler_class.__name__,
             "depth": settings["DEPTH_LIMIT"],

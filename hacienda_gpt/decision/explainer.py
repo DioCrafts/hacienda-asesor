@@ -23,9 +23,7 @@ class ExplanationComposer:
         sections.append("1) Hechos detectados")
         if interpretation.extracted_facts:
             for fact in interpretation.extracted_facts:
-                sections.append(
-                    f"- {fact.name}: {fact.value} (confianza {fact.confidence:.2f}, fuente: {fact.source})"
-                )
+                sections.append(f"- {fact.name}: {fact.value} (confianza {fact.confidence:.2f}, fuente: {fact.source})")
         else:
             sections.append("- No se detectaron hechos concluyentes en este turno.")
 
@@ -43,7 +41,9 @@ class ExplanationComposer:
                     f"- {obligation.title} ({obligation.obligation_id}) — confianza {obligation.confidence:.2f}, riesgo {obligation.risk_level.value}"
                 )
                 if obligation.blocking_missing_facts:
-                    sections.append(f"  - Facts faltantes para confirmar: {', '.join(obligation.blocking_missing_facts)}")
+                    sections.append(
+                        f"  - Facts faltantes para confirmar: {', '.join(obligation.blocking_missing_facts)}"
+                    )
         else:
             sections.append("- No hay obligaciones candidatas confirmables con la información actual.")
 
@@ -79,9 +79,7 @@ class ExplanationComposer:
         if interpretation.next_questions:
             sections.append(f"- {interpretation.next_questions[0].question_text}")
         elif case_state.missing_facts:
-            sections.append(
-                f"- Para avanzar, confirma este dato clave: {case_state.missing_facts[0].fact_name}."
-            )
+            sections.append(f"- Para avanzar, confirma este dato clave: {case_state.missing_facts[0].fact_name}.")
         else:
             sections.append("- ¿Quieres que validemos esta propuesta con más detalle y documentación adicional?")
 

@@ -9,7 +9,9 @@ from hacienda_gpt.llm.grounding import (
 )
 
 
-def _doc(title: str | None = None, source_url: str | None = None, content: str = "contenido", **extra: object) -> Document:
+def _doc(
+    title: str | None = None, source_url: str | None = None, content: str = "contenido", **extra: object
+) -> Document:
     metadata: dict[str, object] = {}
     if title is not None:
         metadata["title"] = title
@@ -21,7 +23,11 @@ def _doc(title: str | None = None, source_url: str | None = None, content: str =
 
 def test_evaluate_returns_cited_when_metadata_is_complete() -> None:
     docs = [
-        _doc(title="Residencia fiscal IRPF", source_url="https://sede.agenciatributaria.gob.es/x", document_type="normativa"),
+        _doc(
+            title="Residencia fiscal IRPF",
+            source_url="https://sede.agenciatributaria.gob.es/x",
+            document_type="normativa",
+        ),
         _doc(title="Manual IRPF", source_url="https://sede.agenciatributaria.gob.es/y"),
     ]
     gate = GroundingGate(min_citations=1)
@@ -84,7 +90,11 @@ def test_evaluate_min_citations_threshold_blocks_partial_metadata() -> None:
 
 def test_evaluate_deduplicates_citations() -> None:
     duplicated = _doc(title="x", source_url="https://y")
-    docs = [duplicated, _doc(title="x", source_url="https://y", content="otra parte"), _doc(title="z", source_url="https://w")]
+    docs = [
+        duplicated,
+        _doc(title="x", source_url="https://y", content="otra parte"),
+        _doc(title="z", source_url="https://w"),
+    ]
     gate = GroundingGate(min_citations=1)
 
     envelope = gate.evaluate(answer="ok", documents=docs)

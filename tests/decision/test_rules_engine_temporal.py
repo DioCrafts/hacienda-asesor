@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from hacienda_gpt.decision.rules import DecisionRule, RuleSet
+from hacienda_gpt.decision.rules import RuleSet
 from hacienda_gpt.decision.rules_engine import RulesEngine
 from hacienda_gpt.decision.schemas import CaseState, Fact, FactValueType
 
@@ -34,7 +34,12 @@ def test_selects_only_rules_applicable_to_fiscal_year() -> None:
                     "valid_to": "2023-12-31",
                     "conditions": [{"fact": "residencia_fiscal", "operator": "eq", "value": "ES"}],
                     "required_facts": ["residencia_fiscal"],
-                    "generated_obligation": {"obligation_id": "obl_a", "title": "A", "description": "A", "status": "candidate"},
+                    "generated_obligation": {
+                        "obligation_id": "obl_a",
+                        "title": "A",
+                        "description": "A",
+                        "status": "candidate",
+                    },
                     "base_confidence": 0.6,
                     "risk_level": "low",
                 },
@@ -45,7 +50,12 @@ def test_selects_only_rules_applicable_to_fiscal_year() -> None:
                     "valid_to": "2026-12-31",
                     "conditions": [{"fact": "residencia_fiscal", "operator": "eq", "value": "ES"}],
                     "required_facts": ["residencia_fiscal"],
-                    "generated_obligation": {"obligation_id": "obl_b", "title": "B", "description": "B", "status": "candidate"},
+                    "generated_obligation": {
+                        "obligation_id": "obl_b",
+                        "title": "B",
+                        "description": "B",
+                        "status": "candidate",
+                    },
                     "base_confidence": 0.7,
                     "risk_level": "medium",
                 },
@@ -69,7 +79,12 @@ def test_conflict_resolution_keeps_highest_confidence_for_same_obligation() -> N
                     "valid_to": "2026-12-31",
                     "conditions": [{"fact": "residencia_fiscal", "operator": "eq", "value": "ES"}],
                     "required_facts": ["residencia_fiscal"],
-                    "generated_obligation": {"obligation_id": "obl_same", "title": "Same", "description": "D", "status": "candidate"},
+                    "generated_obligation": {
+                        "obligation_id": "obl_same",
+                        "title": "Same",
+                        "description": "D",
+                        "status": "candidate",
+                    },
                     "base_confidence": 0.6,
                     "risk_level": "medium",
                 },
@@ -80,7 +95,12 @@ def test_conflict_resolution_keeps_highest_confidence_for_same_obligation() -> N
                     "valid_to": "2026-12-31",
                     "conditions": [{"fact": "residencia_fiscal", "operator": "eq", "value": "ES"}],
                     "required_facts": ["residencia_fiscal"],
-                    "generated_obligation": {"obligation_id": "obl_same", "title": "Same2", "description": "D2", "status": "candidate"},
+                    "generated_obligation": {
+                        "obligation_id": "obl_same",
+                        "title": "Same2",
+                        "description": "D2",
+                        "status": "candidate",
+                    },
                     "base_confidence": 0.9,
                     "risk_level": "high",
                 },
@@ -105,7 +125,12 @@ def test_records_exact_rule_and_ruleset_versions_for_auditability() -> None:
                     "valid_to": "2026-12-31",
                     "conditions": [{"fact": "residencia_fiscal", "operator": "eq", "value": "ES"}],
                     "required_facts": ["residencia_fiscal"],
-                    "generated_obligation": {"obligation_id": "obl_v", "title": "V", "description": "V", "status": "candidate"},
+                    "generated_obligation": {
+                        "obligation_id": "obl_v",
+                        "title": "V",
+                        "description": "V",
+                        "status": "candidate",
+                    },
                     "base_confidence": 0.8,
                     "risk_level": "medium",
                 }

@@ -1,10 +1,10 @@
-import time
 from datetime import UTC, datetime
+import time
 from uuid import uuid4
 
+from langchain_core.messages import AIMessage, HumanMessage
 import requests
 import streamlit as st
-from langchain_core.messages import AIMessage, HumanMessage
 
 from hacienda_gpt.decision.interpreter_light import detect_facts_and_missing
 from hacienda_gpt.decision.rules_engine import evaluate_rules
@@ -93,7 +93,9 @@ def _persist_turn_local(store: SQLiteCaseStateStore, case_id: str, user_input: s
         merged_facts = {fact.fact_id: fact for fact in existing.facts}
         for fact in facts:
             merged_facts[fact.fact_id] = fact
-        case_state = existing.model_copy(update={"facts": list(merged_facts.values()), "missing_facts": missing_facts, "updated_at": now})
+        case_state = existing.model_copy(
+            update={"facts": list(merged_facts.values()), "missing_facts": missing_facts, "updated_at": now}
+        )
 
     rules_result = evaluate_rules(case_state=case_state, recent_facts=facts)
     case_state = case_state.model_copy(update={"obligation_candidates": rules_result.candidate_obligations})
@@ -108,7 +110,15 @@ def _build_obligation_cards(case_state: CaseState) -> list[dict[str, str]]:
     for obligation in case_state.obligation_candidates:
         sources = ", ".join(sorted({e.title for e in obligation.evidence_refs if e.title})) or "Sin fuentes"
         missing = ", ".join(obligation.blocking_missing_facts) or "Ninguno"
-        cards.append({"title": obligation.title, "confidence": f"{obligation.confidence:.2f}", "risk": obligation.risk_level.value, "sources": sources, "missing": missing})
+        cards.append(
+            {
+                "title": obligation.title,
+                "confidence": f"{obligation.confidence:.2f}",
+                "risk": obligation.risk_level.value,
+                "sources": sources,
+                "missing": missing,
+            }
+        )
     return cards
 
 
@@ -193,7 +203,12 @@ def main():
     case_id = _ensure_case_id()
 
     if "messages" not in st.session_state:
-        st.session_state["messages"] = [{"role": "assistant", "content": "¡Hola! ¿Cómo puedo ayudarte con tus preguntas relacionadas con la Agencia Tributaria?"}]
+        st.session_state["messages"] = [
+            {
+                "role": "assistant",
+                "content": "¡Hola! ¿Cómo puedo ayudarte con tus preguntas relacionadas con la Agencia Tributaria?",
+            }
+        ]
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"], avatar=bot_logo if message["role"] == "assistant" else None):
@@ -226,7 +241,9 @@ def main():
                 st.caption(f"API case_id: {turn['case_id']}")
             except Exception as exc:
                 st.error(f"Error llamando API backend: {exc}. Usando fallback local.")
-                case_state = _persist_turn_local(store=store, case_id=case_id, user_input=query, assistant_output=response)
+                case_state = _persist_turn_local(
+                    store=store, case_id=case_id, user_input=query, assistant_output=response
+                )
                 _render_debug(case_state)
                 _render_obligation_cards(case_state)
         else:

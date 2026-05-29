@@ -1,8 +1,8 @@
 from datetime import UTC, datetime
 
-from hacienda_gpt.decision.rules import DecisionRule, RuleCondition, RuleSet
+from hacienda_gpt.decision.rules import DecisionRule, RuleSet
 from hacienda_gpt.decision.rules_engine import RulesEngine
-from hacienda_gpt.decision.schemas import CaseState, Fact, FactValueType, ObligationStatus, RiskLevel
+from hacienda_gpt.decision.schemas import CaseState, Fact, FactValueType, ObligationStatus
 
 
 def _case_with_facts(*facts: Fact) -> CaseState:
@@ -79,9 +79,7 @@ def test_rules_engine_reports_missing_facts_and_no_candidate() -> None:
                     "jurisdiction": "ES",
                     "valid_from": "2024-01-01",
                     "valid_to": "2026-12-31",
-                    "conditions": [
-                        {"fact": "residencia_fiscal", "operator": "eq", "value": "ES"}
-                    ],
+                    "conditions": [{"fact": "residencia_fiscal", "operator": "eq", "value": "ES"}],
                     "required_facts": ["residencia_fiscal", "tipo_renta"],
                     "generated_obligation": {
                         "obligation_id": "obl_x",

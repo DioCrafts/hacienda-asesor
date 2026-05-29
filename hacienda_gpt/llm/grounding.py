@@ -17,10 +17,11 @@ The gate is intentionally conservative: when in doubt, abstain.
 
 from __future__ import annotations
 
-import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Sequence
+import re
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 

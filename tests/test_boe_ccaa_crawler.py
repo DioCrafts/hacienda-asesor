@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import http.server
 import json
+from pathlib import Path
 import socket
 import threading
-from pathlib import Path
 
 import pytest
 
 from hacienda_gpt.crawler.boe_consolidado import (
-    BOECCAACrawler,
     BOE_BASE_URL,
     CCAA_REGIMEN_COMUN,
     DEFAULT_CCAA_CODES,
+    BOECCAACrawler,
     build_code_urls,
 )
 

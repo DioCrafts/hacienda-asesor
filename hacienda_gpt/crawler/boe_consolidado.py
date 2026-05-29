@@ -22,11 +22,11 @@ three tributos with autonomic competence:
 
 from __future__ import annotations
 
+from collections.abc import Generator
+from datetime import UTC, datetime
 import json
 import os
 import re
-from collections.abc import Generator
-from datetime import UTC, datetime
 from typing import Any
 
 import scrapy
@@ -125,7 +125,7 @@ class BOECCAACrawler(scrapy.Spider):
         os.makedirs(self.folder, exist_ok=True)
         self._targets = _resolve_targets(ccaa, skip_unknown=self.skip_unknown)
 
-    def start_requests(self) -> Generator[scrapy.Request, None, None]:
+    def start_requests(self) -> Generator[scrapy.Request]:
         for ccaa_key in self._targets:
             urls = build_code_urls(ccaa_key, base_url=self.base_url)
             yield scrapy.Request(
@@ -151,7 +151,9 @@ class BOECCAACrawler(scrapy.Spider):
         if response.status != 200 or not response.body.startswith(_PDF_MAGIC):
             self.logger.warning(
                 "Unexpected response for %s: status=%s, first_bytes=%r",
-                ccaa_key, response.status, response.body[:20],
+                ccaa_key,
+                response.status,
+                response.body[:20],
             )
             return
         ccaa_dir = os.path.join(self.folder, ccaa_key)

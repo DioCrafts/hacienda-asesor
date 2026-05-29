@@ -17,7 +17,9 @@ def _case() -> CaseState:
     )
 
 
-def _obligation(obligation_id: str, risk: RiskLevel, confidence: float, missing: list[str], tax_period: str = "2025") -> ObligationCandidate:
+def _obligation(
+    obligation_id: str, risk: RiskLevel, confidence: float, missing: list[str], tax_period: str = "2025"
+) -> ObligationCandidate:
     now = datetime.now(UTC)
     return ObligationCandidate(
         obligation_id=obligation_id,

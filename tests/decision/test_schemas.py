@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from hacienda_gpt.decision.schemas import (
     SCHEMA_VERSION,

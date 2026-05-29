@@ -87,10 +87,14 @@ def start_crawler(
 @click.option("--teac-end-id", default=100, type=int, help="DYCTEA criterion end id (only used by --crawler teac)")
 @click.option("--cendoj-urls-file", default=None, help="Path to a file with one CENDOJ resolution URL per line")
 @click.option("--cendoj-urls", default=None, help="Semicolon-separated CENDOJ resolution URLs")
-@click.option("--cendoj-only-tributario/--cendoj-keep-all", default=True, help="Keep only resolutions flagged as tributario")
+@click.option(
+    "--cendoj-only-tributario/--cendoj-keep-all", default=True, help="Keep only resolutions flagged as tributario"
+)
 @click.option("--ccaa", default=None, help="Comma-separated CCAA keys for --crawler boe-ccaa (default: all)")
 @click.option("--skip-unknown-ccaa", is_flag=True, default=False, help="Only crawl CCAA codes verified as published")
-@click.option("--boletines", default=None, help="Comma-separated boletin keys for --crawler boletin (default: all bundled)")
+@click.option(
+    "--boletines", default=None, help="Comma-separated boletin keys for --crawler boletin (default: all bundled)"
+)
 @click.option("--boletin-terms", default=None, help="Override the per-spec default search terms (comma separated)")
 def cli(
     folder: str,

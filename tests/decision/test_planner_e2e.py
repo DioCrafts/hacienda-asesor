@@ -17,7 +17,9 @@ def _case() -> CaseState:
     )
 
 
-def _obligation(oid: str, risk: RiskLevel, confidence: float, missing: list[str], with_evidence: bool) -> ObligationCandidate:
+def _obligation(
+    oid: str, risk: RiskLevel, confidence: float, missing: list[str], with_evidence: bool
+) -> ObligationCandidate:
     now = datetime.now(UTC)
     evidence = []
     if with_evidence:
