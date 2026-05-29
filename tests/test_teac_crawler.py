@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import http.server
 import json
+import multiprocessing
 import os
+from pathlib import Path
 import socket
 import threading
-from pathlib import Path
 
 import pytest
 
@@ -121,6 +122,17 @@ def fixture_server() -> tuple[str, threading.Thread, http.server.HTTPServer]:
     thread.join(timeout=2)
 
 
+def _run_crawl(crawler_cls, settings: dict, crawl_kwargs: dict) -> None:
+    """Run a Scrapy crawl to completion. Executed in a forked subprocess: Scrapy
+    starts the global Twisted reactor, which cannot restart within a process, so
+    each crawl needs its own process to stay independent of test order."""
+    from scrapy.crawler import CrawlerProcess
+
+    process = CrawlerProcess(settings=settings)
+    process.crawl(crawler_cls, **crawl_kwargs)
+    process.start(install_signal_handlers=False)
+
+
 def test_crawler_persists_only_existing_criteria(
     tmp_path: Path,
     fixture_server: tuple[str, threading.Thread, http.server.HTTPServer],
@@ -133,26 +145,29 @@ def test_crawler_persists_only_existing_criteria(
 
     if not hasattr(_scrapy, "__path__"):
         pytest.skip("scrapy is stubbed by conftest; real package required for this integration test")
-    from scrapy.crawler import CrawlerProcess
 
     snapshot_date = "2026-05-28"
-    process = CrawlerProcess(
-        settings={
-            "TELNETCONSOLE_ENABLED": False,
-            "LOG_ENABLED": False,
-            "DOWNLOAD_DELAY": 0,
-            "ROBOTSTXT_OBEY": False,
-        }
-    )
-    process.crawl(
-        TEACCrawler,
-        folder=str(tmp_path),
-        start_id=9,
-        end_id=12,
-        snapshot_date=snapshot_date,
-        base_url=base_url,
-    )
-    process.start(install_signal_handlers=False)
+    settings = {
+        "TELNETCONSOLE_ENABLED": False,
+        "LOG_ENABLED": False,
+        "DOWNLOAD_DELAY": 0,
+        "ROBOTSTXT_OBEY": False,
+    }
+    crawl_kwargs = {
+        "folder": str(tmp_path),
+        "start_id": 9,
+        "end_id": 12,
+        "snapshot_date": snapshot_date,
+        "base_url": base_url,
+    }
+    proc = multiprocessing.get_context("fork").Process(target=_run_crawl, args=(TEACCrawler, settings, crawl_kwargs))
+    proc.start()
+    proc.join(120)
+    if proc.is_alive():
+        proc.terminate()
+        proc.join(5)
+        raise AssertionError("crawl subprocess timed out")
+    assert proc.exitcode == 0, "crawl subprocess failed"
 
     snapshot_dir = tmp_path / snapshot_date
     saved_jsons = sorted(snapshot_dir.glob("*.json"))
@@ -178,7 +193,7 @@ def test_live_smoke_against_dyctea() -> None:
     This test is skipped by default because the CI environment may not have
     network access to *.hacienda.gob.es. Run locally with:
 
-        TEAC_LIVE_SMOKE=1 poetry run pytest tests/test_teac_crawler.py::test_live_smoke_against_dyctea -v
+        TEAC_LIVE_SMOKE=1 uv run pytest tests/test_teac_crawler.py::test_live_smoke_against_dyctea -v
     """
     import urllib.request
 

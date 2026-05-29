@@ -10,7 +10,28 @@ def _ensure_module(name: str) -> types.ModuleType:
     return mod
 
 
+def _real_dependencies_available() -> bool:
+    """True when the real (non-stub) heavy deps are importable.
+
+    In that case the suite must run against real code, not the stubs below.
+    """
+    try:
+        import click  # noqa: F401
+        import langchain_classic.chains  # noqa: F401
+        import langchain_core.callbacks  # noqa: F401
+        import langchain_openai  # noqa: F401
+        import pydantic  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
 def pytest_sessionstart(session):
+    # Use the real packages when they are installed (e.g. CI after
+    # `pip install .`); only stub when they are absent (CI-lite dev env).
+    if _real_dependencies_available():
+        return
+
     # Minimal stubs for optional heavy dependencies so imports succeed in CI-lite envs.
     langchain = _ensure_module("langchain")
     langchain.chains = _ensure_module("langchain.chains")
@@ -50,7 +71,7 @@ def pytest_sessionstart(session):
     # langchain 1.x moved the legacy chains to `langchain_classic`. The
     # production code now imports from there, so stub the mirror modules
     # to keep the CI-lite environment self-contained.
-    lc_classic = _ensure_module("langchain_classic")
+    _ensure_module("langchain_classic")
     lc_classic_chains = _ensure_module("langchain_classic.chains")
     lc_classic_chains.create_history_aware_retriever = lambda *a, **k: object()
     lc_classic_chains.create_retrieval_chain = lambda *a, **k: object()
@@ -58,9 +79,7 @@ def pytest_sessionstart(session):
     lc_classic_combine.create_stuff_documents_chain = lambda *a, **k: object()
     lc_classic_ret = _ensure_module("langchain_classic.retrievers")
     lc_classic_ret.ContextualCompressionRetriever = object
-    lc_classic_doc_comp = _ensure_module(
-        "langchain_classic.retrievers.document_compressors"
-    )
+    lc_classic_doc_comp = _ensure_module("langchain_classic.retrievers.document_compressors")
     lc_classic_doc_comp.EmbeddingsFilter = object
     lc_classic_multiq = _ensure_module("langchain_classic.retrievers.multi_query")
     lc_classic_multiq.MultiQueryRetriever = MultiQueryRetriever
@@ -126,7 +145,6 @@ def pytest_sessionstart(session):
 
     lo = _ensure_module("langchain_openai")
     lo.ChatOpenAI = object
-    lo.OpenAIEmbeddings = object
 
     try:
         import streamlit as st  # noqa: F401  # use real streamlit when installed (provides session_state, etc.)
@@ -140,7 +158,8 @@ def pytest_sessionstart(session):
 
     class Request:
         def __init__(self, *a, **k):
-            self.args=a; self.kwargs=k
+            self.args = a
+            self.kwargs = k
 
     scrapy.Spider = Spider
     scrapy.Request = Request
@@ -179,31 +198,39 @@ def pytest_sessionstart(session):
     pv = _ensure_module("pathvalidate")
     pv.sanitize_filepath = lambda value: value
     lc_docs = _ensure_module("langchain_core.documents")
+
     class Document:
         def __init__(self, page_content="", metadata=None):
             self.page_content = page_content
             self.metadata = metadata or {}
+
     lc_docs.Document = Document
 
     lc_emb = _ensure_module("langchain_core.embeddings")
     lc_emb.Embeddings = object
 
     loaders = _ensure_module("langchain_community.document_loaders")
+
     class DirectoryLoader:
         def __init__(self, *a, **k):
             pass
+
         def load(self):
             return []
+
     loaders.DirectoryLoader = DirectoryLoader
 
-    emb = _ensure_module("langchain_community.embeddings")
-    emb.GPT4AllEmbeddings = object
+    hf = _ensure_module("langchain_huggingface")
+    hf.HuggingFaceEmbeddings = object
 
     ts = _ensure_module("langchain_text_splitters")
     ts.HTMLHeaderTextSplitter = lambda *a, **k: type("S", (), {"split_text": lambda self, t: []})()
+
     class RecursiveCharacterTextSplitter:
         def __init__(self, *a, **k):
             pass
+
         def split_documents(self, docs):
             return docs
+
     ts.RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter

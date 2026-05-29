@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import json
-import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
+import json
 from pathlib import Path
+import sqlite3
 from threading import RLock
-from typing import Any, Iterator
+from typing import Any
 
 from hacienda_gpt.decision.schemas import CaseState
 from hacienda_gpt.decision.state_store import CaseStateStore
@@ -40,8 +41,7 @@ class SQLiteCaseStateStore(CaseStateStore):
     def _initialize(self) -> None:
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as conn:
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS case_states (
                     case_id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
@@ -50,10 +50,8 @@ class SQLiteCaseStateStore(CaseStateStore):
                     updated_at TEXT NOT NULL,
                     payload_json TEXT NOT NULL
                 )
-                """
-            )
-            conn.execute(
-                """
+                """)
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS audit_events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     case_id TEXT NOT NULL,
@@ -61,8 +59,7 @@ class SQLiteCaseStateStore(CaseStateStore):
                     event_json TEXT NOT NULL,
                     FOREIGN KEY (case_id) REFERENCES case_states(case_id) ON DELETE CASCADE
                 )
-                """
-            )
+                """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_case_states_user ON case_states(user_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_case_states_updated ON case_states(updated_at)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_case_time ON audit_events(case_id, event_time)")

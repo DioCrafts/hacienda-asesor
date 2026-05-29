@@ -13,7 +13,14 @@ def test_audit_event_contains_required_trace_fields() -> None:
         intent=Intent.DECLARACION_IRPF,
         confidence=0.8,
         extracted_facts=[
-            Fact(fact_id="f1", name="residencia_fiscal", value="ES", value_type=FactValueType.STRING, source="user", confidence=0.9)
+            Fact(
+                fact_id="f1",
+                name="residencia_fiscal",
+                value="ES",
+                value_type=FactValueType.STRING,
+                source="user",
+                confidence=0.9,
+            )
         ],
     )
     rules_result = RulesEngineResult(

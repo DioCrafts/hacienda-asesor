@@ -1,6 +1,3 @@
-
-from types import SimpleNamespace
-
 from hacienda_gpt.ui import app
 
 
@@ -29,9 +26,15 @@ def test_api_process_turn_returns_payload(monkeypatch):
                 return None
 
             def json(self):
-                if url.endswith('/cases'):
+                if url.endswith("/cases"):
                     return {"case_id": "case_api_2"}
-                return {"case_id": "case_api_2", "facts": [], "missing_facts": [], "candidate_obligation_ids": [], "next_questions": []}
+                return {
+                    "case_id": "case_api_2",
+                    "facts": [],
+                    "missing_facts": [],
+                    "candidate_obligation_ids": [],
+                    "next_questions": [],
+                }
 
         return Resp()
 

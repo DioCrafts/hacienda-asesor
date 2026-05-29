@@ -2,17 +2,18 @@ from __future__ import annotations
 
 import http.server
 import json
+import multiprocessing
+from pathlib import Path
 import socket
 import threading
-from pathlib import Path
 
 import pytest
 
 from hacienda_gpt.crawler.boe_consolidado import (
-    BOECCAACrawler,
     BOE_BASE_URL,
     CCAA_REGIMEN_COMUN,
     DEFAULT_CCAA_CODES,
+    BOECCAACrawler,
     build_code_urls,
 )
 
@@ -88,6 +89,17 @@ def boe_fixture_server() -> tuple[str, http.server.HTTPServer]:
     thread.join(timeout=2)
 
 
+def _run_crawl(crawler_cls, settings: dict, crawl_kwargs: dict) -> None:
+    """Run a Scrapy crawl to completion. Executed in a forked subprocess: Scrapy
+    starts the global Twisted reactor, which cannot restart within a process, so
+    each crawl needs its own process to stay independent of test order."""
+    from scrapy.crawler import CrawlerProcess
+
+    process = CrawlerProcess(settings=settings)
+    process.crawl(crawler_cls, **crawl_kwargs)
+    process.start(install_signal_handlers=False)
+
+
 def test_crawler_persists_only_pdfs_returned(
     tmp_path: Path,
     boe_fixture_server: tuple[str, http.server.HTTPServer],
@@ -97,26 +109,29 @@ def test_crawler_persists_only_pdfs_returned(
 
     if not hasattr(_scrapy, "__path__"):
         pytest.skip("scrapy stubbed by conftest; integration test needs the real package")
-    from scrapy.crawler import CrawlerProcess
 
     base_url, _server = boe_fixture_server
     snapshot = "2026-05-28"
-    process = CrawlerProcess(
-        settings={
-            "TELNETCONSOLE_ENABLED": False,
-            "LOG_ENABLED": False,
-            "DOWNLOAD_DELAY": 0,
-            "ROBOTSTXT_OBEY": False,
-        }
-    )
-    process.crawl(
-        BOECCAACrawler,
-        folder=str(tmp_path),
-        ccaa="andalucia,madrid,galicia",  # galicia is in fixtures map but server only serves AN+MD
-        snapshot_date=snapshot,
-        base_url=base_url,
-    )
-    process.start(install_signal_handlers=False)
+    settings = {
+        "TELNETCONSOLE_ENABLED": False,
+        "LOG_ENABLED": False,
+        "DOWNLOAD_DELAY": 0,
+        "ROBOTSTXT_OBEY": False,
+    }
+    crawl_kwargs = {
+        "folder": str(tmp_path),
+        "ccaa": "andalucia,madrid,galicia",  # galicia is mapped but server serves only AN+MD
+        "snapshot_date": snapshot,
+        "base_url": base_url,
+    }
+    proc = multiprocessing.get_context("fork").Process(target=_run_crawl, args=(BOECCAACrawler, settings, crawl_kwargs))
+    proc.start()
+    proc.join(120)
+    if proc.is_alive():
+        proc.terminate()
+        proc.join(5)
+        raise AssertionError("crawl subprocess timed out")
+    assert proc.exitcode == 0, "crawl subprocess failed"
 
     snap_dir = tmp_path / snapshot
     andalucia_meta = snap_dir / "andalucia" / "metadata.json"

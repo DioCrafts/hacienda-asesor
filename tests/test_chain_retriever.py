@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
-import pytest
 from langchain_core.retrievers import BaseRetriever
+import pytest
 
 from hacienda_gpt.llm import chain
 

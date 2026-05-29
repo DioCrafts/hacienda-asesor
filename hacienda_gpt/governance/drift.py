@@ -10,11 +10,11 @@ the new normative text before it expires de facto.
 
 from __future__ import annotations
 
-import hashlib
-import json
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from enum import Enum
+import hashlib
+import json
 from pathlib import Path
 from typing import Protocol
 

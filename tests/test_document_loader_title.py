@@ -12,10 +12,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 from langchain_core.documents import Document
+import pytest
 
-from hacienda_gpt.processor import document_loader
 from hacienda_gpt.processor.document_loader import (
     DocumentProcessor,
     _read_source_html,

@@ -4,7 +4,6 @@ import hashlib
 import json
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
 from hacienda_gpt.cli.drift_check import cli

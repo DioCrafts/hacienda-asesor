@@ -17,12 +17,11 @@ venv are exercised end-to-end at import time.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 import pytest
-
 
 _IMPORT_SCRIPT = """
 import sys

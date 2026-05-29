@@ -1,18 +1,14 @@
 import functools
 import logging
-import re
 from pathlib import Path
+import re
 from typing import Any
 
+from langchain_community.document_loaders import DirectoryLoader
+from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_community.document_loaders import DirectoryLoader
-from langchain_community.embeddings import GPT4AllEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import HTMLHeaderTextSplitter, RecursiveCharacterTextSplitter
-
-from hacienda_gpt.utils import get_openai_api_key
 
 HEADER_SPLITTER = HTMLHeaderTextSplitter(headers_to_split_on=[("h1", "section"), ("h2", "section"), ("h3", "section")])
 
@@ -30,9 +26,7 @@ _TEAC_ASUNTO_RE = re.compile(
     r"Asunto\s*:\s*(?P<asunto>.+?)\s*(?:Referencias\s+normativas|Conceptos\s*:|Texto\s+de\s+la\s+resoluci|Volver\b)",
     re.IGNORECASE | re.DOTALL,
 )
-_TEAC_CRITERIO_RE = re.compile(
-    r"de la resoluci[oó]n\s*:\s*([^\s<]+)", re.IGNORECASE
-)
+_TEAC_CRITERIO_RE = re.compile(r"de la resoluci[oó]n\s*:\s*([^\s<]+)", re.IGNORECASE)
 _WHITESPACE_RE = re.compile(r"\s+")
 
 
@@ -281,11 +275,12 @@ class DocumentProcessor:
         logging.info("Local FAISS index successfully saved")
 
 
-def process_with_openai(args: dict) -> None:
-    processor = DocumentProcessor(OpenAIEmbeddings(api_key=get_openai_api_key()), **args)
-    processor.process_documents()
+def build_index(args: dict) -> None:
+    """Build and persist the FAISS index using the configured local embedder."""
+    # Lazy import keeps the processor module (and its CLI) light, and routes
+    # through the shared embedder factory so the index always matches the
+    # query path.
+    from hacienda_gpt.llm.embeddings import create_embeddings
 
-
-def process_with_gpt4all(args: dict) -> None:
-    processor = DocumentProcessor(GPT4AllEmbeddings(), **args)
+    processor = DocumentProcessor(create_embeddings(), **args)
     processor.process_documents()

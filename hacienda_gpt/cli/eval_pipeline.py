@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
+import json
 from pathlib import Path
 
 import click
@@ -106,9 +106,7 @@ def build_markdown_report(metrics: dict[str, float]) -> str:
 
 
 def build_html_report(metrics: dict[str, float]) -> str:
-    rows = "".join(
-        f"<tr><td>{k}</td><td>{v}</td></tr>" for k, v in metrics.items()
-    )
+    rows = "".join(f"<tr><td>{k}</td><td>{v}</td></tr>" for k, v in metrics.items())
     return f"""
 <!doctype html>
 <html lang='es'>

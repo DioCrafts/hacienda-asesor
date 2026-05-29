@@ -15,12 +15,12 @@ spec; no changes to the spider itself.
 
 from __future__ import annotations
 
-import json
-import os
-import re
 from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+import json
+import os
+import re
 from typing import Any
 from urllib.parse import urljoin
 
@@ -169,21 +169,18 @@ class RegionalBoletinCrawler(scrapy.Spider):
         self.folder = os.path.join(folder, snapshot)
         os.makedirs(self.folder, exist_ok=True)
         self._specs = _resolve_specs(boletines)
-        self._terms: list[str] | None = (
-            [t.strip() for t in re.split(r"[,;]", terms) if t.strip()] if terms else None
-        )
+        self._terms: list[str] | None = [t.strip() for t in re.split(r"[,;]", terms) if t.strip()] if terms else None
 
-    def start_requests(self) -> Generator[scrapy.Request, None, None]:
-        for request in self._build_search_requests():
-            yield request
+    def start_requests(self) -> Generator[scrapy.Request]:
+        yield from self._build_search_requests()
 
     async def start(self):  # type: ignore[override]
         for request in self._build_search_requests():
             yield request
 
-    def _build_search_requests(self) -> Generator[scrapy.Request, None, None]:
+    def _build_search_requests(self) -> Generator[scrapy.Request]:
         for spec in self._specs:
-            for term in (self._terms or spec.default_terms):
+            for term in self._terms or spec.default_terms:
                 url = spec.search_url_template.format(query=term)
                 yield scrapy.Request(
                     url,
@@ -261,4 +258,4 @@ def _resolve_specs(boletines: str | None) -> list[RegionalBoletinSpec]:
 
 def _slugify(value: str) -> str:
     slug = re.sub(r"[^A-Za-z0-9._-]+", "_", value).strip("_")
-    return (slug[:80] or "doc")
+    return slug[:80] or "doc"

@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from hacienda_gpt.crawler.cendoj import parse_cendoj_document
 
 FIXTURES = Path(__file__).parent / "fixtures" / "cendoj"

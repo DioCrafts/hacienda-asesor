@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+      # Lint tools only — no need to install the project's heavy deps.
+      - name: ruff
+        run: uvx ruff@0.15.8 check --no-fix .
+      - name: black
+        run: uvx black@26.3.1 --check --target-version py313 hacienda_gpt tests
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync
+      - run: uv run pytest -q
+
+  typecheck:
+    runs-on: ubuntu-latest
+    # mypy is not enforced yet (never run in CI before); keep it informational
+    # so it surfaces type issues without blocking until the backlog is cleared.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync
+      - run: uv run mypy hacienda_gpt

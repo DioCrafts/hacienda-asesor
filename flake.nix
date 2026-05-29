@@ -98,29 +98,29 @@
             faiss
             httpie
             playwright
-            poetry
+            uv
             poppler
-            python311
+            python313
             stdenv
             tesseract
           ];
           commands = with lib;
           with builtins; let
-            poetryCommand = {
+            uvCommand = {
               bin,
               args ? ["$@"],
             }: {
               category = "python";
               name = "${bin}";
               help = "Run ${bin}";
-              command = "poetry run ${bin} ${concatStringsSep " " args}";
+              command = "uv run ${bin} ${concatStringsSep " " args}";
             };
             commandList = [
               {bin = "pytest";}
               {bin = "streamlit";}
             ];
           in
-            (map poetryCommand commandList)
+            (map uvCommand commandList)
             ++ [
               {
                 category = "Tools";

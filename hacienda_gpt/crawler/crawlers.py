@@ -17,6 +17,15 @@ from hacienda_gpt.crawler.boletin_autonomico import RegionalBoletinCrawler  # re
 from hacienda_gpt.crawler.cendoj import CENDOJCrawler  # re-export
 from hacienda_gpt.crawler.teac import TEACCrawler  # re-export
 
+__all__ = [
+    "AgenciaTributariaWebCrawler",
+    "AgenciaTributariaPDFCrawler",
+    "BOECCAACrawler",
+    "RegionalBoletinCrawler",
+    "CENDOJCrawler",
+    "TEACCrawler",
+]
+
 
 class AgenciaTributariaWebCrawler(scrapy.Spider):
     name = "AgenciaTributariaWebCrawler"
@@ -55,11 +64,11 @@ class AgenciaTributariaWebCrawler(scrapy.Spider):
         self.allowed_patterns: list[re.Pattern] = [re.compile(path) for path in self.allowed_paths]
         self._ensure_folder_exists()
 
-    def start_requests(self) -> Generator[scrapy.Request, None, None]:
+    def start_requests(self) -> Generator[scrapy.Request]:
         for url in self.urls:
             yield scrapy.Request(url, meta=self._get_meta_for_request(url), callback=self.parse)
 
-    def parse(self, response: Response) -> Generator[scrapy.Request, None, None]:
+    def parse(self, response: Response) -> Generator[scrapy.Request]:
         self._save_response_to_file(response)
         yield from self._follow_domain_links(response)
 
@@ -79,7 +88,7 @@ class AgenciaTributariaWebCrawler(scrapy.Spider):
         with open(self._generate_file_path(response), "wb") as file_pointer:
             file_pointer.write(response.body)
 
-    def _follow_domain_links(self, response: Response) -> Generator[scrapy.Request, None, None]:
+    def _follow_domain_links(self, response: Response) -> Generator[scrapy.Request]:
         link_extractor = LinkExtractor(allow=self.allowed_patterns, allow_domains=["sede.agenciatributaria.gob.es"])
         for link in link_extractor.extract_links(response):
             yield scrapy.Request(url=link.url, meta=self._get_meta_for_request(link.url), callback=self.parse)
@@ -113,7 +122,7 @@ class AgenciaTributariaPDFCrawler(scrapy.Spider):
         self.seen_urls: set[str] = set()
         self.seen_content_hashes: set[str] = set()
 
-    def parse(self, response: Response) -> Generator[dict[str, list[str] | str] | scrapy.Request, None, None]:
+    def parse(self, response: Response) -> Generator[dict[str, list[str] | str] | scrapy.Request]:
         self.seen_urls.add(response.url)
         extractor = LinkExtractor(allow_domains=[self._extract_domain_from_start_url()], unique=True)
         for link in extractor.extract_links(response):
@@ -125,7 +134,7 @@ class AgenciaTributariaPDFCrawler(scrapy.Spider):
                 self.seen_urls.add(link.url)
                 yield scrapy.Request(link.url, callback=self.parse)
 
-    def parse_pdf(self, response: Response) -> Generator[dict[str, list[str] | str], None, None]:
+    def parse_pdf(self, response: Response) -> Generator[dict[str, list[str] | str]]:
         if not self._is_pdf_response(response):
             return
         content_hash = hashlib.sha256(response.body).hexdigest()

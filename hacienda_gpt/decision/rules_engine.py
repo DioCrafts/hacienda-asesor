@@ -1,14 +1,20 @@
 from __future__ import annotations
 
-import hashlib
-import json
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
+import hashlib
+import json
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from hacienda_gpt.decision.rules import ConditionOperator, DecisionRule, RuleCondition, RuleSet, load_rules_from_directory
+from hacienda_gpt.decision.rules import (
+    ConditionOperator,
+    DecisionRule,
+    RuleCondition,
+    RuleSet,
+    load_rules_from_directory,
+)
 from hacienda_gpt.decision.schemas import CaseState, Fact, ObligationCandidate, parse_fiscal_year
 
 
@@ -51,7 +57,7 @@ class RulesEngine:
     ruleset: RuleSet
 
     @classmethod
-    def from_rules_directory(cls, directory: str = "rules") -> "RulesEngine":
+    def from_rules_directory(cls, directory: str = "rules") -> RulesEngine:
         return cls(ruleset=load_rules_from_directory(directory))
 
     def evaluate(self, case_state: CaseState, recent_facts: list[Fact]) -> RulesEngineResult:
@@ -154,7 +160,9 @@ class RulesEngine:
                 return False
         return False
 
-    def _build_candidate_obligation(self, rule: DecisionRule, case_state: CaseState, missing_facts: list[str]) -> ObligationCandidate:
+    def _build_candidate_obligation(
+        self, rule: DecisionRule, case_state: CaseState, missing_facts: list[str]
+    ) -> ObligationCandidate:
         now = datetime.now(UTC)
         return ObligationCandidate(
             obligation_id=rule.generated_obligation.obligation_id,
@@ -185,7 +193,6 @@ class RulesEngine:
                 by_id[obligation.obligation_id] = obligation
 
         kept_ids = set(by_id.keys())
-        matched_by_obligation = {ob.obligation_id for ob in obligations}
         conflict_happened = len(obligations) != len(kept_ids)
 
         if conflict_happened:
@@ -208,6 +215,8 @@ class RulesEngine:
         return hashlib.sha256("|".join(versions).encode("utf-8")).hexdigest()
 
 
-def evaluate_rules(case_state: CaseState, recent_facts: list[Fact], rules_directory: str = "rules") -> RulesEngineResult:
+def evaluate_rules(
+    case_state: CaseState, recent_facts: list[Fact], rules_directory: str = "rules"
+) -> RulesEngineResult:
     engine = RulesEngine.from_rules_directory(rules_directory)
     return engine.evaluate(case_state=case_state, recent_facts=recent_facts)

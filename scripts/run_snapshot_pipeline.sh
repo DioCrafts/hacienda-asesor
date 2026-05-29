@@ -24,7 +24,7 @@ echo "[1/5] Crawling snapshot ${SNAPSHOT_DATE} for ${ENVIRONMENT}"
 python -m hacienda_gpt.cli.crawler --crawler web --folder "${HTML_DIR}" --depth 1 --mode flat
 
 echo "[2/5] Building FAISS index"
-python -m hacienda_gpt.cli.processor --content-dir "${HTML_DIR}" --output-dir "${INDEX_DIR}" --embedder openai --overwrite-output
+python -m hacienda_gpt.cli.processor --content-dir "${HTML_DIR}" --output-dir "${INDEX_DIR}" --overwrite-output
 
 echo "[3/5] Running evaluation pipeline"
 python -m hacienda_gpt.cli.eval_pipeline --dataset eval_data/intent_fact_extraction.jsonl --output-json "${EVAL_JSON}" --output-md "${EVAL_MD}" --output-html "${EVAL_HTML}"

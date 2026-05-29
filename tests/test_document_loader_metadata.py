@@ -27,7 +27,13 @@ def test_enrich_metadata_detects_legal_fields() -> None:
     assert meta["normative_document_type"] == "ley"
     assert meta["effective_date"] == "01/01/2025"
     assert meta["scope"] == "nacional"
-    assert meta["source_hierarchy"] in {"ley", "reglamento", "acto_administrativo", "guia_administrativa", "constitucion"}
+    assert meta["source_hierarchy"] in {
+        "ley",
+        "reglamento",
+        "acto_administrativo",
+        "guia_administrativa",
+        "constitucion",
+    }
 
 
 def test_semantic_split_preserves_legal_context_header() -> None:

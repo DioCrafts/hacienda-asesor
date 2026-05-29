@@ -31,8 +31,8 @@ HaciendaGPT combina recuperación semántica (RAG), reglas de decisión fiscal y
 
 ## ✅ Requisitos
 
-- Python `>=3.12,<3.14`
-- Poetry
+- Python `>=3.13,<3.14`
+- [uv](https://docs.astral.sh/uv/)
 - (Opcional para crawler web) Playwright/Chromium
 
 ---
@@ -40,17 +40,24 @@ HaciendaGPT combina recuperación semántica (RAG), reglas de decisión fiscal y
 ## ⚙️ Setup rápido
 
 ```bash
-poetry install
+uv sync                  # crea .venv e instala deps (main + dev) desde uv.lock
 # opcional: cp .env.example .env
 ```
 
 Variables de entorno recomendadas:
 
 ```bash
-export OPENAI_API_KEY="sk-..."
+export OPENAI_API_KEY="sk-..."          # solo para el LLM de chat (ChatOpenAI)
 export OPENAI_MODEL="gpt-4o-mini"
 export OPENAI_TEMPERATURE="0"
 export TOP_K="3"
+
+# Embedder local (mismo para indexar y consultar; ver sección "Embeddings"):
+export EMBEDDING_MODEL="Qwen/Qwen3-Embedding-8B"
+export EMBEDDING_DEVICE="cuda"           # cuda | cpu | mps
+export EMBEDDING_NORMALIZE="true"
+# export EMBEDDING_DIM="1024"            # opcional: truncado MRL para un índice más pequeño
+
 export FAISS_INDEX_PATH="./data/faiss"
 # Seguridad: activa solo si el índice FAISS proviene de una fuente 100% confiable
 export FAISS_TRUSTED_INDEX="true"
@@ -58,12 +65,33 @@ export DECISION_DEBUG_MODE="false"
 export DECISION_STATE_DB_PATH="./data/decision_state.sqlite3"
 ```
 
+### Embeddings
+
+El proyecto usa **un único embedder local**: `Qwen/Qwen3-Embedding-8B`
+(multilingüe, nº1 en MMTEB, 100+ idiomas con español incluido, sin coste por
+llamada). Se construye en `hacienda_gpt/llm/embeddings.py` y lo comparten la
+indexación y la consulta, así que **no hay riesgo de mismatch** entre el índice
+y el retrieval.
+
+- Genera vectores de 4096 dims, truncables con `EMBEDDING_DIM` (MRL).
+- Recomienda GPU con ≥16 GB de VRAM; en CPU es lento.
+- Puedes apuntar a otro modelo *sentence-transformers* con `EMBEDDING_MODEL`
+  (p.ej. `intfloat/multilingual-e5-large`).
+
+> El LLM de chat sigue siendo OpenAI (`OPENAI_API_KEY`); solo los *embeddings*
+> son locales.
+>
+> ⚠️ Si cambias de modelo de embedding **reconstruye el índice FAISS** (los
+> espacios vectoriales no son intercambiables). Los umbrales de similitud en
+> `retrieval_profiles.py` (0.82 / 0.75) se calibraron para OpenAI; con Qwen3
+> (coseno normalizado) puede que necesites reajustarlos.
+
 > 🍎 **macOS**: si al primer request a `/qa` (uvicorn) o a la UI
 > (Streamlit) el proceso muere con
 > `OMP: Error #15: Initializing libomp.dylib, but found libomp.dylib
 > already initialized`, exporta `KMP_DUPLICATE_LIB_OK=TRUE` antes de
 > lanzar el servicio. La causa es que `faiss-cpu` y las dependencias de
-> `gpt4all`/`unstructured` enlazan dos copias de libomp en el mismo
+> `sentence-transformers`/`unstructured` enlazan dos copias de libomp en el mismo
 > proceso.
 
 ---
@@ -79,9 +107,9 @@ dentro del snapshot. Vive junto al CLI a propósito: si lo dejásemos bajo
 de decisión.
 
 ```bash
-poetry run python -m hacienda_gpt.cli.boe_seed
+uv run python -m hacienda_gpt.cli.boe_seed
 # o, para previsualizar sin descargar:
-poetry run python -m hacienda_gpt.cli.boe_seed --dry-run
+uv run python -m hacienda_gpt.cli.boe_seed --dry-run
 ```
 
 El CLI escribe los HTML consolidados (`/buscar/act.php?id=...`) en
@@ -99,9 +127,9 @@ DYCTEA usa identificadores compuestos para sus criterios
 buscador real por rango de fechas y baja cada criterio individualmente:
 
 ```bash
-poetry run python -m hacienda_gpt.cli.teac_seed --from-date 2024-01-01 --to-date 2024-12-31
+uv run python -m hacienda_gpt.cli.teac_seed --from-date 2024-01-01 --to-date 2024-12-31
 # previsualización (sin descargar los detalles):
-poetry run python -m hacienda_gpt.cli.teac_seed --from-date 2024-01-01 --to-date 2024-06-30 --dry-run
+uv run python -m hacienda_gpt.cli.teac_seed --from-date 2024-01-01 --to-date 2024-06-30 --dry-run
 ```
 
 Salida: `data/html/<snapshot>/teac/<safe_id>.html` + `.json` por
@@ -140,7 +168,7 @@ explícitamente. La plantilla versionada está en
 [hacienda_gpt/cli/cendoj_seed_urls.txt](hacienda_gpt/cli/cendoj_seed_urls.txt):
 
 ```bash
-poetry run python -m hacienda_gpt.cli.crawler \
+uv run python -m hacienda_gpt.cli.crawler \
   --crawler cendoj --folder ./data/cendoj \
   --cendoj-urls-file hacienda_gpt/cli/cendoj_seed_urls.txt
 ```
@@ -160,7 +188,7 @@ Las únicas fuentes PDF que sí funcionan integradas en el repo son:
 
 ```bash
 # Códigos consolidados autonómicos del BOE (4 PDFs verificados):
-poetry run python -m hacienda_gpt.cli.crawler --crawler boe-ccaa --folder ./data/boe --skip-unknown-ccaa
+uv run python -m hacienda_gpt.cli.crawler --crawler boe-ccaa --folder ./data/boe --skip-unknown-ccaa
 ```
 
 Si necesitas ingerir PDFs externos (manuales de despacho propio,
@@ -173,13 +201,13 @@ o crea una mini-CLI siguiendo el patrón de
 ### HTML (sitio AEAT)
 
 ```bash
-poetry run python -m hacienda_gpt.cli.crawler --crawler web --folder ./data/html --depth 1 --mode flat
+uv run python -m hacienda_gpt.cli.crawler --crawler web --folder ./data/html --depth 1 --mode flat
 ```
 
 ### PDF
 
 ```bash
-poetry run python -m hacienda_gpt.cli.crawler --crawler pdf --folder ./data/pdf --depth 1
+uv run python -m hacienda_gpt.cli.crawler --crawler pdf --folder ./data/pdf --depth 1
 ```
 
 > El crawler guarda por defecto en carpetas con `snapshot_date` (YYYY-MM-DD).
@@ -188,23 +216,12 @@ poetry run python -m hacienda_gpt.cli.crawler --crawler pdf --folder ./data/pdf 
 
 ## 🧩 2) Construcción del índice FAISS
 
-> ⚠️ La cadena de retrieval en `hacienda_gpt/llm/chain.py` usa
-> `OpenAIEmbeddings` para embeddear la query, por lo que **el índice que
-> sirva a la UI/API debe construirse con `--embedder openai`**. Usar
-> `gpt4all` produce un mismatch de dimensiones (384 vs 1536) y los
-> retrievals fallan o devuelven ruido.
-
-Con embeddings de OpenAI (recomendado, requerido para la UI/API):
+> ℹ️ El índice y la consulta comparten el mismo embedder local (Qwen3-Embedding,
+> ver sección **Embeddings**), así que no hay nada que elegir. Reconstruye el
+> índice solo si cambias `EMBEDDING_MODEL`.
 
 ```bash
-poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --embedder openai --overwrite-output
-```
-
-Con embeddings locales (solo experimentación offline; **no compatible con
-la chain en runtime tal cual está hoy**):
-
-```bash
-poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --embedder gpt4all --overwrite-output
+uv run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --overwrite-output
 ```
 
 ---
@@ -212,7 +229,7 @@ poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --outp
 ## 💬 3) Ejecutar UI (Streamlit)
 
 ```bash
-poetry run streamlit run hacienda_gpt/ui/app.py
+uv run streamlit run hacienda_gpt/ui/app.py
 ```
 
 ---
@@ -220,7 +237,7 @@ poetry run streamlit run hacienda_gpt/ui/app.py
 ## 🔌 4) Ejecutar API (FastAPI)
 
 ```bash
-poetry run uvicorn hacienda_gpt.api.api:app --reload --host 127.0.0.1 --port 8000
+uv run uvicorn hacienda_gpt.api.api:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ### Endpoints: `/qa` vs `/cases`
@@ -340,7 +357,7 @@ El detector de drift recalcula los hashes contra el snapshot actual y emite un
 reporte con findings clasificados (`ok`, `changed`, `missing`, `unverified`):
 
 ```bash
-poetry run python -m hacienda_gpt.cli.drift_check \
+uv run python -m hacienda_gpt.cli.drift_check \
   --rules-dir rules \
   --snapshot-root ./data \
   --output reports/drift.json \
@@ -358,7 +375,7 @@ nombre del crawler (`boe`, `aeat`, `teac`, …) y se mapea a `<snapshot-root>/<s
 ## 📏 5) Evaluación
 
 ```bash
-poetry run python -m hacienda_gpt.cli.eval --output ./eval_results.json
+uv run python -m hacienda_gpt.cli.eval --output ./eval_results.json
 ```
 
 La evaluación genera:
@@ -381,13 +398,13 @@ La evaluación genera:
 ## 🧪 Tests rápidos
 
 ```bash
-poetry run pytest -q
+uv run pytest -q
 ```
 
 También puedes ejecutar suites concretas, por ejemplo:
 
 ```bash
-poetry run pytest -q tests/decision/test_rules_engine.py
+uv run pytest -q tests/decision/test_rules_engine.py
 ```
 
 ---

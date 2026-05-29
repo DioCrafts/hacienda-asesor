@@ -4,7 +4,7 @@ The general `boe-ccaa` crawler downloads the CCAA codes; this CLI is a thin
 companion for the long tail of *individual* legislative acts that we want
 indexed by ID — e.g. the Modelo 720 trio (Ley 7/2012, RD 1558/2012, Orden
 HAP/72/2013). Maintainers add new IDs to ``rules/boe_seed_catalog.json`` and
-re-run ``poetry run python -m hacienda_gpt.cli.boe_seed`` to refresh the
+re-run ``uv run python -m hacienda_gpt.cli.boe_seed`` to refresh the
 local snapshot.
 
 We deliberately go through ``https://www.boe.es/buscar/act.php?id=<ID>``
@@ -14,15 +14,13 @@ rather than the original ``/diario_boe/txt.php`` so that consolidated text
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 import json
 import logging
-import os
-import sys
-import time
-import urllib.request
-from datetime import UTC, datetime
 from pathlib import Path
+import time
 from urllib.error import HTTPError, URLError
+import urllib.request
 
 import click
 

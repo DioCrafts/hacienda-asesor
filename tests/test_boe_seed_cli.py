@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import io
 import json
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
+import pytest
 
 from hacienda_gpt.cli import boe_seed
-
 
 _CATALOG = {
     "description": "test",
@@ -115,9 +113,7 @@ def test_boe_seed_real_run_writes_files_and_manifest(
     assert all("buscar/act.php?id=" in url for url in captured_urls)
 
 
-def test_boe_seed_retries_on_transient_failure(
-    catalog_path: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
+def test_boe_seed_retries_on_transient_failure(catalog_path: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     attempts: list[int] = []
 
     class _FakeResponse:

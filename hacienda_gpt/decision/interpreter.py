@@ -54,9 +54,7 @@ class InterpretationResult(BaseModel):
         missing_names = {item.fact_name for item in self.missing_facts}
         for question in self.next_questions:
             if question.target_fact not in missing_names:
-                raise ValueError(
-                    f"question target_fact '{question.target_fact}' must exist in missing_facts"
-                )
+                raise ValueError(f"question target_fact '{question.target_fact}' must exist in missing_facts")
         return self
 
 
