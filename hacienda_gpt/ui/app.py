@@ -73,9 +73,13 @@ def _api_create_case_if_needed() -> str:
     return case_id
 
 
-def _api_process_turn(user_input: str) -> dict:
+def _api_process_turn(user_input: str, chat_history: list[dict[str, str]] | None = None) -> dict:
     case_id = _api_create_case_if_needed()
-    r = requests.post(f"{API_BASE_URL}/cases/{case_id}/turn", json={"user_input": user_input}, timeout=30)
+    r = requests.post(
+        f"{API_BASE_URL}/cases/{case_id}/turn",
+        json={"user_input": user_input, "chat_history": chat_history or []},
+        timeout=30,
+    )
     r.raise_for_status()
     return r.json()
 
@@ -86,6 +90,7 @@ def _persist_turn_local(
     user_input: str,
     assistant_output: str,
     extractor: FactExtractor | None = None,
+    chat_history: list[dict[str, str]] | None = None,
 ) -> CaseState:
     now = datetime.now(UTC)
     existing = store.get_case(case_id)
@@ -93,10 +98,12 @@ def _persist_turn_local(
 
     # Same interpretation path as the API's /cases/turn, so the decision state
     # the UI persists matches what the backend would produce. interpret_turn
-    # already merges new facts with those on the existing case.
+    # already merges new facts with those on the existing case, and the prior
+    # conversation is forwarded so the extractor can resolve multi-turn
+    # references.
     interpretation = interpret_turn(
         user_input,
-        chat_history=[],
+        chat_history=chat_history or [],
         current_case_state=existing,
         extractor=extractor or default_fact_extractor(),
     )
@@ -236,6 +243,11 @@ def main():
             st.markdown(message["content"])
 
     if query := st.chat_input("Preguntáme lo que quieras"):
+        # Prior turns (role/content dicts), captured before this query is added,
+        # for both the RAG chain and the fact extractor.
+        prior_history = [
+            {"role": m["role"], "content": m["content"]} for m in st.session_state.messages
+        ]
         st.session_state.messages.append({"role": "user", "content": query})
         with st.chat_message("user"):
             st.markdown(query)
@@ -258,18 +270,28 @@ def main():
 
         if UI_USE_API:
             try:
-                turn = _api_process_turn(query)
+                turn = _api_process_turn(query, chat_history=prior_history)
                 st.caption(f"API case_id: {turn['case_id']}")
             except Exception as exc:
                 st.error(f"Error llamando API backend: {exc}. Usando fallback local.")
                 case_state = _persist_turn_local(
-                    store=store, case_id=case_id, user_input=query, assistant_output=response, extractor=extractor
+                    store=store,
+                    case_id=case_id,
+                    user_input=query,
+                    assistant_output=response,
+                    extractor=extractor,
+                    chat_history=prior_history,
                 )
                 _render_debug(case_state)
                 _render_obligation_cards(case_state)
         else:
             case_state = _persist_turn_local(
-                store=store, case_id=case_id, user_input=query, assistant_output=response, extractor=extractor
+                store=store,
+                case_id=case_id,
+                user_input=query,
+                assistant_output=response,
+                extractor=extractor,
+                chat_history=prior_history,
             )
             _render_debug(case_state)
             _render_obligation_cards(case_state)

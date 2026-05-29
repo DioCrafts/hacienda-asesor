@@ -1,7 +1,8 @@
 from fastapi.testclient import TestClient
 from langchain_core.documents import Document
 
-from hacienda_gpt.api.api import app, get_qa_chain
+from hacienda_gpt.api.api import app, get_fact_extractor, get_qa_chain
+from hacienda_gpt.decision.fact_extractor import ExtractionPayload
 
 client = TestClient(app)
 
@@ -62,6 +63,44 @@ def test_post_turn_updates_case_tax_period_from_extracted_fact() -> None:
     got = client.get(f"/cases/{case_id}")
     assert got.status_code == 200
     assert got.json()["tax_period"] == "2024"
+
+
+def test_post_turn_forwards_chat_history_to_extractor() -> None:
+    captured: dict = {}
+
+    class _SpyExtractor:
+        def extract(self, user_input, chat_history, current_case_state):
+            captured["user_input"] = user_input
+            captured["chat_history"] = chat_history
+            return ExtractionPayload(intent="iva", intent_confidence=0.5, extracted_facts=[])
+
+    created = client.post("/cases", json={"user_id": "uh", "jurisdiction": "ES", "tax_period": "2025"})
+    case_id = created.json()["case_id"]
+
+    history = [
+        {"role": "user", "content": "Tengo una empresa"},
+        {"role": "assistant", "content": "De acuerdo, cuéntame más."},
+    ]
+    app.dependency_overrides[get_fact_extractor] = lambda: _SpyExtractor()
+    try:
+        turn = client.post(
+            f"/cases/{case_id}/turn",
+            json={"user_input": "¿Y el IVA de 2024?", "chat_history": history},
+        )
+    finally:
+        app.dependency_overrides.pop(get_fact_extractor, None)
+
+    assert turn.status_code == 200
+    assert captured["user_input"] == "¿Y el IVA de 2024?"
+    assert captured["chat_history"] == history
+
+
+def test_post_turn_chat_history_defaults_to_empty() -> None:
+    created = client.post("/cases", json={"user_id": "uh2", "jurisdiction": "ES", "tax_period": "2025"})
+    case_id = created.json()["case_id"]
+    # Backward compatible: callers may still omit chat_history entirely.
+    turn = client.post(f"/cases/{case_id}/turn", json={"user_input": "Dudas de IRPF"})
+    assert turn.status_code == 200
 
 
 def test_not_found_case() -> None:

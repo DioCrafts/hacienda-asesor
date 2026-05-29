@@ -60,6 +60,10 @@ class TurnRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     user_input: str = Field(min_length=1)
+    # Prior conversation turns ({"role": "user"|"assistant", "content": str}).
+    # Forwarded to the extractor so multi-turn references ("y para 2023…")
+    # resolve against earlier turns. Defaults to empty for stateless callers.
+    chat_history: list[dict[str, str]] = Field(default_factory=list)
 
 
 class TurnResponse(BaseModel):
@@ -133,7 +137,7 @@ def post_turn(
 
     interpretation = interpret_turn(
         payload.user_input,
-        chat_history=[],
+        chat_history=payload.chat_history,
         current_case_state=case,
         extractor=extractor,
     )
