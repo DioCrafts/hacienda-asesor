@@ -100,7 +100,7 @@
             playwright
             poetry
             poppler
-            python311
+            python313
             stdenv
             tesseract
           ];
