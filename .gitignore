@@ -104,7 +104,6 @@ celerybeat.pid
 # Environments
 .env
 .venv
-.venv-poetry/
 env/
 venv/
 ENV/
@@ -129,32 +128,41 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-### direnv ###
+# direnv
 .direnv/
+/.envrc.local
 
 # Nix build output
 /result*
 /repl-result*
 
-# scrapy
-/crawls
-/out
+# Tool caches
+.ruff_cache/
 
-# other
-/.data/
-/.ruff_cache/
-
-# streamlit
+# Streamlit
 .streamlit/
+
+# Project data & generated artifacts (not committed)
+/data/
+/.data/
 /.faiss/
+/crawls/
+/out/
+/reports/
+/tmp/
+/eval_results.json
+/eval_pipeline_results.json
+/eval_pipeline_report.md
+/eval_pipeline_report.html
+/eval_interpreter_results.json
+/eval_interpreter_results.md
+/retrieval_benchmark.json
 
-# direnv
-/.direnv
-/.envrc.local
-/env
-
-# other
-/data
-
-# claude code
+# Claude Code
 .claude/scheduled_tasks.lock
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
