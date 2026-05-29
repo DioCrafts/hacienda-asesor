@@ -28,6 +28,16 @@ _TEAC_ASUNTO_RE = re.compile(
 )
 _TEAC_CRITERIO_RE = re.compile(r"de la resoluci[oó]n\s*:\s*([^\s<]+)", re.IGNORECASE)
 _WHITESPACE_RE = re.compile(r"\s+")
+# Year tagging is deliberately conservative: a fiscal year is only attached
+# when a year sits next to an explicit fiscal-context word ("ejercicio 2024",
+# "renta 2024", "campaña 2023"…). Evergreen norms (e.g. "Ley 35/2006") must
+# stay untagged so the best-effort retrieval filter keeps returning them for
+# every year. ``\D{0,15}`` lets the word and the year be a few tokens apart
+# without swallowing another number in between.
+_FISCAL_YEAR_RE = re.compile(
+    r"(?:ejercicio|campa(?:ñ|n)a|per[ií]odo impositivo|renta|irpf|impuesto sobre la renta)" r"\D{0,15}((?:19|20)\d{2})",
+    re.IGNORECASE,
+)
 
 
 def _normalize_whitespace(value: str) -> str:
@@ -175,6 +185,22 @@ class DocumentProcessor:
             return "reglamento"
         return None
 
+    def _detect_fiscal_year(self, text: str, source_url: str) -> int | None:
+        """Best-effort fiscal year for year-specific documents.
+
+        Returns ``None`` for evergreen content so the retrieval filter (which
+        keeps documents lacking the field) never drops a still-applicable norm.
+        Only years next to a fiscal-context word are accepted; bare numbers
+        such as the "2006" in "Ley 35/2006" are ignored.
+        """
+        corpus = f"{text}\n{source_url}"
+        best: int | None = None
+        for match in _FISCAL_YEAR_RE.finditer(corpus):
+            year = int(match.group(1))
+            if 1990 <= year <= 2099 and (best is None or year > best):
+                best = year
+        return best
+
     def _detect_effective_date(self, text: str) -> str | None:
         patterns = [
             r"vigencia\s*:?\s*(\d{2}/\d{2}/\d{4})",
@@ -220,6 +246,7 @@ class DocumentProcessor:
             "section": section or doc.metadata.get("section") or "general",
             "last_updated": self._extract_last_updated(text),
             "document_type": self._parse_document_type(source_url),
+            "fiscal_year": self._detect_fiscal_year(text, source_url),
             "normative_document_type": self._detect_normative_document_type(text, source_url),
             "effective_date": self._detect_effective_date(text),
             "scope": self._detect_scope(text, source_url),

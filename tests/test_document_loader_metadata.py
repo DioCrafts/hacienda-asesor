@@ -36,6 +36,28 @@ def test_enrich_metadata_detects_legal_fields() -> None:
     }
 
 
+def test_enrich_metadata_tags_year_specific_documents() -> None:
+    processor = _processor()
+    doc = Document(
+        page_content="Manual de la Renta 2024. Campaña IRPF ejercicio 2024.",
+        metadata={"source": "https://sede.agenciatributaria.gob.es/manual-renta-2024"},
+    )
+    meta = processor._enrich_metadata(doc)
+    assert meta["fiscal_year"] == 2024
+
+
+def test_enrich_metadata_leaves_evergreen_norm_untagged() -> None:
+    # A bare "2006" inside "Ley 35/2006" must not be mistaken for a fiscal year,
+    # so the best-effort retrieval filter keeps returning the law for any year.
+    processor = _processor()
+    doc = Document(
+        page_content="Ley 35/2006, de 28 de noviembre, del IRPF.",
+        metadata={"source": "https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764"},
+    )
+    meta = processor._enrich_metadata(doc)
+    assert meta["fiscal_year"] is None
+
+
 def test_semantic_split_preserves_legal_context_header() -> None:
     processor = _processor()
     html_like = Document(
