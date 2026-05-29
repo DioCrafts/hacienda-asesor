@@ -209,28 +209,5 @@ def pytest_sessionstart(session):
     lc_emb = _ensure_module("langchain_core.embeddings")
     lc_emb.Embeddings = object
 
-    loaders = _ensure_module("langchain_community.document_loaders")
-
-    class DirectoryLoader:
-        def __init__(self, *a, **k):
-            pass
-
-        def load(self):
-            return []
-
-    loaders.DirectoryLoader = DirectoryLoader
-
     hf = _ensure_module("langchain_huggingface")
     hf.HuggingFaceEmbeddings = object
-
-    ts = _ensure_module("langchain_text_splitters")
-    ts.HTMLHeaderTextSplitter = lambda *a, **k: type("S", (), {"split_text": lambda self, t: []})()
-
-    class RecursiveCharacterTextSplitter:
-        def __init__(self, *a, **k):
-            pass
-
-        def split_documents(self, docs):
-            return docs
-
-    ts.RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter

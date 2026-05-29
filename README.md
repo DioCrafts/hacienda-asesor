@@ -22,7 +22,7 @@ HaciendaGPT combina recuperación semántica (RAG), reglas de decisión fiscal y
 ## 🧱 Arquitectura (alto nivel)
 
 1. **Crawler**: descarga contenido fuente (web/PDF).
-2. **Processor**: normaliza documentos y construye índice vectorial FAISS.
+2. **Processor**: convierte y trocea PDF/HTML con **Docling** (análisis de layout, tablas y *chunking* por estructura + presupuesto de tokens) y construye el índice vectorial FAISS.
 3. **Retrieval + LLM**: recupera contexto relevante y genera respuesta.
 4. **Decision Engine**: evalúa reglas por periodo fiscal y hechos detectados.
 5. **UI/API**: expone experiencia de usuario e integración.
@@ -101,8 +101,8 @@ y el retrieval.
 > `OMP: Error #15: Initializing libomp.dylib, but found libomp.dylib
 > already initialized`, exporta `KMP_DUPLICATE_LIB_OK=TRUE` antes de
 > lanzar el servicio. La causa es que `faiss-cpu` y las dependencias de
-> `sentence-transformers`/`unstructured` enlazan dos copias de libomp en el mismo
-> proceso.
+> `sentence-transformers`/`docling` (ambos sobre PyTorch) enlazan dos copias de
+> libomp en el mismo proceso.
 
 ---
 

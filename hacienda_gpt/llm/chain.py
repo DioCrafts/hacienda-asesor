@@ -104,7 +104,6 @@ def _create_retriever(
     llm: ChatOpenAI,
     *,
     profile_name: str = "decision",
-    fiscal_year: int | None = None,
     metadata_filter: dict | None = None,
 ) -> BaseRetriever:
     """Load and return a compressed FAISS retriever."""
@@ -115,9 +114,9 @@ def _create_retriever(
         )
 
     profile = (
-        build_decision_profile(fiscal_year=fiscal_year, metadata_filter=metadata_filter)
+        build_decision_profile(metadata_filter=metadata_filter)
         if profile_name == "decision"
-        else build_explain_profile(fiscal_year=fiscal_year, metadata_filter=metadata_filter)
+        else build_explain_profile(metadata_filter=metadata_filter)
     )
 
     faiss = FAISS.load_local(FAISS_INDEX_PATH, embeddings, allow_dangerous_deserialization=True)
