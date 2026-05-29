@@ -1,5 +1,4 @@
 from datetime import UTC, datetime
-import time
 from uuid import uuid4
 
 from langchain_core.messages import AIMessage, HumanMessage
@@ -7,10 +6,9 @@ import requests
 import streamlit as st
 
 from hacienda_gpt.decision.fact_extractor import FactExtractor, default_fact_extractor
-from hacienda_gpt.decision.interpreter import interpret_turn
-from hacienda_gpt.decision.rules_engine import evaluate_rules
 from hacienda_gpt.decision.schemas import CaseState
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
+from hacienda_gpt.decision.turn_service import TurnOutcome, process_turn
 from hacienda_gpt.llm.chain import answer_with_grounding, create_openai_chain
 from hacienda_gpt.llm.grounding import AnswerEnvelope, AnswerMode
 from hacienda_gpt.settings import API_BASE_URL, DECISION_DEBUG_MODE, DECISION_STATE_DB_PATH, UI_USE_API
@@ -73,9 +71,13 @@ def _api_create_case_if_needed() -> str:
     return case_id
 
 
-def _api_process_turn(user_input: str) -> dict:
+def _api_process_turn(user_input: str, chat_history: list[dict[str, str]] | None = None) -> dict:
     case_id = _api_create_case_if_needed()
-    r = requests.post(f"{API_BASE_URL}/cases/{case_id}/turn", json={"user_input": user_input}, timeout=30)
+    r = requests.post(
+        f"{API_BASE_URL}/cases/{case_id}/turn",
+        json={"user_input": user_input, "chat_history": chat_history or []},
+        timeout=30,
+    )
     r.raise_for_status()
     return r.json()
 
@@ -86,43 +88,35 @@ def _persist_turn_local(
     user_input: str,
     assistant_output: str,
     extractor: FactExtractor | None = None,
-) -> CaseState:
+    chat_history: list[dict[str, str]] | None = None,
+) -> TurnOutcome:
     now = datetime.now(UTC)
     existing = store.get_case(case_id)
     user_id = st.session_state.get("user_id", "streamlit_user")
 
-    # Same interpretation path as the API's /cases/turn, so the decision state
-    # the UI persists matches what the backend would produce. interpret_turn
-    # already merges new facts with those on the existing case.
-    interpretation = interpret_turn(
-        user_input,
-        chat_history=[],
-        current_case_state=existing,
-        extractor=extractor or default_fact_extractor(),
+    # Start from the persisted case (or a fresh one) and run the *same* pipeline
+    # the API's /cases/turn uses, via the shared turn_service.process_turn. This
+    # keeps the question policy, ask_counts and gave_up_facts in sync between the
+    # UI and the backend instead of letting the local path silently skip them.
+    case = existing or CaseState(
+        case_id=case_id,
+        user_id=user_id,
+        jurisdiction="ES",
+        tax_period=str(now.year),
+        created_at=now,
+        updated_at=now,
     )
-    facts = interpretation.extracted_facts
-    missing_facts = interpretation.missing_facts
 
-    if existing is None:
-        case_state = CaseState(
-            case_id=case_id,
-            user_id=user_id,
-            jurisdiction="ES",
-            tax_period=str(now.year),
-            facts=facts,
-            missing_facts=missing_facts,
-            created_at=now,
-            updated_at=now,
-        )
-    else:
-        case_state = existing.model_copy(update={"facts": facts, "missing_facts": missing_facts, "updated_at": now})
-
-    rules_result = evaluate_rules(case_state=case_state, recent_facts=facts)
-    case_state = case_state.model_copy(update={"obligation_candidates": rules_result.candidate_obligations})
-    store.save_case(case_state)
+    outcome = process_turn(
+        case=case,
+        user_input=user_input,
+        extractor=extractor or default_fact_extractor(),
+        chat_history=chat_history,
+    )
+    store.save_case(outcome.case_state)
     store.append_audit_event(case_id, {"event_type": "turn_persisted", "user_input": user_input})
     store.append_audit_event(case_id, {"event_type": "assistant_responded", "assistant_output": assistant_output})
-    return case_state
+    return outcome
 
 
 def _build_obligation_cards(case_state: CaseState) -> list[dict[str, str]]:
@@ -196,6 +190,14 @@ def _render_citations(envelope: AnswerEnvelope) -> None:
                 st.caption(citation.snippet)
 
 
+def _render_next_questions(questions) -> None:
+    if not questions:
+        return
+    st.subheader("Para afinar la recomendación")
+    for question in questions:
+        st.markdown(f"- {question.question_text}")
+
+
 def _render_debug(case_state: CaseState) -> None:
     if not DECISION_DEBUG_MODE:
         return
@@ -236,21 +238,26 @@ def main():
             st.markdown(message["content"])
 
     if query := st.chat_input("Preguntáme lo que quieras"):
+        # Prior turns (role/content dicts), captured before this query is added,
+        # for both the RAG chain and the fact extractor.
+        prior_history = [
+            {"role": m["role"], "content": m["content"]} for m in st.session_state.messages
+        ]
         st.session_state.messages.append({"role": "user", "content": query})
         with st.chat_message("user"):
             st.markdown(query)
 
         with st.chat_message("assistant", avatar=bot_logo):
-            message_placeholder = st.empty()
             history = _build_chat_history(st.session_state.messages[:-1])
-            envelope = answer_with_grounding(chain, query=query, chat_history=history)
+            # The grounding gate needs the full answer and its documents before
+            # it can decide the verdict (and may replace the answer with an
+            # abstention message), so there is nothing to stream token by token.
+            # Render the finalized answer directly instead of faking a typewriter
+            # effect that only added latency.
+            with st.spinner("Consultando la normativa…"):
+                envelope = answer_with_grounding(chain, query=query, chat_history=history)
             response = envelope.answer
-            full_response = ""
-            for chunk in response.split():
-                full_response += chunk + " "
-                time.sleep(0.05)
-                message_placeholder.markdown(full_response + "▌")
-            message_placeholder.markdown(full_response)
+            st.markdown(response)
             _render_grounding_banner(envelope)
             _render_citations(envelope)
 
@@ -258,21 +265,33 @@ def main():
 
         if UI_USE_API:
             try:
-                turn = _api_process_turn(query)
+                turn = _api_process_turn(query, chat_history=prior_history)
                 st.caption(f"API case_id: {turn['case_id']}")
             except Exception as exc:
                 st.error(f"Error llamando API backend: {exc}. Usando fallback local.")
-                case_state = _persist_turn_local(
-                    store=store, case_id=case_id, user_input=query, assistant_output=response, extractor=extractor
+                outcome = _persist_turn_local(
+                    store=store,
+                    case_id=case_id,
+                    user_input=query,
+                    assistant_output=response,
+                    extractor=extractor,
+                    chat_history=prior_history,
                 )
-                _render_debug(case_state)
-                _render_obligation_cards(case_state)
+                _render_debug(outcome.case_state)
+                _render_obligation_cards(outcome.case_state)
+                _render_next_questions(outcome.selected_questions)
         else:
-            case_state = _persist_turn_local(
-                store=store, case_id=case_id, user_input=query, assistant_output=response, extractor=extractor
+            outcome = _persist_turn_local(
+                store=store,
+                case_id=case_id,
+                user_input=query,
+                assistant_output=response,
+                extractor=extractor,
+                chat_history=prior_history,
             )
-            _render_debug(case_state)
-            _render_obligation_cards(case_state)
+            _render_debug(outcome.case_state)
+            _render_obligation_cards(outcome.case_state)
+            _render_next_questions(outcome.selected_questions)
 
 
 if __name__ == "__main__":
