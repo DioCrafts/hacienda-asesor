@@ -142,13 +142,19 @@ class SanitizingRetriever(BaseRetriever):
         return _sanitize_context_documents(docs)
 
 
-def create_openai_chain(openai_api_key: str) -> Runnable:
-    """Create a retrieval chain using the stable Runnable/LCEL architecture."""
+def create_openai_chain(openai_api_key: str, *, profile_name: str = "explain") -> Runnable:
+    """Create a retrieval chain using the stable Runnable/LCEL architecture.
+
+    Defaults to the ``explain`` retrieval profile (higher recall): both callers
+    — the ``/qa`` endpoint and the Streamlit chat — serve explanatory Q&A, the
+    use case that profile was tuned for. The stricter ``decision`` profile is
+    reserved for the decision engine and the retrieval benchmark.
+    """
     llm = ChatOpenAI(temperature=OPENAI_TEMPERATURE, model=OPENAI_MODEL, api_key=openai_api_key)
     # Embedder comes from the shared factory (default: local Qwen3-Embedding).
     # The OpenAI key is still used for the chat LLM above, not for embeddings.
     embeddings = create_embeddings()
-    retriever = _create_retriever(embeddings, llm)
+    retriever = _create_retriever(embeddings, llm, profile_name=profile_name)
 
     contextualize_prompt = ChatPromptTemplate.from_messages(
         [

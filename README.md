@@ -57,6 +57,9 @@ export TOP_K="3"
 # más precisión/menos recall (riesgo de abstención); bajarlos = lo contrario.
 export RETRIEVAL_DECISION_THRESHOLD="0.45"   # perfil "decision" (más estricto)
 export RETRIEVAL_EXPLAIN_THRESHOLD="0.35"    # perfil "explain" (más recall)
+# La cadena de Q&A (`/qa` y el chat de la UI) usa el perfil "explain" por
+# defecto, ya que son consultas explicativas. El perfil "decision" (más
+# estricto) queda para el motor de decisión y el benchmark de retrieval.
 
 # Embedder local (mismo para indexar y consultar; ver sección "Embeddings"):
 export EMBEDDING_MODEL="Qwen/Qwen3-Embedding-8B"
