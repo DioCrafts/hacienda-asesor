@@ -31,8 +31,8 @@ HaciendaGPT combina recuperación semántica (RAG), reglas de decisión fiscal y
 
 ## ✅ Requisitos
 
-- Python `>=3.12,<3.14`
-- Poetry
+- Python `>=3.13,<3.14`
+- [uv](https://docs.astral.sh/uv/)
 - (Opcional para crawler web) Playwright/Chromium
 
 ---
@@ -40,7 +40,7 @@ HaciendaGPT combina recuperación semántica (RAG), reglas de decisión fiscal y
 ## ⚙️ Setup rápido
 
 ```bash
-poetry install
+uv sync                  # crea .venv e instala deps (main + dev) desde uv.lock
 # opcional: cp .env.example .env
 ```
 
@@ -107,9 +107,9 @@ dentro del snapshot. Vive junto al CLI a propósito: si lo dejásemos bajo
 de decisión.
 
 ```bash
-poetry run python -m hacienda_gpt.cli.boe_seed
+uv run python -m hacienda_gpt.cli.boe_seed
 # o, para previsualizar sin descargar:
-poetry run python -m hacienda_gpt.cli.boe_seed --dry-run
+uv run python -m hacienda_gpt.cli.boe_seed --dry-run
 ```
 
 El CLI escribe los HTML consolidados (`/buscar/act.php?id=...`) en
@@ -127,9 +127,9 @@ DYCTEA usa identificadores compuestos para sus criterios
 buscador real por rango de fechas y baja cada criterio individualmente:
 
 ```bash
-poetry run python -m hacienda_gpt.cli.teac_seed --from-date 2024-01-01 --to-date 2024-12-31
+uv run python -m hacienda_gpt.cli.teac_seed --from-date 2024-01-01 --to-date 2024-12-31
 # previsualización (sin descargar los detalles):
-poetry run python -m hacienda_gpt.cli.teac_seed --from-date 2024-01-01 --to-date 2024-06-30 --dry-run
+uv run python -m hacienda_gpt.cli.teac_seed --from-date 2024-01-01 --to-date 2024-06-30 --dry-run
 ```
 
 Salida: `data/html/<snapshot>/teac/<safe_id>.html` + `.json` por
@@ -168,7 +168,7 @@ explícitamente. La plantilla versionada está en
 [hacienda_gpt/cli/cendoj_seed_urls.txt](hacienda_gpt/cli/cendoj_seed_urls.txt):
 
 ```bash
-poetry run python -m hacienda_gpt.cli.crawler \
+uv run python -m hacienda_gpt.cli.crawler \
   --crawler cendoj --folder ./data/cendoj \
   --cendoj-urls-file hacienda_gpt/cli/cendoj_seed_urls.txt
 ```
@@ -188,7 +188,7 @@ Las únicas fuentes PDF que sí funcionan integradas en el repo son:
 
 ```bash
 # Códigos consolidados autonómicos del BOE (4 PDFs verificados):
-poetry run python -m hacienda_gpt.cli.crawler --crawler boe-ccaa --folder ./data/boe --skip-unknown-ccaa
+uv run python -m hacienda_gpt.cli.crawler --crawler boe-ccaa --folder ./data/boe --skip-unknown-ccaa
 ```
 
 Si necesitas ingerir PDFs externos (manuales de despacho propio,
@@ -201,13 +201,13 @@ o crea una mini-CLI siguiendo el patrón de
 ### HTML (sitio AEAT)
 
 ```bash
-poetry run python -m hacienda_gpt.cli.crawler --crawler web --folder ./data/html --depth 1 --mode flat
+uv run python -m hacienda_gpt.cli.crawler --crawler web --folder ./data/html --depth 1 --mode flat
 ```
 
 ### PDF
 
 ```bash
-poetry run python -m hacienda_gpt.cli.crawler --crawler pdf --folder ./data/pdf --depth 1
+uv run python -m hacienda_gpt.cli.crawler --crawler pdf --folder ./data/pdf --depth 1
 ```
 
 > El crawler guarda por defecto en carpetas con `snapshot_date` (YYYY-MM-DD).
@@ -221,7 +221,7 @@ poetry run python -m hacienda_gpt.cli.crawler --crawler pdf --folder ./data/pdf 
 > índice solo si cambias `EMBEDDING_MODEL`.
 
 ```bash
-poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --overwrite-output
+uv run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --overwrite-output
 ```
 
 ---
@@ -229,7 +229,7 @@ poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --outp
 ## 💬 3) Ejecutar UI (Streamlit)
 
 ```bash
-poetry run streamlit run hacienda_gpt/ui/app.py
+uv run streamlit run hacienda_gpt/ui/app.py
 ```
 
 ---
@@ -237,7 +237,7 @@ poetry run streamlit run hacienda_gpt/ui/app.py
 ## 🔌 4) Ejecutar API (FastAPI)
 
 ```bash
-poetry run uvicorn hacienda_gpt.api.api:app --reload --host 127.0.0.1 --port 8000
+uv run uvicorn hacienda_gpt.api.api:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ### Endpoints: `/qa` vs `/cases`
@@ -357,7 +357,7 @@ El detector de drift recalcula los hashes contra el snapshot actual y emite un
 reporte con findings clasificados (`ok`, `changed`, `missing`, `unverified`):
 
 ```bash
-poetry run python -m hacienda_gpt.cli.drift_check \
+uv run python -m hacienda_gpt.cli.drift_check \
   --rules-dir rules \
   --snapshot-root ./data \
   --output reports/drift.json \
@@ -375,7 +375,7 @@ nombre del crawler (`boe`, `aeat`, `teac`, …) y se mapea a `<snapshot-root>/<s
 ## 📏 5) Evaluación
 
 ```bash
-poetry run python -m hacienda_gpt.cli.eval --output ./eval_results.json
+uv run python -m hacienda_gpt.cli.eval --output ./eval_results.json
 ```
 
 La evaluación genera:
@@ -398,13 +398,13 @@ La evaluación genera:
 ## 🧪 Tests rápidos
 
 ```bash
-poetry run pytest -q
+uv run pytest -q
 ```
 
 También puedes ejecutar suites concretas, por ejemplo:
 
 ```bash
-poetry run pytest -q tests/decision/test_rules_engine.py
+uv run pytest -q tests/decision/test_rules_engine.py
 ```
 
 ---

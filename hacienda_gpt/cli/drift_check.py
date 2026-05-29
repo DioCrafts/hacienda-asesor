@@ -1,7 +1,7 @@
 """CLI entrypoint for the normative drift detector.
 
 Usage:
-    poetry run python -m hacienda_gpt.cli.drift_check \\
+    uv run python -m hacienda_gpt.cli.drift_check \\
         --rules-dir rules \\
         --snapshot-root ./data \\
         --output reports/drift.json \\

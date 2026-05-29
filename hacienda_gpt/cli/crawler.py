@@ -28,7 +28,7 @@ _PARAM_FREE_CRAWLERS = {AgenciaTributariaPDFCrawler, AgenciaTributariaWebCrawler
 SETTINGS = {
     "ROBOTSTXT_OBEY": True,
     "HTTPCACHE_ENABLED": True,
-    # `scrapy-fake-useragent` 1.4.4 (the version pinned in poetry.lock) reaches
+    # `scrapy-fake-useragent` 1.4.4 (the version pinned in uv.lock) reaches
     # for `self.EXCEPTIONS_TO_RETRY` on Scrapy's `RetryMiddleware`, but that
     # attribute was removed in Scrapy 2.11+. Hitting it blows up the very
     # first request (typically the robots.txt fetch) and the crawl ends with
