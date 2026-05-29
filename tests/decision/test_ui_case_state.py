@@ -22,7 +22,7 @@ def test_persist_turn_creates_case_and_audit_events(monkeypatch) -> None:
     monkeypatch.setitem(app.st.session_state, "user_id", "user_test")
     store = FakeStore()
 
-    case = app._persist_turn_local(
+    outcome = app._persist_turn_local(
         store=store,
         case_id="case_x",
         user_input="Soy residente en España y tengo dudas sobre IRPF",
@@ -30,6 +30,7 @@ def test_persist_turn_creates_case_and_audit_events(monkeypatch) -> None:
         extractor=RegexFactExtractor(),
     )
 
+    case = outcome.case_state
     assert case.case_id == "case_x"
     assert len(case.facts) >= 1
     assert len(store.events) == 2
@@ -46,7 +47,7 @@ def test_persist_turn_updates_existing_case(monkeypatch) -> None:
         assistant_output="ok",
         extractor=extractor,
     )
-    updated = app._persist_turn_local(
+    outcome = app._persist_turn_local(
         store=store,
         case_id="case_x",
         user_input="Tengo ingresos del trabajo",
@@ -54,6 +55,7 @@ def test_persist_turn_updates_existing_case(monkeypatch) -> None:
         extractor=extractor,
     )
 
+    updated = outcome.case_state
     assert updated.case_id == "case_x"
     assert updated.user_id == "user_test"
     assert len(store.events) == 4

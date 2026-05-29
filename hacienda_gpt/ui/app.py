@@ -7,10 +7,9 @@ import requests
 import streamlit as st
 
 from hacienda_gpt.decision.fact_extractor import FactExtractor, default_fact_extractor
-from hacienda_gpt.decision.interpreter import interpret_turn
-from hacienda_gpt.decision.rules_engine import evaluate_rules
 from hacienda_gpt.decision.schemas import CaseState
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
+from hacienda_gpt.decision.turn_service import TurnOutcome, process_turn
 from hacienda_gpt.llm.chain import answer_with_grounding, create_openai_chain
 from hacienda_gpt.llm.grounding import AnswerEnvelope, AnswerMode
 from hacienda_gpt.settings import API_BASE_URL, DECISION_DEBUG_MODE, DECISION_STATE_DB_PATH, UI_USE_API
@@ -91,45 +90,34 @@ def _persist_turn_local(
     assistant_output: str,
     extractor: FactExtractor | None = None,
     chat_history: list[dict[str, str]] | None = None,
-) -> CaseState:
+) -> TurnOutcome:
     now = datetime.now(UTC)
     existing = store.get_case(case_id)
     user_id = st.session_state.get("user_id", "streamlit_user")
 
-    # Same interpretation path as the API's /cases/turn, so the decision state
-    # the UI persists matches what the backend would produce. interpret_turn
-    # already merges new facts with those on the existing case, and the prior
-    # conversation is forwarded so the extractor can resolve multi-turn
-    # references.
-    interpretation = interpret_turn(
-        user_input,
-        chat_history=chat_history or [],
-        current_case_state=existing,
-        extractor=extractor or default_fact_extractor(),
+    # Start from the persisted case (or a fresh one) and run the *same* pipeline
+    # the API's /cases/turn uses, via the shared turn_service.process_turn. This
+    # keeps the question policy, ask_counts and gave_up_facts in sync between the
+    # UI and the backend instead of letting the local path silently skip them.
+    case = existing or CaseState(
+        case_id=case_id,
+        user_id=user_id,
+        jurisdiction="ES",
+        tax_period=str(now.year),
+        created_at=now,
+        updated_at=now,
     )
-    facts = interpretation.extracted_facts
-    missing_facts = interpretation.missing_facts
 
-    if existing is None:
-        case_state = CaseState(
-            case_id=case_id,
-            user_id=user_id,
-            jurisdiction="ES",
-            tax_period=str(now.year),
-            facts=facts,
-            missing_facts=missing_facts,
-            created_at=now,
-            updated_at=now,
-        )
-    else:
-        case_state = existing.model_copy(update={"facts": facts, "missing_facts": missing_facts, "updated_at": now})
-
-    rules_result = evaluate_rules(case_state=case_state, recent_facts=facts)
-    case_state = case_state.model_copy(update={"obligation_candidates": rules_result.candidate_obligations})
-    store.save_case(case_state)
+    outcome = process_turn(
+        case=case,
+        user_input=user_input,
+        extractor=extractor or default_fact_extractor(),
+        chat_history=chat_history,
+    )
+    store.save_case(outcome.case_state)
     store.append_audit_event(case_id, {"event_type": "turn_persisted", "user_input": user_input})
     store.append_audit_event(case_id, {"event_type": "assistant_responded", "assistant_output": assistant_output})
-    return case_state
+    return outcome
 
 
 def _build_obligation_cards(case_state: CaseState) -> list[dict[str, str]]:
@@ -203,6 +191,14 @@ def _render_citations(envelope: AnswerEnvelope) -> None:
                 st.caption(citation.snippet)
 
 
+def _render_next_questions(questions) -> None:
+    if not questions:
+        return
+    st.subheader("Para afinar la recomendación")
+    for question in questions:
+        st.markdown(f"- {question.question_text}")
+
+
 def _render_debug(case_state: CaseState) -> None:
     if not DECISION_DEBUG_MODE:
         return
@@ -274,7 +270,7 @@ def main():
                 st.caption(f"API case_id: {turn['case_id']}")
             except Exception as exc:
                 st.error(f"Error llamando API backend: {exc}. Usando fallback local.")
-                case_state = _persist_turn_local(
+                outcome = _persist_turn_local(
                     store=store,
                     case_id=case_id,
                     user_input=query,
@@ -282,10 +278,11 @@ def main():
                     extractor=extractor,
                     chat_history=prior_history,
                 )
-                _render_debug(case_state)
-                _render_obligation_cards(case_state)
+                _render_debug(outcome.case_state)
+                _render_obligation_cards(outcome.case_state)
+                _render_next_questions(outcome.selected_questions)
         else:
-            case_state = _persist_turn_local(
+            outcome = _persist_turn_local(
                 store=store,
                 case_id=case_id,
                 user_input=query,
@@ -293,8 +290,9 @@ def main():
                 extractor=extractor,
                 chat_history=prior_history,
             )
-            _render_debug(case_state)
-            _render_obligation_cards(case_state)
+            _render_debug(outcome.case_state)
+            _render_obligation_cards(outcome.case_state)
+            _render_next_questions(outcome.selected_questions)
 
 
 if __name__ == "__main__":

@@ -10,13 +10,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from hacienda_gpt.decision.audit import build_recommendation_audit_event
 from hacienda_gpt.decision.fact_extractor import FactExtractor, default_fact_extractor
-from hacienda_gpt.decision.interpreter import interpret_turn
 from hacienda_gpt.decision.planner import Planner
-from hacienda_gpt.decision.question_policy import QuestionPolicy
-from hacienda_gpt.decision.rules_engine import evaluate_rules
 from hacienda_gpt.decision.schemas import CaseState, Fact, MissingFact
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
-from hacienda_gpt.decision.taxonomy import SupportedIntent
+from hacienda_gpt.decision.turn_service import process_turn
 from hacienda_gpt.llm.grounding import AnswerEnvelope
 from hacienda_gpt.settings import DECISION_STATE_DB_PATH
 
@@ -39,13 +36,6 @@ def get_case_store() -> SQLiteCaseStateStore:
 
 def get_fact_extractor() -> FactExtractor:
     return default_fact_extractor()
-
-
-def _resolve_tax_period(case: CaseState, facts: list[Fact]) -> str:
-    period_fact = next((fact for fact in facts if fact.name == "periodo_fiscal"), None)
-    if period_fact is None:
-        return case.tax_period
-    return str(period_fact.value)
 
 
 class CreateCaseRequest(BaseModel):
@@ -135,68 +125,26 @@ def post_turn(
     if case is None:
         raise HTTPException(status_code=404, detail="case not found")
 
-    interpretation = interpret_turn(
-        payload.user_input,
-        chat_history=payload.chat_history,
-        current_case_state=case,
+    outcome = process_turn(
+        case=case,
+        user_input=payload.user_input,
         extractor=extractor,
+        chat_history=payload.chat_history,
     )
-    effective_tax_period = _resolve_tax_period(case, interpretation.extracted_facts)
-    case_for_rules = case.model_copy(update={"tax_period": effective_tax_period})
-    rules_result = evaluate_rules(case_state=case_for_rules, recent_facts=interpretation.extracted_facts)
-
-    updated = case.model_copy(
-        update={
-            "facts": interpretation.extracted_facts,
-            "tax_period": effective_tax_period,
-            "missing_facts": interpretation.missing_facts,
-            "obligation_candidates": rules_result.candidate_obligations,
-            "updated_at": datetime.now(UTC),
-        }
-    )
-
-    intent = (
-        SupportedIntent(interpretation.intent.value)
-        if interpretation.intent.value in [e.value for e in SupportedIntent]
-        else SupportedIntent.UNKNOWN
-    )
-    policy_result = QuestionPolicy().select_next_questions(
-        case_state=updated,
-        intent=intent,
-        candidate_questions=interpretation.next_questions,
-        max_questions=1,
-    )
-    selected_questions = policy_result.selected_questions
-
-    new_ask_counts = dict(updated.ask_counts)
-    for question in selected_questions:
-        new_ask_counts[question.target_fact] = new_ask_counts.get(question.target_fact, 0) + 1
-
-    merged_gave_up = list(dict.fromkeys([*updated.gave_up_facts, *policy_result.newly_gave_up]))
-    merged_asked = list(dict.fromkeys([*updated.asked_facts, *(q.target_fact for q in selected_questions)]))
-    missing_after = [m for m in updated.missing_facts if m.fact_name not in merged_gave_up]
-
-    updated = updated.model_copy(
-        update={
-            "asked_facts": merged_asked,
-            "ask_counts": new_ask_counts,
-            "gave_up_facts": merged_gave_up,
-            "missing_facts": missing_after,
-        }
-    )
+    updated = outcome.case_state
     store.save_case(updated)
 
     # execute planner for side effect of validation and auditability
-    Planner().plan(updated, rules_result.candidate_obligations)
+    Planner().plan(updated, outcome.rules_result.candidate_obligations)
 
     store.append_audit_event(case_id, {"event_type": "turn_processed", "input": payload.user_input})
     store.append_audit_event(
         case_id,
         build_recommendation_audit_event(
             case_state=updated,
-            interpretation=interpretation,
-            rules_result=rules_result,
-            obligations=rules_result.candidate_obligations,
+            interpretation=outcome.interpretation,
+            rules_result=outcome.rules_result,
+            obligations=outcome.rules_result.candidate_obligations,
         ),
     )
 
@@ -205,7 +153,7 @@ def post_turn(
         facts=updated.facts,
         missing_facts=updated.missing_facts,
         candidate_obligation_ids=[o.obligation_id for o in updated.obligation_candidates],
-        next_questions=[q.question_text for q in selected_questions],
+        next_questions=[q.question_text for q in outcome.selected_questions],
         degraded=bool(updated.gave_up_facts),
         degraded_facts=list(updated.gave_up_facts),
     )
