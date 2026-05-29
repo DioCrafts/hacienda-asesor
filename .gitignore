@@ -155,3 +155,6 @@ dmypy.json
 
 # other
 /data
+
+# claude code
+.claude/scheduled_tasks.lock

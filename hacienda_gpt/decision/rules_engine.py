@@ -185,7 +185,6 @@ class RulesEngine:
                 by_id[obligation.obligation_id] = obligation
 
         kept_ids = set(by_id.keys())
-        matched_by_obligation = {ob.obligation_id for ob in obligations}
         conflict_happened = len(obligations) != len(kept_ids)
 
         if conflict_happened:

@@ -17,6 +17,15 @@ from hacienda_gpt.crawler.boletin_autonomico import RegionalBoletinCrawler  # re
 from hacienda_gpt.crawler.cendoj import CENDOJCrawler  # re-export
 from hacienda_gpt.crawler.teac import TEACCrawler  # re-export
 
+__all__ = [
+    "AgenciaTributariaWebCrawler",
+    "AgenciaTributariaPDFCrawler",
+    "BOECCAACrawler",
+    "RegionalBoletinCrawler",
+    "CENDOJCrawler",
+    "TEACCrawler",
+]
+
 
 class AgenciaTributariaWebCrawler(scrapy.Spider):
     name = "AgenciaTributariaWebCrawler"
