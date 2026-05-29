@@ -34,8 +34,18 @@ def get_case_store() -> SQLiteCaseStateStore:
     return _build_case_store()
 
 
-def get_fact_extractor() -> FactExtractor:
+@lru_cache(maxsize=1)
+def _build_fact_extractor() -> FactExtractor:
+    # Built once and reused, mirroring _build_qa_chain / _build_case_store. The
+    # previous per-request construction spun up a fresh OpenAI() client on every
+    # turn; the extractor's backend choice is fixed by the environment at
+    # process start, so there is nothing to recompute per request.
     return default_fact_extractor()
+
+
+def get_fact_extractor() -> FactExtractor:
+    # Thin wrapper so tests can still override it via app.dependency_overrides.
+    return _build_fact_extractor()
 
 
 class CreateCaseRequest(BaseModel):

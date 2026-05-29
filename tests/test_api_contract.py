@@ -140,6 +140,16 @@ def test_get_case_store_is_cached() -> None:
         api._build_case_store.cache_clear()
 
 
+def test_get_fact_extractor_is_cached() -> None:
+    from hacienda_gpt.api import api
+
+    api._build_fact_extractor.cache_clear()
+    try:
+        assert api.get_fact_extractor() is api.get_fact_extractor()
+    finally:
+        api._build_fact_extractor.cache_clear()
+
+
 def test_qa_abstains_when_no_context() -> None:
     app.dependency_overrides[get_qa_chain] = lambda: _StubQAChain({"answer": "respuesta", "context": []})
     try:
