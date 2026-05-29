@@ -1,7 +1,12 @@
 from datetime import UTC, datetime
 
 from hacienda_gpt.decision.rules import DecisionRule, RuleSet
-from hacienda_gpt.decision.rules_engine import RulesEngine
+from hacienda_gpt.decision.rules_engine import (
+    RulesEngine,
+    _engine_for_directory,
+    clear_rules_cache,
+    evaluate_rules,
+)
 from hacienda_gpt.decision.schemas import CaseState, Fact, FactValueType, ObligationStatus
 
 
@@ -138,3 +143,47 @@ def test_rules_engine_integration_loads_real_rules_directory() -> None:
     result = engine.evaluate(case_state=case, recent_facts=recent)
     assert len(result.rule_traces) >= 1
     assert any(trace.rule_id for trace in result.rule_traces)
+
+
+def test_evaluate_rules_reuses_cached_engine_per_directory() -> None:
+    clear_rules_cache()
+    first = _engine_for_directory("rules")
+    second = _engine_for_directory("rules")
+    assert first is second  # same warm engine, not re-parsed from disk
+
+    case = _case_with_facts(_fact("residencia_fiscal", "ES"))
+    recent = [_fact("menciona_ingresos", True)]
+    # Two turns through the cached path produce identical obligation ids.
+    r1 = evaluate_rules(case_state=case, recent_facts=recent)
+    r2 = evaluate_rules(case_state=case, recent_facts=recent)
+    assert [o.obligation_id for o in r1.candidate_obligations] == [
+        o.obligation_id for o in r2.candidate_obligations
+    ]
+
+    clear_rules_cache()
+    assert _engine_for_directory("rules") is not first  # cache cleared -> fresh build
+
+
+def test_rule_version_is_memoized() -> None:
+    rule = DecisionRule.model_validate(
+        {
+            "id": "r_mem",
+            "jurisdiction": "ES",
+            "valid_from": "2024-01-01",
+            "valid_to": "2026-12-31",
+            "conditions": [{"fact": "residencia_fiscal", "operator": "eq", "value": "ES"}],
+            "required_facts": ["residencia_fiscal"],
+            "generated_obligation": {
+                "obligation_id": "obl_mem",
+                "title": "t",
+                "description": "d",
+                "status": "candidate",
+            },
+            "base_confidence": 0.5,
+            "risk_level": "low",
+        }
+    )
+    engine = RulesEngine(RuleSet(rules=[rule]))
+    version = engine._rule_version(rule)
+    assert engine._version_cache[rule.id] == version
+    assert engine._rule_version(rule) == version  # second call hits the cache

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
+from functools import lru_cache
 import hashlib
 import json
 from typing import Any
@@ -55,6 +56,12 @@ class RulesEngineResult(BaseModel):
 @dataclass(frozen=True)
 class RulesEngine:
     ruleset: RuleSet
+    # Memoizes per-rule SHA-256 versions (keyed by the unique rule id). Rules are
+    # immutable for the engine's lifetime, so the digest only needs computing
+    # once; recomputing the full `model_dump` hash on every `evaluate()` was pure
+    # waste. `init=False`/`compare=False` keep equality and construction by
+    # `ruleset` alone; mutating the dict is allowed even on a frozen dataclass.
+    _version_cache: dict[str, str] = field(default_factory=dict, init=False, compare=False, repr=False)
 
     @classmethod
     def from_rules_directory(cls, directory: str = "rules") -> RulesEngine:
@@ -204,9 +211,14 @@ class RulesEngine:
         return list(by_id.values()), traces
 
     def _rule_version(self, rule: DecisionRule) -> str:
+        cached = self._version_cache.get(rule.id)
+        if cached is not None:
+            return cached
         payload = rule.model_dump(mode="json")
         encoded = json.dumps(payload, sort_keys=True, ensure_ascii=False)
-        return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+        version = hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+        self._version_cache[rule.id] = version
+        return version
 
     def _ruleset_version(self, rules: list[DecisionRule]) -> str:
         if not rules:
@@ -215,8 +227,25 @@ class RulesEngine:
         return hashlib.sha256("|".join(versions).encode("utf-8")).hexdigest()
 
 
+@lru_cache(maxsize=8)
+def _engine_for_directory(rules_directory: str) -> RulesEngine:
+    """Build (and reuse) the engine for a rules directory.
+
+    Loading a directory globs, reads and Pydantic-validates every rule file.
+    That is static for the process lifetime, so — mirroring the cached case
+    store and QA chain — the first turn pays the cost and the rest reuse the
+    warm engine instead of re-parsing the rules on every request.
+    """
+    return RulesEngine.from_rules_directory(rules_directory)
+
+
+def clear_rules_cache() -> None:
+    """Drop the cached engine(s); call after editing rule files in-process."""
+    _engine_for_directory.cache_clear()
+
+
 def evaluate_rules(
     case_state: CaseState, recent_facts: list[Fact], rules_directory: str = "rules"
 ) -> RulesEngineResult:
-    engine = RulesEngine.from_rules_directory(rules_directory)
+    engine = _engine_for_directory(rules_directory)
     return engine.evaluate(case_state=case_state, recent_facts=recent_facts)
