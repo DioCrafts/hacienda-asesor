@@ -24,22 +24,46 @@ class SQLiteCaseStateStore(CaseStateStore):
     def __init__(self, db_path: str) -> None:
         self.db_path = str(Path(db_path))
         self._lock = RLock()
+        self._conn: sqlite3.Connection | None = None
         self._initialize()
+
+    def _get_conn(self) -> sqlite3.Connection:
+        """Return the reusable connection, opening it once on first use.
+
+        Callers must hold ``self._lock``. The connection is shared across
+        operations (``check_same_thread=False`` plus the lock serialize all
+        access), so the WAL / foreign-keys PRAGMAs are applied a single time
+        instead of on every query.
+        """
+        if self._conn is None:
+            Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
+            conn = sqlite3.connect(self.db_path, timeout=30.0, check_same_thread=False)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA foreign_keys=ON;")
+            self._conn = conn
+        return self._conn
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
-        conn = sqlite3.connect(self.db_path, timeout=30.0, check_same_thread=False)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL;")
-        conn.execute("PRAGMA foreign_keys=ON;")
+        conn = self._get_conn()
         try:
             yield conn
             conn.commit()
-        finally:
-            conn.close()
+        except Exception:
+            # Roll back so a failed statement never leaves the reused
+            # connection stuck mid-transaction for the next caller.
+            conn.rollback()
+            raise
+
+    def close(self) -> None:
+        """Close the underlying connection (idempotent)."""
+        with self._lock:
+            if self._conn is not None:
+                self._conn.close()
+                self._conn = None
 
     def _initialize(self) -> None:
-        Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS case_states (
