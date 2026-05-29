@@ -22,7 +22,7 @@ def test_smoke_pipeline_crawler_to_index_to_question(monkeypatch) -> None:
             "extra_kwargs": extra_kwargs or {},
         }
 
-    def fake_process_with_gpt4all(args):
+    def fake_build_index(args):
         calls["processor"] = args
 
     class DummyChain:
@@ -31,7 +31,7 @@ def test_smoke_pipeline_crawler_to_index_to_question(monkeypatch) -> None:
             return {"answer": "Calendario del contribuyente: https://sede.agenciatributaria.gob.es"}
 
     monkeypatch.setattr(crawler_cli, "start_crawler", fake_start_crawler)
-    monkeypatch.setattr(processor_cli, "process_with_gpt4all", fake_process_with_gpt4all)
+    monkeypatch.setattr(processor_cli, "build_index", fake_build_index)
     monkeypatch.setattr(chain, "create_openai_chain", lambda openai_api_key: DummyChain())
 
     runner = CliRunner()
@@ -54,8 +54,6 @@ def test_smoke_pipeline_crawler_to_index_to_question(monkeypatch) -> None:
             "500",
             "--chunk-overlap",
             "50",
-            "--embedder",
-            "gpt4all",
             "--overwrite-output",
         ],
     )

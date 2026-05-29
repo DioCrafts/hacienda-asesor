@@ -52,8 +52,7 @@ export OPENAI_MODEL="gpt-4o-mini"
 export OPENAI_TEMPERATURE="0"
 export TOP_K="3"
 
-# Embedder (mismo para indexar y consultar; ver sección "Embeddings"):
-export EMBEDDER="qwen3"                  # qwen3 (local, por defecto) | openai | gpt4all
+# Embedder local (mismo para indexar y consultar; ver sección "Embeddings"):
 export EMBEDDING_MODEL="Qwen/Qwen3-Embedding-8B"
 export EMBEDDING_DEVICE="cuda"           # cuda | cpu | mps
 export EMBEDDING_NORMALIZE="true"
@@ -68,23 +67,22 @@ export DECISION_STATE_DB_PATH="./data/decision_state.sqlite3"
 
 ### Embeddings
 
-El embedder se configura en un **único sitio** (`EMBEDDER` en
-`hacienda_gpt/settings.py`, consumido por `hacienda_gpt/llm/embeddings.py`).
-Tanto la indexación como la consulta lo usan, así que **no hay riesgo de
-mismatch** entre el índice y el retrieval.
+El proyecto usa **un único embedder local**: `Qwen/Qwen3-Embedding-8B`
+(multilingüe, nº1 en MMTEB, 100+ idiomas con español incluido, sin coste por
+llamada). Se construye en `hacienda_gpt/llm/embeddings.py` y lo comparten la
+indexación y la consulta, así que **no hay riesgo de mismatch** entre el índice
+y el retrieval.
 
-- **`qwen3`** (por defecto): `Qwen/Qwen3-Embedding-8B`, local y multilingüe
-  (nº1 en MMTEB, 100+ idiomas, español incluido), sin coste por llamada.
-  Vectores de 4096 dims (truncables con `EMBEDDING_DIM` vía MRL). Recomienda
-  GPU con ≥16 GB de VRAM; en CPU es lento.
-- **`openai`**: `OpenAIEmbeddings` (requiere `OPENAI_API_KEY`).
-- **`gpt4all`**: `all-MiniLM` local; muy ligero pero de baja calidad en español.
+- Genera vectores de 4096 dims, truncables con `EMBEDDING_DIM` (MRL).
+- Recomienda GPU con ≥16 GB de VRAM; en CPU es lento.
+- Puedes apuntar a otro modelo *sentence-transformers* con `EMBEDDING_MODEL`
+  (p.ej. `intfloat/multilingual-e5-large`).
 
 > El LLM de chat sigue siendo OpenAI (`OPENAI_API_KEY`); solo los *embeddings*
-> son locales por defecto.
+> son locales.
 >
-> ⚠️ Si cambias de embedder **reconstruye el índice FAISS** (los espacios
-> vectoriales no son intercambiables). Los umbrales de similitud en
+> ⚠️ Si cambias de modelo de embedding **reconstruye el índice FAISS** (los
+> espacios vectoriales no son intercambiables). Los umbrales de similitud en
 > `retrieval_profiles.py` (0.82 / 0.75) se calibraron para OpenAI; con Qwen3
 > (coseno normalizado) puede que necesites reajustarlos.
 
@@ -93,7 +91,7 @@ mismatch** entre el índice y el retrieval.
 > `OMP: Error #15: Initializing libomp.dylib, but found libomp.dylib
 > already initialized`, exporta `KMP_DUPLICATE_LIB_OK=TRUE` antes de
 > lanzar el servicio. La causa es que `faiss-cpu` y las dependencias de
-> `gpt4all`/`unstructured` enlazan dos copias de libomp en el mismo
+> `sentence-transformers`/`unstructured` enlazan dos copias de libomp en el mismo
 > proceso.
 
 ---
@@ -218,25 +216,13 @@ poetry run python -m hacienda_gpt.cli.crawler --crawler pdf --folder ./data/pdf 
 
 ## 🧩 2) Construcción del índice FAISS
 
-> ℹ️ El índice y la consulta comparten embedder a través de la variable
-> `EMBEDDER` (ver sección **Embeddings**), así que basta con indexar con el
-> mismo `--embedder` que usará el runtime. El valor por defecto es `qwen3`.
-
-Con el embedder local por defecto (Qwen3-Embedding, multilingüe):
+> ℹ️ El índice y la consulta comparten el mismo embedder local (Qwen3-Embedding,
+> ver sección **Embeddings**), así que no hay nada que elegir. Reconstruye el
+> índice solo si cambias `EMBEDDING_MODEL`.
 
 ```bash
-poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --embedder qwen3 --overwrite-output
+poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --overwrite-output
 ```
-
-Con embeddings de OpenAI (si prefieres no ejecutar el modelo local):
-
-```bash
-poetry run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --embedder openai --overwrite-output
-```
-
-> El flag `--embedder` por defecto toma el valor de `EMBEDDER`. Asegúrate de
-> que coincide entre indexación y runtime, o reconstruye el índice tras
-> cambiarlo.
 
 ---
 

@@ -3,13 +3,8 @@ import os
 
 import click
 
-from hacienda_gpt.processor.document_loader import (
-    process_with_gpt4all,
-    process_with_openai,
-    process_with_qwen3,
-)
-from hacienda_gpt.settings import EMBEDDER
-from hacienda_gpt.utils import MissingOpenAIAPIKeyError, configure_logging
+from hacienda_gpt.processor.document_loader import build_index
+from hacienda_gpt.utils import configure_logging
 
 PRJ_DATA_DIR = os.environ.get("PRJ_DATA_DIR", os.path.expanduser("~"))
 FAISS_DIR = os.path.join(PRJ_DATA_DIR, "faiss")
@@ -22,8 +17,7 @@ CONTENT_DIR = os.path.join(PRJ_DATA_DIR, "html")
 @click.option("--chunk-size", type=click.IntRange(min=0), default=1500)
 @click.option("--chunk-overlap", type=click.IntRange(min=0), default=0)
 @click.option("--overwrite-output", is_flag=True)
-@click.option("--embedder", type=click.Choice(["qwen3", "openai", "gpt4all"], case_sensitive=False), default=EMBEDDER)
-def cli(content_dir, output_dir, chunk_size, chunk_overlap, overwrite_output, embedder):
+def cli(content_dir, output_dir, chunk_size, chunk_overlap, overwrite_output):
     configure_logging()
 
     if not overwrite_output and os.path.exists(output_dir) and os.listdir(output_dir):
@@ -37,15 +31,7 @@ def cli(content_dir, output_dir, chunk_size, chunk_overlap, overwrite_output, em
         "chunk_overlap": chunk_overlap,
     }
 
-    dispatch = {
-        "qwen3": process_with_qwen3,
-        "openai": process_with_openai,
-        "gpt4all": process_with_gpt4all,
-    }
-    try:
-        dispatch[embedder.lower()](args)
-    except MissingOpenAIAPIKeyError as error:
-        raise click.ClickException(str(error)) from error
+    build_index(args)
 
     logging.info("Local FAISS index has been successfully saved")
 

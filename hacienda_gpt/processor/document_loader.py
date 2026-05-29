@@ -277,24 +277,12 @@ class DocumentProcessor:
         logging.info("Local FAISS index successfully saved")
 
 
-def _process(args: dict, embedder: str) -> None:
+def build_index(args: dict) -> None:
+    """Build and persist the FAISS index using the configured local embedder."""
     # Lazy import keeps the processor module (and its CLI) light, and routes
-    # every backend through the single embedder factory so the index always
-    # matches the query path.
+    # through the shared embedder factory so the index always matches the
+    # query path.
     from hacienda_gpt.llm.embeddings import create_embeddings
 
-    processor = DocumentProcessor(create_embeddings(embedder), **args)
+    processor = DocumentProcessor(create_embeddings(), **args)
     processor.process_documents()
-
-
-def process_with_qwen3(args: dict) -> None:
-    """Index using the local multilingual Qwen3-Embedding model (default)."""
-    _process(args, "qwen3")
-
-
-def process_with_openai(args: dict) -> None:
-    _process(args, "openai")
-
-
-def process_with_gpt4all(args: dict) -> None:
-    _process(args, "gpt4all")

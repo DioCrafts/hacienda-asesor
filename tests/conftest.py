@@ -126,7 +126,6 @@ def pytest_sessionstart(session):
 
     lo = _ensure_module("langchain_openai")
     lo.ChatOpenAI = object
-    lo.OpenAIEmbeddings = object
 
     try:
         import streamlit as st  # noqa: F401  # use real streamlit when installed (provides session_state, etc.)
@@ -195,9 +194,6 @@ def pytest_sessionstart(session):
         def load(self):
             return []
     loaders.DirectoryLoader = DirectoryLoader
-
-    emb = _ensure_module("langchain_community.embeddings")
-    emb.GPT4AllEmbeddings = object
 
     hf = _ensure_module("langchain_huggingface")
     hf.HuggingFaceEmbeddings = object

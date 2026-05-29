@@ -12,11 +12,10 @@ OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 OPENAI_TEMPERATURE = float(os.environ.get("OPENAI_TEMPERATURE", "0"))
 
 # --- Embeddings -------------------------------------------------------------
-# Single source of truth for the embedder. Indexing (the processor) and
-# querying (chain / benchmark) MUST use the same embedder or the FAISS vector
-# space won't match. The factory in hacienda_gpt.llm.embeddings reads these.
-# Default: the local, multilingual Qwen3-Embedding-8B (no per-call API cost).
-EMBEDDER = os.environ.get("EMBEDDER", "qwen3")  # qwen3 | openai | gpt4all
+# The app uses a single local, multilingual embedder (Qwen3-Embedding by
+# default), built in hacienda_gpt.llm.embeddings and shared by indexing and
+# querying so the FAISS vector space always matches. Override the model via
+# EMBEDDING_MODEL (any sentence-transformers-compatible repo id).
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "Qwen/Qwen3-Embedding-8B")
 EMBEDDING_DEVICE = os.environ.get("EMBEDDING_DEVICE", "cuda")  # cuda | cpu | mps
 EMBEDDING_NORMALIZE = _env_bool("EMBEDDING_NORMALIZE", default=True)

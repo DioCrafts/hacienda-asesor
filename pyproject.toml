@@ -25,14 +25,13 @@ python-dotenv = "1.2.2"
 huggingface-hub = "1.15.0"
 streamlit-extras = "1.6.0"
 tqdm = "4.67.3"
-unstructured = {version = "0.22.29", extras = ["all-docs"]}
+unstructured = "0.22.29"  # base parses HTML; the indexer ingests only HTML
 pdfminer-six = "20260107"
 click = "8.4.0"
 scrapy = "2.15.2"
 scrapy-fake-useragent = "1.4.4"
 pathvalidate = "3.3.1"
 scrapy-playwright = "0.0.46"
-gpt4all = "2.8.2"
 # Local multilingual embeddings (default embedder: Qwen/Qwen3-Embedding-8B).
 # Qwen3-Embedding requires transformers >= 4.51; sentence-transformers caps it < 6.
 sentence-transformers = "5.5.1"
