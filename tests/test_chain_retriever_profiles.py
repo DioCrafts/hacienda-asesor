@@ -18,18 +18,14 @@ def test_create_retriever_applies_profile_filter_and_threshold(monkeypatch) -> N
     monkeypatch.setattr(chain, "EmbeddingsFilter", MagicMock(return_value=emb_filter))
     monkeypatch.setattr(chain, "ContextualCompressionRetriever", MagicMock(return_value=MagicMock(spec=BaseRetriever)))
 
-    chain._create_retriever(
-        MagicMock(), MagicMock(), profile_name="decision", fiscal_year=2025, metadata_filter={"scope": "nacional"}
-    )
+    chain._create_retriever(MagicMock(), MagicMock(), profile_name="decision", metadata_filter={"scope": "nacional"})
 
     fake_faiss.as_retriever.assert_called_once()
     kwargs = fake_faiss.as_retriever.call_args.kwargs["search_kwargs"]
     flt = kwargs["filter"]
-    # The filter is now a best-effort predicate: exact matches pass, a missing
-    # field is kept (so evergreen norms survive a year filter), and an explicit
-    # mismatch is rejected.
+    # Best-effort predicate: an exact match passes, an absent field is kept (so
+    # documents lacking the key survive the filter), an explicit mismatch fails.
     assert callable(flt)
-    assert flt({"fiscal_year": 2025, "scope": "nacional"}) is True
     assert flt({"scope": "nacional"}) is True
-    assert flt({"fiscal_year": 2024, "scope": "nacional"}) is False
-    assert flt({"fiscal_year": 2025, "scope": "regional"}) is False
+    assert flt({"document_type": "manual"}) is True
+    assert flt({"scope": "regional"}) is False

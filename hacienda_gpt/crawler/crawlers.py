@@ -121,33 +121,57 @@ class AgenciaTributariaPDFCrawler(scrapy.Spider):
         self.folder = os.path.join(base_folder, snapshot_date)
         self.seen_urls: set[str] = set()
         self.seen_content_hashes: set[str] = set()
+        os.makedirs(self.folder, exist_ok=True)
 
-    def parse(self, response: Response) -> Generator[dict[str, list[str] | str] | scrapy.Request]:
+    def parse(self, response: Response) -> Generator[scrapy.Request]:
         self.seen_urls.add(response.url)
         extractor = LinkExtractor(allow_domains=[self._extract_domain_from_start_url()], unique=True)
         for link in extractor.extract_links(response):
             if link.url in self.seen_urls:
                 continue
-            if self._is_pdf_url(link.url):
-                yield scrapy.Request(link.url, callback=self.parse_pdf)
-            else:
-                self.seen_urls.add(link.url)
-                yield scrapy.Request(link.url, callback=self.parse)
+            self.seen_urls.add(link.url)
+            callback = self.parse_pdf if self._is_pdf_url(link.url) else self.parse
+            yield scrapy.Request(link.url, callback=callback)
 
-    def parse_pdf(self, response: Response) -> Generator[dict[str, list[str] | str]]:
+    def parse_pdf(self, response: Response) -> None:
+        # Persist the bytes Scrapy already fetched. We deliberately do NOT use
+        # Scrapy's FilesPipeline: every HTTPS request in this project is forced
+        # through scrapy-playwright (the stock TLS downloader is broken on the
+        # pinned stack), so a FilesPipeline-issued request would re-render the
+        # PDF in Chromium instead of returning raw bytes. Writing response.body
+        # here mirrors how AgenciaTributariaWebCrawler saves HTML.
         if not self._is_pdf_response(response):
             return
-        content_hash = hashlib.sha256(response.body).hexdigest()
+        body = response.body
+        if not body or not body.startswith(b"%PDF"):
+            self.logger.warning(
+                "Skipping %s: response body is not a PDF (%d bytes); playwright may have rendered it.",
+                response.url,
+                len(body or b""),
+            )
+            return
+        content_hash = hashlib.sha256(body).hexdigest()
         if content_hash in self.seen_content_hashes:
             return
         self.seen_content_hashes.add(content_hash)
-        yield {"file_urls": [response.url], "path": self.folder}
+        path = self._generate_pdf_path(response.url)
+        with open(path, "wb") as file_pointer:
+            file_pointer.write(body)
+        self.logger.info("Saved PDF %s -> %s", response.url, path)
+
+    def _generate_pdf_path(self, url: str) -> str:
+        # basename strips any directory component, so path traversal via the URL
+        # is impossible; sanitize_filepath then removes illegal filename chars.
+        name = sanitize_filepath(os.path.basename(urlparse(url).path))
+        if not name.lower().endswith(".pdf"):
+            name = f"{hashlib.md5(url.encode()).hexdigest()}.pdf"
+        return os.path.join(self.folder, name)
 
     def _is_pdf_url(self, url: str) -> bool:
         return url.lower().endswith(".pdf")
 
     def _is_pdf_response(self, response: Response) -> bool:
-        content_type = response.headers.get("Content-Type", b"").decode("utf-8", errors="ignore").lower()
+        content_type = (response.headers.get("Content-Type") or b"").decode("utf-8", errors="ignore").lower()
         return "application/pdf" in content_type or self._is_pdf_url(response.url)
 
     def _extract_domain_from_start_url(self) -> str:

@@ -79,12 +79,10 @@ def _sanitize_context_documents(docs):
 def _build_metadata_filter(metadata_filter: dict) -> Callable[[dict], bool]:
     """Build a best-effort metadata predicate for FAISS retrieval.
 
-    FAISS' native dict filter rejects any document that lacks the key, which
-    would silently drop evergreen normative documents (a 2006 law carries no
-    single ``fiscal_year``) the moment a caller filters by year. This predicate
-    keeps a document when the field is absent and only rejects it on an explicit
-    mismatch, matching the "best-effort" intent documented in
-    ``retrieval_profiles``.
+    FAISS' native dict filter rejects any document that lacks the key. This
+    predicate instead keeps a document when the filtered field is absent and
+    only rejects it on an explicit mismatch, so a caller can narrow by a
+    metadata field without silently dropping chunks that don't carry it.
     """
 
     def _matches(metadata: dict) -> bool:
@@ -104,7 +102,6 @@ def _create_retriever(
     llm: ChatOpenAI,
     *,
     profile_name: str = "decision",
-    fiscal_year: int | None = None,
     metadata_filter: dict | None = None,
 ) -> BaseRetriever:
     """Load and return a compressed FAISS retriever."""
@@ -115,9 +112,9 @@ def _create_retriever(
         )
 
     profile = (
-        build_decision_profile(fiscal_year=fiscal_year, metadata_filter=metadata_filter)
+        build_decision_profile(metadata_filter=metadata_filter)
         if profile_name == "decision"
-        else build_explain_profile(fiscal_year=fiscal_year, metadata_filter=metadata_filter)
+        else build_explain_profile(metadata_filter=metadata_filter)
     )
 
     faiss = FAISS.load_local(FAISS_INDEX_PATH, embeddings, allow_dangerous_deserialization=True)

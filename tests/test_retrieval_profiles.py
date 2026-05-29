@@ -2,18 +2,18 @@ from hacienda_gpt.llm.retrieval_profiles import build_decision_profile, build_ex
 import hacienda_gpt.settings as settings
 
 
-def test_decision_profile_defaults_and_filters() -> None:
-    profile = build_decision_profile(fiscal_year=2025, metadata_filter={"scope": "nacional"})
+def test_decision_profile_defaults_and_filter() -> None:
+    profile = build_decision_profile(metadata_filter={"scope": "nacional"})
     assert profile.name == "decision_retriever"
     assert profile.similarity_threshold == settings.RETRIEVAL_DECISION_THRESHOLD
-    assert profile.metadata_filter["fiscal_year"] == 2025
-    assert profile.metadata_filter["scope"] == "nacional"
+    assert profile.metadata_filter == {"scope": "nacional"}
 
 
-def test_explain_profile_defaults_and_filters() -> None:
-    profile = build_explain_profile(fiscal_year=2025)
+def test_explain_profile_defaults_to_no_filter() -> None:
+    profile = build_explain_profile()
     assert profile.name == "explain_retriever"
     assert profile.similarity_threshold == settings.RETRIEVAL_EXPLAIN_THRESHOLD
+    assert profile.metadata_filter is None
 
 
 def test_decision_profile_is_stricter_than_explain() -> None:

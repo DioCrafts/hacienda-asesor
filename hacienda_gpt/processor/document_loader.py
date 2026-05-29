@@ -1,305 +1,171 @@
-import functools
+"""Document ingestion and chunking — Docling-only pipeline.
+
+Docling is the single ingestion backend. It parses PDF and HTML with
+layout-, reading-order- and table-aware models, and its tokenization-aware
+``HybridChunker`` splits each document along its own structure (title →
+section → element) while respecting the embedder's token budget. The chunker
+keeps tables intact (``repeat_table_header``) instead of flattening them into
+a stream of numbers.
+
+This module deliberately carries **no fiscal-domain metadata inference**: the
+chunk metadata exposed downstream comes straight from Docling itself (heading
+hierarchy, originating filename, page number). Those are exactly the fields the
+grounding gate needs to decide whether a chunk is citable.
+
+Heavy imports (``docling`` / ``langchain_docling`` / FAISS) are deferred so
+that importing this module never drags in the ML stack — unit tests stub the
+loader seam instead.
+"""
+
+from __future__ import annotations
+
 import logging
 from pathlib import Path
-import re
 from typing import Any
 
-from langchain_community.document_loaders import DirectoryLoader
-from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_text_splitters import HTMLHeaderTextSplitter, RecursiveCharacterTextSplitter
 
-HEADER_SPLITTER = HTMLHeaderTextSplitter(headers_to_split_on=[("h1", "section"), ("h2", "section"), ("h3", "section")])
-
-# --- Title extraction helpers ---------------------------------------------- #
-# The vanilla "first non-empty body line" heuristic loses badly on BOE and
-# DYCTEA snapshots: BOE pages start with "Agencia Estatal Boletín Oficial del
-# Estado", DYCTEA pages start with the literal string "DYCTEA". Both leak
-# through to the grounding gate as the chunk title and make the model hedge
-# even when retrieval is good. The helpers below read the raw HTML once per
-# source file (LRU-cached) and apply per-domain rules.
-
-_BOE_ID_PREFIX_RE = re.compile(r"^BOE-[A-Z]-\d+-\d+\s+(.+)$")
-_TITLE_TAG_RE = re.compile(r"<title[^>]*>(.+?)</title>", re.IGNORECASE | re.DOTALL)
-_TEAC_ASUNTO_RE = re.compile(
-    r"Asunto\s*:\s*(?P<asunto>.+?)\s*(?:Referencias\s+normativas|Conceptos\s*:|Texto\s+de\s+la\s+resoluci|Volver\b)",
-    re.IGNORECASE | re.DOTALL,
-)
-_TEAC_CRITERIO_RE = re.compile(r"de la resoluci[oó]n\s*:\s*([^\s<]+)", re.IGNORECASE)
-_WHITESPACE_RE = re.compile(r"\s+")
-# Year tagging is deliberately conservative: a fiscal year is only attached
-# when a year sits next to an explicit fiscal-context word ("ejercicio 2024",
-# "renta 2024", "campaña 2023"…). Evergreen norms (e.g. "Ley 35/2006") must
-# stay untagged so the best-effort retrieval filter keeps returning them for
-# every year. ``\D{0,15}`` lets the word and the year be a few tokens apart
-# without swallowing another number in between.
-_FISCAL_YEAR_RE = re.compile(
-    r"(?:ejercicio|campa(?:ñ|n)a|per[ií]odo impositivo|renta|irpf|impuesto sobre la renta)" r"\D{0,15}((?:19|20)\d{2})",
-    re.IGNORECASE,
-)
+# File types Docling ingests for this corpus. PDF unlocks the BOE consolidated
+# texts and AEAT manuals/folletos that the legacy HTML-only indexer ignored.
+SUPPORTED_SUFFIXES: tuple[str, ...] = (".pdf", ".html", ".htm")
 
 
-def _normalize_whitespace(value: str) -> str:
-    return _WHITESPACE_RE.sub(" ", value).strip()
+def _clean_text(value: Any) -> str | None:
+    return value.strip() if isinstance(value, str) and value.strip() else None
 
 
-def _decode_basic_entities(value: str) -> str:
-    # The few HTML entities we routinely see in BOE/DYCTEA titles.
-    return (
-        value.replace("&amp;", "&")
-        .replace("&quot;", '"')
-        .replace("&#34;", '"')
-        .replace("&aacute;", "á")
-        .replace("&eacute;", "é")
-        .replace("&iacute;", "í")
-        .replace("&oacute;", "ó")
-        .replace("&uacute;", "ú")
-        .replace("&ntilde;", "ñ")
-        .replace("&Ntilde;", "Ñ")
-    )
+def _as_dl_meta(raw: Any) -> dict[str, Any]:
+    """Coerce langchain-docling's ``dl_meta`` into a plain dict.
+
+    langchain-docling stores it as a JSON-serializable dict, but be defensive
+    about pydantic-model variants across versions.
+    """
+    if isinstance(raw, dict):
+        return raw
+    for attr in ("model_dump", "export_json_dict"):
+        method = getattr(raw, attr, None)
+        if callable(method):
+            try:
+                dumped = method()
+            except Exception:  # noqa: BLE001 - best-effort metadata read
+                return {}
+            return dumped if isinstance(dumped, dict) else {}
+    return {}
 
 
-def _classify_source(source_path: str) -> str:
-    lower = source_path.lower()
-    if "/boe-" in lower or "boe.es/" in lower:
-        return "boe"
-    if "/teac/" in lower or "/dyctea/" in lower:
-        return "teac"
-    return "default"
-
-
-@functools.lru_cache(maxsize=4096)
-def _read_source_html(source_path: str) -> str | None:
-    """Read a source HTML file from disk; cached so chunks share the IO cost."""
-    try:
-        path = Path(source_path)
-    except (TypeError, ValueError):
+def _headings_title(dl_meta: dict[str, Any]) -> str | None:
+    headings = dl_meta.get("headings")
+    if not isinstance(headings, list):
         return None
-    if not path.is_file() or path.suffix.lower() not in {".html", ".htm"}:
-        return None
-    try:
-        return path.read_text(encoding="utf-8", errors="replace")
-    except OSError:
-        return None
+    cleaned = [h.strip() for h in headings if isinstance(h, str) and h.strip()]
+    # Join the heading hierarchy (e.g. "Título III — Artículo 96") so the
+    # citation title is descriptive rather than just the deepest heading.
+    return " — ".join(cleaned) if cleaned else None
 
 
-def _title_from_boe(html: str) -> str | None:
-    match = _TITLE_TAG_RE.search(html)
-    if not match:
-        return None
-    raw = _normalize_whitespace(_decode_basic_entities(match.group(1)))
-    stripped = _BOE_ID_PREFIX_RE.match(raw)
-    if stripped:
-        return stripped.group(1).strip()
-    return raw or None
-
-
-def _title_from_teac(html: str) -> str | None:
-    asunto = _TEAC_ASUNTO_RE.search(html)
-    if asunto:
-        cleaned = _normalize_whitespace(_decode_basic_entities(asunto.group("asunto")))
-        if cleaned:
-            return f"TEAC — {cleaned}"
-    criterio = _TEAC_CRITERIO_RE.search(html)
-    if criterio:
-        return f"TEAC criterio {criterio.group(1).strip()}"
+def _origin_filename(dl_meta: dict[str, Any]) -> str | None:
+    origin = dl_meta.get("origin")
+    if isinstance(origin, dict):
+        return _clean_text(origin.get("filename"))
     return None
 
 
-def _title_from_source(source_path: str) -> str | None:
-    html = _read_source_html(source_path)
-    if html is None:
-        return None
-    kind = _classify_source(source_path)
-    if kind == "boe":
-        return _title_from_boe(html)
-    if kind == "teac":
-        return _title_from_teac(html)
-    # Generic fallback: <title> tag if present and informative.
-    match = _TITLE_TAG_RE.search(html)
-    if not match:
-        return None
-    raw = _normalize_whitespace(_decode_basic_entities(match.group(1)))
-    return raw or None
+def _first_page_no(dl_meta: dict[str, Any]) -> int | None:
+    for item in dl_meta.get("doc_items") or []:
+        if not isinstance(item, dict):
+            continue
+        for prov in item.get("prov") or []:
+            page = prov.get("page_no") if isinstance(prov, dict) else None
+            if isinstance(page, int):
+                return page
+    return None
+
+
+def docling_chunk_metadata(doc: Document) -> dict[str, Any]:
+    """Flatten Docling's native chunk metadata into the citation-facing keys.
+
+    Surfaces only what Docling produced — heading hierarchy (``title`` /
+    ``section``), the source locator (``source_url``) and the originating page
+    (``page_no``). The grounding gate marks a chunk citable when it carries a
+    ``title`` and a locator, so those are guaranteed non-empty.
+    """
+    metadata = dict(doc.metadata or {})
+    dl_meta = _as_dl_meta(metadata.get("dl_meta"))
+
+    source = _clean_text(metadata.get("source")) or _origin_filename(dl_meta)
+    heading = _headings_title(dl_meta)
+    title = heading or _origin_filename(dl_meta) or source or "sin_titulo"
+
+    metadata["source_url"] = source or ""
+    metadata["title"] = title
+    metadata["section"] = heading or "general"
+    page_no = _first_page_no(dl_meta)
+    if page_no is not None:
+        metadata["page_no"] = page_no
+    return metadata
 
 
 class DocumentProcessor:
+    """Build a FAISS index from a content directory using Docling."""
+
     def __init__(
         self,
         embeddings: Embeddings,
         content_dir: str,
         output_dir: str,
-        chunk_size: int = 1000,
-        chunk_overlap: int = 0,
-        glob: str = "**/*.html",
+        *,
+        max_tokens: int | None = None,
     ) -> None:
         self.embeddings = embeddings
         self.content_dir = content_dir
         self.output_dir = output_dir
-        self.chunk_size = chunk_size
-        self.chunk_overlap = chunk_overlap
-        self.glob = glob
+        self.max_tokens = max_tokens
 
-    def _create_text_splitter(self) -> RecursiveCharacterTextSplitter:
-        return RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
+    def discover_files(self) -> list[str]:
+        root = Path(self.content_dir)
+        if not root.exists():
+            return []
+        return [str(path) for path in sorted(root.rglob("*")) if path.suffix.lower() in SUPPORTED_SUFFIXES]
 
-    def _create_loader(self) -> DirectoryLoader:
-        return DirectoryLoader(path=self.content_dir, glob=self.glob, use_multithreading=True, show_progress=True)
+    def _build_loader(self, files: list[str]) -> Any:
+        """Construct the DoclingLoader. Isolated so tests can stub the seam."""
+        from docling.chunking import HybridChunker
+        from langchain_docling.loader import DoclingLoader, ExportType
 
-    def _parse_document_type(self, source_url: str) -> str:
-        url = source_url.lower()
-        if "faq" in url or "preguntas-frecuentes" in url:
-            return "faq"
-        if "manual" in url or "folletos" in url:
-            return "manual"
-        if "modelo" in url or "normativa" in url or "ley" in url:
-            return "normativa"
-        return "tramite"
+        from hacienda_gpt import settings
 
-    def _extract_last_updated(self, text: str) -> str | None:
-        match = re.search(r"(\d{2}/\d{2}/\d{4})", text)
-        return match.group(1) if match else None
+        chunker_kwargs: dict[str, Any] = {"tokenizer": settings.EMBEDDING_MODEL}
+        if self.max_tokens:
+            chunker_kwargs["max_tokens"] = self.max_tokens
+        return DoclingLoader(
+            file_path=files,
+            export_type=ExportType.DOC_CHUNKS,
+            chunker=HybridChunker(**chunker_kwargs),
+        )
 
-    def _extract_title(self, text: str, source_path: str = "") -> str:
-        if source_path:
-            from_source = _title_from_source(source_path)
-            if from_source:
-                return from_source[:180]
-        lines = [line.strip() for line in text.splitlines() if line.strip()]
-        return lines[0][:180] if lines else "sin_titulo"
-
-    def _detect_normative_document_type(self, text: str, source_url: str) -> str | None:
-        corpus = f"{text}\n{source_url}".lower()
-        if "real decreto" in corpus:
-            return "real_decreto"
-        if re.search(r"\bley\s+\d+/\d{4}\b", corpus) or "ley " in corpus:
-            return "ley"
-        if "orden " in corpus:
-            return "orden"
-        if "resolución" in corpus or "resolucion" in corpus:
-            return "resolucion"
-        if "instrucción" in corpus or "instruccion" in corpus:
-            return "instruccion"
-        if "reglamento" in corpus:
-            return "reglamento"
-        return None
-
-    def _detect_fiscal_year(self, text: str, source_url: str) -> int | None:
-        """Best-effort fiscal year for year-specific documents.
-
-        Returns ``None`` for evergreen content so the retrieval filter (which
-        keeps documents lacking the field) never drops a still-applicable norm.
-        Only years next to a fiscal-context word are accepted; bare numbers
-        such as the "2006" in "Ley 35/2006" are ignored.
-        """
-        corpus = f"{text}\n{source_url}"
-        best: int | None = None
-        for match in _FISCAL_YEAR_RE.finditer(corpus):
-            year = int(match.group(1))
-            if 1990 <= year <= 2099 and (best is None or year > best):
-                best = year
-        return best
-
-    def _detect_effective_date(self, text: str) -> str | None:
-        patterns = [
-            r"vigencia\s*:?\s*(\d{2}/\d{2}/\d{4})",
-            r"en\s+vigor\s*(?:desde)?\s*(\d{2}/\d{2}/\d{4})",
-            r"efectos\s+desde\s*(\d{2}/\d{2}/\d{4})",
+    def load_chunks(self) -> list[Document]:
+        files = self.discover_files()
+        if not files:
+            logging.warning("No %s files found under %s", SUPPORTED_SUFFIXES, self.content_dir)
+            return []
+        logging.info("Converting & chunking %d files with Docling", len(files))
+        raw_chunks = self._build_loader(files).load()
+        return [
+            Document(page_content=chunk.page_content, metadata=docling_chunk_metadata(chunk)) for chunk in raw_chunks
         ]
-        lowered = text.lower()
-        for pattern in patterns:
-            match = re.search(pattern, lowered)
-            if match:
-                return match.group(1)
-        return None
-
-    def _detect_scope(self, text: str, source_url: str) -> str:
-        corpus = f"{text}\n{source_url}".lower()
-        if "unión europea" in corpus or "union europea" in corpus or "ue" in corpus:
-            return "eu"
-        if "comunidad autónoma" in corpus or "comunidad autonoma" in corpus or "autonómico" in corpus:
-            return "regional"
-        if "españa" in corpus or "agencia tributaria" in corpus or "aeat" in corpus:
-            return "nacional"
-        return "unknown"
-
-    def _detect_source_hierarchy(self, text: str, source_url: str) -> str:
-        corpus = f"{text}\n{source_url}".lower()
-        if "constitución" in corpus or "constitucion" in corpus:
-            return "constitucion"
-        if "ley " in corpus:
-            return "ley"
-        if "real decreto" in corpus or "decreto" in corpus:
-            return "reglamento"
-        if "orden" in corpus or "resolución" in corpus or "resolucion" in corpus:
-            return "acto_administrativo"
-        return "guia_administrativa"
-
-    def _enrich_metadata(self, doc: Document, section: str | None = None) -> dict[str, Any]:
-        source_url = doc.metadata.get("source", "")
-        text = doc.page_content
-        return {
-            **doc.metadata,
-            "source_url": source_url,
-            "title": self._extract_title(text, source_url),
-            "section": section or doc.metadata.get("section") or "general",
-            "last_updated": self._extract_last_updated(text),
-            "document_type": self._parse_document_type(source_url),
-            "fiscal_year": self._detect_fiscal_year(text, source_url),
-            "normative_document_type": self._detect_normative_document_type(text, source_url),
-            "effective_date": self._detect_effective_date(text),
-            "scope": self._detect_scope(text, source_url),
-            "source_hierarchy": self._detect_source_hierarchy(text, source_url),
-        }
-
-    def _inject_legal_context(self, content: str, section: str | None) -> str:
-        if not section:
-            return content
-        return f"[LEGAL_SECTION_CONTEXT] {section}\n\n{content}"
-
-    def _semantic_split(self, doc: Document) -> list[Document]:
-        source = doc.metadata.get("source", "")
-        if source.lower().endswith(".html"):
-            try:
-                sem_chunks = HEADER_SPLITTER.split_text(doc.page_content)
-                chunks: list[Document] = []
-                for chunk in sem_chunks:
-                    section = chunk.metadata.get("section")
-                    content = self._inject_legal_context(chunk.page_content, section)
-                    meta = self._enrich_metadata(doc, section)
-                    meta["legal_context_header"] = section or "general"
-                    chunks.append(Document(page_content=content, metadata=meta))
-                if not chunks:
-                    raise ValueError("empty semantic chunks")
-                return chunks
-            except Exception:
-                logging.warning("Semantic HTML split failed for %s, falling back to recursive splitter", source)
-
-        recursive_chunks = self._create_text_splitter().split_documents([doc])
-        contextual_chunks: list[Document] = []
-        for chunk in recursive_chunks:
-            section = chunk.metadata.get("section") or doc.metadata.get("section") or "general"
-            content = self._inject_legal_context(chunk.page_content, section)
-            meta = self._enrich_metadata(chunk, section)
-            meta["legal_context_header"] = section
-            contextual_chunks.append(Document(page_content=content, metadata=meta))
-        return contextual_chunks
-
-    def _load_and_split(self) -> list[Document]:
-        loaded_docs = self._create_loader().load()
-        chunks: list[Document] = []
-        for doc in loaded_docs:
-            chunks.extend(self._semantic_split(doc))
-        return chunks
 
     def process_documents(self) -> None:
+        from langchain_community.vectorstores import FAISS
+
         logging.info("Loading documents from %s", self.content_dir)
-        documents = self._load_and_split()
-        logging.info("Loaded %d chunks for indexing", len(documents))
-        db = FAISS.from_documents(documents, self.embeddings)
+        chunks = self.load_chunks()
+        logging.info("Produced %d Docling chunks for indexing", len(chunks))
+        if not chunks:
+            raise RuntimeError(f"No indexable chunks produced from {self.content_dir!r}; nothing to index.")
+        db = FAISS.from_documents(chunks, self.embeddings)
         db.save_local(self.output_dir)
-        logging.info("Local FAISS index successfully saved")
+        logging.info("Local FAISS index successfully saved to %s", self.output_dir)
 
 
 def build_index(args: dict) -> None:

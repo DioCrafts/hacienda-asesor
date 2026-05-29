@@ -150,7 +150,7 @@ class GroundingGate:
         return Citation(
             title=title,
             locator=locator,
-            document_type=metadata.get("document_type") or metadata.get("normative_document_type"),
+            document_type=metadata.get("document_type"),
             section=metadata.get("section"),
             snippet=snippet or None,
         )
