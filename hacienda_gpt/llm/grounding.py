@@ -38,6 +38,27 @@ DEFAULT_ABSTAIN_PATTERNS: tuple[str, ...] = (
     r"no\s+dispongo\s+de\s+(?:información|informacion)",
 )
 
+# The QA system prompt mandates three follow-up questions rendered as bold
+# markers (P1, P2, P3) appended after the answer body. Those questions are not
+# the model's own answer and routinely contain hedging-sounding wording
+# ("¿Qué hago si no estoy seguro de mi residencia fiscal?"). Scanning them for
+# abstention phrases turned well-grounded, cited answers into false
+# abstentions, so the block is stripped before the hedge check.
+_FOLLOWUP_MARKER_RE = re.compile(r"(?im)^\s*\*{0,2}\s*P([123])\b")
+
+
+def strip_followup_questions(answer: str) -> str:
+    """Return the answer body with the trailing P1/P2/P3 block removed.
+
+    Only strips when at least two follow-up markers are present (the prompt
+    always emits three), so an isolated ``P1`` appearing inside legitimate
+    body text is left untouched.
+    """
+    markers = list(_FOLLOWUP_MARKER_RE.finditer(answer))
+    if len(markers) < 2:
+        return answer
+    return answer[: markers[0].start()].rstrip()
+
 
 class AnswerMode(str, Enum):
     CITED = "cited"
@@ -80,14 +101,17 @@ class GroundingGate:
     def evaluate(self, answer: str, documents: Sequence[Any]) -> AnswerEnvelope:
         citations = self._collect_citations(documents)
         clean_answer = (answer or "").strip()
+        # Evaluate hedging only on the answer body, never on the appended
+        # follow-up questions (see `strip_followup_questions`).
+        answer_body = strip_followup_questions(clean_answer)
 
-        if self._matches_abstain_pattern(clean_answer) or not documents:
+        if self._matches_abstain_pattern(answer_body) or not documents:
             return AnswerEnvelope(
                 answer=self.abstain_message,
                 mode=AnswerMode.ABSTAINED,
                 citations=citations,
                 raw_answer=clean_answer or None,
-                reason=self._abstain_reason(clean_answer, documents),
+                reason=self._abstain_reason(answer_body, documents),
                 min_citations_required=self.min_citations,
             )
 
