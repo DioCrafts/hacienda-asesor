@@ -91,6 +91,16 @@ def test_qa_returns_envelope_with_citations() -> None:
     assert "Si eres residente" in body["answer"]
 
 
+def test_get_case_store_is_cached() -> None:
+    from hacienda_gpt.api import api
+
+    api._build_case_store.cache_clear()
+    try:
+        assert api.get_case_store() is api.get_case_store()
+    finally:
+        api._build_case_store.cache_clear()
+
+
 def test_qa_abstains_when_no_context() -> None:
     app.dependency_overrides[get_qa_chain] = lambda: _StubQAChain({"answer": "respuesta", "context": []})
     try:

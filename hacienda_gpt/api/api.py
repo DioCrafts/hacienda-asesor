@@ -23,10 +23,18 @@ from hacienda_gpt.settings import DECISION_STATE_DB_PATH
 app = FastAPI(title="HaciendaGPT Decision API", version="1.0.0")
 
 
-def get_case_store() -> SQLiteCaseStateStore:
+@lru_cache(maxsize=1)
+def _build_case_store() -> SQLiteCaseStateStore:
     # Single configurable store shared with the Streamlit UI; the path was
     # previously hardcoded, so the API and UI never saw each other's cases.
+    # Cached so the schema DDL and the SQLite connection are set up once,
+    # not rebuilt on every request (mirrors _build_qa_chain).
     return SQLiteCaseStateStore(DECISION_STATE_DB_PATH)
+
+
+def get_case_store() -> SQLiteCaseStateStore:
+    # Thin wrapper so tests can still override it via app.dependency_overrides.
+    return _build_case_store()
 
 
 def get_fact_extractor() -> FactExtractor:
