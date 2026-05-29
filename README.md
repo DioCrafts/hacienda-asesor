@@ -52,6 +52,12 @@ export OPENAI_MODEL="gpt-4o-mini"
 export OPENAI_TEMPERATURE="0"
 export TOP_K="3"
 
+# Umbrales de similitud (coseno) del EmbeddingsFilter. Defaults pensados para
+# Qwen3 (coseno normalizado); calíbralos con benchmark_retrieval. Subirlos =
+# más precisión/menos recall (riesgo de abstención); bajarlos = lo contrario.
+export RETRIEVAL_DECISION_THRESHOLD="0.45"   # perfil "decision" (más estricto)
+export RETRIEVAL_EXPLAIN_THRESHOLD="0.35"    # perfil "explain" (más recall)
+
 # Embedder local (mismo para indexar y consultar; ver sección "Embeddings"):
 export EMBEDDING_MODEL="Qwen/Qwen3-Embedding-8B"
 export EMBEDDING_DEVICE="cuda"           # cuda | cpu | mps
@@ -82,9 +88,13 @@ y el retrieval.
 > son locales.
 >
 > ⚠️ Si cambias de modelo de embedding **reconstruye el índice FAISS** (los
-> espacios vectoriales no son intercambiables). Los umbrales de similitud en
-> `retrieval_profiles.py` (0.82 / 0.75) se calibraron para OpenAI; con Qwen3
-> (coseno normalizado) puede que necesites reajustarlos.
+> espacios vectoriales no son intercambiables). Los umbrales de similitud ahora
+> viven en `settings.py` y son configurables por entorno
+> (`RETRIEVAL_DECISION_THRESHOLD` / `RETRIEVAL_EXPLAIN_THRESHOLD`). Los valores
+> históricos (0.82 / 0.75) estaban pensados para OpenAI y sobre-filtraban con
+> Qwen3 (coseno normalizado), provocando abstenciones aun con buen retrieval;
+> los defaults se bajaron a 0.45 / 0.35. **Calíbralos** con
+> `uv run python -m hacienda_gpt.cli.benchmark_retrieval`.
 
 > 🍎 **macOS**: si al primer request a `/qa` (uvicorn) o a la UI
 > (Streamlit) el proceso muere con

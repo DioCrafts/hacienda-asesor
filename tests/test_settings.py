@@ -33,3 +33,30 @@ def test_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert reloaded.FAISS_INDEX_PATH == ".faiss"
     assert reloaded.FAISS_TRUSTED_INDEX is False
     assert reloaded.TOP_K == 3
+
+
+def test_retrieval_threshold_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    for key in ["RETRIEVAL_DECISION_THRESHOLD", "RETRIEVAL_EXPLAIN_THRESHOLD"]:
+        monkeypatch.delenv(key, raising=False)
+
+    reloaded = importlib.reload(settings)
+
+    assert reloaded.RETRIEVAL_DECISION_THRESHOLD == 0.45
+    assert reloaded.RETRIEVAL_EXPLAIN_THRESHOLD == 0.35
+    # decision favours precision; explain favours recall.
+    assert reloaded.RETRIEVAL_DECISION_THRESHOLD > reloaded.RETRIEVAL_EXPLAIN_THRESHOLD
+
+
+def test_retrieval_threshold_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RETRIEVAL_DECISION_THRESHOLD", "0.7")
+    monkeypatch.setenv("RETRIEVAL_EXPLAIN_THRESHOLD", "0.6")
+    try:
+        reloaded = importlib.reload(settings)
+        assert reloaded.RETRIEVAL_DECISION_THRESHOLD == 0.7
+        assert reloaded.RETRIEVAL_EXPLAIN_THRESHOLD == 0.6
+    finally:
+        # Restore module-level defaults so the mutated singleton does not leak
+        # into other test modules that import `settings`.
+        monkeypatch.delenv("RETRIEVAL_DECISION_THRESHOLD", raising=False)
+        monkeypatch.delenv("RETRIEVAL_EXPLAIN_THRESHOLD", raising=False)
+        importlib.reload(settings)

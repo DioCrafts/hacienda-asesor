@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 from uuid import uuid4
@@ -203,16 +204,29 @@ class QARequest(BaseModel):
     chat_history: list[dict] = Field(default_factory=list)
 
 
-def get_qa_chain():
-    """Lazily build the retrieval chain.
+@lru_cache(maxsize=1)
+def _build_qa_chain():
+    """Build the retrieval chain once and reuse it across requests.
 
-    Declared as a FastAPI dependency so tests can override it without
-    needing OpenAI credentials or a real FAISS index.
+    Constructing the chain loads the local embedding model (Qwen3-Embedding,
+    several GB) and the FAISS index. Doing that on every ``/qa`` request — as
+    the previous per-request dependency did — added seconds of latency and
+    re-loaded the model into memory each time. The cache makes the first
+    request pay the cost and the rest reuse the warm chain.
     """
     from hacienda_gpt.llm.chain import create_openai_chain
     from hacienda_gpt.utils import get_openai_api_key
 
     return create_openai_chain(openai_api_key=get_openai_api_key())
+
+
+def get_qa_chain():
+    """FastAPI dependency returning the cached retrieval chain.
+
+    Kept as a thin wrapper so tests can still override it via
+    ``app.dependency_overrides`` without building a real chain.
+    """
+    return _build_qa_chain()
 
 
 @app.post("/qa", response_model=AnswerEnvelope)

@@ -24,4 +24,12 @@ def test_create_retriever_applies_profile_filter_and_threshold(monkeypatch) -> N
 
     fake_faiss.as_retriever.assert_called_once()
     kwargs = fake_faiss.as_retriever.call_args.kwargs["search_kwargs"]
-    assert kwargs["filter"]["fiscal_year"] == 2025
+    flt = kwargs["filter"]
+    # The filter is now a best-effort predicate: exact matches pass, a missing
+    # field is kept (so evergreen norms survive a year filter), and an explicit
+    # mismatch is rejected.
+    assert callable(flt)
+    assert flt({"fiscal_year": 2025, "scope": "nacional"}) is True
+    assert flt({"scope": "nacional"}) is True
+    assert flt({"fiscal_year": 2024, "scope": "nacional"}) is False
+    assert flt({"fiscal_year": 2025, "scope": "regional"}) is False

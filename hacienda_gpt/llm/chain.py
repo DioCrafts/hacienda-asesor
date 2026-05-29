@@ -1,3 +1,4 @@
+from collections.abc import Callable
 import textwrap
 
 from langchain_classic.chains import create_history_aware_retriever, create_retrieval_chain
@@ -75,6 +76,29 @@ def _sanitize_context_documents(docs):
     return sanitized
 
 
+def _build_metadata_filter(metadata_filter: dict) -> Callable[[dict], bool]:
+    """Build a best-effort metadata predicate for FAISS retrieval.
+
+    FAISS' native dict filter rejects any document that lacks the key, which
+    would silently drop evergreen normative documents (a 2006 law carries no
+    single ``fiscal_year``) the moment a caller filters by year. This predicate
+    keeps a document when the field is absent and only rejects it on an explicit
+    mismatch, matching the "best-effort" intent documented in
+    ``retrieval_profiles``.
+    """
+
+    def _matches(metadata: dict) -> bool:
+        for key, expected in metadata_filter.items():
+            actual = metadata.get(key)
+            if actual is None:
+                continue
+            if actual != expected:
+                return False
+        return True
+
+    return _matches
+
+
 def _create_retriever(
     embeddings: Embeddings,
     llm: ChatOpenAI,
@@ -97,9 +121,9 @@ def _create_retriever(
     )
 
     faiss = FAISS.load_local(FAISS_INDEX_PATH, embeddings, allow_dangerous_deserialization=True)
-    search_kwargs = {"k": TOP_K}
+    search_kwargs: dict = {"k": TOP_K}
     if profile.metadata_filter:
-        search_kwargs["filter"] = profile.metadata_filter
+        search_kwargs["filter"] = _build_metadata_filter(profile.metadata_filter)
     base_retriever = faiss.as_retriever(search_kwargs=search_kwargs)
     multi_query_retriever = MultiQueryRetriever.from_llm(retriever=base_retriever, llm=llm)
     embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=profile.similarity_threshold)

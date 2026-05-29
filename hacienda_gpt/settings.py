@@ -33,3 +33,15 @@ API_BASE_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000")
 
 GROUNDING_MIN_CITATIONS = int(os.environ.get("GROUNDING_MIN_CITATIONS", "1"))
 GROUNDING_SNIPPET_CHARS = int(os.environ.get("GROUNDING_SNIPPET_CHARS", "240"))
+
+# --- Retrieval thresholds ---------------------------------------------------
+# Cosine-similarity floor applied by the EmbeddingsFilter compressor in the
+# retrieval chain. The historical values (0.82 / 0.75) were tuned for OpenAI
+# embeddings; with the local Qwen3-Embedding (normalized cosine) those floors
+# over-filter and can starve the grounding gate, making it abstain even when
+# retrieval is good. The defaults below are lowered to bias toward recall.
+# Calibrate empirically per corpus/embedder with:
+#   uv run python -m hacienda_gpt.cli.benchmark_retrieval
+# and override via env when you have measured numbers.
+RETRIEVAL_DECISION_THRESHOLD = float(os.environ.get("RETRIEVAL_DECISION_THRESHOLD", "0.45"))
+RETRIEVAL_EXPLAIN_THRESHOLD = float(os.environ.get("RETRIEVAL_EXPLAIN_THRESHOLD", "0.35"))

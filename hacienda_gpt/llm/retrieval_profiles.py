@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from hacienda_gpt import settings
+
 
 @dataclass(frozen=True)
 class RetrievalProfile:
@@ -29,7 +31,7 @@ def build_decision_profile(
         merged.update(metadata_filter)
     return RetrievalProfile(
         name="decision_retriever",
-        similarity_threshold=0.82,
+        similarity_threshold=settings.RETRIEVAL_DECISION_THRESHOLD,
         metadata_filter=merged,
     )
 
@@ -46,6 +48,6 @@ def build_explain_profile(
         merged.update(metadata_filter)
     return RetrievalProfile(
         name="explain_retriever",
-        similarity_threshold=0.75,
+        similarity_threshold=settings.RETRIEVAL_EXPLAIN_THRESHOLD,
         metadata_filter=merged,
     )
