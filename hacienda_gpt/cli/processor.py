@@ -20,8 +20,18 @@ CONTENT_DIR = os.path.join(PRJ_DATA_DIR, "html")
     default=None,
     help="Cap per-chunk tokens for Docling's HybridChunker (default: the embedder's token limit).",
 )
+@click.option(
+    "--num-workers",
+    type=click.IntRange(min=1),
+    default=1,
+    help=(
+        "Parallelise Docling parsing across N processes. The embedder is still loaded "
+        "once in the parent (no per-worker GPU duplication). Recommended: number of "
+        "physical CPU cores. Default 1 (sequential)."
+    ),
+)
 @click.option("--overwrite-output", is_flag=True)
-def cli(content_dir, output_dir, max_tokens, overwrite_output):
+def cli(content_dir, output_dir, max_tokens, num_workers, overwrite_output):
     configure_logging()
 
     if not overwrite_output and os.path.exists(output_dir) and os.listdir(output_dir):
@@ -32,6 +42,7 @@ def cli(content_dir, output_dir, max_tokens, overwrite_output):
         "content_dir": content_dir,
         "output_dir": output_dir,
         "max_tokens": max_tokens,
+        "num_workers": num_workers,
     }
 
     build_index(args)

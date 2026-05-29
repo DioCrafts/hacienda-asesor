@@ -20,6 +20,7 @@ loader seam instead.
 from __future__ import annotations
 
 import logging
+import multiprocessing as mp
 from pathlib import Path
 from typing import Any
 
@@ -106,6 +107,46 @@ def docling_chunk_metadata(doc: Document) -> dict[str, Any]:
     return metadata
 
 
+def _shard_files(files: list[str], num_shards: int) -> list[list[str]]:
+    """Round-robin split — keeps each shard size-balanced regardless of order."""
+    return [files[i::num_shards] for i in range(num_shards)]
+
+
+def _process_shard_worker(args: tuple[list[str], int | None]) -> list[Document]:
+    """Worker entry point for `multiprocessing.Pool`.
+
+    Lives at module scope (not inside DocumentProcessor) so it picks pickling
+    cleanly on macOS spawn. Each worker rebuilds its own DoclingLoader: the
+    layout/parsing models are loaded per-worker, but they are dwarfed by what
+    Docling's HTML pipeline does in pure Python — and that's exactly why
+    splitting across processes (bypassing the GIL) is worth the duplicate
+    setup. The embedding model is **not** loaded here: only the parent does
+    that, once, when FAISS.from_documents runs.
+    """
+    files, max_tokens = args
+    if not files:
+        return []
+
+    from docling.chunking import HybridChunker
+    from langchain_docling.loader import DoclingLoader, ExportType
+
+    from hacienda_gpt import settings as _settings
+
+    chunker_kwargs: dict[str, Any] = {"tokenizer": _settings.EMBEDDING_MODEL}
+    if max_tokens:
+        chunker_kwargs["max_tokens"] = max_tokens
+
+    loader = DoclingLoader(
+        file_path=files,
+        export_type=ExportType.DOC_CHUNKS,
+        chunker=HybridChunker(**chunker_kwargs),
+    )
+    raw_chunks = loader.load()
+    return [
+        Document(page_content=chunk.page_content, metadata=docling_chunk_metadata(chunk)) for chunk in raw_chunks
+    ]
+
+
 class DocumentProcessor:
     """Build a FAISS index from a content directory using Docling."""
 
@@ -116,11 +157,13 @@ class DocumentProcessor:
         output_dir: str,
         *,
         max_tokens: int | None = None,
+        num_workers: int = 1,
     ) -> None:
         self.embeddings = embeddings
         self.content_dir = content_dir
         self.output_dir = output_dir
         self.max_tokens = max_tokens
+        self.num_workers = max(1, num_workers)
 
     def discover_files(self) -> list[str]:
         root = Path(self.content_dir)
@@ -144,16 +187,54 @@ class DocumentProcessor:
             chunker=HybridChunker(**chunker_kwargs),
         )
 
+    def _load_chunks_sequential(self, files: list[str]) -> list[Document]:
+        raw_chunks = self._build_loader(files).load()
+        return [
+            Document(page_content=chunk.page_content, metadata=docling_chunk_metadata(chunk)) for chunk in raw_chunks
+        ]
+
+    def _load_chunks_parallel(self, files: list[str]) -> list[Document]:
+        """Fan files out across `num_workers` processes.
+
+        Docling's docs flag the in-process ThreadPoolExecutor variant as
+        offering "no benefit expected without free-threaded python" — the GIL
+        serialises HTML parsing in CPython 3.13. multiprocessing sidesteps the
+        GIL by giving each worker its own interpreter, which is what we want.
+
+        Each worker re-imports Docling and the tokenizer (~50-200 MB overhead
+        per worker, manageable), and the embedder model is **never** loaded in
+        workers — only in the parent at FAISS-build time.
+        """
+        shards = _shard_files(files, self.num_workers)
+        # Drop empty shards (happens when files < num_workers).
+        shards = [s for s in shards if s]
+        work_items = [(shard, self.max_tokens) for shard in shards]
+        logging.info(
+            "Spawning %d Docling workers (round-robin shards of %s)",
+            len(shards),
+            ",".join(str(len(s)) for s in shards),
+        )
+        ctx = mp.get_context("spawn")  # macOS-safe: avoids fork() + threads issues.
+        all_chunks: list[Document] = []
+        with ctx.Pool(processes=len(shards)) as pool:
+            for shard_idx, shard_chunks in enumerate(pool.imap_unordered(_process_shard_worker, work_items)):
+                logging.info("Worker shard %d produced %d chunks", shard_idx, len(shard_chunks))
+                all_chunks.extend(shard_chunks)
+        return all_chunks
+
     def load_chunks(self) -> list[Document]:
         files = self.discover_files()
         if not files:
             logging.warning("No %s files found under %s", SUPPORTED_SUFFIXES, self.content_dir)
             return []
-        logging.info("Converting & chunking %d files with Docling", len(files))
-        raw_chunks = self._build_loader(files).load()
-        return [
-            Document(page_content=chunk.page_content, metadata=docling_chunk_metadata(chunk)) for chunk in raw_chunks
-        ]
+        logging.info(
+            "Converting & chunking %d files with Docling (num_workers=%d)",
+            len(files),
+            self.num_workers,
+        )
+        if self.num_workers <= 1 or len(files) <= 1:
+            return self._load_chunks_sequential(files)
+        return self._load_chunks_parallel(files)
 
     def process_documents(self) -> None:
         from langchain_community.vectorstores import FAISS
