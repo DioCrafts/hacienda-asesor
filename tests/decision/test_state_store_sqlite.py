@@ -99,6 +99,36 @@ def test_append_audit_event_unknown_case_raises(tmp_path: pytest.TempPathFactory
         store.append_audit_event("unknown_case", {"event_type": "x"})
 
 
+def test_connection_is_reused_across_operations(tmp_path: pytest.TempPathFactory) -> None:
+    store = SQLiteCaseStateStore(str(tmp_path / "state.db"))
+    with store._lock:
+        first = store._get_conn()
+        second = store._get_conn()
+    assert first is second
+
+
+def test_close_is_idempotent_and_reopens_lazily(tmp_path: pytest.TempPathFactory) -> None:
+    store = SQLiteCaseStateStore(str(tmp_path / "state.db"))
+    store.close()
+    store.close()  # second close must not raise
+
+    now = datetime.now(UTC)
+    store.save_case(_build_case("case_1", "user_1", now))  # reopens the connection
+    assert store.get_case("case_1") is not None
+
+
+def test_failed_operation_leaves_reused_connection_usable(tmp_path: pytest.TempPathFactory) -> None:
+    # A failed statement must roll back without poisoning the shared connection
+    # for the next caller (the connection is no longer recreated per call).
+    store = SQLiteCaseStateStore(str(tmp_path / "state.db"))
+    with pytest.raises(KeyError):
+        store.append_audit_event("unknown_case", {"event_type": "x"})
+
+    now = datetime.now(UTC)
+    store.save_case(_build_case("case_1", "user_1", now))
+    assert store.get_case("case_1") is not None
+
+
 def test_basic_concurrency_with_parallel_upserts(tmp_path: pytest.TempPathFactory) -> None:
     db = tmp_path / "state.db"
     store = SQLiteCaseStateStore(str(db))

@@ -1,3 +1,4 @@
+from hacienda_gpt.decision.fact_extractor import RegexFactExtractor
 from hacienda_gpt.decision.schemas import CaseState
 from hacienda_gpt.ui import app
 
@@ -26,6 +27,7 @@ def test_persist_turn_creates_case_and_audit_events(monkeypatch) -> None:
         case_id="case_x",
         user_input="Soy residente en España y tengo dudas sobre IRPF",
         assistant_output="respuesta",
+        extractor=RegexFactExtractor(),
     )
 
     assert case.case_id == "case_x"
@@ -36,9 +38,20 @@ def test_persist_turn_creates_case_and_audit_events(monkeypatch) -> None:
 def test_persist_turn_updates_existing_case(monkeypatch) -> None:
     monkeypatch.setitem(app.st.session_state, "user_id", "user_test")
     store = FakeStore()
-    app._persist_turn_local(store=store, case_id="case_x", user_input="Soy residente en España", assistant_output="ok")
+    extractor = RegexFactExtractor()
+    app._persist_turn_local(
+        store=store,
+        case_id="case_x",
+        user_input="Soy residente en España",
+        assistant_output="ok",
+        extractor=extractor,
+    )
     updated = app._persist_turn_local(
-        store=store, case_id="case_x", user_input="Tengo ingresos del trabajo", assistant_output="ok2"
+        store=store,
+        case_id="case_x",
+        user_input="Tengo ingresos del trabajo",
+        assistant_output="ok2",
+        extractor=extractor,
     )
 
     assert updated.case_id == "case_x"

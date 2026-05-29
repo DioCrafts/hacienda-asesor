@@ -6,6 +6,7 @@ from hacienda_gpt.llm.grounding import (
     DEFAULT_ABSTAIN_MESSAGE,
     AnswerMode,
     GroundingGate,
+    strip_followup_questions,
 )
 
 
@@ -101,6 +102,51 @@ def test_evaluate_deduplicates_citations() -> None:
 
     titles = [c.title for c in envelope.citations]
     assert titles == ["x", "z"]
+
+
+def test_followup_questions_with_hedging_do_not_force_abstention() -> None:
+    # The system prompt forces three follow-up questions; one of them mentions
+    # "no estoy seguro". A cited answer must NOT be discarded because of it.
+    docs = [_doc(title="Residencia fiscal IRPF", source_url="https://sede/x")]
+    answer = (
+        "Si eres residente fiscal en España, estás obligado a declarar el IRPF "
+        "por tu renta mundial.\n\n"
+        "**P1**: ¿Qué hago si no estoy seguro de mi residencia fiscal?\n\n"
+        "**P2**: ¿Cómo afectan los convenios de doble imposición?\n\n"
+        "**P3**: ¿Qué plazos tengo para presentar la declaración?"
+    )
+    gate = GroundingGate(min_citations=1)
+
+    envelope = gate.evaluate(answer=answer, documents=docs)
+
+    assert envelope.mode is AnswerMode.CITED
+    # The full answer (including the follow-up questions) is preserved.
+    assert "no estoy seguro" in envelope.answer
+
+
+def test_hedging_in_body_still_abstains_even_with_followups() -> None:
+    docs = [_doc(title="x", source_url="https://y")]
+    answer = (
+        "Hmm, no estoy seguro acerca de tu pregunta.\n\n"
+        "**P1**: ¿Puedes dar más detalles?\n\n"
+        "**P2**: ¿De qué ejercicio fiscal hablamos?\n\n"
+        "**P3**: ¿Cuál es tu residencia fiscal?"
+    )
+    gate = GroundingGate(min_citations=1)
+
+    envelope = gate.evaluate(answer=answer, documents=docs)
+
+    assert envelope.mode is AnswerMode.ABSTAINED
+    assert envelope.answer == DEFAULT_ABSTAIN_MESSAGE
+
+
+def test_strip_followup_questions_removes_block_but_keeps_isolated_marker() -> None:
+    answer = "Cuerpo de la respuesta.\n\n**P1**: a\n\n**P2**: b\n\n**P3**: c"
+    assert strip_followup_questions(answer) == "Cuerpo de la respuesta."
+
+    # A single stray marker is not a follow-up block and is left untouched.
+    single = "El modelo P1 del formulario se presenta en plazo."
+    assert strip_followup_questions(single) == single
 
 
 def test_citation_snippet_is_truncated() -> None:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from functools import lru_cache
-from pathlib import Path
 from typing import Annotated
 from uuid import uuid4
 
@@ -19,12 +18,23 @@ from hacienda_gpt.decision.schemas import CaseState, Fact, MissingFact
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.decision.taxonomy import SupportedIntent
 from hacienda_gpt.llm.grounding import AnswerEnvelope
+from hacienda_gpt.settings import DECISION_STATE_DB_PATH
 
 app = FastAPI(title="HaciendaGPT Decision API", version="1.0.0")
 
 
+@lru_cache(maxsize=1)
+def _build_case_store() -> SQLiteCaseStateStore:
+    # Single configurable store shared with the Streamlit UI; the path was
+    # previously hardcoded, so the API and UI never saw each other's cases.
+    # Cached so the schema DDL and the SQLite connection are set up once,
+    # not rebuilt on every request (mirrors _build_qa_chain).
+    return SQLiteCaseStateStore(DECISION_STATE_DB_PATH)
+
+
 def get_case_store() -> SQLiteCaseStateStore:
-    return SQLiteCaseStateStore(str(Path("./data/api_case_state.sqlite3")))
+    # Thin wrapper so tests can still override it via app.dependency_overrides.
+    return _build_case_store()
 
 
 def get_fact_extractor() -> FactExtractor:

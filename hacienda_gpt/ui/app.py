@@ -6,7 +6,8 @@ from langchain_core.messages import AIMessage, HumanMessage
 import requests
 import streamlit as st
 
-from hacienda_gpt.decision.interpreter_light import detect_facts_and_missing
+from hacienda_gpt.decision.fact_extractor import FactExtractor, default_fact_extractor
+from hacienda_gpt.decision.interpreter import interpret_turn
 from hacienda_gpt.decision.rules_engine import evaluate_rules
 from hacienda_gpt.decision.schemas import CaseState
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
@@ -32,6 +33,13 @@ def load_chain():
 @st.cache_resource
 def load_case_store() -> SQLiteCaseStateStore:
     return SQLiteCaseStateStore(DECISION_STATE_DB_PATH)
+
+
+@st.cache_resource
+def load_fact_extractor() -> FactExtractor:
+    # Same extractor the API uses (OpenAI structured output when a key is set,
+    # regex fallback otherwise), so UI and API interpret turns identically.
+    return default_fact_extractor()
 
 
 def _build_chat_history(messages: list[dict[str, str]]) -> list[HumanMessage | AIMessage]:
@@ -72,12 +80,29 @@ def _api_process_turn(user_input: str) -> dict:
     return r.json()
 
 
-def _persist_turn_local(store: SQLiteCaseStateStore, case_id: str, user_input: str, assistant_output: str) -> CaseState:
+def _persist_turn_local(
+    store: SQLiteCaseStateStore,
+    case_id: str,
+    user_input: str,
+    assistant_output: str,
+    extractor: FactExtractor | None = None,
+) -> CaseState:
     now = datetime.now(UTC)
     existing = store.get_case(case_id)
     user_id = st.session_state.get("user_id", "streamlit_user")
 
-    facts, missing_facts = detect_facts_and_missing(user_input)
+    # Same interpretation path as the API's /cases/turn, so the decision state
+    # the UI persists matches what the backend would produce. interpret_turn
+    # already merges new facts with those on the existing case.
+    interpretation = interpret_turn(
+        user_input,
+        chat_history=[],
+        current_case_state=existing,
+        extractor=extractor or default_fact_extractor(),
+    )
+    facts = interpretation.extracted_facts
+    missing_facts = interpretation.missing_facts
+
     if existing is None:
         case_state = CaseState(
             case_id=case_id,
@@ -90,12 +115,7 @@ def _persist_turn_local(store: SQLiteCaseStateStore, case_id: str, user_input: s
             updated_at=now,
         )
     else:
-        merged_facts = {fact.fact_id: fact for fact in existing.facts}
-        for fact in facts:
-            merged_facts[fact.fact_id] = fact
-        case_state = existing.model_copy(
-            update={"facts": list(merged_facts.values()), "missing_facts": missing_facts, "updated_at": now}
-        )
+        case_state = existing.model_copy(update={"facts": facts, "missing_facts": missing_facts, "updated_at": now})
 
     rules_result = evaluate_rules(case_state=case_state, recent_facts=facts)
     case_state = case_state.model_copy(update={"obligation_candidates": rules_result.candidate_obligations})
@@ -200,6 +220,7 @@ def main():
 
     chain = load_chain()
     store = load_case_store()
+    extractor = load_fact_extractor()
     case_id = _ensure_case_id()
 
     if "messages" not in st.session_state:
@@ -242,12 +263,14 @@ def main():
             except Exception as exc:
                 st.error(f"Error llamando API backend: {exc}. Usando fallback local.")
                 case_state = _persist_turn_local(
-                    store=store, case_id=case_id, user_input=query, assistant_output=response
+                    store=store, case_id=case_id, user_input=query, assistant_output=response, extractor=extractor
                 )
                 _render_debug(case_state)
                 _render_obligation_cards(case_state)
         else:
-            case_state = _persist_turn_local(store=store, case_id=case_id, user_input=query, assistant_output=response)
+            case_state = _persist_turn_local(
+                store=store, case_id=case_id, user_input=query, assistant_output=response, extractor=extractor
+            )
             _render_debug(case_state)
             _render_obligation_cards(case_state)
 
