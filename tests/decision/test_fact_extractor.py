@@ -84,6 +84,12 @@ def test_coerce_number_accepts_numeric_slot() -> None:
         ("45.000", 45000.0),
         ("45.000,50", 45000.50),
         ("12,5", 12.5),
+        # English-style decimal point: must NOT be read as 125 (regression).
+        ("12.5", 12.5),
+        ("1.234.567", 1234567.0),
+        ("1,234.50", 1234.50),
+        ("45,000", 45000.0),
+        ("facturo 45.000 euros", 45000.0),
     ],
 )
 def test_coerce_number_parses_localized_strings(raw: str, expected: float) -> None:

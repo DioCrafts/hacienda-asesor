@@ -68,11 +68,22 @@ def create_system_prompt() -> str:
     return textwrap.dedent(template)
 
 
-def _sanitize_context_documents(docs):
+def _sanitize_context_documents(docs: list[Document]) -> list[Document]:
+    """Return copies of ``docs`` with prompt-injection fragments redacted.
+
+    FAISS' ``InMemoryDocstore`` hands back the *same* ``Document`` instances it
+    stores, so mutating ``doc.page_content`` in place would permanently corrupt
+    the in-memory corpus (and the chain is cached for the process lifetime). We
+    copy the document — only when sanitizing actually changed the content — so
+    the index keeps its original text and each request sees a clean view.
+    """
     sanitized = []
     for doc in docs:
-        doc.page_content = sanitize_retrieved_context(doc.page_content)
-        sanitized.append(doc)
+        cleaned = sanitize_retrieved_context(doc.page_content)
+        if cleaned == doc.page_content:
+            sanitized.append(doc)
+        else:
+            sanitized.append(doc.model_copy(update={"page_content": cleaned}))
     return sanitized
 
 

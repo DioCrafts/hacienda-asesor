@@ -405,7 +405,50 @@ class OpenAIFactExtractor:
 # --------------------------------------------------------------------------- #
 
 
-_NUMERIC_RE = re.compile(r"-?\d+(?:[\.,]\d+)?")
+# Grabs the first number-like token, separators included ("45.000,50", "12.5").
+_NUMERIC_TOKEN_RE = re.compile(r"-?\d[\d.,]*\d|-?\d")
+# Strict thousands-grouping shapes: "45.000", "1.234.567" / "45,000", "1,234,567".
+_THOUSANDS_DOT_RE = re.compile(r"^-?\d{1,3}(?:\.\d{3})+$")
+_THOUSANDS_COMMA_RE = re.compile(r"^-?\d{1,3}(?:,\d{3})+$")
+
+
+def _parse_number_from_string(value: str) -> float | None:
+    """Parse a euro-style amount, disambiguating ``.`` / ``,`` separators.
+
+    The previous implementation stripped every ``.`` and turned every ``,`` into
+    a ``.``, which corrupted English-style decimals ("12.5" → 125). Here we pick
+    the decimal separator deliberately:
+
+    * both present  → the *last* one is the decimal mark, the other groups thousands
+      ("45.000,50" → 45000.50, "1,234.50" → 1234.50);
+    * only ``,``    → Spanish decimal comma ("12,5" → 12.5) unless it is a strict
+      3-digit grouping ("45,000" → 45000);
+    * only ``.``    → thousands grouping ("45.000" → 45000) unless it is a decimal
+      point ("12.5" → 12.5).
+    """
+    match = _NUMERIC_TOKEN_RE.search(value)
+    if not match:
+        return None
+    token = match.group(0)
+    has_dot = "." in token
+    has_comma = "," in token
+
+    if has_dot and has_comma:
+        if token.rfind(",") > token.rfind("."):
+            normalized = token.replace(".", "").replace(",", ".")
+        else:
+            normalized = token.replace(",", "")
+    elif has_comma:
+        normalized = token.replace(",", "") if _THOUSANDS_COMMA_RE.match(token) else token.replace(",", ".")
+    elif has_dot:
+        normalized = token.replace(".", "") if _THOUSANDS_DOT_RE.match(token) else token
+    else:
+        normalized = token
+
+    try:
+        return float(normalized)
+    except ValueError:
+        return None
 
 
 def _coerce_value(
@@ -438,14 +481,7 @@ def _coerce_value(
         if isinstance(value_number, (int, float)) and not isinstance(value_number, bool):
             return float(value_number)
         if isinstance(value_string, str):
-            match = _NUMERIC_RE.search(value_string.replace(".", "").replace(",", "."))
-            # The replace dance above handles "45.000,50" → "45000.50"; for
-            # plain "45000" or "12,5" it still extracts the right token.
-            if match:
-                try:
-                    return float(match.group(0))
-                except ValueError:
-                    return None
+            return _parse_number_from_string(value_string)
         return None
 
     if expected is FactValueType.BOOLEAN:

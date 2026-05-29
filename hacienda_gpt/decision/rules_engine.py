@@ -74,14 +74,18 @@ class RulesEngine:
 
         traces: list[RuleTrace] = []
         obligations: list[ObligationCandidate] = []
+        # rule_id -> obligation_id, so conflict resolution can mark *only* the
+        # traces whose obligation actually collided (see _resolve_conflicts).
+        rule_obligation_map: dict[str, str] = {}
 
         for rule in applicable_rules:
             trace, matched = self._evaluate_rule(rule, fact_map)
             traces.append(trace)
             if matched:
                 obligations.append(self._build_candidate_obligation(rule, case_state, trace.missing_facts))
+                rule_obligation_map[rule.id] = rule.generated_obligation.obligation_id
 
-        deduped_obligations, updated_traces = self._resolve_conflicts(obligations, traces)
+        deduped_obligations, updated_traces = self._resolve_conflicts(obligations, traces, rule_obligation_map)
 
         return RulesEngineResult(
             candidate_obligations=deduped_obligations,
@@ -191,20 +195,24 @@ class RulesEngine:
         self,
         obligations: list[ObligationCandidate],
         traces: list[RuleTrace],
+        rule_obligation_map: dict[str, str],
     ) -> tuple[list[ObligationCandidate], list[RuleTrace]]:
         # Conflict strategy: for same obligation_id keep highest confidence.
         by_id: dict[str, ObligationCandidate] = {}
+        counts: dict[str, int] = {}
         for obligation in obligations:
+            counts[obligation.obligation_id] = counts.get(obligation.obligation_id, 0) + 1
             existing = by_id.get(obligation.obligation_id)
             if existing is None or obligation.confidence > existing.confidence:
                 by_id[obligation.obligation_id] = obligation
 
-        kept_ids = set(by_id.keys())
-        conflict_happened = len(obligations) != len(kept_ids)
-
-        if conflict_happened:
+        # Only the obligation_ids produced by more than one rule were actually
+        # in conflict; mark just those traces so the audit trail stays precise
+        # instead of flagging every matched rule.
+        conflicted_ids = {obligation_id for obligation_id, count in counts.items() if count > 1}
+        if conflicted_ids:
             for trace in traces:
-                if trace.matched:
+                if trace.matched and rule_obligation_map.get(trace.rule_id) in conflicted_ids:
                     trace.conflict_resolved = True
                     trace.conflict_strategy = "highest_confidence_per_obligation_id"
 
