@@ -79,12 +79,10 @@ def _sanitize_context_documents(docs):
 def _build_metadata_filter(metadata_filter: dict) -> Callable[[dict], bool]:
     """Build a best-effort metadata predicate for FAISS retrieval.
 
-    FAISS' native dict filter rejects any document that lacks the key, which
-    would silently drop evergreen normative documents (a 2006 law carries no
-    single ``fiscal_year``) the moment a caller filters by year. This predicate
-    keeps a document when the field is absent and only rejects it on an explicit
-    mismatch, matching the "best-effort" intent documented in
-    ``retrieval_profiles``.
+    FAISS' native dict filter rejects any document that lacks the key. This
+    predicate instead keeps a document when the filtered field is absent and
+    only rejects it on an explicit mismatch, so a caller can narrow by a
+    metadata field without silently dropping chunks that don't carry it.
     """
 
     def _matches(metadata: dict) -> bool:

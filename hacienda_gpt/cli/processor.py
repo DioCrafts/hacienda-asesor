@@ -14,10 +14,14 @@ CONTENT_DIR = os.path.join(PRJ_DATA_DIR, "html")
 @click.command()
 @click.option("--content-dir", type=click.Path(exists=True, file_okay=False, dir_okay=True), default=CONTENT_DIR)
 @click.option("--output-dir", type=click.Path(exists=False, file_okay=False, dir_okay=True), default=FAISS_DIR)
-@click.option("--chunk-size", type=click.IntRange(min=0), default=1500)
-@click.option("--chunk-overlap", type=click.IntRange(min=0), default=0)
+@click.option(
+    "--max-tokens",
+    type=click.IntRange(min=1),
+    default=None,
+    help="Cap per-chunk tokens for Docling's HybridChunker (default: the embedder's token limit).",
+)
 @click.option("--overwrite-output", is_flag=True)
-def cli(content_dir, output_dir, chunk_size, chunk_overlap, overwrite_output):
+def cli(content_dir, output_dir, max_tokens, overwrite_output):
     configure_logging()
 
     if not overwrite_output and os.path.exists(output_dir) and os.listdir(output_dir):
@@ -27,8 +31,7 @@ def cli(content_dir, output_dir, chunk_size, chunk_overlap, overwrite_output):
     args = {
         "content_dir": content_dir,
         "output_dir": output_dir,
-        "chunk_size": chunk_size,
-        "chunk_overlap": chunk_overlap,
+        "max_tokens": max_tokens,
     }
 
     build_index(args)

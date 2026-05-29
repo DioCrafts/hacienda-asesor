@@ -43,17 +43,7 @@ def test_smoke_pipeline_crawler_to_index_to_question(monkeypatch) -> None:
 
     process_result = runner.invoke(
         processor_cli.cli,
-        [
-            "--content-dir",
-            ".",
-            "--output-dir",
-            "./tmp/faiss",
-            "--chunk-size",
-            "500",
-            "--chunk-overlap",
-            "50",
-            "--overwrite-output",
-        ],
+        ["--content-dir", ".", "--output-dir", "./tmp/faiss", "--overwrite-output"],
     )
     assert process_result.exit_code == 0
 

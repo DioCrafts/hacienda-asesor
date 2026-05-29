@@ -116,21 +116,11 @@ class DocumentProcessor:
         output_dir: str,
         *,
         max_tokens: int | None = None,
-        # Accepted for CLI/back-compat only. Docling chunks by document
-        # structure and token budget, not characters, so these are ignored.
-        chunk_size: int | None = None,
-        chunk_overlap: int | None = None,
-        glob: str | None = None,
     ) -> None:
         self.embeddings = embeddings
         self.content_dir = content_dir
         self.output_dir = output_dir
         self.max_tokens = max_tokens
-        if chunk_size or chunk_overlap:
-            logging.info(
-                "Docling ingestion ignores chunk_size/chunk_overlap (character-based); "
-                "chunking is structure- and token-aware. Use max_tokens to cap chunk size."
-            )
 
     def discover_files(self) -> list[str]:
         root = Path(self.content_dir)
