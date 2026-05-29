@@ -114,6 +114,69 @@ def test_conflict_resolution_keeps_highest_confidence_for_same_obligation() -> N
     assert any(t.conflict_resolved for t in result.rule_traces if t.matched)
 
 
+def test_conflict_resolution_only_flags_traces_whose_obligation_collided() -> None:
+    # r1 + r2 collide on obl_same (real conflict); r3 produces obl_other on its
+    # own (no conflict). Only r1/r2 traces must be marked conflict_resolved.
+    ruleset = RuleSet.model_validate(
+        {
+            "rules": [
+                {
+                    "id": "r1",
+                    "jurisdiction": "ES",
+                    "valid_from": "2024-01-01",
+                    "valid_to": "2026-12-31",
+                    "conditions": [{"fact": "residencia_fiscal", "operator": "eq", "value": "ES"}],
+                    "required_facts": ["residencia_fiscal"],
+                    "generated_obligation": {
+                        "obligation_id": "obl_same",
+                        "title": "Same",
+                        "description": "D",
+                        "status": "candidate",
+                    },
+                    "base_confidence": 0.6,
+                    "risk_level": "medium",
+                },
+                {
+                    "id": "r2",
+                    "jurisdiction": "ES",
+                    "valid_from": "2024-01-01",
+                    "valid_to": "2026-12-31",
+                    "conditions": [{"fact": "residencia_fiscal", "operator": "eq", "value": "ES"}],
+                    "required_facts": ["residencia_fiscal"],
+                    "generated_obligation": {
+                        "obligation_id": "obl_same",
+                        "title": "Same2",
+                        "description": "D2",
+                        "status": "candidate",
+                    },
+                    "base_confidence": 0.9,
+                    "risk_level": "high",
+                },
+                {
+                    "id": "r3",
+                    "jurisdiction": "ES",
+                    "valid_from": "2024-01-01",
+                    "valid_to": "2026-12-31",
+                    "conditions": [{"fact": "menciona_ingresos", "operator": "eq", "value": True}],
+                    "required_facts": ["menciona_ingresos"],
+                    "generated_obligation": {
+                        "obligation_id": "obl_other",
+                        "title": "Other",
+                        "description": "D3",
+                        "status": "candidate",
+                    },
+                    "base_confidence": 0.8,
+                    "risk_level": "low",
+                },
+            ]
+        }
+    )
+    engine = RulesEngine(ruleset)
+    result = engine.evaluate(_case("2025"), recent_facts=[])
+    flags = {t.rule_id: t.conflict_resolved for t in result.rule_traces}
+    assert flags == {"r1": True, "r2": True, "r3": False}
+
+
 def test_records_exact_rule_and_ruleset_versions_for_auditability() -> None:
     ruleset = RuleSet.model_validate(
         {
