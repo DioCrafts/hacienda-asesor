@@ -1,5 +1,4 @@
 from datetime import UTC, datetime
-import time
 from uuid import uuid4
 
 from langchain_core.messages import AIMessage, HumanMessage
@@ -249,16 +248,16 @@ def main():
             st.markdown(query)
 
         with st.chat_message("assistant", avatar=bot_logo):
-            message_placeholder = st.empty()
             history = _build_chat_history(st.session_state.messages[:-1])
-            envelope = answer_with_grounding(chain, query=query, chat_history=history)
+            # The grounding gate needs the full answer and its documents before
+            # it can decide the verdict (and may replace the answer with an
+            # abstention message), so there is nothing to stream token by token.
+            # Render the finalized answer directly instead of faking a typewriter
+            # effect that only added latency.
+            with st.spinner("Consultando la normativa…"):
+                envelope = answer_with_grounding(chain, query=query, chat_history=history)
             response = envelope.answer
-            full_response = ""
-            for chunk in response.split():
-                full_response += chunk + " "
-                time.sleep(0.05)
-                message_placeholder.markdown(full_response + "▌")
-            message_placeholder.markdown(full_response)
+            st.markdown(response)
             _render_grounding_banner(envelope)
             _render_citations(envelope)
 
