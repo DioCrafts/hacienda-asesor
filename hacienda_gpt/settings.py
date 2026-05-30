@@ -12,14 +12,57 @@ OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 OPENAI_TEMPERATURE = float(os.environ.get("OPENAI_TEMPERATURE", "0"))
 
 # --- Embeddings -------------------------------------------------------------
-# The app uses a single local, multilingual embedder (Qwen3-Embedding by
-# default), built in hacienda_gpt.llm.embeddings and shared by indexing and
-# querying so the FAISS vector space always matches. Override the model via
-# EMBEDDING_MODEL (any sentence-transformers-compatible repo id).
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "Qwen/Qwen3-Embedding-8B")
-EMBEDDING_DEVICE = os.environ.get("EMBEDDING_DEVICE", "cuda")  # cuda | cpu | mps
-EMBEDDING_NORMALIZE = _env_bool("EMBEDDING_NORMALIZE", default=True)
-EMBEDDING_DIM = os.environ.get("EMBEDDING_DIM")  # optional MRL truncation, e.g. "1024"
+# The app uses a single local embedder via MLX (Apple Silicon native, bf16,
+# no quantization). The converted model directory contains both the bf16
+# weights for the MLX runtime AND the HuggingFace tokenizer files that the
+# Docling HybridChunker uses for token-aware chunk splitting — so a single
+# ``EMBEDDING_MODEL`` path serves indexing, querying, and chunking. Convert a
+# new model with ``scripts/convert_to_mlx.py``.
+EMBEDDING_MODEL = os.environ.get(
+    "EMBEDDING_MODEL", "data/models/qwen3-emb-mlx-bf16"
+)
+# How many texts to feed the embedder per forward pass. 32 is the empirical
+# optimum on M-series for Qwen3-Embedding-0.6B (larger batches lose to
+# padding waste under naive dynamic padding without length sorting). Override
+# only after measuring on your corpus + hardware.
+EMBEDDING_BATCH_SIZE = int(os.environ.get("EMBEDDING_BATCH_SIZE", "32"))
+# Hard cap on per-input tokens at encode time. The chunker bounds chunks to
+# the same budget, so this is defensive only — it protects throughput from
+# any chunk that accidentally slips past the chunker.
+EMBEDDING_MAX_SEQ_LENGTH = int(os.environ.get("EMBEDDING_MAX_SEQ_LENGTH", "512"))
+# Inference batch size: how many chunks the embedder processes per forward
+# pass. Default 32 (sentence-transformers default) is empirically optimal on
+# Apple M-series for Qwen3-Embedding-0.6B. Counter-intuitively, larger batches
+# slow us down because sentence-transformers uses naive dynamic padding (pad
+# each batch to its longest member, no length sorting): bigger batches contain
+# more variance, wasting more attention compute on padding tokens. Override
+# only when you've measured a different optimum for your corpus + hardware.
+EMBEDDING_BATCH_SIZE = int(os.environ.get("EMBEDDING_BATCH_SIZE", "32"))
+# Hard cap on per-input tokens at encode time. Qwen3-Embedding ships with
+# ``max_seq_length=32768`` (its native context). Capping at 512 matches the
+# chunker's budget and protects throughput from any chunks that accidentally
+# slip past the chunker (e.g. a future bug). The cap is **defensive only**:
+# benchmarks on the current corpus show no measurable speedup, because
+# attention cost depends on actual sequence length, not max_seq_length.
+EMBEDDING_MAX_SEQ_LENGTH = int(os.environ.get("EMBEDDING_MAX_SEQ_LENGTH", "512"))
+
+# --- Reranker (Qwen3-Reranker on MLX) ---------------------------------------
+# Cross-encoder pass after first-stage dense retrieval. Scores (query, doc)
+# pairs directly and re-orders the candidate set, surfacing the docs that
+# actually answer the query (vs. docs that are merely topically similar).
+# Opt-in: indexing pipelines don't need it, and we want a clean A/B against
+# the dense-only baseline before enabling it by default.
+RERANKER_ENABLED = _env_bool("RERANKER_ENABLED", default=False)
+RERANKER_MODEL = os.environ.get("RERANKER_MODEL", "data/models/qwen3-reranker-mlx-bf16")
+# After reranking, keep the top-K documents to send to the LLM. The retriever's
+# ``TOP_K`` controls first-stage recall (how many docs reach the reranker);
+# this controls precision of what the LLM finally sees. 5 is a balance —
+# enough for the LLM to triangulate, few enough to fit context budget.
+RERANKER_TOP_K = int(os.environ.get("RERANKER_TOP_K", "5"))
+# Reranker first-stage k: when reranker is enabled we bump the FAISS retriever
+# top-k so the reranker has more candidates to reorder. The reranker is much
+# better at picking the truly relevant ones, so widening recall here is cheap.
+RERANKER_FIRST_STAGE_K = int(os.environ.get("RERANKER_FIRST_STAGE_K", "20"))
 
 FAISS_INDEX_PATH = os.environ.get("FAISS_INDEX_PATH", ".faiss")
 FAISS_TRUSTED_INDEX = _env_bool("FAISS_TRUSTED_INDEX", default=False)

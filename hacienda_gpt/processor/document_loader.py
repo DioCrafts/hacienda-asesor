@@ -51,7 +51,6 @@ from hacienda_gpt.processor.manifest import (
     load_manifest,
     relative_key,
     save_manifest,
-    update_manifest_after_run,
 )
 
 # File types Docling ingests for this corpus. PDF unlocks the BOE consolidated
@@ -245,6 +244,7 @@ class DocumentProcessor:
         incremental: bool = True,
         embedder_model: str | None = None,
         embedder_dim: int | None = None,
+        batch_size: int = 200,
     ) -> None:
         self.embeddings = embeddings
         self.content_dir = content_dir
@@ -256,6 +256,11 @@ class DocumentProcessor:
         # was built against a different model/chunker and must be discarded.
         self._embedder_model = embedder_model or "unknown"
         self._embedder_dim = embedder_dim
+        # Files persisted to FAISS + manifest after every batch. Smaller =
+        # finer crash-recovery granularity; larger = fewer (cheaper) save_local
+        # calls. 200 is a balance for the 11k-file corpus: ~95s of work at
+        # risk if we crash mid-batch on M-series hardware.
+        self.batch_size = max(1, batch_size)
 
     def pipeline_fingerprint(self) -> str:
         """Stable identifier for the (embedder, chunker, docling) tuple.
@@ -388,6 +393,14 @@ class DocumentProcessor:
         return self._run_docling_on(files)
 
     def _run_docling_on(self, files: list[str]) -> list[Document]:
+        """Collect *all* chunks for ``files`` synchronously.
+
+        Kept as a thin wrapper around the streaming primitive for callers
+        that still want the whole-batch shape (smoke tests, the legacy
+        ``load_chunks`` path). New ingest orchestration goes through
+        :meth:`_iter_chunks_streaming` directly so workers never idle between
+        batches.
+        """
         if not files:
             return []
         logging.info(
@@ -395,9 +408,75 @@ class DocumentProcessor:
             len(files),
             self.num_workers,
         )
+        all_chunks: list[Document] = []
+        for _, chunks in self._iter_chunks_streaming(files):
+            all_chunks.extend(chunks)
+        return all_chunks
+
+    def _iter_chunks_streaming(self, files: list[str]):
+        """Yield ``(file, chunks)`` as Docling workers finish each file.
+
+        Single persistent multiprocessing pool over the full ``files`` list:
+        workers always pull from the **global** queue, so the "fat tail"
+        idle problem (three workers stuck on giant BOE consolidados while
+        eight peers wait for the next batch) goes away — the eight free
+        peers just take the next file from the global queue immediately.
+
+        Used by :meth:`process_documents` to interleave Docling parsing
+        and FAISS / manifest checkpointing without any batch-boundary
+        synchronisation barrier. The HybridChunker is loaded once per
+        worker for the **entire** iteration (vs once per batch in the
+        legacy batched implementation).
+        """
+        if not files:
+            return
+
         if self.num_workers <= 1 or len(files) <= 1:
-            return self._load_chunks_sequential(files)
-        return self._load_chunks_parallel(files)
+            # Sequential / single-file path. We still go through
+            # ``_load_chunks_sequential`` to preserve the chunk_id and
+            # source_file metadata contract; then regroup by source so the
+            # caller sees the same per-file stream as the parallel path.
+            all_chunks = self._load_chunks_sequential(files)
+            chunks_by_file: dict[str, list[Document]] = {}
+            for chunk in all_chunks:
+                src = chunk.metadata.get("source_file", "")
+                chunks_by_file.setdefault(src, []).append(chunk)
+            for f in files:
+                yield f, chunks_by_file.get(f, [])
+            return
+
+        total = len(files)
+        n_workers = min(self.num_workers, total)
+        logging.info(
+            "Spawning %d Docling workers (whole-corpus streaming pool over %d files)",
+            n_workers,
+            total,
+        )
+        processed = 0
+        last_progress_logged = 0
+        cum_chunks = 0
+        # Report every ~2 % of files, at most every 100 files, at least every 25.
+        report_every = max(25, min(100, total // 50 or 25))
+        ctx = mp.get_context("spawn")  # macOS-safe: avoids fork+threads issues.
+        with ctx.Pool(
+            processes=n_workers,
+            initializer=_init_worker,
+            initargs=(self.max_tokens,),
+        ) as pool:
+            for file_path, file_chunks in pool.imap_unordered(_process_one_file, files, chunksize=1):
+                processed += 1
+                cum_chunks += len(file_chunks)
+                if processed - last_progress_logged >= report_every or processed == total:
+                    pct = 100 * processed / total
+                    logging.info(
+                        "Docling streaming progress: %d / %d files (%.1f%%) — %d chunks so far",
+                        processed,
+                        total,
+                        pct,
+                        cum_chunks,
+                    )
+                    last_progress_logged = processed
+                yield file_path, file_chunks
 
     # ----------------------------------------------------------------- #
     # Manifest helpers
@@ -446,25 +525,20 @@ class DocumentProcessor:
     # Diff-aware pipeline
     # ----------------------------------------------------------------- #
 
-    def plan(
-        self,
-    ) -> tuple[list[Document], list[str], FileDiff | None, dict[str, FileEntry]]:
-        """Compute what needs to happen to bring FAISS in sync with disk.
+    def plan(self) -> tuple[list[str], list[str], FileDiff | None, str]:
+        """Decide what work to do — read-only, never runs Docling.
 
         Returns
         -------
-        new_chunks : list[Document]
-            Documents to add to the index (from new or modified source files).
+        files_to_process : list[str]
+            Absolute paths to feed through Docling + the embedder.
         ids_to_remove : list[str]
-            FAISS chunk ids to drop because their source file was removed
-            or modified.
+            FAISS chunk ids to drop (sources removed or modified).
         diff : FileDiff | None
-            ``None`` signals "fall back to full rebuild" (no manifest, or the
-            stored fingerprint doesn't match the current pipeline). Otherwise
-            carries the new/modified/removed/unchanged split.
-        new_entries : dict[str, FileEntry]
-            Manifest entries to insert or update for the files we just
-            processed. Keys are relative paths from ``content_dir``.
+            ``None`` signals "no usable manifest, do a full rebuild".
+            Otherwise carries the new/modified/removed/unchanged split.
+        fingerprint : str
+            Pipeline fingerprint to stamp on any manifest we write later.
         """
         files = self.discover_files()
         fingerprint = self.pipeline_fingerprint()
@@ -481,10 +555,8 @@ class DocumentProcessor:
                 manifest = None
 
         if manifest is None:
-            # Full rebuild path.
-            new_chunks = self._run_docling_on(files)
-            new_entries = self._build_entries(files, new_chunks)
-            return new_chunks, [], None, new_entries
+            # No usable manifest → full rebuild over every discovered file.
+            return list(files), [], None, fingerprint
 
         diff = diff_files_against_manifest(files, manifest, Path(self.content_dir))
         logging.info(
@@ -505,94 +577,177 @@ class DocumentProcessor:
                 ids_to_remove.extend(entry.chunk_ids)
 
         files_to_process = list(diff.new) + list(diff.modified)
-        new_chunks = self._run_docling_on(files_to_process) if files_to_process else []
-        new_entries = self._build_entries(files_to_process, new_chunks)
-        return new_chunks, ids_to_remove, diff, new_entries
+        return files_to_process, ids_to_remove, diff, fingerprint
 
     def process_documents(self) -> None:
+        """Bring FAISS + manifest in sync with disk, batching for crash safety.
+
+        Persistence model: after every batch of ``self.batch_size`` files we
+        ``save_local`` the FAISS index and rewrite ``manifest.json``. A crash
+        between batches loses at most one batch of work; relaunching with
+        ``--incremental`` (default) sees the manifest, SHA-256-matches the
+        already-indexed files as ``unchanged``, and resumes at the first
+        missing file. The save order is **index first, manifest second**: if
+        we crash between them the index has extra chunks the manifest doesn't
+        know about, and the next run re-indexes those files — FAISS overwrites
+        the entries (deterministic chunk_ids). The opposite order would mark
+        files indexed without vectors, which silently breaks retrieval.
+        """
         from langchain_community.vectorstores import FAISS
 
         logging.info("Loading documents from %s", self.content_dir)
-        new_chunks, ids_to_remove, diff, new_entries = self.plan()
-
-        fingerprint = self.pipeline_fingerprint()
+        files_to_process, ids_to_remove, diff, fingerprint = self.plan()
         content_dir = Path(self.content_dir)
 
-        if diff is None:
-            # Full rebuild — build a fresh index with explicit ids so future
-            # incremental runs can target individual chunks.
-            logging.info("Produced %d Docling chunks for indexing (full rebuild)", len(new_chunks))
-            if not new_chunks:
-                raise RuntimeError(
-                    f"No indexable chunks produced from {self.content_dir!r}; nothing to index."
-                )
-            ids = [c.metadata["chunk_id"] for c in new_chunks]
-            db = FAISS.from_documents(new_chunks, self.embeddings, ids=ids)
-            self._atomic_save_index(db)
-            manifest = update_manifest_after_run(
-                manifest=None,
-                pipeline_fingerprint=fingerprint,
-                content_dir=content_dir,
-                diff=None,
-                new_entries=new_entries,
-            )
-            save_manifest(self.output_dir, manifest)
-            logging.info("Local FAISS index successfully saved to %s", self.output_dir)
-            return
-
-        # Incremental path.
-        if not diff.has_work:
+        # No-op: incremental run, nothing changed.
+        if diff is not None and not diff.has_work:
             logging.info("Corpus unchanged since last run — nothing to do.")
             existing = load_manifest(self.output_dir)
             if existing is not None:
-                save_manifest(self.output_dir, existing)  # bump updated_at
+                save_manifest(self.output_dir, existing)
             return
 
-        try:
-            db = FAISS.load_local(
-                self.output_dir, self.embeddings, allow_dangerous_deserialization=True
+        # Empty corpus on a full rebuild → loud failure.
+        if diff is None and not files_to_process:
+            raise RuntimeError(
+                f"No indexable files found in {self.content_dir!r}; nothing to index."
             )
-        except Exception as exc:  # noqa: BLE001
-            logging.error(
-                "Could not load existing FAISS index at %s (%s); falling back to full rebuild.",
-                self.output_dir,
-                exc,
-            )
-            all_files = self.discover_files()
-            all_chunks = self._run_docling_on(all_files)
-            ids = [c.metadata["chunk_id"] for c in all_chunks]
-            db = FAISS.from_documents(all_chunks, self.embeddings, ids=ids)
-            self._atomic_save_index(db)
-            manifest = update_manifest_after_run(
-                manifest=None,
-                pipeline_fingerprint=fingerprint,
-                content_dir=content_dir,
-                diff=None,
-                new_entries=self._build_entries(all_files, all_chunks),
-            )
-            save_manifest(self.output_dir, manifest)
-            logging.info("Local FAISS index rebuilt at %s", self.output_dir)
-            return
 
-        if ids_to_remove:
+        # Set up starting state.
+        # - Full rebuild (diff is None): db starts None and is lazy-initialized
+        #   on the first batch with FAISS.from_documents.
+        # - Incremental: load the existing index off disk. If load fails (e.g.
+        #   corrupt files), fall back to full rebuild over the whole corpus.
+        db: Any | None = None
+        existing_manifest: Manifest | None = None
+        if diff is not None:
+            try:
+                db = FAISS.load_local(
+                    self.output_dir, self.embeddings, allow_dangerous_deserialization=True
+                )
+                existing_manifest = load_manifest(self.output_dir)
+            except Exception as exc:  # noqa: BLE001
+                logging.error(
+                    "Could not load existing FAISS index at %s (%s); falling back to full rebuild.",
+                    self.output_dir,
+                    exc,
+                )
+                diff = None
+                ids_to_remove = []
+                db = None
+                existing_manifest = None
+                files_to_process = self.discover_files()
+                if not files_to_process:
+                    raise RuntimeError(
+                        f"No indexable files found in {self.content_dir!r}; nothing to index."
+                    ) from exc
+
+        # Apply removals once, up front — they're a single bookkeeping step,
+        # not per-batch work.
+        if db is not None and ids_to_remove:
             db.delete(ids=ids_to_remove)
             logging.info("Deleted %d stale chunks from FAISS.", len(ids_to_remove))
-        if new_chunks:
-            new_ids = [c.metadata["chunk_id"] for c in new_chunks]
-            db.add_documents(new_chunks, ids=new_ids)
-            logging.info("Appended %d new chunks to FAISS.", len(new_chunks))
+        if existing_manifest is not None and diff is not None:
+            for path in diff.removed:
+                rel = relative_key(path, content_dir)
+                existing_manifest.files.pop(rel, None)
 
-        self._atomic_save_index(db)
-        existing = load_manifest(self.output_dir)
-        manifest = update_manifest_after_run(
-            manifest=existing,
-            pipeline_fingerprint=fingerprint,
-            content_dir=content_dir,
-            diff=diff,
-            new_entries=new_entries,
+        # Removals-only path: nothing to parse, just persist what we have.
+        if not files_to_process:
+            if db is not None:
+                self._atomic_save_index(db)
+            if existing_manifest is not None:
+                existing_manifest.pipeline_fingerprint = fingerprint
+                save_manifest(self.output_dir, existing_manifest)
+            logging.info("Local FAISS index updated incrementally at %s", self.output_dir)
+            return
+
+        # Streaming processing loop.
+        #
+        # The legacy implementation was batched at parallelism level: spawn a
+        # pool, drain the batch, persist, spawn a new pool. That gave a "fat
+        # tail" idle phase at the end of every batch — workers freed up by
+        # short docs sat idle while a peer slogged through a giant BOE
+        # consolidado, because there were no more files in the current batch
+        # for them to steal. The streaming loop below dissolves the batch
+        # boundary at parallelism level (single persistent pool over the
+        # entire ``files_to_process``) while keeping it at persistence level
+        # (we still checkpoint every ``self.batch_size`` completed files).
+        total_files = len(files_to_process)
+        cumulative_chunks = 0
+        checkpoint_n = 0
+        files_window: list[str] = []
+        chunks_window: list[Document] = []
+        completed = 0
+        logging.info(
+            "Streaming over %d file(s) with %d worker(s); checkpoint every %d completed files.",
+            total_files,
+            self.num_workers,
+            self.batch_size,
         )
-        save_manifest(self.output_dir, manifest)
-        logging.info("Local FAISS index updated incrementally at %s", self.output_dir)
+
+        for file_path, file_chunks in self._iter_chunks_streaming(files_to_process):
+            files_window.append(file_path)
+            chunks_window.extend(file_chunks)
+            completed += 1
+            cumulative_chunks += len(file_chunks)
+
+            is_last = completed == total_files
+            should_checkpoint = (completed % self.batch_size == 0) or is_last
+            if not should_checkpoint:
+                continue
+
+            checkpoint_n += 1
+            logging.info(
+                "Checkpoint %d at file %d/%d: persisting %d files (%d new chunks in this window).",
+                checkpoint_n,
+                completed,
+                total_files,
+                len(files_window),
+                len(chunks_window),
+            )
+
+            if chunks_window:
+                ids = [c.metadata["chunk_id"] for c in chunks_window]
+                if db is None:
+                    db = FAISS.from_documents(chunks_window, self.embeddings, ids=ids)
+                else:
+                    db.add_documents(chunks_window, ids=ids)
+
+            # Persist FAISS first (atomic), then manifest (atomic). See the
+            # method docstring for the rationale on the ordering.
+            if db is not None:
+                self._atomic_save_index(db)
+
+            entries = self._build_entries(files_window, chunks_window)
+            if existing_manifest is None:
+                existing_manifest = Manifest(
+                    pipeline_fingerprint=fingerprint,
+                    created_at=datetime.now(UTC).isoformat(),
+                    updated_at=datetime.now(UTC).isoformat(),
+                    files=dict(entries),
+                )
+            else:
+                existing_manifest.files.update(entries)
+                existing_manifest.pipeline_fingerprint = fingerprint
+            save_manifest(self.output_dir, existing_manifest)
+
+            logging.info(
+                "Checkpoint %d persisted. Cumulative chunks: %d. Manifest: %d file(s).",
+                checkpoint_n,
+                cumulative_chunks,
+                len(existing_manifest.files),
+            )
+
+            files_window = []
+            chunks_window = []
+
+        logging.info(
+            "Local FAISS index successfully saved to %s (%d chunks across %d file(s))",
+            self.output_dir,
+            cumulative_chunks,
+            total_files,
+        )
 
     # ----------------------------------------------------------------- #
     # I/O
@@ -633,8 +788,10 @@ def build_index(args: dict) -> None:
     # Capture the embedder identity at construction time so the processor can
     # compute the pipeline fingerprint without re-importing settings later.
     args.setdefault("embedder_model", settings.EMBEDDING_MODEL)
-    raw_dim = settings.EMBEDDING_DIM
-    args.setdefault("embedder_dim", int(raw_dim) if raw_dim else None)
+    # The MLX backend always produces full-dimension vectors (no MRL
+    # truncation). The fingerprint code records ``dim=auto`` when this is
+    # None, which is correct for the current setup.
+    args.setdefault("embedder_dim", None)
 
     processor = DocumentProcessor(create_embeddings(), **args)
     processor.process_documents()

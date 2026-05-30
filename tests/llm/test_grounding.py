@@ -71,7 +71,9 @@ def test_evaluate_abstains_when_model_emits_doubt_phrase() -> None:
     envelope = gate.evaluate(answer="Hmm, no estoy seguro acerca de tu pregunta.", documents=docs)
 
     assert envelope.mode is AnswerMode.ABSTAINED
-    assert envelope.answer == DEFAULT_ABSTAIN_MESSAGE
+    # The canned abstain message is always the prefix; the gate may append a
+    # "documentos encontrados" suffix when citations exist.
+    assert envelope.answer.startswith(DEFAULT_ABSTAIN_MESSAGE)
     assert envelope.raw_answer is not None
 
 
@@ -137,7 +139,7 @@ def test_hedging_in_body_still_abstains_even_with_followups() -> None:
     envelope = gate.evaluate(answer=answer, documents=docs)
 
     assert envelope.mode is AnswerMode.ABSTAINED
-    assert envelope.answer == DEFAULT_ABSTAIN_MESSAGE
+    assert envelope.answer.startswith(DEFAULT_ABSTAIN_MESSAGE)
 
 
 def test_strip_followup_questions_removes_block_but_keeps_isolated_marker() -> None:
@@ -159,3 +161,132 @@ def test_citation_snippet_is_truncated() -> None:
     snippet = envelope.citations[0].snippet or ""
     assert len(snippet) <= 40
     assert snippet.endswith("…")
+
+
+# --------------------------------------------------------------------------- #
+# Stricter hedge detection — issues found in the live QA battery.
+# --------------------------------------------------------------------------- #
+
+
+def test_self_admission_no_information_in_context_triggers_abstain() -> None:
+    """The cripto/modelo_721 hallucination: the LLM said 'no está mencionado
+    en la legislación consolidada' but the gate did not detect it, so the
+    answer was wrongly labelled CITED. Now we honour the LLM's own hedge."""
+    answer = (
+        "El modelo 721 no está mencionado en la legislación consolidada que "
+        "se ha compartido. Es posible que se trate de un error tipográfico."
+    )
+    docs = [_doc(title="Real Decreto X", source_url="https://aeat/x", content="texto")]
+    gate = GroundingGate(min_citations=1)
+
+    envelope = gate.evaluate(answer=answer, documents=docs)
+
+    assert envelope.mode is AnswerMode.ABSTAINED
+
+
+def test_self_admission_aunque_en_el_contexto_no_se_detalla_triggers_abstain() -> None:
+    """The irpf_beckham false-cite: the LLM admitted 'aunque en el contexto
+    proporcionado no se detalla específicamente este régimen' but the gate
+    let it through because tangential TEAC citations were retrieved."""
+    answer = (
+        "Aunque en el contexto proporcionado no se detalla específicamente "
+        "este régimen, generalmente los requisitos incluyen lo siguiente..."
+    )
+    docs = [_doc(title="Doctrina TEAC", source_url="https://aeat/x", content="texto")]
+    gate = GroundingGate(min_citations=1)
+
+    envelope = gate.evaluate(answer=answer, documents=docs)
+
+    assert envelope.mode is AnswerMode.ABSTAINED
+
+
+def test_self_admission_speculation_about_typo_triggers_abstain() -> None:
+    """The most dangerous hallucination: the LLM tells the user they made a
+    typo ('podría tratarse de un error tipográfico') instead of admitting
+    lack of data. That's misinformation and must be downgraded."""
+    answer = "Podría tratarse de un error tipográfico, ya que el modelo 721 no existe."
+    docs = [_doc(title="Modelo 720", source_url="https://aeat/720", content="texto")]
+    gate = GroundingGate(min_citations=1)
+
+    envelope = gate.evaluate(answer=answer, documents=docs)
+
+    assert envelope.mode is AnswerMode.ABSTAINED
+
+
+# --------------------------------------------------------------------------- #
+# Informative abstain message — names what we found and what's missing.
+# --------------------------------------------------------------------------- #
+
+
+def test_abstain_message_lists_found_citations() -> None:
+    """When abstaining with citations on hand, the message should surface
+    them so the user knows what we did look at."""
+    docs = [
+        _doc(title="Sentencia TC 59/2017", source_url="https://aeat/x"),
+        _doc(title="Doctrina TEAC sobre plusvalía", source_url="https://aeat/y"),
+    ]
+    gate = GroundingGate(min_citations=1)
+
+    envelope = gate.evaluate(answer="Hmm, no estoy seguro.", documents=docs)
+
+    assert envelope.mode is AnswerMode.ABSTAINED
+    assert "Documentos relacionados encontrados" in envelope.answer
+    assert "Sentencia TC 59/2017" in envelope.answer
+
+
+def test_abstain_message_flags_missing_modelo_number() -> None:
+    """When the user names a specific tax form that's absent from the
+    citations, the abstain message must point it out by number."""
+    query = "Tengo cripto en el extranjero. ¿Qué es el modelo 721?"
+    docs = [_doc(title="Modelo 720 — declaración bienes extranjero", source_url="https://aeat/x", content="bienes en el extranjero")]
+    gate = GroundingGate(min_citations=1)
+
+    envelope = gate.evaluate(answer="Hmm, no estoy seguro.", documents=docs, query=query)
+
+    assert envelope.mode is AnswerMode.ABSTAINED
+    assert "modelo 721" in envelope.answer.lower()
+
+
+def test_abstain_message_flags_missing_ley_reference() -> None:
+    """``Ley 7/2012`` in the query but not in any citation → surface it."""
+    query = "¿Sigue vigente la Ley 7/2012 sobre modelo 720?"
+    docs = [_doc(title="Sentencia TC sobre plusvalía", source_url="https://aeat/x", content="plusvalía municipal")]
+    gate = GroundingGate(min_citations=1)
+
+    envelope = gate.evaluate(answer="Hmm, no estoy seguro.", documents=docs, query=query)
+
+    assert envelope.mode is AnswerMode.ABSTAINED
+    assert "Ley 7/2012" in envelope.answer
+
+
+def test_abstain_message_does_not_flag_when_entity_in_citations() -> None:
+    """If the citation snippet contains the entity number, it's NOT missing."""
+    query = "¿Cómo afecta la STC 182/2021 a mi liquidación?"
+    docs = [
+        _doc(
+            title="Pleno. Sentencia 182/2021",
+            source_url="https://boe/x",
+            content="El Tribunal Constitucional, en su sentencia 182/2021, declara...",
+        ),
+    ]
+    gate = GroundingGate(min_citations=1)
+
+    envelope = gate.evaluate(answer="Hmm, no estoy seguro.", documents=docs, query=query)
+
+    assert envelope.mode is AnswerMode.ABSTAINED
+    # The entity is in the citation → should NOT be listed as missing.
+    assert "No encontré información específica sobre" not in envelope.answer
+
+
+def test_abstain_message_backwards_compatible_when_query_omitted() -> None:
+    """Existing callers that don't pass ``query`` still get a sensible
+    message — just without the missing-entity stanza."""
+    docs = [_doc(title="Algún doc", source_url="https://aeat/x")]
+    gate = GroundingGate(min_citations=1)
+
+    envelope = gate.evaluate(answer="Hmm, no estoy seguro.", documents=docs)
+
+    assert envelope.mode is AnswerMode.ABSTAINED
+    assert envelope.answer.startswith(DEFAULT_ABSTAIN_MESSAGE)
+    # No "missing entity" line when we don't know what the user asked.
+    assert "No encontré información específica sobre" not in envelope.answer

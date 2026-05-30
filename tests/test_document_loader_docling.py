@@ -91,7 +91,16 @@ def test_load_chunks_maps_loader_output(monkeypatch, tmp_path: Path) -> None:
             return [
                 Document(
                     page_content="Tipo de IVA general 21%.",
-                    metadata={"source": str(tmp_path / "doc.pdf"), "dl_meta": {"headings": ["IVA"]}},
+                    # ``origin.filename`` is what the streaming wrapper uses to
+                    # bucket chunks back to their source file — the real
+                    # Docling output always sets it.
+                    metadata={
+                        "source": str(tmp_path / "doc.pdf"),
+                        "dl_meta": {
+                            "headings": ["IVA"],
+                            "origin": {"filename": "doc.pdf"},
+                        },
+                    },
                 )
             ]
 

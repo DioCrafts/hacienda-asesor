@@ -26,6 +26,10 @@ from hacienda_gpt.settings import (
     GROUNDING_SNIPPET_CHARS,
     OPENAI_MODEL,
     OPENAI_TEMPERATURE,
+    RERANKER_ENABLED,
+    RERANKER_FIRST_STAGE_K,
+    RERANKER_MODEL,
+    RERANKER_TOP_K,
     TOP_K,
 )
 
@@ -48,6 +52,7 @@ def create_system_prompt() -> str:
     9. Proporciona siempre la fuente de dónde has obtenido la información si está disponible.\
     10. Después de proporcionar una respuesta, proporciona tres preguntas de seguimiento formuladas como si las estuviera haciendo un usuario inteligente. Formatea en negritas como P1, P2 y P3. \
         Coloca dos saltos de linea antes y después de cada pregunta para el espaciado. Estas preguntas deben profundizar más en el tema original.\
+    11. NUNCA sugieras que la pregunta del usuario contiene un error tipográfico, una confusión con otra referencia, o que una norma que cita no existe. Si una referencia que pregunta (un nº de modelo, una Ley, una sentencia) no aparece en <context></context>, simplemente di "Hmm, no estoy seguro: no encuentro esa referencia concreta en mis fuentes". La validación de existencia de una norma corresponde a la Agencia Tributaria, no a ti.\
 
     Todo lo que esté entre los siguientes bloques de <context></context> se obtiene de un banco de conocimiento, no forma parte de la conversación con el usuario.
 
@@ -129,13 +134,29 @@ def _create_retriever(
     )
 
     faiss = FAISS.load_local(FAISS_INDEX_PATH, embeddings, allow_dangerous_deserialization=True)
-    search_kwargs: dict = {"k": TOP_K}
+    # When the reranker is enabled we widen first-stage recall (more
+    # candidates for the cross-encoder to reorder); when it's off we keep the
+    # historical ``TOP_K`` so the dense-only path is unchanged.
+    first_stage_k = RERANKER_FIRST_STAGE_K if RERANKER_ENABLED else TOP_K
+    search_kwargs: dict = {"k": first_stage_k}
     if profile.metadata_filter:
         search_kwargs["filter"] = _build_metadata_filter(profile.metadata_filter)
     base_retriever = faiss.as_retriever(search_kwargs=search_kwargs)
     multi_query_retriever = MultiQueryRetriever.from_llm(retriever=base_retriever, llm=llm)
     embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=profile.similarity_threshold)
-    compressed = ContextualCompressionRetriever(base_retriever=multi_query_retriever, base_compressor=embeddings_filter)
+    compressed: BaseRetriever = ContextualCompressionRetriever(
+        base_retriever=multi_query_retriever, base_compressor=embeddings_filter
+    )
+    if RERANKER_ENABLED:
+        # Stack a Qwen3-Reranker pass on top of the filter: it sees only docs
+        # that already passed the cosine threshold and reorders them via
+        # cross-encoder scoring, picking the top-K to feed to the LLM.
+        from hacienda_gpt.llm.reranker import MLXReranker
+
+        reranker = MLXReranker(model_path=RERANKER_MODEL, top_k=RERANKER_TOP_K)
+        compressed = ContextualCompressionRetriever(
+            base_retriever=compressed, base_compressor=reranker
+        )
     return SanitizingRetriever(inner=compressed)
 
 
@@ -215,4 +236,6 @@ def answer_with_grounding(
         context = result.get("context")
         if isinstance(context, list):
             documents = [doc for doc in context if isinstance(doc, Document)]
-    return gate.evaluate(answer=raw_answer, documents=documents)
+    # Pass the user query through so the gate can surface a precise abstain
+    # message ("found X, missing Y") instead of the canned one when it triggers.
+    return gate.evaluate(answer=raw_answer, documents=documents, query=query)

@@ -208,6 +208,3 @@ def pytest_sessionstart(session):
 
     lc_emb = _ensure_module("langchain_core.embeddings")
     lc_emb.Embeddings = object
-
-    hf = _ensure_module("langchain_huggingface")
-    hf.HuggingFaceEmbeddings = object

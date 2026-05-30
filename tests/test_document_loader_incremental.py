@@ -1,9 +1,10 @@
 """End-to-end coverage of the incremental indexing flow.
 
-Stubs ``_run_docling_on`` so we never need the heavy Docling stack, but
-exercises the **real** FAISS code path (langchain-community 0.4.1) so the
-add/delete semantics that the plan depends on are validated against the
-actual library, not our wishful thinking.
+Stubs ``_iter_chunks_streaming`` (the primary parallelism seam) so we never
+need the heavy Docling stack, but exercises the **real** FAISS code path
+(langchain-community 0.4.1) so the add/delete semantics that the plan
+depends on are validated against the actual library, not our wishful
+thinking.
 
 Each test is a tiny end-to-end scenario from the section "4.2 Tests de
 integración" of ``docs/incremental_indexing_plan.md``.
@@ -59,7 +60,13 @@ def _write(path: Path, content: str = "<html>x</html>") -> Path:
     return path
 
 
-def _make_processor(content_dir: Path, output_dir: Path, *, incremental: bool = True) -> dl.DocumentProcessor:
+def _make_processor(
+    content_dir: Path,
+    output_dir: Path,
+    *,
+    incremental: bool = True,
+    batch_size: int = 200,
+) -> dl.DocumentProcessor:
     return dl.DocumentProcessor(
         embeddings=_DeterministicEmbed(),
         content_dir=str(content_dir),
@@ -69,6 +76,7 @@ def _make_processor(content_dir: Path, output_dir: Path, *, incremental: bool = 
         incremental=incremental,
         embedder_model="test/embedder",
         embedder_dim=8,
+        batch_size=batch_size,
     )
 
 
@@ -91,21 +99,20 @@ def _docs_for(file_path: str, n: int) -> list[Document]:
 
 @pytest.fixture
 def patch_docling(monkeypatch: pytest.MonkeyPatch):
-    """Replace ``_run_docling_on`` with a predictable stub keyed on filename.
+    """Replace ``_iter_chunks_streaming`` with a predictable stub generator.
 
-    The stub yields 2 chunks per .html file by default; tests can override
-    the per-file chunk count via the returned ``override`` dict.
+    The stub yields ``(file, chunks)`` with 2 chunks per .html file by
+    default; tests can override the per-file chunk count via the returned
+    ``override`` dict (set to 0 to simulate a file Docling failed to parse).
     """
     override: dict[str, int] = {}
 
-    def fake_run(self, files: list[str]) -> list[Document]:
-        docs: list[Document] = []
+    def fake_stream(self, files: list[str]):
         for f in files:
             count = override.get(Path(f).name, 2)
-            docs.extend(_docs_for(f, count))
-        return docs
+            yield f, _docs_for(f, count)
 
-    monkeypatch.setattr(dl.DocumentProcessor, "_run_docling_on", fake_run)
+    monkeypatch.setattr(dl.DocumentProcessor, "_iter_chunks_streaming", fake_stream)
     return override
 
 
@@ -146,15 +153,15 @@ def test_second_run_without_changes_does_no_docling_work(corpus, patch_docling, 
 
     _make_processor(content_dir, output_dir).process_documents()
 
-    # Second run: instrument _run_docling_on to fail if invoked at all.
+    # Second run: instrument the streaming seam to fail if invoked at all.
     called: dict[str, list] = {"args": []}
-    original = dl.DocumentProcessor._run_docling_on
+    original = dl.DocumentProcessor._iter_chunks_streaming
 
     def spy(self, files):
         called["args"].append(list(files))
-        return original(self, files)
+        yield from original(self, files)
 
-    monkeypatch.setattr(dl.DocumentProcessor, "_run_docling_on", spy)
+    monkeypatch.setattr(dl.DocumentProcessor, "_iter_chunks_streaming", spy)
 
     _make_processor(content_dir, output_dir).process_documents()
 
@@ -175,13 +182,13 @@ def test_added_file_processes_only_the_new_one(corpus, patch_docling, monkeypatc
     _write(content_dir / "b.html")  # new
 
     docling_calls: list[list[str]] = []
-    original = dl.DocumentProcessor._run_docling_on
+    original = dl.DocumentProcessor._iter_chunks_streaming
 
     def spy(self, files):
         docling_calls.append([Path(f).name for f in files])
-        return original(self, files)
+        yield from original(self, files)
 
-    monkeypatch.setattr(dl.DocumentProcessor, "_run_docling_on", spy)
+    monkeypatch.setattr(dl.DocumentProcessor, "_iter_chunks_streaming", spy)
     _make_processor(content_dir, output_dir).process_documents()
 
     # Only b.html should have been re-processed.
@@ -337,15 +344,156 @@ def test_incremental_false_ignores_manifest(corpus, patch_docling, monkeypatch) 
     _write(content_dir / "b.html")
 
     docling_calls: list[list[str]] = []
-    original = dl.DocumentProcessor._run_docling_on
+    original = dl.DocumentProcessor._iter_chunks_streaming
 
     def spy(self, files):
         docling_calls.append([Path(f).name for f in files])
-        return original(self, files)
+        yield from original(self, files)
 
-    monkeypatch.setattr(dl.DocumentProcessor, "_run_docling_on", spy)
+    monkeypatch.setattr(dl.DocumentProcessor, "_iter_chunks_streaming", spy)
 
     _make_processor(content_dir, output_dir, incremental=False).process_documents()
 
     # Full rebuild means ALL files go through Docling (not just b.html).
     assert sorted(docling_calls[-1]) == ["a.html", "b.html"]
+
+
+# (The spy below replaces the earlier _run_docling_on-based pattern; kept for
+# the test that follows because it uses the same fixture context.)
+
+
+# --------------------------------------------------------------------------- #
+# Batching: persistence is durable across batch boundaries.
+# Crash mid-run loses at most one batch.
+# --------------------------------------------------------------------------- #
+
+
+def test_full_rebuild_persists_after_every_batch(corpus, patch_docling, monkeypatch) -> None:
+    """5 files, batch_size=2 → 3 batches; manifest must grow monotonically
+    after every batch (proving on-disk durability between batches)."""
+    content_dir, output_dir = corpus
+    for name in ("a.html", "b.html", "c.html", "d.html", "e.html"):
+        _write(content_dir / name)
+
+    manifest_snapshots: list[dict[str, int]] = []
+    real_save_manifest = dl.save_manifest
+
+    def snap(out_dir, manifest):
+        manifest_snapshots.append({k: v.n_chunks for k, v in manifest.files.items()})
+        return real_save_manifest(out_dir, manifest)
+
+    monkeypatch.setattr(dl, "save_manifest", snap)
+
+    _make_processor(content_dir, output_dir, batch_size=2).process_documents()
+
+    # 5 files / batch_size 2 → batches of [2, 2, 1].
+    # Manifest snapshot count = 3 (one save per batch). Each is a superset of
+    # the previous (no batch ever shrinks the manifest during a clean run).
+    assert len(manifest_snapshots) == 3
+    sizes = [len(snap) for snap in manifest_snapshots]
+    assert sizes == [2, 4, 5]
+    for prev, curr in zip(manifest_snapshots, manifest_snapshots[1:]):
+        assert set(prev.keys()).issubset(curr.keys())
+
+    # Final manifest matches what's on disk.
+    final = mf.load_manifest(output_dir)
+    assert set(final.files.keys()) == {"a.html", "b.html", "c.html", "d.html", "e.html"}
+
+
+def test_crash_mid_run_resumes_from_manifest(corpus, patch_docling, monkeypatch) -> None:
+    """Simulate a crash mid-stream after the 4th file is yielded, then
+    re-run incrementally.
+
+    Verifies the streaming + checkpoint-counter semantics:
+    - With ``batch_size=2`` the loop checkpoints after files 2 and 4
+      (``completed % batch_size == 0``).
+    - The streaming iterator raises before yielding file 5 → manifest has
+      4 files (the two successful checkpoints).
+    - The restart re-processes only the missing 1 file.
+    """
+    content_dir, output_dir = corpus
+    for name in ("a.html", "b.html", "c.html", "d.html", "e.html"):
+        _write(content_dir / name)
+
+    original = dl.DocumentProcessor._iter_chunks_streaming
+
+    def fail_after_four(self, files):
+        yielded = 0
+        for pair in original(self, files):
+            if yielded == 4:
+                raise RuntimeError("simulated crash mid-stream")
+            yielded += 1
+            yield pair
+
+    monkeypatch.setattr(dl.DocumentProcessor, "_iter_chunks_streaming", fail_after_four)
+
+    with pytest.raises(RuntimeError, match="simulated crash"):
+        _make_processor(content_dir, output_dir, batch_size=2).process_documents()
+
+    # After the crash, the manifest should reflect the 4 files from the two
+    # successful checkpoints (at completed=2 and completed=4).
+    mid = mf.load_manifest(output_dir)
+    assert mid is not None
+    assert len(mid.files) == 4
+
+    # Re-run with the original (un-crashing) stub. Only the 1 missing file
+    # should hit the streaming path on the restart.
+    docling_calls: list[list[str]] = []
+
+    def spy(self, files):
+        docling_calls.append([Path(f).name for f in files])
+        yield from original(self, files)
+
+    monkeypatch.setattr(dl.DocumentProcessor, "_iter_chunks_streaming", spy)
+
+    _make_processor(content_dir, output_dir, batch_size=2).process_documents()
+
+    # On restart, only the one missing file is processed.
+    flattened = [f for batch in docling_calls for f in batch]
+    assert len(flattened) == 1
+    final = mf.load_manifest(output_dir)
+    assert len(final.files) == 5
+
+
+def test_batch_with_zero_chunks_still_advances_manifest(corpus, patch_docling) -> None:
+    """If Docling extracts zero chunks for some files in a batch (e.g. empty
+    HTML pages mixed with normal ones), those files must still land in the
+    manifest with ``n_chunks=0`` so the next run sees them as ``unchanged``
+    and doesn't re-parse them forever."""
+    content_dir, output_dir = corpus
+    _write(content_dir / "a.html")
+    _write(content_dir / "empty.html")
+
+    # Override per-file chunk count: "empty.html" yields zero chunks.
+    patch_docling["empty.html"] = 0
+
+    _make_processor(content_dir, output_dir, batch_size=10).process_documents()
+
+    manifest = mf.load_manifest(output_dir)
+    assert set(manifest.files.keys()) == {"a.html", "empty.html"}
+    assert manifest.files["a.html"].n_chunks == 2
+    assert manifest.files["empty.html"].n_chunks == 0
+    assert manifest.files["empty.html"].chunk_ids == []
+
+
+def test_empty_corpus_full_rebuild_raises(corpus, patch_docling) -> None:
+    """Pointing the processor at an empty content_dir is a loud failure —
+    we never want to write an empty index silently."""
+    content_dir, output_dir = corpus
+    # content_dir exists but is empty.
+    with pytest.raises(RuntimeError, match="No indexable files"):
+        _make_processor(content_dir, output_dir).process_documents()
+
+
+def test_batch_size_one_still_works(corpus, patch_docling) -> None:
+    """Edge case: smallest possible batch size."""
+    content_dir, output_dir = corpus
+    for name in ("a.html", "b.html", "c.html"):
+        _write(content_dir / name)
+
+    _make_processor(content_dir, output_dir, batch_size=1).process_documents()
+
+    final = mf.load_manifest(output_dir)
+    assert set(final.files.keys()) == {"a.html", "b.html", "c.html"}
+    # All chunks present.
+    assert final.total_chunks == 6  # 3 files × 2 chunks/file (stub default)

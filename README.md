@@ -61,11 +61,10 @@ export RETRIEVAL_EXPLAIN_THRESHOLD="0.35"    # perfil "explain" (más recall)
 # defecto, ya que son consultas explicativas. El perfil "decision" (más
 # estricto) queda para el motor de decisión y el benchmark de retrieval.
 
-# Embedder local (mismo para indexar y consultar; ver sección "Embeddings"):
-export EMBEDDING_MODEL="Qwen/Qwen3-Embedding-8B"
-export EMBEDDING_DEVICE="cuda"           # cuda | cpu | mps
-export EMBEDDING_NORMALIZE="true"
-# export EMBEDDING_DIM="1024"            # opcional: truncado MRL para un índice más pequeño
+# Embedder local MLX (Apple Silicon, mismo modelo para indexar y consultar):
+export EMBEDDING_MODEL="data/models/qwen3-emb-mlx-bf16"
+# export EMBEDDING_BATCH_SIZE="32"        # opcional: batch en cada forward pass
+# export EMBEDDING_MAX_SEQ_LENGTH="512"   # opcional: cap defensivo de tokens
 
 export FAISS_INDEX_PATH="./data/faiss"
 # Seguridad: activa solo si el índice FAISS proviene de una fuente 100% confiable
@@ -76,36 +75,46 @@ export DECISION_STATE_DB_PATH="./data/decision_state.sqlite3"
 
 ### Embeddings
 
-El proyecto usa **un único embedder local**: `Qwen/Qwen3-Embedding-8B`
-(multilingüe, nº1 en MMTEB, 100+ idiomas con español incluido, sin coste por
-llamada). Se construye en `hacienda_gpt/llm/embeddings.py` y lo comparten la
-indexación y la consulta, así que **no hay riesgo de mismatch** entre el índice
-y el retrieval.
+El proyecto usa **un único embedder local sobre MLX** (runtime nativo de
+Apple Silicon, pesos bf16, **sin cuantización**). Modelo base:
+`Qwen/Qwen3-Embedding-0.6B` convertido a MLX y servido desde
+`data/models/qwen3-emb-mlx-bf16/`. Tanto la indexación como la consulta
+construyen el embedder en `hacienda_gpt/llm/embeddings.py`, así que **no hay
+riesgo de mismatch** entre el índice y el retrieval.
 
-- Genera vectores de 4096 dims, truncables con `EMBEDDING_DIM` (MRL).
-- Recomienda GPU con ≥16 GB de VRAM; en CPU es lento.
-- Puedes apuntar a otro modelo *sentence-transformers* con `EMBEDDING_MODEL`
-  (p.ej. `intfloat/multilingual-e5-large`).
+Por qué MLX y no PyTorch+MPS: medido **~1.35× más rápido** en M-series con
+equivalencia numérica (cosine sim 0.9998 vs PyTorch). Apple Silicon-only —
+el proyecto se ejecuta en Mac M-series por diseño.
+
+#### Setup inicial (una sola vez)
+
+```bash
+# Convierte el modelo HuggingFace a MLX bf16 local.
+uv run python scripts/convert_to_mlx.py
+# Default: --hf-path Qwen/Qwen3-Embedding-0.6B --mlx-path data/models/qwen3-emb-mlx-bf16
+```
+
+Esto produce un directorio de ~1.1 GB que `EMBEDDING_MODEL` apunta por
+defecto. Para cambiar de modelo, convierte uno nuevo con
+`--hf-path`/`--mlx-path` distintos y exporta `EMBEDDING_MODEL=<nueva ruta>`.
 
 > El LLM de chat sigue siendo OpenAI (`OPENAI_API_KEY`); solo los *embeddings*
 > son locales.
 >
 > ⚠️ Si cambias de modelo de embedding **reconstruye el índice FAISS** (los
-> espacios vectoriales no son intercambiables). Los umbrales de similitud ahora
-> viven en `settings.py` y son configurables por entorno
-> (`RETRIEVAL_DECISION_THRESHOLD` / `RETRIEVAL_EXPLAIN_THRESHOLD`). Los valores
-> históricos (0.82 / 0.75) estaban pensados para OpenAI y sobre-filtraban con
-> Qwen3 (coseno normalizado), provocando abstenciones aun con buen retrieval;
-> los defaults se bajaron a 0.45 / 0.35. **Calíbralos** con
+> espacios vectoriales no son intercambiables — el sistema incremental detecta
+> el cambio vía pipeline fingerprint y fuerza un rebuild automático). Los
+> umbrales de similitud viven en `settings.py` y se configuran vía
+> `RETRIEVAL_DECISION_THRESHOLD` / `RETRIEVAL_EXPLAIN_THRESHOLD`. Defaults
+> actuales: 0.45 / 0.35. **Calíbralos** para tu corpus con
 > `uv run python -m hacienda_gpt.cli.benchmark_retrieval`.
 
 > 🍎 **macOS**: si al primer request a `/qa` (uvicorn) o a la UI
 > (Streamlit) el proceso muere con
 > `OMP: Error #15: Initializing libomp.dylib, but found libomp.dylib
 > already initialized`, exporta `KMP_DUPLICATE_LIB_OK=TRUE` antes de
-> lanzar el servicio. La causa es que `faiss-cpu` y las dependencias de
-> `sentence-transformers`/`docling` (ambos sobre PyTorch) enlazan dos copias de
-> libomp en el mismo proceso.
+> lanzar el servicio. La causa es que `faiss-cpu` y `docling` enlazan dos
+> copias de libomp en el mismo proceso.
 
 ---
 

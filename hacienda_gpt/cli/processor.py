@@ -52,7 +52,19 @@ CONTENT_DIR = os.path.join(PRJ_DATA_DIR, "html")
         "rebuilds; --incremental runs reuse the existing files by design."
     ),
 )
-def cli(content_dir, output_dir, max_tokens, num_workers, incremental, overwrite_output):
+@click.option(
+    "--batch-size",
+    type=click.IntRange(min=1),
+    default=200,
+    help=(
+        "Number of files per persistence batch. After every batch, FAISS and "
+        "manifest are written atomically to disk, so a crash loses at most "
+        "the current batch — re-running with --incremental resumes from the "
+        "manifest. Smaller = finer recovery granularity, more I/O. 200 ~95s "
+        "of work-at-risk on M-series hardware."
+    ),
+)
+def cli(content_dir, output_dir, max_tokens, num_workers, incremental, overwrite_output, batch_size):
     configure_logging()
 
     # Guarding logic differs by mode:
@@ -74,6 +86,7 @@ def cli(content_dir, output_dir, max_tokens, num_workers, incremental, overwrite
         "max_tokens": max_tokens,
         "num_workers": num_workers,
         "incremental": incremental,
+        "batch_size": batch_size,
     }
 
     build_index(args)

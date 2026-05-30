@@ -15,7 +15,6 @@ dependencies = [
     "langchain==1.3.1",
     "langchain-community==0.4.1",
     "langchain-openai==1.2.1",
-    "langchain-huggingface==1.2.2",
     # Ingestion + chunking: Docling (PDF/HTML layout- and table-aware parsing,
     # tokenization-aware HybridChunker) is the single ingestion backend. It
     # replaces the legacy unstructured/HTML-splitter pipeline. langchain-docling
@@ -34,10 +33,15 @@ dependencies = [
     "scrapy-fake-useragent==1.4.4",
     "pathvalidate==3.3.1",
     "scrapy-playwright==0.0.46",
-    # Local multilingual embeddings (default: Qwen/Qwen3-Embedding-8B).
-    # Qwen3-Embedding needs transformers >= 4.51; sentence-transformers caps it < 6.
-    "sentence-transformers==5.5.1",
+    # Tokenizer for Docling's HybridChunker (loaded from the local converted
+    # model dir via HF AutoTokenizer). The embedder itself runs on MLX, so we
+    # don't need sentence-transformers / langchain-huggingface anywhere.
     "transformers>=4.51.0,<6.0.0",
+    # MLX backend for Apple Silicon — bf16 weights, no quantization. The
+    # project targets Apple Silicon Macs; this dep is non-optional. Pinned to
+    # the versions the conversion was verified against.
+    "mlx==0.31.2",
+    "mlx-embeddings==0.1.0",
     "ptpython==3.0.32",
     "fastapi==0.118.0",
     "uvicorn==0.37.0",

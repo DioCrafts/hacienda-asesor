@@ -179,23 +179,36 @@ def test_load_chunks_num_workers_1_uses_sequential_path(monkeypatch: pytest.Monk
 
 
 def test_load_chunks_num_workers_gt1_uses_parallel_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    """With multiple workers the loader must NOT fall back to the sequential
+    code path. After the streaming refactor the parallel branch lives
+    inside ``_iter_chunks_streaming`` (single persistent pool over the whole
+    corpus), so we verify the negative: ``_load_chunks_sequential`` is never
+    called when ``num_workers > 1``."""
     proc = _processor(num_workers=4)
     monkeypatch.setattr(proc, "discover_files", lambda: [f"/tmp/{i}.html" for i in range(8)])
 
-    called: dict[str, int] = {"seq": 0, "par": 0}
+    seq_called: dict[str, int] = {"n": 0}
     monkeypatch.setattr(
         proc,
         "_load_chunks_sequential",
-        lambda files: called.__setitem__("seq", called["seq"] + 1) or [],
+        lambda files: seq_called.__setitem__("n", seq_called["n"] + 1) or [],
     )
-    monkeypatch.setattr(
-        proc,
-        "_load_chunks_parallel",
-        lambda files: called.__setitem__("par", called["par"] + 1) or [Document(page_content="x", metadata={})],
-    )
+    # Intercept the streaming seam so the test never actually spawns workers
+    # — we just want to confirm we entered the parallel branch (the one that
+    # avoids ``_load_chunks_sequential``).
+    streaming_calls: dict[str, list] = {"files": []}
+
+    def fake_stream(self, files):
+        streaming_calls["files"].append(list(files))
+        yield from ()  # empty stream, no chunks
+
+    monkeypatch.setattr(DocumentProcessor, "_iter_chunks_streaming", fake_stream)
 
     proc.load_chunks()
-    assert called == {"seq": 0, "par": 1}
+
+    # Sequential path was NOT taken; streaming was invoked once with all files.
+    assert seq_called["n"] == 0
+    assert streaming_calls["files"] == [[f"/tmp/{i}.html" for i in range(8)]]
 
 
 def test_load_chunks_single_file_skips_pool_even_with_workers(monkeypatch: pytest.MonkeyPatch) -> None:
