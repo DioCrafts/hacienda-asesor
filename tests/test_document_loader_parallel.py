@@ -73,15 +73,83 @@ def test_shard_files_round_robin_handles_more_workers_than_files() -> None:
 # --------------------------------------------------------------------------- #
 
 
-def test_process_shard_worker_returns_empty_for_empty_shard() -> None:
-    """An empty shard must not load Docling at all. Cheap regression: if this
-    silently spins up DoclingLoader for `files=[]`, every empty-shard run pays
-    the model-load cost. Calling directly because the multiprocessing pool
-    would actually invoke the real loader."""
-    from hacienda_gpt.processor.document_loader import _process_shard_worker
+def test_process_one_file_uses_per_worker_chunker(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`_process_one_file` must reuse the pre-built `_WORKER_CHUNKER` (set by
+    `_init_worker`) instead of building one per call. Otherwise the tokenizer
+    is loaded on every file — that's the original sequential bottleneck
+    reappearing inside each pool task.
+    """
+    from hacienda_gpt.processor import document_loader as dl
 
-    chunks = _process_shard_worker(([], 512))
+    sentinel_chunker = object()
+    monkeypatch.setattr(dl, "_WORKER_CHUNKER", sentinel_chunker)
+
+    captured: dict = {}
+
+    class _FakeLoader:
+        def __init__(self, *, file_path, export_type, chunker):
+            captured["file_path"] = file_path
+            captured["chunker"] = chunker
+
+        def load(self):
+            return []
+
+    class _FakeLoaderModule:
+        DoclingLoader = _FakeLoader
+
+        class ExportType:
+            DOC_CHUNKS = "doc_chunks"
+
+    monkeypatch.setitem(
+        __import__("sys").modules,
+        "langchain_docling.loader",
+        _FakeLoaderModule,
+    )
+    fp, chunks = dl._process_one_file("/tmp/some.html")
+    assert fp == "/tmp/some.html"
     assert chunks == []
+    assert captured["chunker"] is sentinel_chunker, "must reuse the per-process chunker"
+    assert captured["file_path"] == ["/tmp/some.html"]
+
+
+def test_init_worker_configures_logging(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`configure_logging` MUST run inside the worker; otherwise the
+    `Finished converting document X` lines stay invisible — that's exactly
+    the visibility regression we just fixed."""
+    from hacienda_gpt.processor import document_loader as dl
+
+    calls = {"configure_logging": 0, "chunker_built": 0}
+
+    class _FakeChunker:
+        def __init__(self, **kw):
+            calls["chunker_built"] += 1
+            calls["chunker_kwargs"] = kw
+
+    fake_settings = type("S", (), {"EMBEDDING_MODEL": "stub/embedder"})()
+
+    def fake_configure_logging() -> None:
+        calls["configure_logging"] += 1
+
+    monkeypatch.setitem(
+        __import__("sys").modules,
+        "docling.chunking",
+        type("M", (), {"HybridChunker": _FakeChunker}),
+    )
+    monkeypatch.setattr(
+        __import__("hacienda_gpt.utils", fromlist=["configure_logging"]),
+        "configure_logging",
+        fake_configure_logging,
+    )
+    monkeypatch.setattr(dl, "_WORKER_CHUNKER", None)
+    # The function imports `from hacienda_gpt import settings`; replace at the
+    # package level so the worker picks our stub.
+    monkeypatch.setattr("hacienda_gpt.settings.EMBEDDING_MODEL", "stub/embedder", raising=False)
+
+    dl._init_worker(512)
+    assert calls["configure_logging"] == 1
+    assert calls["chunker_built"] == 1
+    assert calls["chunker_kwargs"]["max_tokens"] == 512
+    assert dl._WORKER_CHUNKER is not None
 
 
 # --------------------------------------------------------------------------- #
@@ -193,7 +261,12 @@ def test_cli_threads_num_workers_into_build_index(monkeypatch: pytest.MonkeyPatc
     assert captured.get("max_tokens") == 512
 
 
-def test_cli_num_workers_defaults_to_1(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+def test_cli_num_workers_default_targets_mac_perf_cores(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    """Default `--num-workers` is 11 — tuned for Mac M-series (10 perf cores +
+    1 extra to absorb stalls on giant BOE consolidados). Bumping the default
+    matters because every CLI invocation that omits the flag was running
+    single-process before; now it runs on the whole performance core pool
+    automatically. If this default ever drops, ingest wall time grows ~10x."""
     captured: dict = {}
     monkeypatch.setattr(cli_module, "build_index", lambda args: captured.update(args))
     content_dir = tmp_path / "html"
@@ -211,4 +284,4 @@ def test_cli_num_workers_defaults_to_1(monkeypatch: pytest.MonkeyPatch, tmp_path
         ],
     )
     assert result.exit_code == 0, result.output
-    assert captured.get("num_workers") == 1
+    assert captured.get("num_workers") == 11

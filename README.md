@@ -233,9 +233,36 @@ uv run python -m hacienda_gpt.cli.crawler --crawler pdf --folder ./data/pdf --de
 > ver sección **Embeddings**), así que no hay nada que elegir. Reconstruye el
 > índice solo si cambias `EMBEDDING_MODEL`.
 
+### Primera vez (full build)
+
 ```bash
-uv run python -m hacienda_gpt.cli.processor --content-dir ./data/html --output-dir ./data/faiss --overwrite-output
+uv run python -m hacienda_gpt.cli.processor \
+  --content-dir ./data/html --output-dir ./data/faiss \
+  --full --overwrite-output
 ```
+
+### Actualizaciones (incremental, por defecto)
+
+El processor escribe junto al índice un `manifest.json` que registra
+`(sha256, size, chunk_ids)` por fichero. En runs posteriores, solo se vuelve a
+parsear con Docling + embebir los ficheros **nuevos o modificados**:
+
+```bash
+uv run python -m hacienda_gpt.cli.processor \
+  --content-dir ./data/html --output-dir ./data/faiss
+# (--incremental es el default; --full fuerza reconstrucción)
+```
+
+- **Ficheros nuevos / modificados** → Docling + embebido + `FAISS.add_documents`.
+- **Ficheros eliminados del corpus** → `FAISS.delete(ids=…)` quita sus vectores.
+- **Ficheros sin cambios** → se saltan por completo (no Docling, no embebido).
+- **Pipeline fingerprint cambiado** (embedder, `max_tokens` o versión de
+  Docling) → reconstrucción full automática con warning, porque mezclar
+  vectores de espacios distintos rompería la recuperación silenciosamente.
+
+Resultado: un re-índice diario sobre 11k+ docs colapsa de ~12 h a minutos.
+
+Detalles, casos límite y rationale: [`docs/incremental_indexing_plan.md`](docs/incremental_indexing_plan.md).
 
 ---
 
