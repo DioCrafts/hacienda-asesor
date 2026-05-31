@@ -21,29 +21,19 @@ OPENAI_TEMPERATURE = float(os.environ.get("OPENAI_TEMPERATURE", "0"))
 EMBEDDING_MODEL = os.environ.get(
     "EMBEDDING_MODEL", "data/models/qwen3-emb-mlx-bf16"
 )
-# How many texts to feed the embedder per forward pass. 32 is the empirical
-# optimum on M-series for Qwen3-Embedding-0.6B (larger batches lose to
-# padding waste under naive dynamic padding without length sorting). Override
-# only after measuring on your corpus + hardware.
-EMBEDDING_BATCH_SIZE = int(os.environ.get("EMBEDDING_BATCH_SIZE", "32"))
-# Hard cap on per-input tokens at encode time. The chunker bounds chunks to
-# the same budget, so this is defensive only — it protects throughput from
-# any chunk that accidentally slips past the chunker.
-EMBEDDING_MAX_SEQ_LENGTH = int(os.environ.get("EMBEDDING_MAX_SEQ_LENGTH", "512"))
-# Inference batch size: how many chunks the embedder processes per forward
-# pass. Default 32 (sentence-transformers default) is empirically optimal on
-# Apple M-series for Qwen3-Embedding-0.6B. Counter-intuitively, larger batches
-# slow us down because sentence-transformers uses naive dynamic padding (pad
-# each batch to its longest member, no length sorting): bigger batches contain
-# more variance, wasting more attention compute on padding tokens. Override
-# only when you've measured a different optimum for your corpus + hardware.
+# How many chunks the embedder processes per forward pass. Default 32 is the
+# empirical optimum on M-series for Qwen3-Embedding-0.6B. Counter-intuitively,
+# larger batches slow things down because the underlying tokenizer pads each
+# batch to its longest member without length-sorting; bigger batches end up
+# containing more length variance, wasting attention compute on padding
+# tokens. Override only after measuring on your corpus + hardware.
 EMBEDDING_BATCH_SIZE = int(os.environ.get("EMBEDDING_BATCH_SIZE", "32"))
 # Hard cap on per-input tokens at encode time. Qwen3-Embedding ships with
 # ``max_seq_length=32768`` (its native context). Capping at 512 matches the
-# chunker's budget and protects throughput from any chunks that accidentally
-# slip past the chunker (e.g. a future bug). The cap is **defensive only**:
-# benchmarks on the current corpus show no measurable speedup, because
-# attention cost depends on actual sequence length, not max_seq_length.
+# chunker's budget and protects throughput from any chunk that accidentally
+# slips past the chunker (defence-in-depth). The cap is **defensive only**:
+# benchmarks on the current corpus show no measurable speedup from it,
+# because attention cost depends on actual sequence length, not on the cap.
 EMBEDDING_MAX_SEQ_LENGTH = int(os.environ.get("EMBEDDING_MAX_SEQ_LENGTH", "512"))
 
 # --- Reranker (Qwen3-Reranker on MLX) ---------------------------------------

@@ -105,7 +105,22 @@ def test_load_chunks_maps_loader_output(monkeypatch, tmp_path: Path) -> None:
             ]
 
     processor = _processor(str(tmp_path))
-    monkeypatch.setattr(processor, "_build_loader", lambda files: _FakeLoader())
+    # The new sequential path dispatches through the strategy registry +
+    # ``_docling_parse_paths``. We stub the inner Docling call but keep
+    # the surrounding ``docling_chunk_metadata`` flattening logic — that
+    # is the contract this test pins (raw ``dl_meta`` → flat ``title`` /
+    # ``source_url`` / ``section`` fields).
+    from hacienda_gpt.processor import document_loader as dl
+
+    def fake_parse_paths(paths):
+        raw = _FakeLoader().load()
+        return [
+            Document(page_content=c.page_content, metadata=dl.docling_chunk_metadata(c))
+            for c in raw
+        ]
+
+    monkeypatch.setattr(dl, "_docling_parse_paths", fake_parse_paths)
+    monkeypatch.setattr(dl, "_init_worker", lambda max_tokens: None)
 
     chunks = processor.load_chunks()
     assert len(chunks) == 1

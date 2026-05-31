@@ -33,7 +33,9 @@ from __future__ import annotations
 import hashlib
 import logging
 import multiprocessing as mp
+import queue
 import shutil
+import threading
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -195,38 +197,89 @@ def _stable_chunk_id(file_path: str, chunk_index: int) -> str:
     return f"{file_hash}-{chunk_index}"
 
 
-def _process_one_file(file_path: str) -> tuple[str, list[Document]]:
-    """Worker entry point — pulled once per file from the pool's input iterable.
+def _docling_parse_paths(file_paths: list[str]) -> list[Document]:
+    """Run the per-worker Docling+HybridChunker over a list of paths.
 
-    Reuses the per-process `_WORKER_CHUNKER` so each call only pays for
-    `DoclingLoader([file], ...).load()` (a thin LangChain wrapper around
-    `DocumentConverter.convert(file)`), not for the tokenizer load.
+    Shared helper between the default ingest strategy (one parent file
+    in, one batch of chunks out) and the BOE consolidado strategy
+    (parent split into N temp sub-files; this helper chunks all N in one
+    DoclingLoader call, which is faster than N separate calls because
+    Docling reuses its converter state).
 
-    Stamps each emitted ``Document`` with:
-
-    * ``chunk_id``: stable FAISS id (see :func:`_stable_chunk_id`).
-    * ``source_file``: the absolute path that produced this chunk — the
-      manifest layer uses it to group chunks per file when computing diffs.
-
-    Returns `(file_path, chunks)` so the parent can log per-file progress
-    in the order documents actually finish (with `imap_unordered`).
+    Reuses ``_WORKER_CHUNKER`` from the pool initialiser — does not
+    reload the tokenizer per call. Chunks are returned with Docling's
+    raw metadata (``dl_meta`` + the flattened ``title``/``section``/
+    ``source_url`` fields); callers are responsible for stamping
+    ``chunk_id`` and ``source_file`` to match their semantics.
     """
     from langchain_docling.loader import DoclingLoader, ExportType
 
-    if _WORKER_CHUNKER is None:  # Defensive: should never happen with initializer.
-        _init_worker(None)
+    if _WORKER_CHUNKER is None:
+        # The pool initialiser must have set this. Failing loudly here
+        # surfaces a configuration bug; silently rebuilding would
+        # silently drop the chunker tuning (max_tokens, etc.).
+        raise RuntimeError(
+            "_WORKER_CHUNKER is not initialised — pool initialiser did not run."
+        )
     loader = DoclingLoader(
-        file_path=[file_path],
+        file_path=list(file_paths),
         export_type=ExportType.DOC_CHUNKS,
         chunker=_WORKER_CHUNKER,
     )
     raw_chunks = loader.load()
-    docs: list[Document] = []
-    for idx, chunk in enumerate(raw_chunks):
+    out: list[Document] = []
+    for chunk in raw_chunks:
         meta = docling_chunk_metadata(chunk)
+        out.append(Document(page_content=chunk.page_content, metadata=meta))
+    return out
+
+
+def _docling_parse_default(file_path: str) -> list[Document]:
+    """Default Docling strategy's concrete parse step.
+
+    Surfaced here (rather than inside the strategy class) so that
+    workers can call it via the per-process ``_WORKER_CHUNKER`` without
+    the strategy needing to know about the pool internals. Returns
+    chunks with ``source_file`` + ``chunk_id`` stamped.
+    """
+    chunks = _docling_parse_paths([file_path])
+    docs: list[Document] = []
+    for idx, chunk in enumerate(chunks):
+        meta = dict(chunk.metadata or {})
         meta["chunk_id"] = _stable_chunk_id(file_path, idx)
         meta["source_file"] = file_path
+        meta.setdefault("_strategy_id", "default-docling-v1")
         docs.append(Document(page_content=chunk.page_content, metadata=meta))
+    return docs
+
+
+def _process_one_file(file_path: str) -> tuple[str, list[Document]]:
+    """Worker entry point — pulled once per file from the pool's input
+    iterable. Dispatches the file to the appropriate ingest strategy
+    via the registry (specialised strategies first, default last).
+
+    Returns ``(file_path, chunks)`` so the parent can log per-file
+    progress in the order documents actually finish (with
+    ``imap_unordered``).
+    """
+    from hacienda_gpt.processor.strategies import (
+        install_default_strategies,
+        select_strategy,
+    )
+
+    # Idempotent — only registers strategies the worker hasn't seen yet.
+    # Each spawned worker re-imports the module so we ensure the registry
+    # is populated even when the worker's process started without it.
+    install_default_strategies()
+    strategy = select_strategy(file_path)
+    docs = list(strategy.parse(file_path))
+    # Defence-in-depth: stamp ``chunk_id`` / ``source_file`` if the
+    # strategy forgot to. The contract says strategies must set them,
+    # but a fallback keeps a buggy strategy from breaking the index.
+    for idx, doc in enumerate(docs):
+        doc.metadata.setdefault("chunk_id", _stable_chunk_id(file_path, idx))
+        doc.metadata.setdefault("source_file", file_path)
+        doc.metadata.setdefault("_strategy_id", strategy.strategy_id)
     return (file_path, docs)
 
 
@@ -272,12 +325,16 @@ class DocumentProcessor:
         # ``docling`` doesn't expose ``__version__`` on its public module
         # surface, so fall back to package metadata. Without this the
         # fingerprint stays ``docling=unknown`` across upgrades and a Docling
-        # bump silently reuses incompatible vectors.
-        try:
-            from importlib.metadata import PackageNotFoundError, version
+        # bump silently reuses incompatible vectors. We catch **only**
+        # ``PackageNotFoundError`` — anything else (corrupt package metadata,
+        # importlib internals failing) must bubble up and fail loudly: a
+        # silent ``unknown`` would defeat the whole point of the fingerprint
+        # protection against pipeline-version mismatches.
+        from importlib.metadata import PackageNotFoundError, version
 
+        try:
             docling_version = version("docling")
-        except (PackageNotFoundError, Exception):  # noqa: BLE001
+        except PackageNotFoundError:
             docling_version = "unknown"
         return compute_pipeline_fingerprint(
             embedder_model=self._embedder_model,
@@ -432,11 +489,30 @@ class DocumentProcessor:
             return
 
         if self.num_workers <= 1 or len(files) <= 1:
-            # Sequential / single-file path. We still go through
-            # ``_load_chunks_sequential`` to preserve the chunk_id and
-            # source_file metadata contract; then regroup by source so the
-            # caller sees the same per-file stream as the parallel path.
-            all_chunks = self._load_chunks_sequential(files)
+            # Sequential / single-file path. Route through
+            # ``_process_one_file`` per file (in-process, no
+            # multiprocessing) so the **strategy registry** dispatches
+            # the same way it does for the parallel path — otherwise a
+            # giant BOE on a num_workers=1 ingest would bypass the
+            # BoE-consolidado splitter and hang.
+            _init_worker(self.max_tokens)  # ensure _WORKER_CHUNKER is set
+            for f in files:
+                try:
+                    file_path, chunks = _process_one_file(f)
+                except Exception as exc:  # noqa: BLE001
+                    logging.error(
+                        "Sequential strategy dispatch failed on %s: %s",
+                        f,
+                        exc,
+                    )
+                    continue
+                yield file_path, chunks
+            return
+
+            # Legacy (unreachable): pre-strategy path kept commented for
+            # reference. Remove once the strategy registry has been in
+            # production for a release without regressions.
+            all_chunks = self._load_chunks_sequential(files)  # pragma: no cover
             chunks_by_file: dict[str, list[Document]] = {}
             for chunk in all_chunks:
                 src = chunk.metadata.get("source_file", "")
@@ -487,18 +563,30 @@ class DocumentProcessor:
     ) -> dict[str, FileEntry]:
         """Group new chunks by their source file, then mint manifest entries.
 
-        ``files_processed`` is the authoritative list of files we asked
-        Docling to ingest (the diff's ``new + modified``). Every entry must
-        appear in the manifest even if Docling produced zero chunks for it,
-        so a subsequent run still recognises the file as known.
+        ``files_processed`` is the authoritative list of files we asked the
+        chosen strategy to ingest (the diff's ``new + modified``). Every
+        entry must appear in the manifest even if the strategy produced
+        zero chunks for it, so a subsequent run still recognises the file
+        as known.
+
+        Records the ``strategy_id`` that emitted each chunk by reading
+        ``chunk.metadata["_strategy_id"]`` (stamped by ``_process_one_file``
+        and the strategies themselves). When a file processed produced no
+        chunks at all, we fall back to the registry's current claim for
+        that path so the manifest still records who would have processed
+        it — keeps the per-file strategy diff coherent on edge cases.
         """
         content_dir = Path(self.content_dir)
         chunks_by_file: dict[str, list[str]] = {}
+        strategy_by_file: dict[str, str] = {}
         for chunk in chunks:
             src = chunk.metadata.get("source_file")
             cid = chunk.metadata.get("chunk_id")
+            sid = chunk.metadata.get("_strategy_id")
             if src and cid:
                 chunks_by_file.setdefault(src, []).append(cid)
+            if src and sid and src not in strategy_by_file:
+                strategy_by_file[src] = sid
 
         now = datetime.now(UTC).isoformat()
         entries: dict[str, FileEntry] = {}
@@ -512,12 +600,27 @@ class DocumentProcessor:
                 continue
             rel = relative_key(path, content_dir)
             cids = chunks_by_file.get(path, [])
+            sid = strategy_by_file.get(path)
+            if sid is None:
+                # Zero-chunk file — ask the registry who claims this path
+                # now so we still record the strategy_id correctly.
+                try:
+                    from hacienda_gpt.processor.strategies import (
+                        install_default_strategies,
+                        select_strategy,
+                    )
+
+                    install_default_strategies()
+                    sid = select_strategy(path).strategy_id
+                except Exception:  # noqa: BLE001 — never block the ingest on this
+                    sid = None
             entries[rel] = FileEntry(
                 sha256=sha,
                 size_bytes=size,
                 n_chunks=len(cids),
                 chunk_ids=cids,
                 ingested_at=now,
+                strategy_id=sid,
             )
         return entries
 
@@ -558,7 +661,23 @@ class DocumentProcessor:
             # No usable manifest → full rebuild over every discovered file.
             return list(files), [], None, fingerprint
 
-        diff = diff_files_against_manifest(files, manifest, Path(self.content_dir))
+        # Pass the strategy router into the diff so files whose owning
+        # strategy changed get re-ingested by the new owner.
+        def _strategy_for(path: str) -> str:
+            from hacienda_gpt.processor.strategies import (
+                install_default_strategies,
+                select_strategy,
+            )
+
+            install_default_strategies()
+            return select_strategy(path).strategy_id
+
+        diff = diff_files_against_manifest(
+            files,
+            manifest,
+            Path(self.content_dir),
+            strategy_for=_strategy_for,
+        )
         logging.info(
             "Incremental diff vs manifest: new=%d  modified=%d  removed=%d  unchanged=%d",
             len(diff.new),
@@ -662,85 +781,169 @@ class DocumentProcessor:
             logging.info("Local FAISS index updated incrementally at %s", self.output_dir)
             return
 
-        # Streaming processing loop.
+        # Streaming processing loop with an **async checkpoint worker**.
         #
-        # The legacy implementation was batched at parallelism level: spawn a
-        # pool, drain the batch, persist, spawn a new pool. That gave a "fat
-        # tail" idle phase at the end of every batch — workers freed up by
-        # short docs sat idle while a peer slogged through a giant BOE
-        # consolidado, because there were no more files in the current batch
-        # for them to steal. The streaming loop below dissolves the batch
-        # boundary at parallelism level (single persistent pool over the
-        # entire ``files_to_process``) while keeping it at persistence level
-        # (we still checkpoint every ``self.batch_size`` completed files).
+        # Sync checkpoints (the previous implementation) blocked the main
+        # thread for the full embedding + FAISS-save duration, which on big
+        # checkpoints (40 k chunks) took 30–60 minutes. During that window
+        # the multiprocessing pool's IPC queue filled up and the 11 Docling
+        # workers throttled from 99 % to ~70 % CPU because nothing was
+        # consuming their output. The fix below moves the checkpoint work
+        # (embedding + FAISS persist + manifest write) into a separate
+        # thread; the main thread keeps draining the pool's queue, so the
+        # workers never stall.
+        #
+        # The queue is bounded so memory growth is capped: at most
+        # ``CHECKPOINT_QUEUE_SIZE`` checkpoints can be **waiting** to be
+        # persisted while the worker processes one. Each waiting checkpoint
+        # holds its window of chunks in memory (~200 files × ~150 chunks ×
+        # 2 KB text ≈ 60 MB). Size 4 covers the ~6 : 1 parse-vs-embed time
+        # ratio we measured on the BOE corpus on M-series — main thread can
+        # fill 4 windows during one embedding cycle before blocking on
+        # ``queue.put`` (natural backpressure).
         total_files = len(files_to_process)
         cumulative_chunks = 0
         checkpoint_n = 0
         files_window: list[str] = []
         chunks_window: list[Document] = []
         completed = 0
-        logging.info(
-            "Streaming over %d file(s) with %d worker(s); checkpoint every %d completed files.",
-            total_files,
-            self.num_workers,
-            self.batch_size,
-        )
 
-        for file_path, file_chunks in self._iter_chunks_streaming(files_to_process):
-            files_window.append(file_path)
-            chunks_window.extend(file_chunks)
-            completed += 1
-            cumulative_chunks += len(file_chunks)
+        # Mutable holders so the bg thread can update them as it goes — the
+        # main thread only writes to ``db_holder`` before the loop starts
+        # (during the initial removal pass) and reads it only in the
+        # fallback rebuild branch above, so there is no race.
+        db_holder: list[Any] = [db]
+        manifest_holder: list[Manifest | None] = [existing_manifest]
+        checkpoint_queue: queue.Queue = queue.Queue(maxsize=4)
+        checkpoint_exc: list[BaseException] = []
+        # SENTINEL signals "no more checkpoints, please exit".
+        SENTINEL = object()
 
-            is_last = completed == total_files
-            should_checkpoint = (completed % self.batch_size == 0) or is_last
-            if not should_checkpoint:
-                continue
+        def _persist_checkpoint(
+            files_w: list[str],
+            chunks_w: list[Document],
+            ckpt_n: int,
+        ) -> None:
+            current_db = db_holder[0]
+            current_manifest = manifest_holder[0]
 
-            checkpoint_n += 1
-            logging.info(
-                "Checkpoint %d at file %d/%d: persisting %d files (%d new chunks in this window).",
-                checkpoint_n,
-                completed,
-                total_files,
-                len(files_window),
-                len(chunks_window),
-            )
-
-            if chunks_window:
-                ids = [c.metadata["chunk_id"] for c in chunks_window]
-                if db is None:
-                    db = FAISS.from_documents(chunks_window, self.embeddings, ids=ids)
+            if chunks_w:
+                ids = [c.metadata["chunk_id"] for c in chunks_w]
+                if current_db is None:
+                    current_db = FAISS.from_documents(
+                        chunks_w, self.embeddings, ids=ids
+                    )
                 else:
-                    db.add_documents(chunks_window, ids=ids)
+                    current_db.add_documents(chunks_w, ids=ids)
+                db_holder[0] = current_db
 
-            # Persist FAISS first (atomic), then manifest (atomic). See the
-            # method docstring for the rationale on the ordering.
-            if db is not None:
-                self._atomic_save_index(db)
+            if current_db is not None:
+                self._atomic_save_index(current_db)
 
-            entries = self._build_entries(files_window, chunks_window)
-            if existing_manifest is None:
-                existing_manifest = Manifest(
+            entries = self._build_entries(files_w, chunks_w)
+            if current_manifest is None:
+                current_manifest = Manifest(
                     pipeline_fingerprint=fingerprint,
                     created_at=datetime.now(UTC).isoformat(),
                     updated_at=datetime.now(UTC).isoformat(),
                     files=dict(entries),
                 )
             else:
-                existing_manifest.files.update(entries)
-                existing_manifest.pipeline_fingerprint = fingerprint
-            save_manifest(self.output_dir, existing_manifest)
+                current_manifest.files.update(entries)
+                current_manifest.pipeline_fingerprint = fingerprint
+            manifest_holder[0] = current_manifest
+            save_manifest(self.output_dir, current_manifest)
 
             logging.info(
-                "Checkpoint %d persisted. Cumulative chunks: %d. Manifest: %d file(s).",
-                checkpoint_n,
-                cumulative_chunks,
-                len(existing_manifest.files),
+                "Checkpoint %d persisted. Manifest: %d file(s).",
+                ckpt_n,
+                len(current_manifest.files),
             )
 
-            files_window = []
-            chunks_window = []
+        def _checkpoint_worker() -> None:
+            try:
+                while True:
+                    item = checkpoint_queue.get()
+                    if item is SENTINEL:
+                        return
+                    files_w, chunks_w, ckpt_n = item
+                    _persist_checkpoint(files_w, chunks_w, ckpt_n)
+            except BaseException as exc:  # noqa: BLE001 - propagate to main
+                checkpoint_exc.append(exc)
+
+        logging.info(
+            "Streaming over %d file(s) with %d worker(s); async-checkpoint every %d completed files.",
+            total_files,
+            self.num_workers,
+            self.batch_size,
+        )
+
+        checkpoint_thread = threading.Thread(
+            target=_checkpoint_worker,
+            name="checkpoint-worker",
+            daemon=True,
+        )
+        checkpoint_thread.start()
+
+        try:
+            for file_path, file_chunks in self._iter_chunks_streaming(files_to_process):
+                # Surface bg-thread failures promptly so we don't accumulate
+                # work that will never be persisted.
+                if checkpoint_exc:
+                    raise checkpoint_exc[0]
+
+                files_window.append(file_path)
+                chunks_window.extend(file_chunks)
+                completed += 1
+                cumulative_chunks += len(file_chunks)
+
+                is_last = completed == total_files
+                should_checkpoint = (completed % self.batch_size == 0) or is_last
+                if not should_checkpoint:
+                    continue
+
+                checkpoint_n += 1
+                logging.info(
+                    "Checkpoint %d enqueued at file %d/%d: %d files, %d new chunks.",
+                    checkpoint_n,
+                    completed,
+                    total_files,
+                    len(files_window),
+                    len(chunks_window),
+                )
+                # Blocks if the worker hasn't finished the previous
+                # checkpoint yet — natural backpressure when embedding is
+                # the bottleneck.
+                checkpoint_queue.put((files_window, chunks_window, checkpoint_n))
+                files_window = []
+                chunks_window = []
+        finally:
+            # Signal end-of-stream and wait for the worker to drain whatever
+            # is in flight. Even on exception we want the worker to finish
+            # its current checkpoint so partial state on disk is consistent.
+            #
+            # Two failure modes to defend against:
+            #
+            # * Bg thread crashed (exception in ``_persist_checkpoint``) —
+            #   it's no longer reading the queue, so ``put(SENTINEL)`` would
+            #   block forever if the queue is full. Use a put with timeout
+            #   inside a loop guarded by ``is_alive`` so we bail when the
+            #   thread is gone.
+            # * Bg thread is busy persisting a big checkpoint — perfectly
+            #   normal, ``put`` will block until the worker drains a slot,
+            #   then we join indefinitely. That is by design: we want all
+            #   queued checkpoints persisted before returning.
+            while checkpoint_thread.is_alive():
+                try:
+                    checkpoint_queue.put(SENTINEL, timeout=5)
+                    break
+                except queue.Full:
+                    continue
+            checkpoint_thread.join()
+
+        # If the bg thread errored, re-raise here (it dies silently otherwise).
+        if checkpoint_exc:
+            raise checkpoint_exc[0]
 
         logging.info(
             "Local FAISS index successfully saved to %s (%d chunks across %d file(s))",

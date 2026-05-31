@@ -29,12 +29,32 @@ MALICIOUS_PATTERNS = [
 ]
 
 
+# Compile once at import time. Sanitisation runs once per retrieved doc on
+# every ``/qa`` (~20 docs/request after the reranker first stage); previously
+# the loop called ``re.sub`` with **string** patterns, relying on Python's
+# internal LRU cache (512 entries, evictable). Pre-compiled patterns sidestep
+# the cache lookup entirely.
+#
+# We intentionally keep the **sequential** application (each pattern's
+# substitution feeds the next) rather than collapsing into a single
+# ``|``-alternation. The alternation form would change semantics: the engine
+# picks the longest match per position across the alternation, so
+# ``ignore (all|previous|prior) instructions`` would now also fire on inputs
+# the serial form left alone, and the order-of-application interactions
+# (e.g. ``system prompt`` redacted first, then ``reveal .*prompt`` no longer
+# matches) disappear. Behaviour stability over micro-perf — keep the list.
+_COMPILED_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(pattern, re.IGNORECASE) for pattern in MALICIOUS_PATTERNS
+]
+_REDACTION = "[REDACTED_INJECTION_PATTERN]"
+
+
 def sanitize_retrieved_context(text: str) -> str:
     """Redact common prompt-injection fragments from retrieved docs.
 
-    This is defense-in-depth; primary policy remains in system prompt.
+    Defence-in-depth; primary policy remains in the system prompt.
     """
     sanitized = text
-    for pattern in MALICIOUS_PATTERNS:
-        sanitized = re.sub(pattern, "[REDACTED_INJECTION_PATTERN]", sanitized, flags=re.IGNORECASE)
+    for pattern in _COMPILED_PATTERNS:
+        sanitized = pattern.sub(_REDACTION, sanitized)
     return sanitized

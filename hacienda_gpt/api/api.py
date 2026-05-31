@@ -1,12 +1,46 @@
 from __future__ import annotations
 
+import threading
+from collections.abc import Callable
 from datetime import UTC, datetime
-from functools import lru_cache
-from typing import Annotated
+from typing import Annotated, TypeVar
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
+
+T = TypeVar("T")
+
+
+def _thread_safe_singleton(factory: Callable[[], T]) -> Callable[[], T]:
+    """Lazy, thread-safe replacement for ``functools.lru_cache(maxsize=1)``.
+
+    ``functools.lru_cache`` is documented as **not** thread-safe for
+    concurrent first calls: under a request burst (e.g. uvicorn worker
+    thread pool serving the first ``/qa``) two threads can both observe a
+    cache miss and run ``factory()`` in parallel. For ``_build_qa_chain``
+    that meant loading the 1.1 GB MLX embedder twice into RAM. This
+    decorator wraps the factory in double-checked locking so the work
+    happens exactly once. Exposes ``cache_clear()`` for tests.
+    """
+    lock = threading.Lock()
+    holder: list[T] = []
+
+    def wrapper() -> T:
+        if holder:
+            return holder[0]
+        with lock:
+            if holder:
+                return holder[0]
+            holder.append(factory())
+            return holder[0]
+
+    def cache_clear() -> None:
+        with lock:
+            holder.clear()
+
+    wrapper.cache_clear = cache_clear  # type: ignore[attr-defined]
+    return wrapper
 
 from hacienda_gpt.decision.audit import build_recommendation_audit_event
 from hacienda_gpt.decision.fact_extractor import FactExtractor, default_fact_extractor
@@ -20,7 +54,7 @@ from hacienda_gpt.settings import DECISION_STATE_DB_PATH
 app = FastAPI(title="HaciendaGPT Decision API", version="1.0.0")
 
 
-@lru_cache(maxsize=1)
+@_thread_safe_singleton
 def _build_case_store() -> SQLiteCaseStateStore:
     # Single configurable store shared with the Streamlit UI; the path was
     # previously hardcoded, so the API and UI never saw each other's cases.
@@ -34,7 +68,7 @@ def get_case_store() -> SQLiteCaseStateStore:
     return _build_case_store()
 
 
-@lru_cache(maxsize=1)
+@_thread_safe_singleton
 def _build_fact_extractor() -> FactExtractor:
     # Built once and reused, mirroring _build_qa_chain / _build_case_store. The
     # previous per-request construction spun up a fresh OpenAI() client on every
@@ -176,7 +210,7 @@ class QARequest(BaseModel):
     chat_history: list[dict] = Field(default_factory=list)
 
 
-@lru_cache(maxsize=1)
+@_thread_safe_singleton
 def _build_qa_chain():
     """Build the retrieval chain once and reuse it across requests.
 

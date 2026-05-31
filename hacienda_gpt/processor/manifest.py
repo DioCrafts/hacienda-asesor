@@ -48,6 +48,15 @@ class FileEntry:
     ``chunk_ids`` is what lets the diff step delete just this file's vectors
     from FAISS without rebuilding the entire index when the file is later
     modified or removed.
+
+    ``strategy_id`` records which ingest strategy produced these chunks.
+    When the strategy responsible for a file (per the current registry)
+    differs from the strategy stored here, the diff treats the file as
+    **modified** and re-ingests it — letting strategy changes invalidate
+    only the files they own without forcing a full rebuild. Legacy
+    manifests (pre-strategy) carry ``None`` here, which is treated as
+    "trust the existing entry, don't reprocess on strategy mismatch
+    alone" — backward-compatible migration without losing indexed work.
     """
 
     sha256: str
@@ -55,24 +64,33 @@ class FileEntry:
     n_chunks: int
     chunk_ids: list[str]
     ingested_at: str  # ISO-8601 UTC
+    strategy_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "sha256": self.sha256,
             "size_bytes": self.size_bytes,
             "n_chunks": self.n_chunks,
             "chunk_ids": list(self.chunk_ids),
             "ingested_at": self.ingested_at,
         }
+        # Persist strategy_id only when set, keeping legacy entries clean
+        # JSON (so a manifest from before the strategies feature reads as
+        # ``strategy_id=None`` after a roundtrip).
+        if self.strategy_id is not None:
+            out["strategy_id"] = self.strategy_id
+        return out
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> FileEntry:
+        raw_strategy = raw.get("strategy_id")
         return cls(
             sha256=str(raw["sha256"]),
             size_bytes=int(raw["size_bytes"]),
             n_chunks=int(raw["n_chunks"]),
             chunk_ids=[str(x) for x in raw.get("chunk_ids", [])],
             ingested_at=str(raw["ingested_at"]),
+            strategy_id=str(raw_strategy) if raw_strategy is not None else None,
         )
 
 
@@ -242,12 +260,24 @@ def diff_files_against_manifest(
     current_files: list[str],
     manifest: Manifest | None,
     content_dir: Path,
+    *,
+    strategy_for: callable | None = None,  # type: ignore[type-arg]
 ) -> FileDiff:
     """Three-way diff between disk state and manifest state.
 
-    Cost: O(N) for new/missing files, plus one SHA-256 stream per file that
-    matches a manifest entry by path. We short-circuit on size mismatch
-    before hashing so size-only changes don't pay the hashing cost.
+    Cost: O(N) for new/missing files, plus one SHA-256 stream per file
+    that matches a manifest entry by path. We short-circuit on size
+    mismatch before hashing so size-only changes don't pay the hashing
+    cost.
+
+    When ``strategy_for`` is supplied (a callable ``(abs_path) -> str``
+    that returns the strategy_id that currently claims the file), files
+    whose stored ``strategy_id`` differs from the current claim are
+    marked as **modified** — the strategy change invalidates that file's
+    chunks without forcing a full rebuild of the rest of the index.
+    Manifest entries with ``strategy_id is None`` (legacy, pre-strategy
+    feature) are left alone — we trust the existing chunks rather than
+    forcing a costly migration on every legacy index.
     """
     if manifest is None:
         # First-time ingest — everything is new.
@@ -277,8 +307,21 @@ def diff_files_against_manifest(
         sha, _ = compute_file_hash(path_obj)
         if sha != prev.sha256:
             modified.append(abs_path)
-        else:
-            unchanged.append(abs_path)
+            continue
+        # SHA matches. Re-check strategy ownership: if the file is now
+        # claimed by a different strategy than the one stored, the file
+        # must be reprocessed by the new owner. Legacy entries
+        # (strategy_id=None) skip this gate to avoid forcing a full
+        # migration on existing indexes.
+        if strategy_for is not None and prev.strategy_id is not None:
+            try:
+                current_sid = strategy_for(abs_path)
+            except Exception:  # noqa: BLE001
+                current_sid = prev.strategy_id  # fail-open on routing errors
+            if current_sid != prev.strategy_id:
+                modified.append(abs_path)
+                continue
+        unchanged.append(abs_path)
 
     removed_rels = manifest_keys - set(current_by_rel.keys())
     removed = [str(content_dir / rel) for rel in sorted(removed_rels)]
