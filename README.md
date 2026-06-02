@@ -433,6 +433,42 @@ La evaluación genera:
 - métricas por dimensión (`keyword_score`, `citation_score`, `grounding_score`)
 - detalle por pregunta
 
+### 🤖 Evaluación automatizada con RAGAS (juez LLM local)
+
+Para comparar dos configuraciones de retrieval (p. ej. reranker on/off, BM25 on/off, contextual embeddings on/off) usamos RAGAS con **juez local MLX** — no llama a OpenAI ni cuesta dinero por evaluación.
+
+```bash
+# 1) baseline (config actual)
+FAISS_INDEX_PATH=./data/faiss-test OPENAI_API_KEY=sk-... \
+    uv run python scripts/ragas_eval.py \
+    --out /tmp/hacienda-run/ragas_baseline.json --label baseline
+
+# 2) variante (ej. desactivando reranker)
+RERANKER_ENABLED=false FAISS_INDEX_PATH=./data/faiss-test OPENAI_API_KEY=sk-... \
+    uv run python scripts/ragas_eval.py \
+    --out /tmp/hacienda-run/ragas_no_reranker.json --label no-reranker
+
+# 3) comparar agregados (faith / answer_relevancy / context_precision)
+jq '.ragas.aggregate' /tmp/hacienda-run/ragas_baseline.json
+jq '.ragas.aggregate' /tmp/hacienda-run/ragas_no_reranker.json
+```
+
+Métricas reportadas (sin ground-truth, todas judge-LLM):
+
+| Métrica | Pregunta que responde |
+|---|---|
+| `faithfulness` | ¿La respuesta se apoya en los contextos recuperados? |
+| `answer_relevancy` | ¿La respuesta aborda la pregunta del usuario? |
+| `context_precision` | ¿Los chunks recuperados eran realmente útiles para responder? |
+
+Notas operativas:
+
+- El juez es **Qwen3-1.7B MLX bf16** (~3 GB). Más lento y menos preciso que `gpt-4o-mini` pero **gratis y consistente entre runs**.
+- Latencia: ~15–25 s por escenario (15 escenarios → ~5 min). Tras el primer escenario el modelo queda cacheado en RAM.
+- A esta escala (15 muestras) los scores son **ruidosos en términos absolutos**; úsalos como señal de **regresión** entre dos configs, no como número de referencia.
+- `--samples-only` salta el paso de juez — útil para iterar el chain sin re-juzgar cada vez.
+- Para ejecutar contra el corpus completo: `FAISS_INDEX_PATH=./data/faiss` (asegúrate de que el índice esté construido).
+
 ---
 
 ## 🔐 Notas de seguridad

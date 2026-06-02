@@ -7,6 +7,7 @@ from typing import Annotated, TypeVar
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
@@ -52,6 +53,26 @@ from hacienda_gpt.llm.grounding import AnswerEnvelope
 from hacienda_gpt.settings import DECISION_STATE_DB_PATH
 
 app = FastAPI(title="HaciendaGPT Decision API", version="1.0.0")
+
+# CORS: in dev the Vite frontend runs at http://localhost:5173 and
+# proxies /api/* to this server, which avoids preflight altogether. We
+# still register CORSMiddleware so a non-proxied React build (e.g. a
+# preview deploy on a different host) can hit the API directly. The
+# allow-list is deliberately narrow — wildcard origins would be a footgun
+# the day someone exposes the API publicly.
+_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:4173",  # vite preview
+    "http://127.0.0.1:4173",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
+    allow_credentials=False,
+)
 
 
 @_thread_safe_singleton

@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Subtle global polish. Tailwind handles 99% of styling; only put here
+   what cannot be expressed as a utility class on a component. */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background: #f6f4ef;
+  color: #1b2330;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+               Inter, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbars: keep them present (asesor reads long answers) but make
+   them quieter than the OS default so they don't compete with the
+   colour-coded trust strip. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #d6dbe2;
+  border-radius: 999px;
+  border: 2px solid #f6f4ef;
+}
+::-webkit-scrollbar-thumb:hover { background: #b8c0cb; }

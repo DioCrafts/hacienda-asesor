@@ -48,6 +48,42 @@
       "topic": "jurisprudencia_tc_iivtnu",
       "label": "STC 182/2021 — IIVTNU declaración integral de inconstitucionalidad del método objetivo (cierra la saga plusvalía)",
       "subdir": "boe-jurisprudencia-tc"
+    },
+    {
+      "id": "BOE-A-1987-28141",
+      "topic": "leyes_fundamentales",
+      "label": "Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones (LISD) — texto consolidado",
+      "subdir": "boe-leyes-fundamentales"
+    },
+    {
+      "id": "BOE-A-2006-20764",
+      "topic": "leyes_fundamentales",
+      "label": "Ley 35/2006, de 28 de noviembre, del IRPF (LIRPF) — texto consolidado",
+      "subdir": "boe-leyes-fundamentales"
+    },
+    {
+      "id": "BOE-A-1992-28740",
+      "topic": "leyes_fundamentales",
+      "label": "Ley 37/1992, de 28 de diciembre, del Impuesto sobre el Valor Añadido (LIVA) — texto consolidado",
+      "subdir": "boe-leyes-fundamentales"
+    },
+    {
+      "id": "BOE-A-2003-23186",
+      "topic": "leyes_fundamentales",
+      "label": "Ley 58/2003, de 17 de diciembre, General Tributaria (LGT) — texto consolidado",
+      "subdir": "boe-leyes-fundamentales"
+    },
+    {
+      "id": "BOE-A-2007-15984",
+      "topic": "leyes_fundamentales",
+      "label": "Real Decreto 1065/2007 — Reglamento General de las Actuaciones y Procedimientos de Gestión e Inspección Tributaria (RGGI) — texto consolidado",
+      "subdir": "boe-leyes-fundamentales"
+    },
+    {
+      "id": "BOE-A-2004-4214",
+      "topic": "leyes_fundamentales",
+      "label": "Real Decreto Legislativo 2/2004 — Texto Refundido de la Ley Reguladora de las Haciendas Locales (TRLHL, incluye IIVTNU/plusvalía municipal y IBI) — texto consolidado",
+      "subdir": "boe-leyes-fundamentales"
     }
   ]
 }

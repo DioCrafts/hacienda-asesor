@@ -40,19 +40,112 @@ EMBEDDING_MAX_SEQ_LENGTH = int(os.environ.get("EMBEDDING_MAX_SEQ_LENGTH", "512")
 # Cross-encoder pass after first-stage dense retrieval. Scores (query, doc)
 # pairs directly and re-orders the candidate set, surfacing the docs that
 # actually answer the query (vs. docs that are merely topically similar).
-# Opt-in: indexing pipelines don't need it, and we want a clean A/B against
-# the dense-only baseline before enabling it by default.
-RERANKER_ENABLED = _env_bool("RERANKER_ENABLED", default=False)
+#
+# Measured A/B against the full 11 k-doc corpus (15-scenario fictional-user
+# battery): +2 abstain→cited rescues, -1 cited→abstain regression, net +1
+# cited, latency ~2× per query (6.5 s → 12.3 s median). Zero hallucinations
+# in both modes. The rescues are substantively meaningful (plusvalía
+# devolución + ISD donaciones — concrete tax advice users actually need);
+# the regression is "abstain" rather than wrong advice. Net positive for a
+# fiscal advisor where correctness >> latency, so we enable by default.
+# Override with ``RERANKER_ENABLED=false`` to force the dense-only path
+# (e.g. for latency benchmarks against the old baseline).
+RERANKER_ENABLED = _env_bool("RERANKER_ENABLED", default=True)
 RERANKER_MODEL = os.environ.get("RERANKER_MODEL", "data/models/qwen3-reranker-mlx-bf16")
 # After reranking, keep the top-K documents to send to the LLM. The retriever's
 # ``TOP_K`` controls first-stage recall (how many docs reach the reranker);
-# this controls precision of what the LLM finally sees. 5 is a balance —
-# enough for the LLM to triangulate, few enough to fit context budget.
-RERANKER_TOP_K = int(os.environ.get("RERANKER_TOP_K", "5"))
+# this controls precision of what the LLM finally sees. Raised from 5 to 8
+# (2026-06-02) to ATTACK FABRICATION: when the LLM was given only the top-5
+# reranked chunks for under-specified queries (e.g. "reducción 95% empresa
+# familiar"), it fell back to general knowledge and produced fluent-but-
+# ungrounded answers (faith=0 with confident tone). 8 chunks widens the
+# material the LLM has, reducing the temptation to fill gaps. Cost: +50%
+# context tokens to the LLM, +5-10% latency. Acceptable for fiscal advisor
+# where hallucination is strictly forbidden.
+RERANKER_TOP_K = int(os.environ.get("RERANKER_TOP_K", "8"))
 # Reranker first-stage k: when reranker is enabled we bump the FAISS retriever
-# top-k so the reranker has more candidates to reorder. The reranker is much
-# better at picking the truly relevant ones, so widening recall here is cheap.
-RERANKER_FIRST_STAGE_K = int(os.environ.get("RERANKER_FIRST_STAGE_K", "20"))
+# top-k so the reranker has more candidates to reorder. Raised from 20 to 30
+# alongside the RERANKER_TOP_K bump — the reranker needs proportionally more
+# raw recall to keep choosing 8 *good* chunks instead of 5.
+RERANKER_FIRST_STAGE_K = int(os.environ.get("RERANKER_FIRST_STAGE_K", "30"))
+
+# --- BM25 hybrid retrieval --------------------------------------------------
+# Sparse BM25 retriever combined with the dense FAISS retriever via
+# Reciprocal Rank Fusion (LangChain's ``EnsembleRetriever``). Targets queries
+# that mention concrete entity names — ``modelo 721``, ``Ley 7/2012``,
+# ``STC 182/2021`` — where token-overlap signal beats semantic similarity.
+#
+# **Disabled by default** based on measured A/B against the 15-scenario
+# fictional-user battery on the full 11 k-doc corpus:
+#
+# * cited count: 8 (reranker-only) → 7 (BM25 + reranker), **net -1**;
+# * latency: 12 s → 18 s median (+50 %, on top of the +10 GB build RAM);
+# * BM25 *broke* the reranker's biggest rescue (``iivtnu_devolucion``)
+#   because RRF mixed in topic-tangential docs that mention ``Tribunal
+#   Constitucional`` and demoted the plusvalía-specific STCs;
+# * the lexical queries we expected to rescue (Beckham, STC 8/2022) were
+#   not rescued — those failures are **semantic** (the corpus uses
+#   "régimen impatriados" not "Beckham") and **coverage** gaps that BM25
+#   can't bridge.
+#
+# Kept in code as an opt-in for future re-evaluation against a proper
+# golden test set (50–100 expert-annotated query-answer pairs) where the
+# wins on entity-name queries may show up at scale. Enable with
+# ``BM25_ENABLED=true``.
+BM25_ENABLED = _env_bool("BM25_ENABLED", default=False)
+# Relative weights for Reciprocal Rank Fusion: ``(dense_weight, bm25_weight)``.
+# Default 0.6 / 0.4 biases slightly toward dense (which handles semantic
+# queries) while letting BM25 dominate on exact-reference queries. Adjust
+# with the retrieval benchmark once a golden set exists.
+BM25_DENSE_WEIGHT = float(os.environ.get("BM25_DENSE_WEIGHT", "0.6"))
+BM25_BM25_WEIGHT = float(os.environ.get("BM25_BM25_WEIGHT", "0.4"))
+# First-stage k for BM25 — matched to the dense retriever's k so RRF is fair.
+BM25_K = int(os.environ.get("BM25_K", "20"))
+
+# --- Contextual embeddings (Anthropic September 2024) -----------------------
+# At index time, prepend each chunk with a 1-sentence contextual prefix
+# generated by a local Qwen3 instruct model. The intuition: a chunk that
+# reads "El plazo es de 30 días hábiles" is unanchored — the embedder
+# cannot disambiguate which deadline (ISD donaciones, IVA, modelo 720…).
+# The contextual prefix supplies the anchor, so colloquial queries
+# ("¿plazo donaciones?", "¿régimen Beckham?") align with chunks whose
+# raw text uses the formal terminology ("art 9.1.a LIRPF", "art 93
+# LIRPF"). Anthropic reported 35-50 % retrieval-failure reduction on
+# their benchmarks.
+#
+# Implementation note: changing this flag (or the model / max-tokens)
+# **invalidates the entire FAISS index** via the pipeline fingerprint —
+# the chunks under it are embeddings of a different text. Off by default
+# so existing indexes stay valid; flip to ``true`` and run the processor
+# with ``--full --overwrite-output`` to rebuild.
+CONTEXTUAL_EMBEDDINGS_ENABLED = _env_bool("CONTEXTUAL_EMBEDDINGS_ENABLED", default=False)
+# Local MLX bf16 model that generates the prefix. Qwen3-1.7B is the
+# sweet spot: Qwen3-0.6B echoes the prompt schema instead of filling it,
+# Qwen3-4B + would make the full-corpus pass too slow.
+CONTEXTUAL_MODEL_PATH = os.environ.get(
+    "CONTEXTUAL_MODEL_PATH", "data/models/qwen3-1.7b-instruct-mlx-bf16"
+)
+# Per-chunk generation budget. 80 tokens is enough for a single Spanish
+# sentence (~30 words) plus end-of-turn marker; smaller values risk
+# truncating, larger ones inflate ingest wall-clock without quality gain.
+CONTEXTUAL_MAX_TOKENS = int(os.environ.get("CONTEXTUAL_MAX_TOKENS", "80"))
+
+# Local MLX model used as the **judge** for RAGAS-based RAG evaluation
+# (``scripts/ragas_eval.py``). Decoupled from ``CONTEXTUAL_MODEL_PATH``
+# so we can use a larger / newer instruction-tuned checkpoint for the
+# judge — quality matters at judge time (structured-JSON outputs, yes/no
+# verdicts), and the volume is tiny (~15-50 scenarios per eval). The
+# default points at Qwen3-4B-Instruct-2507 (July-2025 refresh): native
+# non-thinking mode, IFEval 83.4, ~8 GB on disk in bf16. Override with
+# ``RAGAS_JUDGE_MODEL_PATH`` to A/B against a different judge.
+RAGAS_JUDGE_MODEL_PATH = os.environ.get(
+    "RAGAS_JUDGE_MODEL_PATH", "data/models/qwen3-4b-instruct-2507-mlx-bf16"
+)
+# Generation budget for the judge. RAGAS faithfulness emits one JSON
+# object listing every statement in the answer with its verdict —
+# answers with many statements need a generous budget to avoid
+# mid-object truncation that breaks the parser.
+RAGAS_JUDGE_MAX_TOKENS = int(os.environ.get("RAGAS_JUDGE_MAX_TOKENS", "1024"))
 
 FAISS_INDEX_PATH = os.environ.get("FAISS_INDEX_PATH", ".faiss")
 FAISS_TRUSTED_INDEX = _env_bool("FAISS_TRUSTED_INDEX", default=False)

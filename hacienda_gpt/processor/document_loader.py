@@ -161,17 +161,28 @@ def _init_worker(max_tokens: int | None) -> None:
     global _WORKER_CHUNKER
 
     from docling.chunking import HybridChunker
+    from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 
     from hacienda_gpt import settings as _settings
     from hacienda_gpt.utils import configure_logging
 
     configure_logging()
 
-    chunker_kwargs: dict[str, Any] = {"tokenizer": _settings.EMBEDDING_MODEL}
-    if max_tokens:
-        chunker_kwargs["max_tokens"] = max_tokens
-    _WORKER_CHUNKER = HybridChunker(**chunker_kwargs)
-    logging.info("Docling worker ready (pid=%d, max_tokens=%s)", _pid(), max_tokens)
+    # Docling ≥ 2.50 validates the HybridChunker(tokenizer=str) path by
+    # trying to fetch ``sentence_bert_config.json`` from HF Hub for our
+    # local MLX model. That fetch fails (path is local, no Hub entry), and
+    # the chunker raises "max_tokens could not be determined automatically".
+    # We bypass the auto-detect by constructing the HuggingFaceTokenizer
+    # ourselves with an explicit ``max_tokens`` budget. The default matches
+    # the manifest's pipeline_fingerprint (max_tokens=512) so an unset
+    # ``--max-tokens`` CLI flag keeps the existing index valid.
+    effective_max_tokens = max_tokens or 512
+    tokenizer = HuggingFaceTokenizer.from_pretrained(
+        model_name=_settings.EMBEDDING_MODEL,
+        max_tokens=effective_max_tokens,
+    )
+    _WORKER_CHUNKER = HybridChunker(tokenizer=tokenizer)
+    logging.info("Docling worker ready (pid=%d, max_tokens=%s)", _pid(), effective_max_tokens)
 
 
 def _pid() -> int:
@@ -336,11 +347,27 @@ class DocumentProcessor:
             docling_version = version("docling")
         except PackageNotFoundError:
             docling_version = "unknown"
+
+        # Contextual embeddings are an index-time transformation of the
+        # text that gets embedded — turning them on/off (or swapping the
+        # generator model) means the FAISS vectors no longer match what a
+        # query at runtime would produce. Include in the fingerprint so
+        # the manifest layer forces a clean rebuild.
+        from hacienda_gpt import settings
+
+        contextual_model = None
+        contextual_max_tokens = None
+        if settings.CONTEXTUAL_EMBEDDINGS_ENABLED:
+            contextual_model = settings.CONTEXTUAL_MODEL_PATH
+            contextual_max_tokens = settings.CONTEXTUAL_MAX_TOKENS
+
         return compute_pipeline_fingerprint(
             embedder_model=self._embedder_model,
             embedder_dim=self._embedder_dim,
             max_tokens=self.max_tokens,
             docling_version=docling_version,
+            contextual_model=contextual_model,
+            contextual_max_tokens=contextual_max_tokens,
         )
 
     def discover_files(self) -> list[str]:
@@ -352,17 +379,22 @@ class DocumentProcessor:
     def _build_loader(self, files: list[str]) -> Any:
         """Construct the DoclingLoader. Isolated so tests can stub the seam."""
         from docling.chunking import HybridChunker
+        from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
         from langchain_docling.loader import DoclingLoader, ExportType
 
         from hacienda_gpt import settings
 
-        chunker_kwargs: dict[str, Any] = {"tokenizer": settings.EMBEDDING_MODEL}
-        if self.max_tokens:
-            chunker_kwargs["max_tokens"] = self.max_tokens
+        # Same explicit-tokenizer construction as ``_init_worker``: Docling
+        # ≥ 2.50 can't auto-detect ``max_tokens`` for the local MLX model
+        # because it tries an HF Hub fetch that fails offline.
+        tokenizer = HuggingFaceTokenizer.from_pretrained(
+            model_name=settings.EMBEDDING_MODEL,
+            max_tokens=self.max_tokens or 512,
+        )
         return DoclingLoader(
             file_path=files,
             export_type=ExportType.DOC_CHUNKS,
-            chunker=HybridChunker(**chunker_kwargs),
+            chunker=HybridChunker(tokenizer=tokenizer),
         )
 
     def _load_chunks_sequential(self, files: list[str]) -> list[Document]:
@@ -711,8 +743,35 @@ class DocumentProcessor:
         know about, and the next run re-indexes those files — FAISS overwrites
         the entries (deterministic chunk_ids). The opposite order would mark
         files indexed without vectors, which silently breaks retrieval.
+
+        Concurrency: a single ingest run holds an advisory ``fcntl.flock``
+        on ``<output_dir>/.processor.lock`` for its entire duration. A
+        second invocation that finds the lock already held exits with a
+        clear error instead of corrupting the FAISS+manifest pair — we
+        learned this the hard way after three parallel runs overwrote
+        each other's atomic saves and shrank a 2.6 GB index to 19 MB.
         """
+        import fcntl
+        import os
+
         from langchain_community.vectorstores import FAISS
+
+        # Acquire the processor lock for the lifetime of this run.
+        # ``flock`` is automatically released by the OS when the file
+        # descriptor closes (normal exit, crash, kill), so we don't need
+        # a finally-block — staleness self-resolves.
+        os.makedirs(self.output_dir, exist_ok=True)
+        lock_path = Path(self.output_dir) / ".processor.lock"
+        lock_fd = open(lock_path, "w")  # noqa: SIM115 — released on process exit
+        try:
+            fcntl.flock(lock_fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as e:
+            raise RuntimeError(
+                f"Another processor instance already holds {lock_path}. "
+                f"Concurrent ingests corrupt the FAISS+manifest pair. "
+                f"Wait for the existing run to finish, or kill it before "
+                f"retrying."
+            ) from e
 
         logging.info("Loading documents from %s", self.content_dir)
         files_to_process, ids_to_remove, diff, fingerprint = self.plan()
@@ -826,6 +885,37 @@ class DocumentProcessor:
         ) -> None:
             current_db = db_holder[0]
             current_manifest = manifest_holder[0]
+
+            # Contextual prefix step: enrich each chunk's text BEFORE the
+            # embedder sees it. This runs INSIDE the background checkpoint
+            # thread (same one that drives FAISS.add_documents) so the
+            # Docling workers are never blocked waiting on the contextual
+            # LLM. The LLM and the embedder share the GPU sequentially,
+            # but that's fine — each batch of 200 chunks is processed in
+            # a tight loop, and the worker pool keeps streaming the next
+            # batch in parallel.
+            from hacienda_gpt import settings as _settings
+
+            if (
+                chunks_w
+                and _settings.CONTEXTUAL_EMBEDDINGS_ENABLED
+            ):
+                from hacienda_gpt.processor.contextualizer import get_contextualizer
+
+                contextualizer = get_contextualizer(
+                    model_path=_settings.CONTEXTUAL_MODEL_PATH,
+                    max_tokens=_settings.CONTEXTUAL_MAX_TOKENS,
+                )
+                t0 = datetime.now(UTC)
+                chunks_w = list(contextualizer.contextualize(chunks_w))
+                elapsed = (datetime.now(UTC) - t0).total_seconds()
+                logging.info(
+                    "Checkpoint %d: contextualized %d chunk(s) in %.1fs (~%.2fs/chunk).",
+                    ckpt_n,
+                    len(chunks_w),
+                    elapsed,
+                    elapsed / max(len(chunks_w), 1),
+                )
 
             if chunks_w:
                 ids = [c.metadata["chunk_id"] for c in chunks_w]

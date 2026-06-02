@@ -1,0 +1,345 @@
+/*
+ * HaciendaGPT — UI redesign tokens + targeted overrides.
+ *
+ * Streamlit ships with its own coral-on-white default theme; this file
+ * (injected from app.py via st.markdown(unsafe_allow_html=True)) tames
+ * the parts we cannot reach from .streamlit/config.toml, and defines
+ * the small set of bespoke components we render through raw HTML:
+ *
+ *   .trust-strip      grounding verdict over every answer (verde / ámbar / gris)
+ *   .source-card      one card per citation, always visible (no expander)
+ *   .obligation-card  risk-coloured candidate-obligation tile
+ *   .chip / .chip-row sidebar topic chips + suggested-question chips
+ *   .brand            sidebar header (serif logotype + monogram)
+ *   .disclaimer       legal caption rendered below input + in sidebar
+ *
+ * Streamlit's DOM is unstable across releases, so selectors are kept
+ * minimal: we only target stable data-testid hooks. Visual styling for
+ * native widgets lives in .streamlit/config.toml.
+ */
+
+:root {
+  --paper:        #f6f4ef;
+  --surface:      #ffffff;
+  --ink:          #1b2330;
+  --ink-soft:     #46505f;
+  --muted:        #79828f;
+  --line:         #e7e2d8;
+  --primary:      #14635e;
+  --primary-dark: #0f4f4a;
+  --primary-soft: #e4efed;
+  --navy:         #1f3a5f;
+
+  --grounding-cited-bg:    #e8f3ec;
+  --grounding-cited-fg:    #1f7a52;
+  --grounding-cited-bd:    #c2e2cf;
+  --grounding-uncited-bg:  #fbf1da;
+  --grounding-uncited-fg:  #a96f08;
+  --grounding-uncited-bd:  #eed8a6;
+  --grounding-abstain-bg:  #eef0f3;
+  --grounding-abstain-fg:  #586679;
+  --grounding-abstain-bd:  #d6dbe2;
+
+  --risk-high-bg:   #fae8e4;
+  --risk-high-fg:   #c1442e;
+  --risk-medium-bg: #fbf0db;
+  --risk-medium-fg: #b5760a;
+  --risk-low-bg:    #e8f3ec;
+  --risk-low-fg:    #1f7a52;
+}
+
+/* --------------------------------------------------------------------- *
+ * Suppress Streamlit chrome that screams "demo" without losing function. *
+ * --------------------------------------------------------------------- */
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+[data-testid="stDecoration"] { display: none; }
+[data-testid="stHeader"] {
+  background: transparent;
+  height: 0;
+}
+
+.stApp {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* --------------------------------------------------------------------- *
+ * Brand header (sidebar). Serif logotype + monogram SVG.                  *
+ * --------------------------------------------------------------------- */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0 18px 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+.brand-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+.brand-subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* --------------------------------------------------------------------- *
+ * Trust strip — the grounding verdict shown over every assistant reply. *
+ * --------------------------------------------------------------------- */
+.trust-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 12px 0 16px 0;
+}
+.trust-strip .label { letter-spacing: 0.02em; }
+.trust-strip .reason {
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-left: 6px;
+}
+
+.trust-strip.cited {
+  background: var(--grounding-cited-bg);
+  color: var(--grounding-cited-fg);
+  border-color: var(--grounding-cited-bd);
+}
+.trust-strip.uncited {
+  background: var(--grounding-uncited-bg);
+  color: var(--grounding-uncited-fg);
+  border-color: var(--grounding-uncited-bd);
+}
+.trust-strip.abstain {
+  background: var(--grounding-abstain-bg);
+  color: var(--grounding-abstain-fg);
+  border-color: var(--grounding-abstain-bd);
+}
+
+/* --------------------------------------------------------------------- *
+ * Source cards — always visible, replace the collapsed expander.         *
+ * --------------------------------------------------------------------- */
+.sources-block {
+  margin: 12px 0 8px 0;
+}
+.sources-heading {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.source-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--primary);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+.source-card .title {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 14px;
+}
+.source-card .section {
+  font-weight: 500;
+  color: var(--ink-soft);
+  margin-left: 4px;
+}
+.source-card .locator {
+  display: inline-block;
+  margin-top: 6px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  padding: 2px 8px;
+  border-radius: 4px;
+  word-break: break-all;
+}
+.source-card .snippet {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-top: 8px;
+  font-style: italic;
+  border-left: 2px solid var(--line);
+  padding-left: 10px;
+}
+.source-card .link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--primary-dark);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--primary);
+}
+
+/* --------------------------------------------------------------------- *
+ * Obligation cards — risk-coloured tiles + confidence bar.               *
+ * --------------------------------------------------------------------- */
+.obligation-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.obligation-card .heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.obligation-card .title {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 15px;
+}
+.risk-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+.risk-badge.high     { background: var(--risk-high-bg); color: var(--risk-high-fg); }
+.risk-badge.medium   { background: var(--risk-medium-bg); color: var(--risk-medium-fg); }
+.risk-badge.low      { background: var(--risk-low-bg); color: var(--risk-low-fg); }
+
+.confidence-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+.confidence-row .pct {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  min-width: 36px;
+  text-align: right;
+}
+.confidence-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.confidence-bar > .fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 4px;
+}
+
+.obligation-card .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: 8px;
+}
+.obligation-card .missing-q {
+  margin: 4px 0 0 0;
+  padding: 8px 10px;
+  background: var(--primary-soft);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--ink);
+}
+.obligation-card .sources-line {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+
+/* --------------------------------------------------------------------- *
+ * Chips — sidebar topic pills + suggested questions over the input.      *
+ * --------------------------------------------------------------------- */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 4px 0;
+}
+.chip {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  border: 1px solid var(--primary-soft);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.scope-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 600;
+  margin: 14px 0 6px 0;
+}
+
+/* Suggested-question buttons rendered through st.button: tweak their look
+ * so they read as chips rather than CTAs. Streamlit class names for the
+ * native button are unstable, so we scope by container. */
+.suggested-chips .stButton > button {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+  transition: background 0.08s, border-color 0.08s;
+}
+.suggested-chips .stButton > button:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+/* --------------------------------------------------------------------- *
+ * Disclaimer — legal caption.                                            *
+ * --------------------------------------------------------------------- */
+.disclaimer {
+  font-size: 12px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  margin-top: 12px;
+  line-height: 1.5;
+}
+.disclaimer strong { color: var(--ink-soft); }

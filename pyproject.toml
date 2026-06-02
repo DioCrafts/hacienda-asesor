@@ -42,6 +42,9 @@ dependencies = [
     # the versions the conversion was verified against.
     "mlx==0.31.2",
     "mlx-embeddings==0.1.0",
+    # BM25 sparse retriever for hybrid retrieval (RRF with dense FAISS).
+    # Used via ``langchain_community.retrievers.BM25Retriever``.
+    "rank-bm25>=0.2.2,<1.0",
     "ptpython==3.0.32",
     "fastapi==0.118.0",
     "uvicorn==0.37.0",

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  HaciendaGPT — monogram "H".
+  Serif glyph on a soft circular plate. Identity is intentionally austere:
+  the colour palette is the project's primary (#14635e) over primary-soft
+  (#e4efed); the letterform is a generic serif so it can't be mistaken
+  for any tax-authority badge.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="HaciendaGPT">
+  <title>HaciendaGPT</title>
+  <circle cx="32" cy="32" r="30" fill="#e4efed"/>
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#14635e" stroke-width="1.2" stroke-opacity="0.18"/>
+  <g fill="#14635e" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="38" text-anchor="middle">
+    <text x="32" y="44">H</text>
+  </g>
+</svg>

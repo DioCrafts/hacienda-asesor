@@ -20,6 +20,10 @@ from hacienda_gpt.llm.grounding import AnswerEnvelope, GroundingGate
 from hacienda_gpt.llm.retrieval_profiles import build_decision_profile, build_explain_profile
 from hacienda_gpt.llm.security import sanitize_retrieved_context
 from hacienda_gpt.settings import (
+    BM25_BM25_WEIGHT,
+    BM25_DENSE_WEIGHT,
+    BM25_ENABLED,
+    BM25_K,
     FAISS_INDEX_PATH,
     FAISS_TRUSTED_INDEX,
     GROUNDING_MIN_CITATIONS,
@@ -53,6 +57,19 @@ def create_system_prompt() -> str:
     10. Después de proporcionar una respuesta, proporciona tres preguntas de seguimiento formuladas como si las estuviera haciendo un usuario inteligente. Formatea en negritas como P1, P2 y P3. \
         Coloca dos saltos de linea antes y después de cada pregunta para el espaciado. Estas preguntas deben profundizar más en el tema original.\
     11. NUNCA sugieras que la pregunta del usuario contiene un error tipográfico, una confusión con otra referencia, o que una norma que cita no existe. Si una referencia que pregunta (un nº de modelo, una Ley, una sentencia) no aparece en <context></context>, simplemente di "Hmm, no estoy seguro: no encuentro esa referencia concreta en mis fuentes". La validación de existencia de una norma corresponde a la Agencia Tributaria, no a ti.\
+    12. RECONOCE EQUIVALENCIAS Y SINÓNIMOS. El usuario suele usar nombres coloquiales o comunes; el corpus usa nombres técnicos. Antes de abstenerte, comprueba si el contexto trata el mismo concepto con otro nombre. Equivalencias frecuentes (no exhaustivas):\
+       - "régimen Beckham" = "régimen fiscal especial del artículo 93 LIRPF" = "trabajadores desplazados a territorio español".\
+       - "plusvalía municipal" = "IIVTNU" = "Impuesto sobre el Incremento de Valor de los Terrenos de Naturaleza Urbana".\
+       - "modelo 720" = "Declaración informativa de bienes y derechos situados en el extranjero".\
+       - "modelo 721" = "Declaración informativa sobre monedas virtuales situadas en el extranjero".\
+       - "exención por reinversión vivienda" = "art 38 LIRPF" / "exención por mayores de 65 años" = "art 33.4.b LIRPF".\
+       - "reducción 95% empresa familiar" = "art 20.2.c LISD" (mortis causa) / "art 20.6 LISD" (inter vivos) + condiciones del art 4.Ocho LIP.\
+       Si el contexto trata el concepto bajo cualquier nombre técnico, SINTETIZA la respuesta a partir de él. NO te abstengas solo porque el usuario use un nombre coloquial que no aparece literalmente.\
+    13. CUÁNDO ABSTENERSE vs CUÁNDO RESPONDER:\
+       - Si los <context> NO tratan el tema de la pregunta (ni siquiera bajo nombre técnico distinto): di "Hmm, no estoy seguro" + indica qué referencia específica falta.\
+       - Si los <context> SÍ tratan el tema: **EMPIEZA con la respuesta concreta a la pregunta del usuario, no con disclaimers**. Si los contextos contienen el dato pedido (una cifra, un plazo, un porcentaje, un nombre de modelo), dalo directamente. NO inventes lagunas: si la cifra está en el contexto, no digas "el contexto no especifica este dato" — eso es contradictorio y engañoso.\
+       - Las menciones de lagunas son OPCIONALES Y BREVES, solo al final, y solo si el usuario ha pedido un dato específico que realmente NO está en los contextos. NO uses muletillas defensivas tipo "el contexto no detalla específicamente..." o "no se proporciona más información sobre..." como prefijo o sufijo automático — solo cuando aplique de verdad.\
+       - Reserva "Hmm, no estoy seguro" para queries genuinamente fuera de tema o sin contexto relevante. NO lo uses como respuesta defensiva cuando hay material temáticamente alineado.\
 
     Todo lo que esté entre los siguientes bloques de <context></context> se obtiene de un banco de conocimiento, no forma parte de la conversación con el usuario.
 
@@ -66,7 +83,7 @@ def create_system_prompt() -> str:
         {input}
     </question>
 
-    RECUERDA: Si no hay información relevante dentro de <context></context>, simplemente di "Hmm, no estoy seguro". No intentes inventar una respuesta.\
+    RECUERDA: Antes de abstenerte, aplica la regla 13. Si el contexto trata el tema, **lidera con la respuesta concreta**: empieza con el dato/cifra/plazo/modelo que pide el usuario, no con disclaimers. No inventes lagunas que no existen ni añadas muletillas defensivas ("el contexto no detalla...") como prefijo automático. Solo abstén con "Hmm, no estoy seguro" si el contexto no trata el tema en absoluto. No inventes información que no esté en el contexto.\
     Todo lo que esté entre los bloques '<context></context>' anteriores se obtiene de un banco de conocimiento, no forma parte de la conversación con el usuario.
 
     Respuesta:"""
@@ -143,9 +160,36 @@ def _create_retriever(
         search_kwargs["filter"] = _build_metadata_filter(profile.metadata_filter)
     base_retriever = faiss.as_retriever(search_kwargs=search_kwargs)
     multi_query_retriever = MultiQueryRetriever.from_llm(retriever=base_retriever, llm=llm)
+
+    # Hybrid retrieval: combine the dense (MultiQuery + FAISS) path with a
+    # BM25 sparse retriever via Reciprocal Rank Fusion. BM25 excels at
+    # surfacing chunks that mention concrete entity names (``modelo 721``,
+    # ``Ley 7/2012``, ``STC 182/2021``) where token-overlap signal beats
+    # cosine similarity — dense retrieval clusters those near the
+    # semantically-adjacent ``modelo 720`` / ``Ley 7/2002`` and the exact
+    # match drops off the top-K. RRF merges both ranked lists into a single
+    # list that downstream compressors (EmbeddingsFilter, then the
+    # cross-encoder reranker) can refine further.
+    first_stage: BaseRetriever = multi_query_retriever
+    if BM25_ENABLED:
+        from langchain_classic.retrievers import EnsembleRetriever
+        from langchain_community.retrievers import BM25Retriever
+
+        # BM25Retriever indexes a list of Document objects in-memory. We
+        # source them from the FAISS docstore so both retrievers operate
+        # on identical chunk units — RRF only makes sense when the two
+        # ranked lists draw from the same universe of documents.
+        all_docs = list(faiss.docstore._dict.values())
+        bm25 = BM25Retriever.from_documents(all_docs)
+        bm25.k = BM25_K
+        first_stage = EnsembleRetriever(
+            retrievers=[multi_query_retriever, bm25],
+            weights=[BM25_DENSE_WEIGHT, BM25_BM25_WEIGHT],
+        )
+
     embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=profile.similarity_threshold)
     compressed: BaseRetriever = ContextualCompressionRetriever(
-        base_retriever=multi_query_retriever, base_compressor=embeddings_filter
+        base_retriever=first_stage, base_compressor=embeddings_filter
     )
     if RERANKER_ENABLED:
         # Stack a Qwen3-Reranker pass on top of the filter: it sees only docs

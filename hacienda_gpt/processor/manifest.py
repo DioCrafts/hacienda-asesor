@@ -183,12 +183,20 @@ def compute_pipeline_fingerprint(
     max_tokens: int | None,
     docling_version: str,
     loader_schema: int = 1,
+    contextual_model: str | None = None,
+    contextual_max_tokens: int | None = None,
 ) -> str:
     """Deterministic string capturing every knob that invalidates vectors.
 
     Order is fixed so we can compare strings directly. Booleans like
     "auto" appear when the corresponding field is unset, so empty/None
     values still produce a stable, distinct fingerprint.
+
+    Contextual-embeddings fields appear **only when enabled** (i.e. a
+    non-None ``contextual_model`` is passed). That keeps the fingerprint
+    stable for legacy indexes built before the feature shipped — they
+    don't get invalidated just because the project now knows about
+    contextual embeddings.
     """
     parts = [
         f"embedder={embedder_model}",
@@ -197,6 +205,9 @@ def compute_pipeline_fingerprint(
         f"docling={docling_version}",
         f"loader_schema={loader_schema}",
     ]
+    if contextual_model:
+        parts.append(f"contextual_model={contextual_model}")
+        parts.append(f"contextual_max_tokens={contextual_max_tokens or 'auto'}")
     return "|".join(parts)
 
 
