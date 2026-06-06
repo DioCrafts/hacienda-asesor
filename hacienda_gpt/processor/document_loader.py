@@ -747,9 +747,9 @@ class DocumentProcessor:
         Concurrency: a single ingest run holds an advisory ``fcntl.flock``
         on ``<output_dir>/.processor.lock`` for its entire duration. A
         second invocation that finds the lock already held exits with a
-        clear error instead of corrupting the FAISS+manifest pair — we
-        learned this the hard way after three parallel runs overwrote
-        each other's atomic saves and shrank a 2.6 GB index to 19 MB.
+        clear error instead of corrupting the FAISS+manifest pair — the
+        two writers race on ``save_local`` and the index ends up with
+        only the entries of whichever process finished last.
         """
         import fcntl
         import os

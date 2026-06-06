@@ -1,13 +1,17 @@
 // Source card: title + icon + locator chip + snippet quote + optional
 // outbound link. Renders one per Citation returned by /qa.
 
-import { Book, Building2, ExternalLink, Gavel, Library, ScrollText } from "lucide-react";
+import { Book, ExternalLink, Gavel, Landmark, Library, ScrollText } from "lucide-react";
 
 import type { Citation } from "../api";
 import { classifySource } from "../lib/presentation";
 
+// Landmark (pillared building) reads as "law" more clearly than the
+// generic office Building2; Gavel for tribunal decisions, ScrollText
+// for administrative criteria, Book for handbooks, Library as the
+// catch-all for "we have it but it's not categorised".
 const SOURCE_ICON = {
-  boe: Building2,    // BOE consolidated text
+  boe: Landmark,     // BOE consolidated law
   manual: Book,      // AEAT manual / práctica
   dgt: ScrollText,   // DGT consulta vinculante
   teac: Gavel,       // TEAC criterio
@@ -25,9 +29,9 @@ export function SourceCard({ citation }: SourceCardProps) {
     citation.locator?.startsWith("http://") ||
     citation.locator?.startsWith("https://");
   return (
-    <div className="flex gap-3 rounded-xl border border-line bg-surface p-4 shadow-card">
-      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-dark">
-        <Icon size={20} aria-hidden />
+    <div className="flex gap-4 rounded-xl border border-line bg-surface p-4 shadow-card">
+      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-dark">
+        <Icon size={22} aria-hidden />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">

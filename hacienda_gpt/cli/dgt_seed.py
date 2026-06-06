@@ -65,9 +65,25 @@ _REQUIRED_HEADERS = {
 }
 
 _DOC_ID_RE = re.compile(r'id="doc_(\d+)"')
-_NUM_CONSULTA_IN_ROW_RE = re.compile(r'class="NUM-CONSULTA">\s*<strong>\s*([^<\s]+)\s*</strong>')
 _TOTAL_PAGES_RE = re.compile(r'id="total_pages">(\d+)<')
 _NUM_CONSULTA_IN_DOC_RE = re.compile(r'class="NUM-CONSULTA"[^>]*>([^<]+)</p>')
+
+# Captures a (doc_id, num_consulta) pair from each <td id="doc_NNNNN"…>
+# block in the search response. The two fields are emitted adjacent to
+# one another in the same row, so a single regex with re.DOTALL keeps
+# the pairing trivial. ``num_consulta`` ends up as just the V0058-25
+# token, NOT including any trailing annotation like "Consulta contestada
+# que no es objeto de publicación" — those create the anomalous
+# directory names we saw in early crawls.
+_SEARCH_ROW_RE = re.compile(
+    r'id="doc_(\d+)"[^>]*>'              # capture doc_id
+    r'.*?'                                # any HTML in between
+    r'class="NUM-CONSULTA"[^>]*>'         # the NUM-CONSULTA span
+    r'\s*<strong>\s*'
+    r'([VN]\d{4}-\d{2})'                  # capture V0058-25 / N1234-23 only
+    r'\b',                                # word boundary — stops at extra text
+    re.DOTALL,
+)
 
 
 @dataclass
@@ -116,13 +132,15 @@ def _search_month(
     year: int,
     month: int,
     page: int,
-) -> tuple[list[str], int, str]:
-    """Search vinculantes for one (year, month) page and return:
+) -> tuple[list[tuple[str, str]], int, str]:
+    """Search vinculantes for one (year, month) page.
 
-    * the Knosys doc ids found on this page (extracted from ``id="doc_<n>"``),
-    * the total page count for the month (so the caller can paginate), and
-    * the Knosys ``query`` string captured from the response (needed verbatim
-      by ``/do/document``).
+    Returns ``(rows, total_pages, query)`` where ``rows`` is a list of
+    ``(doc_id_internal, num_consulta)`` pairs. The Knosys search response
+    embeds both — the internal numeric id (needed to fetch the document
+    body) and the user-facing consulta number (e.g. ``V0058-25``) which
+    we use to (a) name the output file and (b) skip already-downloaded
+    consultas WITHOUT issuing a /do/document round-trip.
     """
     last_day = calendar.monthrange(year, month)[1]
     # The server reads the date filter from VLCMP_2 using the Knosys range
@@ -166,7 +184,15 @@ def _search_month(
     resp.raise_for_status()
     html = resp.text
 
-    doc_ids = _DOC_ID_RE.findall(html)
+    # Pair each (doc_id, num_consulta) within the same <td> row. If the
+    # combined regex misses some rows (e.g. malformed HTML) fall back to
+    # the standalone doc_id extractor so the run still progresses; rows
+    # without a captured num_consulta are emitted with an empty string
+    # and the main loop handles them via a forced fetch.
+    rows = _SEARCH_ROW_RE.findall(html)
+    if not rows:
+        rows = [(doc_id, "") for doc_id in _DOC_ID_RE.findall(html)]
+
     total_pages_match = _TOTAL_PAGES_RE.search(html)
     total_pages = int(total_pages_match.group(1)) if total_pages_match else 1
 
@@ -176,7 +202,7 @@ def _search_month(
     query_match = re.search(r'id="query"[^>]*value="([^"]*)"', html)
     query = query_match.group(1) if query_match else ""
 
-    return doc_ids, total_pages, query
+    return rows, total_pages, query
 
 
 def _fetch_document(
@@ -196,13 +222,50 @@ def _fetch_document(
     return resp.text
 
 
+# A canonical num_consulta looks like ``V0058-25`` (vinculante) or
+# ``N1234-22`` (no vinculante). Some entries embed the canonical token
+# followed by an annotation (e.g. "V2007-05 Consulta contestada que no
+# es objeto de publicación"); we keep only the canonical token so all
+# files end up in clean year buckets.
+_CANONICAL_NUM_RE = re.compile(r"\b([VN]\d{4}-\d{2})\b")
+
+
 def _parse_doc_num(html: str) -> str | None:
     """Extract the user-facing consulta number (e.g. ``V0058-25``) from
     the document HTML. Used to name the output file."""
     m = _NUM_CONSULTA_IN_DOC_RE.search(html)
-    if m:
-        return m.group(1).strip()
-    return None
+    if not m:
+        return None
+    raw = m.group(1).strip()
+    canonical = _CANONICAL_NUM_RE.search(raw)
+    # Prefer the canonical token; fall back to the raw value when nothing
+    # canonical-looking is present (DGT historic edge cases).
+    return canonical.group(1) if canonical else raw
+
+
+def _build_existing_nums(snapshot_root: Path) -> set[str]:
+    """Walk the on-disk DGT directory and return a set of every
+    ``num_consulta`` we've already downloaded.
+
+    ``rglob`` is used so files under any subdirectory count (legacy
+    snapshots may have bucketed files under annotated paths such as
+    ``05 Número de consulta anulado/V1234-05.html``). The canonical
+    token is extracted from the filename via ``_CANONICAL_NUM_RE``, so
+    bucket layout does not affect dedup. With ~20 k files the rglob
+    completes in milliseconds.
+    """
+    root = snapshot_root / "dgt-vinculantes"
+    if not root.exists():
+        return set()
+    seen: set[str] = set()
+    for path in root.rglob("*.html"):
+        stem = path.stem  # "V0058-25"
+        m = _CANONICAL_NUM_RE.search(stem)
+        if m:
+            seen.add(m.group(1))
+        else:
+            seen.add(stem)
+    return seen
 
 
 def _output_path(snapshot_root: Path, num_consulta: str) -> Path:
@@ -315,6 +378,53 @@ def cli(
     session = _build_session()
     stats = _RunStats()
 
+    # Pre-build the set of already-downloaded consultas so we can skip
+    # them at search time without ever issuing a /do/document call. This
+    # alone turns a multi-hour "skip phase" into a few minutes on a
+    # 20k-file resume.
+    existing_nums: set[str] = _build_existing_nums(snapshot_root)
+    if existing_nums:
+        click.echo(
+            f"Preloaded {len(existing_nums):,} already-downloaded consultas; "
+            f"these will be skipped at search time without document fetches."
+        )
+
+    # Counter of consecutive network failures across the *current* session.
+    # When it crosses ``_SESSION_REFRESH_THRESHOLD`` the cookie jar +
+    # connection pool are rebuilt from scratch. Tomcat (the backing
+    # servlet container at petete) invalidates JSESSIONID after ~30 min
+    # of inactivity, and urllib3's connection pool can hold half-closed
+    # sockets that look fine on this end but are dead server-side — both
+    # surface as runs of failures we can only recover from by rebuilding.
+    consecutive_failures = 0
+    _SESSION_REFRESH_THRESHOLD = 3
+    # Exponential backoff after refresh-itself failures (petete returning
+    # 502 / timing out on the bootstrap GET): 5min, 10, 20, 40, capped at
+    # 60. Resets after a successful refresh.
+    refresh_backoff_step = 0
+    _BACKOFF_SECONDS = (300, 600, 1200, 2400, 3600)
+
+    def _refresh_session() -> None:
+        nonlocal session, consecutive_failures, refresh_backoff_step
+        logger.warning(
+            "Refreshing petete session after %d consecutive failures…",
+            consecutive_failures,
+        )
+        time.sleep(30)  # cooldown before re-handshaking
+        try:
+            session = _build_session()
+            consecutive_failures = 0
+            refresh_backoff_step = 0
+            logger.info("Session refreshed; resuming crawl.")
+        except requests.RequestException as exc:
+            wait = _BACKOFF_SECONDS[min(refresh_backoff_step, len(_BACKOFF_SECONDS) - 1)]
+            logger.error(
+                "Session refresh itself failed (backoff step %d): %s — sleeping %ds",
+                refresh_backoff_step, exc, wait,
+            )
+            refresh_backoff_step += 1
+            time.sleep(wait)
+
     try:
         for year, month in _iter_months(start_date, end_date):
             stats.months_processed += 1
@@ -322,49 +432,88 @@ def cli(
             while True:
                 stats.search_requests += 1
                 try:
-                    doc_ids, total_pages, query = _search_month(session, year, month, page)
-                except requests.HTTPError as e:
-                    logger.warning("Search failed for %04d-%02d page %d: %s — retrying once after 5s", year, month, page, e)
-                    time.sleep(5)
+                    rows, total_pages, query = _search_month(session, year, month, page)
+                    consecutive_failures = 0
+                except requests.RequestException as e:
+                    # RequestException catches the whole tree (HTTPError,
+                    # ReadTimeout, ConnectTimeout, ChunkedEncodingError…)
+                    # so a single transient blip doesn't kill the crawl.
+                    consecutive_failures += 1
+                    logger.warning(
+                        "Search failed for %04d-%02d page %d: %s "
+                        "(consecutive=%d) — retrying once after 30s",
+                        year, month, page, e, consecutive_failures,
+                    )
+                    if consecutive_failures >= _SESSION_REFRESH_THRESHOLD:
+                        _refresh_session()
+                    else:
+                        time.sleep(30)
                     try:
-                        doc_ids, total_pages, query = _search_month(session, year, month, page)
-                    except requests.HTTPError:
+                        rows, total_pages, query = _search_month(session, year, month, page)
+                        consecutive_failures = 0
+                    except requests.RequestException:
+                        consecutive_failures += 1
                         logger.error("Skipping %04d-%02d page %d after retry failure", year, month, page)
                         break
 
-                if not doc_ids:
+                if not rows:
                     break
 
-                for doc_id in doc_ids:
+                for doc_id, num_consulta in rows:
                     if max_docs and stats.docs_fetched >= max_docs:
                         click.echo(f"\nReached --max-docs={max_docs}; stopping early.")
                         _summary(stats, snapshot_root)
                         return
 
-                    # We can't compute the user-facing num before fetching, but
-                    # we can pre-check the row HTML from the search response for
-                    # an explicit NUM-CONSULTA marker and short-circuit the
-                    # download if the file already exists.
+                    # FAST PATH: search already gave us num_consulta. If it
+                    # matches a file we already have on disk, skip without
+                    # any /do/document network call. This is the single
+                    # biggest performance win in the whole crawler.
+                    if num_consulta and num_consulta in existing_nums:
+                        stats.docs_skipped_existing += 1
+                        continue
+
                     if dry_run:
                         stats.docs_fetched += 1
                         continue
 
+                    # Widen the except to ``RequestException`` so a single
+                    # transient ReadTimeout or ConnectError does not abort
+                    # a multi-hour crawl; the consecutive-failure counter
+                    # still escalates to session-refresh when it persists.
                     try:
                         html = _fetch_document(session, query, doc_id)
-                    except requests.HTTPError as e:
+                        consecutive_failures = 0
+                    except requests.RequestException as e:
                         stats.docs_failed += 1
                         stats.failed_doc_ids.append(doc_id)
-                        logger.warning("Document fetch failed: doc=%s %s", doc_id, e)
-                        time.sleep(delay)
+                        consecutive_failures += 1
+                        logger.warning(
+                            "Document fetch failed: doc=%s %s (consecutive=%d)",
+                            doc_id, e, consecutive_failures,
+                        )
+                        if consecutive_failures >= _SESSION_REFRESH_THRESHOLD:
+                            _refresh_session()
+                        else:
+                            time.sleep(delay)
                         continue
 
-                    num = _parse_doc_num(html) or f"unknown-{doc_id}"
+                    # The search row's num_consulta is canonical (regex
+                    # already stripped annotations). Prefer it; fall back
+                    # to scraping the document HTML for the rare malformed
+                    # search row that returned no num_consulta.
+                    num = num_consulta or _parse_doc_num(html) or f"unknown-{doc_id}"
                     out_path = _output_path(snapshot_root, num)
                     if out_path.exists():
+                        # Defensive: search-time skip should have caught
+                        # this, but if num_consulta from search was empty
+                        # we land here. Cheap to verify.
                         stats.docs_skipped_existing += 1
+                        existing_nums.add(num)
                     else:
                         out_path.parent.mkdir(parents=True, exist_ok=True)
                         out_path.write_text(html, encoding="utf-8")
+                        existing_nums.add(num)
                         stats.docs_fetched += 1
                         if stats.docs_fetched % 100 == 0:
                             click.echo(

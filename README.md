@@ -419,6 +419,85 @@ crítico — ideal para gates de CI antes de promover un snapshot.
 Convención de locators: `scheme://relative/path`, donde el `scheme` es el
 nombre del crawler (`boe`, `aeat`, `teac`, …) y se mapea a `<snapshot-root>/<scheme>/<path>`.
 
+### 🔁 Refresh dinámico del corpus normativo (`boe_watch`)
+
+Las leyes fiscales **cambian**: BOE re-publica el texto consolidado bajo el mismo ID cada vez que el legislador enmienda algo. Para detectarlo sin re-descargar todo, [`boe_watch`](hacienda_gpt/cli/boe_watch.py) consulta la **API pública de metadatos** del BOE y compara la `fecha_actualizacion` con un estado local.
+
+```bash
+# Comprobación periódica (segura para ejecutar a diario; no descarga si nada cambió):
+uv run python -m hacienda_gpt.cli.boe_watch
+
+# Mostrar qué pasaría sin tocar nada:
+uv run python -m hacienda_gpt.cli.boe_watch --dry-run
+
+# Forzar el chequeo de un subset:
+uv run python -m hacienda_gpt.cli.boe_watch --only BOE-A-2006-20764,BOE-A-2014-12328
+```
+
+El comando:
+- Lee `hacienda_gpt/cli/boe_seed_catalog.json` y filtra entries con `track: true` (default).
+- Para cada uno, llama a `https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/<ID>/metadatos` (~1.4 KB JSON).
+- Compara `fecha_actualizacion` con el estado local en `data/html/_boe_watch_state.json`.
+- Si cambió: re-descarga el HTML consolidado a `data/html/<snapshot>/<subdir>/<ID>.html`.
+- Registra el cambio en `data/html/_boe_changes.jsonl` (audit log append-only).
+
+Cuando el script reporta `changed` o `new`, basta con relanzar el processor para que los nuevos vectores entren a FAISS:
+
+```bash
+uv run python -m hacienda_gpt.cli.processor --incremental --max-tokens 512 --num-workers 8
+```
+
+Marca `track: false` en el catálogo a documentos que **no** se consolidan (sentencias TC, RDs puntuales sin enmiendas). El watcher los ignora; `boe_seed` los descarga una sola vez.
+
+### Automatización con launchd (macOS) / cron (Linux)
+
+**macOS (LaunchAgent diario a las 06:00)**:
+
+```xml
+<!-- ~/Library/LaunchAgents/com.haciendagpt.boewatch.plist -->
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>com.haciendagpt.boewatch</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/USERNAME/Documents/Repositorios/hacienda-asesor/.venv/bin/python</string>
+        <string>-m</string>
+        <string>hacienda_gpt.cli.boe_watch</string>
+    </array>
+    <key>WorkingDirectory</key><string>/Users/USERNAME/Documents/Repositorios/hacienda-asesor</string>
+    <key>StartCalendarInterval</key>
+    <dict><key>Hour</key><integer>6</integer><key>Minute</key><integer>0</integer></dict>
+    <key>StandardOutPath</key><string>/tmp/hacienda-boe-watch.log</string>
+    <key>StandardErrorPath</key><string>/tmp/hacienda-boe-watch.err</string>
+</dict>
+</plist>
+```
+
+Activar: `launchctl load ~/Library/LaunchAgents/com.haciendagpt.boewatch.plist`.
+
+**Linux (crontab — diario a las 06:00)**:
+
+```cron
+0 6 * * * cd /path/to/hacienda-asesor && \
+    /path/to/hacienda-asesor/.venv/bin/python -m hacienda_gpt.cli.boe_watch >> /var/log/hacienda-boe-watch.log 2>&1
+```
+
+Para auto-encadenar `boe_watch` con `processor --incremental` solo cuando hay cambios:
+
+```bash
+#!/usr/bin/env bash
+set -e
+cd /path/to/hacienda-asesor
+out=$(.venv/bin/python -m hacienda_gpt.cli.boe_watch)
+echo "$out"
+if echo "$out" | grep -qE "changed=[^0]|new=[^0]"; then
+    .venv/bin/python -m hacienda_gpt.cli.processor \
+        --incremental --max-tokens 512 --num-workers 8
+fi
+```
+
 ---
 
 ## 📏 5) Evaluación

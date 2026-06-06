@@ -110,7 +110,7 @@ export default function App() {
                 <UserBubble text={t.userText} />
                 <AssistantBubble>
                   <Markdownish text={t.envelope.answer} />
-                  <TrustStrip mode={t.envelope.mode} />
+                  <TrustStrip mode={t.envelope.mode} reason={t.envelope.reason} />
                   <SourceCardList citations={t.envelope.citations} />
                   <ObligationCardList obligations={t.obligations} />
                   {t.errored && (

@@ -57,14 +57,14 @@ export function ObligationCard({ obligation }: ObligationCardProps) {
         </span>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
         <div className="flex items-center justify-between text-[13px]">
           <span className="text-ink-soft">Confianza</span>
-          <span className="font-bold text-ink">{pct}%</span>
+          <span className="text-[15px] font-bold text-ink">{pct}%</span>
         </div>
-        <div className="mt-1.5 h-2.5 w-full overflow-hidden rounded-pill bg-line">
+        <div className="mt-1.5 h-3 w-full overflow-hidden rounded-pill bg-line">
           <div
-            className="h-full rounded-pill bg-primary"
+            className="h-full rounded-pill bg-primary transition-[width] duration-500"
             style={{ width: `${pct}%` }}
           />
         </div>

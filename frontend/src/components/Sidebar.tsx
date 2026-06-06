@@ -47,10 +47,13 @@ function RecentsList() {
           key={c.id}
           type="button"
           className={clsx(
-            "flex items-center gap-2 rounded-lg px-2 py-2 text-left text-[14px] transition",
+            // The active state gets a vertical primary stripe on the
+            // left so the user can scan the recents column for "where
+            // am I" without reading every title.
+            "flex items-center gap-2 rounded-r-lg px-3 py-2 text-left text-[14px] transition border-l-[3px]",
             c.active
-              ? "bg-primary-soft font-medium text-primary-dark"
-              : "text-ink-soft hover:bg-line/60",
+              ? "border-primary bg-primary-soft font-semibold text-primary-dark"
+              : "border-transparent text-ink-soft hover:bg-line/60",
           )}
         >
           <MessageSquare
