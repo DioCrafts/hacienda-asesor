@@ -69,13 +69,17 @@ def process_turn(
         extractor=extractor,
     )
 
+    # Both use THIS turn's facts: the period the user named now, and the
+    # "recent" facts the rules engine merges over the case's existing ones.
     effective_tax_period = resolve_tax_period(case, interpretation.extracted_facts)
     case_for_rules = case.model_copy(update={"tax_period": effective_tax_period})
     rules_result = evaluate_rules(case_state=case_for_rules, recent_facts=interpretation.extracted_facts)
 
     updated = case.model_copy(
         update={
-            "facts": interpretation.extracted_facts,
+            # Persist the ACCUMULATED facts (this turn merged with prior ones),
+            # never just this turn's — otherwise earlier facts get overwritten.
+            "facts": interpretation.all_facts,
             "tax_period": effective_tax_period,
             "missing_facts": interpretation.missing_facts,
             "obligation_candidates": rules_result.candidate_obligations,

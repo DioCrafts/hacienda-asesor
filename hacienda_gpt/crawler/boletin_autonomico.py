@@ -157,7 +157,7 @@ class RegionalBoletinCrawler(scrapy.Spider):
 
     def __init__(
         self,
-        folder: str = "./data/boletines_autonomicos",
+        folder: str = "./data/html",
         boletines: str | None = None,
         terms: str | None = None,
         snapshot_date: str | None = None,
@@ -166,7 +166,9 @@ class RegionalBoletinCrawler(scrapy.Spider):
     ) -> None:
         super().__init__(*args, **kwargs)
         snapshot = snapshot_date or datetime.now(UTC).strftime("%Y-%m-%d")
-        self.folder = os.path.join(folder, snapshot)
+        # Land under the processor's content_dir, namespaced by source:
+        # ./data/html/<snapshot>/boletines_autonomicos/
+        self.folder = os.path.join(folder, snapshot, "boletines_autonomicos")
         os.makedirs(self.folder, exist_ok=True)
         self._specs = _resolve_specs(boletines)
         self._terms: list[str] | None = [t.strip() for t in re.split(r"[,;]", terms) if t.strip()] if terms else None

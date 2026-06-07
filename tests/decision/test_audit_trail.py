@@ -9,19 +9,20 @@ from hacienda_gpt.decision.schemas import CaseState, Fact, FactValueType
 def test_audit_event_contains_required_trace_fields() -> None:
     now = datetime.now(UTC)
     case = CaseState(case_id="c1", user_id="u1", jurisdiction="ES", tax_period="2025", created_at=now, updated_at=now)
+    residencia = Fact(
+        fact_id="f1",
+        name="residencia_fiscal",
+        value="ES",
+        value_type=FactValueType.STRING,
+        source="user",
+        confidence=0.9,
+    )
     interpretation = InterpretationResult(
         intent=Intent.DECLARACION_IRPF,
         confidence=0.8,
-        extracted_facts=[
-            Fact(
-                fact_id="f1",
-                name="residencia_fiscal",
-                value="ES",
-                value_type=FactValueType.STRING,
-                source="user",
-                confidence=0.9,
-            )
-        ],
+        extracted_facts=[residencia],
+        # facts_used in the audit is the ACCUMULATED set (all_facts).
+        all_facts=[residencia],
     )
     rules_result = RulesEngineResult(
         candidate_obligations=[],
@@ -44,6 +45,7 @@ def test_audit_event_contains_required_trace_fields() -> None:
     event = build_recommendation_audit_event(case, interpretation, rules_result, [])
     assert event["event_type"] == "recommendation_audit"
     assert "facts_used" in event
+    assert {f["name"] for f in event["facts_used"]} == {"residencia_fiscal"}
     assert "rules_triggered" in event
     assert "evidences_cited" in event
     assert "versions" in event

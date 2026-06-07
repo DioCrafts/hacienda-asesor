@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 from langchain_core.documents import Document
+import pytest
 
 from hacienda_gpt.api.api import app, get_fact_extractor, get_qa_chain
 from hacienda_gpt.decision.fact_extractor import ExtractionPayload
@@ -48,6 +49,10 @@ def test_post_turn_contract() -> None:
     assert "missing_facts" in body
     assert "candidate_obligation_ids" in body
     assert "next_questions" in body
+    # The web UI renders full obligation objects; they must stay in sync
+    # with the id list the response also exposes.
+    assert isinstance(body["obligations"], list)
+    assert [o["obligation_id"] for o in body["obligations"]] == body["candidate_obligation_ids"]
 
 
 def test_post_turn_updates_case_tax_period_from_extracted_fact() -> None:
@@ -162,3 +167,56 @@ def test_qa_abstains_when_no_context() -> None:
     assert body["mode"] == "abstained"
     assert body["raw_answer"] == "respuesta"
     assert body["citations"] == []
+
+
+def test_qa_returns_503_when_chain_build_fails(monkeypatch) -> None:
+    # No get_qa_chain override: exercise the real dependency, which must turn a
+    # failed build (e.g. missing FAISS index / OPENAI_API_KEY) into a clean 503
+    # instead of an opaque 500.
+    from hacienda_gpt.api import api
+
+    def _boom():
+        raise RuntimeError("missing FAISS index")
+
+    monkeypatch.setattr(api, "_build_qa_chain", _boom)
+    r = client.post("/qa", json={"query": "¿IRPF?", "chat_history": []})
+    assert r.status_code == 503
+    assert "missing FAISS index" in r.json()["detail"]
+
+
+def test_qa_returns_503_when_answering_fails() -> None:
+    class _BoomChain:
+        def invoke(self, inputs: dict):
+            raise RuntimeError("OpenAI unavailable")
+
+    app.dependency_overrides[get_qa_chain] = lambda: _BoomChain()
+    try:
+        r = client.post("/qa", json={"query": "¿IRPF?", "chat_history": []})
+    finally:
+        app.dependency_overrides.pop(get_qa_chain, None)
+
+    assert r.status_code == 503
+    assert "OpenAI unavailable" in r.json()["detail"]
+
+
+def test_thread_safe_singleton_caches_build_failure() -> None:
+    # Negative caching: a broken build must NOT re-run the expensive factory on
+    # every call (the multi-GB embedder reload storm). cache_clear() recovers.
+    from hacienda_gpt.api.api import _thread_safe_singleton
+
+    calls = {"n": 0}
+
+    def factory():
+        calls["n"] += 1
+        raise RuntimeError("boom")
+
+    cached = _thread_safe_singleton(factory)
+    for _ in range(3):
+        with pytest.raises(RuntimeError):
+            cached()
+    assert calls["n"] == 1  # failure cached: factory ran once, not per call
+
+    cached.cache_clear()
+    with pytest.raises(RuntimeError):
+        cached()
+    assert calls["n"] == 2  # cleared -> rebuilt

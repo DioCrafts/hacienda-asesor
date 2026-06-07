@@ -23,6 +23,12 @@ def test_create_retriever_builds_compressed_retriever(monkeypatch: pytest.Monkey
     fake_compressed_retriever = MagicMock(name="compressed_retriever", spec=BaseRetriever)
 
     monkeypatch.setattr(chain, "FAISS_TRUSTED_INDEX", True)
+    # This test pins the dense-only construction (k=TOP_K, a single
+    # ContextualCompressionRetriever). Pin both feature flags so the default
+    # reranker-on / BM25 path (which adds stages and widens k) doesn't change
+    # what is asserted below.
+    monkeypatch.setattr(chain, "RERANKER_ENABLED", False)
+    monkeypatch.setattr(chain, "BM25_ENABLED", False)
     monkeypatch.setattr(chain.FAISS, "load_local", MagicMock(return_value=fake_faiss))
     monkeypatch.setattr(chain.MultiQueryRetriever, "from_llm", MagicMock(return_value=fake_multi_query_retriever))
     monkeypatch.setattr(chain, "EmbeddingsFilter", MagicMock(return_value=fake_embeddings_filter))

@@ -109,7 +109,7 @@ class BOECCAACrawler(scrapy.Spider):
 
     def __init__(
         self,
-        folder: str = "./data/boe_ccaa",
+        folder: str = "./data/html",
         ccaa: str | None = None,
         snapshot_date: str | None = None,
         base_url: str | None = None,
@@ -119,7 +119,9 @@ class BOECCAACrawler(scrapy.Spider):
     ) -> None:
         super().__init__(*args, **kwargs)
         snapshot = snapshot_date or datetime.now(UTC).strftime("%Y-%m-%d")
-        self.folder = os.path.join(folder, snapshot)
+        # Land under the processor's content_dir, namespaced by source:
+        # ./data/html/<snapshot>/boe_ccaa/
+        self.folder = os.path.join(folder, snapshot, "boe_ccaa")
         self.base_url = (base_url or BOE_BASE_URL).rstrip("/")
         self.skip_unknown = _to_bool(skip_unknown)
         os.makedirs(self.folder, exist_ok=True)

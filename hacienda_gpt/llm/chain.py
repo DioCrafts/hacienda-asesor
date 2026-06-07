@@ -112,18 +112,32 @@ def _sanitize_context_documents(docs: list[Document]) -> list[Document]:
 def _build_metadata_filter(metadata_filter: dict) -> Callable[[dict], bool]:
     """Build a best-effort metadata predicate for FAISS retrieval.
 
-    FAISS' native dict filter rejects any document that lacks the key. This
-    predicate instead keeps a document when the filtered field is absent and
-    only rejects it on an explicit mismatch, so a caller can narrow by a
-    metadata field without silently dropping chunks that don't carry it.
+    Semantics, chosen so a caller can narrow by a sidecar field (source
+    authority, jurisdiction, tributo) without silently nuking recall:
+
+    * **Absent key → keep.** FAISS' native dict filter rejects any document
+      that lacks the key; this predicate keeps it and only rejects on an
+      explicit mismatch.
+    * **List-aware membership.** Sidecar fields like ``covered_tributos`` /
+      ``tributos_detectados`` are lists, so a scalar filter
+      (``{"covered_tributos": "IVA"}``) matches when the value is *in* the
+      document's list, and a list filter matches on any overlap (set
+      intersection). Scalar-vs-scalar is plain equality.
+    * **Multiple keys are AND-combined** — every constraint must hold.
     """
+
+    def _one_matches(actual: object, expected: object) -> bool:
+        expected_set = set(expected) if isinstance(expected, (list, tuple, set)) else {expected}
+        if isinstance(actual, (list, tuple, set)):
+            return bool(expected_set.intersection(actual))
+        return actual in expected_set
 
     def _matches(metadata: dict) -> bool:
         for key, expected in metadata_filter.items():
             actual = metadata.get(key)
             if actual is None:
                 continue
-            if actual != expected:
+            if not _one_matches(actual, expected):
                 return False
         return True
 
@@ -158,6 +172,12 @@ def _create_retriever(
     search_kwargs: dict = {"k": first_stage_k}
     if profile.metadata_filter:
         search_kwargs["filter"] = _build_metadata_filter(profile.metadata_filter)
+        # With a filter, FAISS fetches ``fetch_k`` (default 20) candidates
+        # BEFORE applying it, so a small fetch_k silently caps recall below
+        # ``k`` once filtering drops some. Widen it so the post-filter set can
+        # still fill ``k``. Only set when filtering — the unfiltered default
+        # path keeps FAISS' native behaviour untouched.
+        search_kwargs["fetch_k"] = max(first_stage_k * 5, 100)
     base_retriever = faiss.as_retriever(search_kwargs=search_kwargs)
     multi_query_retriever = MultiQueryRetriever.from_llm(retriever=base_retriever, llm=llm)
 
@@ -218,19 +238,32 @@ class SanitizingRetriever(BaseRetriever):
         return _sanitize_context_documents(docs)
 
 
-def create_openai_chain(openai_api_key: str, *, profile_name: str = "explain") -> Runnable:
+def create_openai_chain(
+    openai_api_key: str,
+    *,
+    profile_name: str = "explain",
+    metadata_filter: dict | None = None,
+) -> Runnable:
     """Create a retrieval chain using the stable Runnable/LCEL architecture.
 
     Defaults to the ``explain`` retrieval profile (higher recall): both callers
     — the ``/qa`` endpoint and the Streamlit chat — serve explanatory Q&A, the
     use case that profile was tuned for. The stricter ``decision`` profile is
     reserved for the decision engine and the retrieval benchmark.
+
+    ``metadata_filter`` is an optional narrowing predicate over sidecar fields
+    (e.g. ``{"jurisdiction_scope": "nacional"}`` or
+    ``{"covered_tributos": "IVA"}``). It defaults to ``None`` — the unfiltered
+    path is byte-for-byte the previous behaviour — and is opt-in per caller; see
+    ``_build_metadata_filter`` for the (recall-safe) matching semantics.
     """
     llm = ChatOpenAI(temperature=OPENAI_TEMPERATURE, model=OPENAI_MODEL, api_key=openai_api_key)
     # Embedder comes from the shared factory (default: local Qwen3-Embedding).
     # The OpenAI key is still used for the chat LLM above, not for embeddings.
     embeddings = create_embeddings()
-    retriever = _create_retriever(embeddings, llm, profile_name=profile_name)
+    retriever = _create_retriever(
+        embeddings, llm, profile_name=profile_name, metadata_filter=metadata_filter
+    )
 
     contextualize_prompt = ChatPromptTemplate.from_messages(
         [

@@ -21,6 +21,7 @@ import click
 
 from hacienda_gpt.decision.rules import load_rules_from_directory
 from hacienda_gpt.governance.drift import DriftDetector, FilesystemResolver, write_report
+from hacienda_gpt.settings import RULES_DIR
 
 
 def _default_report_path() -> Path:
@@ -29,7 +30,7 @@ def _default_report_path() -> Path:
 
 
 @click.command()
-@click.option("--rules-dir", default="rules", show_default=True, help="Directory containing rule JSON files")
+@click.option("--rules-dir", default=RULES_DIR, show_default=True, help="Directory containing rule JSON files")
 @click.option(
     "--snapshot-root",
     default="./data",

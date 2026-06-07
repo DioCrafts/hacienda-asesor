@@ -292,42 +292,64 @@ def _format_missing_as_question(missing: list[str]) -> str:
     return f"Aún me falta saber: <ul><li>{items}</li></ul>"
 
 
-def _format_obligation_card(o: ObligationCandidate) -> str:
-    css_cls, risk_label = _RISK_CSS.get(o.risk_level, ("medium", o.risk_level.value))
-    pct = int(round(o.confidence * 100))
-    sources = ", ".join(
-        sorted({e.title for e in o.evidence_refs if getattr(e, "title", None)})
-    ) or "Sin fuentes asociadas"
-    missing_q = _format_missing_as_question(o.blocking_missing_facts)
+def _build_obligation_cards(case_state: CaseState) -> list[dict[str, str]]:
+    """Build presentation-ready data for each candidate obligation.
+
+    Separated from the HTML so the field mapping (confidence formatting,
+    source aggregation, missing-fact summary) can be unit-tested without a
+    Streamlit runtime.
+    """
+    cards: list[dict[str, str]] = []
+    for o in case_state.obligation_candidates:
+        css_cls, risk_label = _RISK_CSS.get(o.risk_level, ("medium", o.risk_level.value))
+        sources = ", ".join(
+            sorted({e.title for e in o.evidence_refs if getattr(e, "title", None)})
+        ) or "Sin fuentes asociadas"
+        cards.append(
+            {
+                "title": o.title,
+                "risk_label": risk_label,
+                "risk_css": css_cls,
+                "confidence": f"{o.confidence:.2f}",
+                "pct": str(int(round(o.confidence * 100))),
+                "sources": sources,
+                "missing": ", ".join(o.blocking_missing_facts),
+                "missing_question": _format_missing_as_question(o.blocking_missing_facts),
+            }
+        )
+    return cards
+
+
+def _format_obligation_card(card: dict[str, str]) -> str:
     missing_block = (
         f'<div class="label">Dato que falta para confirmar</div>'
-        f'<div class="missing-q">{missing_q}</div>'
-        if missing_q
+        f'<div class="missing-q">{card["missing_question"]}</div>'
+        if card["missing_question"]
         else ""
     )
     return (
         f'<div class="obligation-card">'
         f'<div class="heading">'
-        f'<span class="title">{html.escape(o.title)}</span>'
-        f'<span class="risk-badge {css_cls}">{html.escape(risk_label)}</span>'
+        f'<span class="title">{html.escape(card["title"])}</span>'
+        f'<span class="risk-badge {card["risk_css"]}">{html.escape(card["risk_label"])}</span>'
         f'</div>'
         f'<div class="confidence-row">'
-        f'<div class="confidence-bar"><div class="fill" style="width:{pct}%"></div></div>'
-        f'<span class="pct">{pct}%</span>'
+        f'<div class="confidence-bar"><div class="fill" style="width:{card["pct"]}%"></div></div>'
+        f'<span class="pct">{card["pct"]}%</span>'
         f'</div>'
         f'<div class="label">Base normativa</div>'
-        f'<div class="sources-line">{html.escape(sources)}</div>'
+        f'<div class="sources-line">{html.escape(card["sources"])}</div>'
         f'{missing_block}'
         f'</div>'
     )
 
 
 def _render_obligation_cards(case_state: CaseState) -> None:
-    obligations = list(case_state.obligation_candidates)
-    if not obligations:
+    cards = _build_obligation_cards(case_state)
+    if not cards:
         return
     st.subheader("Obligaciones candidatas")
-    cards_html = "".join(_format_obligation_card(o) for o in obligations)
+    cards_html = "".join(_format_obligation_card(c) for c in cards)
     st.markdown(cards_html, unsafe_allow_html=True)
 
 

@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -154,6 +155,12 @@ TOP_K = int(os.environ.get("TOP_K", "3"))
 
 DECISION_DEBUG_MODE = _env_bool("DECISION_DEBUG_MODE", default=False)
 DECISION_STATE_DB_PATH = os.environ.get("DECISION_STATE_DB_PATH", "./data/decision_state.sqlite3")
+# Decision rules live at the repo root (sibling of the hacienda_gpt package).
+# Resolve to an ABSOLUTE path so the engine loads them regardless of the process
+# working directory (uvicorn/Streamlit may start elsewhere). A relative "rules"
+# silently found nothing from any other CWD — and RuleSet(min_length=1) then
+# raised — stalling every turn. Overridable via the RULES_DIR env var.
+RULES_DIR = os.environ.get("RULES_DIR", str(Path(__file__).resolve().parent.parent / "rules"))
 UI_USE_API = _env_bool("UI_USE_API", default=False)
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000")
 

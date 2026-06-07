@@ -148,10 +148,14 @@ def _normalise_vinculante(value: str | None) -> bool | None:
     if value is None:
         return None
     lowered = value.lower().strip()
-    if "sí" in lowered or "si" == lowered or lowered.startswith("vinculante"):
-        return True
-    if "no" in lowered:
+    # Negation must win over the positive "vinculante" prefix: "No vinculante",
+    # "Vinculante: No", etc. are NOT binding. Check it FIRST — otherwise
+    # ``startswith("vinculante")`` would shadow the "no" and wrongly return True.
+    # The word boundary (\bno\b) avoids tripping on "no" embedded in other words.
+    if re.search(r"\bno\b", lowered):
         return False
+    if re.search(r"\bs[ií]\b", lowered) or lowered.startswith("vinculante"):
+        return True
     return None
 
 
@@ -189,7 +193,7 @@ class TEACCrawler(scrapy.Spider):
 
     def __init__(
         self,
-        folder: str = "./data/teac",
+        folder: str = "./data/html",
         start_id: int = 1,
         end_id: int = 100,
         snapshot_date: str | None = None,
@@ -199,7 +203,9 @@ class TEACCrawler(scrapy.Spider):
     ) -> None:
         super().__init__(*args, **kwargs)
         snapshot = snapshot_date or datetime.now(UTC).strftime("%Y-%m-%d")
-        self.folder = os.path.join(folder, snapshot)
+        # Land under the processor's content_dir, namespaced by source:
+        # ./data/html/<snapshot>/teac/
+        self.folder = os.path.join(folder, snapshot, "teac")
         self.start_id = int(start_id)
         self.end_id = int(end_id)
         self.base_url = (base_url or DYCTEA_BASE_URL).rstrip("/")

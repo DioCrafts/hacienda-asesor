@@ -205,7 +205,7 @@ class CENDOJCrawler(scrapy.Spider):
 
     def __init__(
         self,
-        folder: str = "./data/cendoj",
+        folder: str = "./data/html",
         urls: str | None = None,
         urls_file: str | None = None,
         snapshot_date: str | None = None,
@@ -215,7 +215,10 @@ class CENDOJCrawler(scrapy.Spider):
     ) -> None:
         super().__init__(*args, **kwargs)
         snapshot = snapshot_date or datetime.now(UTC).strftime("%Y-%m-%d")
-        self.folder = os.path.join(folder, snapshot)
+        # Land under the processor's content_dir (./data/html), namespaced by
+        # source, so the snapshot is indexed without a manual promotion step:
+        # ./data/html/<snapshot>/cendoj/
+        self.folder = os.path.join(folder, snapshot, "cendoj")
         self.only_tributario = _to_bool(only_tributario)
         os.makedirs(self.folder, exist_ok=True)
         self._urls = _collect_urls(urls=urls, urls_file=urls_file)

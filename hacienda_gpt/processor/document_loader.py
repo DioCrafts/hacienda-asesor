@@ -30,14 +30,15 @@ loader seam instead.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 import hashlib
+import json
 import logging
 import multiprocessing as mp
+from pathlib import Path
 import queue
 import shutil
 import threading
-from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
 from langchain_core.documents import Document
@@ -133,6 +134,65 @@ def docling_chunk_metadata(doc: Document) -> dict[str, Any]:
     if page_no is not None:
         metadata["page_no"] = page_no
     return metadata
+
+
+# Keys owned by Docling / the loader. The crawler sidecar must never overwrite
+# them, so citation behaviour (title / source_url / section / page_no) and the
+# chunk contract (source_file / chunk_id / _strategy_id / dl_meta) stay intact.
+# Everything else in the sidecar is additive.
+_RESERVED_METADATA_KEYS: frozenset[str] = frozenset(
+    {
+        "title",
+        "section",
+        "source_url",
+        "source",
+        "page_no",
+        "source_file",
+        "chunk_id",
+        "_strategy_id",
+        "dl_meta",
+    }
+)
+
+
+def _load_sidecar(file_path: str) -> dict[str, Any]:
+    """Load the crawler-written JSON metadata sidecar for a source file.
+
+    Two conventions exist across the crawlers:
+
+    * same-basename — ``<doc>.json`` next to ``<doc>.html`` (CENDOJ, TEAC,
+      boletines autonómicos);
+    * per-directory — ``metadata.json`` alongside the document (BOE-CCAA PDFs).
+
+    Same-basename wins when both exist. Returns ``{}`` when there is no sidecar
+    or it can't be parsed: ingestion must never fail over optional metadata.
+    """
+    source = Path(file_path)
+    for candidate in (source.with_suffix(".json"), source.parent / "metadata.json"):
+        if not candidate.is_file():
+            continue
+        try:
+            data = json.loads(candidate.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:  # ValueError covers JSONDecodeError
+            logging.warning("Sidecar %s is unreadable (%s); ignoring.", candidate, exc)
+            return {}
+        return data if isinstance(data, dict) else {}
+    return {}
+
+
+def _merge_sidecar(metadata: dict[str, Any], sidecar: dict[str, Any]) -> None:
+    """Merge crawler sidecar fields into a chunk's metadata.
+
+    Never clobbers the Docling/loader-owned keys (see ``_RESERVED_METADATA_KEYS``)
+    and skips empty values so a sidecar ``null`` / ``""`` never buries a real
+    value. ``False`` / ``0`` are kept — they are meaningful (e.g. ``vinculante``).
+    """
+    for key, value in sidecar.items():
+        if key in _RESERVED_METADATA_KEYS:
+            continue
+        if value is None or value == "":
+            continue
+        metadata.setdefault(key, value)
 
 
 def _shard_files(files: list[str], num_shards: int) -> list[list[str]]:
@@ -291,6 +351,18 @@ def _process_one_file(file_path: str) -> tuple[str, list[Document]]:
         doc.metadata.setdefault("chunk_id", _stable_chunk_id(file_path, idx))
         doc.metadata.setdefault("source_file", file_path)
         doc.metadata.setdefault("_strategy_id", strategy.strategy_id)
+
+    # Merge the crawler-written JSON sidecar (source_authority, jurisdiction,
+    # covered_tributos, vinculante, …) onto every chunk so the metadata the
+    # crawlers extracted is available downstream (retrieval filtering, richer
+    # citations) instead of being discarded. Keyed on the parent ``file_path``
+    # so split documents (BOE consolidado) still resolve the right sidecar.
+    # Reserved Docling/loader keys are preserved, so citation behaviour is
+    # unchanged by this step.
+    sidecar = _load_sidecar(file_path)
+    if sidecar:
+        for doc in docs:
+            _merge_sidecar(doc.metadata, sidecar)
     return (file_path, docs)
 
 

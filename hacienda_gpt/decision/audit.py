@@ -42,7 +42,9 @@ def build_recommendation_audit_event(
                 "confidence": f.confidence,
                 "source": f.source,
             }
-            for f in interpretation.extracted_facts
+            # The accumulated facts the recommendation rested on (not just this
+            # turn's): the audit trail must capture the full decision basis.
+            for f in interpretation.all_facts
         ],
         "rules_triggered": [
             {

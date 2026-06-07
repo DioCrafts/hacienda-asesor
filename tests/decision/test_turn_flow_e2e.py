@@ -163,7 +163,9 @@ def test_multi_turn_accumulates_facts_until_no_missing(client, install_extractor
     fact_names_after_t1 = {f["name"] for f in b1["facts"]}
     assert {"residencia_fiscal", "categoria_contribuyente"} <= fact_names_after_t1
     missing_after_t1 = {m["fact_name"] for m in b1["missing_facts"]}
-    assert "tipo_renta" in missing_after_t1
+    # tipo_renta is IRPF-only per the taxonomy, so for an autónomo the engine
+    # surfaces the fiscal period instead, not tipo_renta.
+    assert "periodo_fiscal" in missing_after_t1
     assert b1["next_questions"], "the engine should keep asking"
 
     b2 = _turn(client, case_id, "facturo 45000 al año por consultoría")
@@ -175,8 +177,8 @@ def test_multi_turn_accumulates_facts_until_no_missing(client, install_extractor
     b3 = _turn(client, case_id, "estimación directa simplificada, ejercicio 2024")
     fact_names_after_t3 = {f["name"] for f in b3["facts"]}
     assert {"regimen_tributario", "periodo_fiscal"} <= fact_names_after_t3
-    # After three turns we have residencia, ingresos and periodo — the
-    # interpreter should not be asking for any of those anymore.
+    # After three turns residencia and periodo are known; tipo_renta is not
+    # part of the autónomo flow (it is IRPF-only), so none of these stay missing.
     missing_after_t3 = {m["fact_name"] for m in b3["missing_facts"]}
     assert "residencia_fiscal" not in missing_after_t3
     assert "tipo_renta" not in missing_after_t3
@@ -184,7 +186,7 @@ def test_multi_turn_accumulates_facts_until_no_missing(client, install_extractor
 
 
 def test_repeated_question_is_rephrased_then_given_up(client, install_extractor):
-    # The extractor returns an autonomo intent but never produces tipo_renta /
+    # The extractor returns an autonomo intent but never produces
     # residencia_fiscal / periodo_fiscal. This simulates a user who keeps
     # answering off-topic, so the engine has to recover gracefully.
     install_extractor(
@@ -221,6 +223,49 @@ def test_repeated_question_is_rephrased_then_given_up(client, install_extractor)
     # the response must flag the conversation as degraded.
     assert last_body["degraded"] is True
     assert last_body["degraded_facts"], "expected at least one fact in degraded_facts"
+
+
+def test_irpf_deadlock_resolves_obligation_after_tipo_renta(client, install_extractor):
+    # Regression for the IRPF deadlock. An IRPF case that mentions income used
+    # to stop asking for tipo_renta (because menciona_ingresos was present),
+    # yet the IRPF rule requires tipo_renta — so the rule stayed blocked and no
+    # obligation ever surfaced. After the fix the dialog keeps asking for
+    # tipo_renta; once provided, the rule unblocks and emits the obligation.
+    install_extractor(
+        {
+            "soy residente": ExtractionPayload(
+                intent="declaracion_irpf",
+                intent_confidence=0.95,
+                extracted_facts=[
+                    _fact("residencia_fiscal", "ES", FactValueType.STRING),
+                    _fact("menciona_ingresos", True, FactValueType.BOOLEAN),
+                    _fact("periodo_fiscal", "2024", FactValueType.STRING),
+                ],
+            ),
+            "son ingresos del trabajo": ExtractionPayload(
+                intent="declaracion_irpf",
+                intent_confidence=0.95,
+                extracted_facts=[
+                    _fact("tipo_renta", "trabajo", FactValueType.STRING),
+                ],
+            ),
+        }
+    )
+    case_id = _create_case(client)
+
+    b1 = _turn(client, case_id, "soy residente y tengo ingresos en 2024")
+    missing1 = {m["fact_name"] for m in b1["missing_facts"]}
+    # Income mentioned, residencia + periodo known, but tipo_renta is still
+    # required and must still be asked (this is the bug the fix targets).
+    assert "tipo_renta" in missing1
+    assert any("ingresos" in q.lower() for q in b1["next_questions"])
+    # Rule cannot fire yet: it is blocked on the missing tipo_renta.
+    assert b1["candidate_obligation_ids"] == []
+
+    b2 = _turn(client, case_id, "son ingresos del trabajo")
+    # tipo_renta provided -> rule unblocks -> the candidate obligation appears.
+    assert "obl_irpf_candidate" in b2["candidate_obligation_ids"]
+    assert any(o["obligation_id"] == "obl_irpf_candidate" for o in b2["obligations"])
 
 
 def test_case_404_unknown(client):

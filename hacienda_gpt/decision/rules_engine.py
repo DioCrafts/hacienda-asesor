@@ -17,6 +17,7 @@ from hacienda_gpt.decision.rules import (
     load_rules_from_directory,
 )
 from hacienda_gpt.decision.schemas import CaseState, Fact, ObligationCandidate, parse_fiscal_year
+from hacienda_gpt.settings import RULES_DIR
 
 
 class ConditionTrace(BaseModel):
@@ -64,7 +65,7 @@ class RulesEngine:
     _version_cache: dict[str, str] = field(default_factory=dict, init=False, compare=False, repr=False)
 
     @classmethod
-    def from_rules_directory(cls, directory: str = "rules") -> RulesEngine:
+    def from_rules_directory(cls, directory: str = RULES_DIR) -> RulesEngine:
         return cls(ruleset=load_rules_from_directory(directory))
 
     def evaluate(self, case_state: CaseState, recent_facts: list[Fact]) -> RulesEngineResult:
@@ -253,7 +254,7 @@ def clear_rules_cache() -> None:
 
 
 def evaluate_rules(
-    case_state: CaseState, recent_facts: list[Fact], rules_directory: str = "rules"
+    case_state: CaseState, recent_facts: list[Fact], rules_directory: str = RULES_DIR
 ) -> RulesEngineResult:
     engine = _engine_for_directory(rules_directory)
     return engine.evaluate(case_state=case_state, recent_facts=recent_facts)

@@ -133,7 +133,7 @@ def test_crawler_persists_only_pdfs_returned(
         raise AssertionError("crawl subprocess timed out")
     assert proc.exitcode == 0, "crawl subprocess failed"
 
-    snap_dir = tmp_path / snapshot
+    snap_dir = tmp_path / snapshot / "boe_ccaa"
     andalucia_meta = snap_dir / "andalucia" / "metadata.json"
     madrid_meta = snap_dir / "madrid" / "metadata.json"
     galicia_meta = snap_dir / "galicia" / "metadata.json"

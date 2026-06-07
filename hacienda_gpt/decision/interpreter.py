@@ -10,6 +10,7 @@ from hacienda_gpt.decision.fact_extractor import (
     RegexFactExtractor,
 )
 from hacienda_gpt.decision.schemas import CaseState, Fact, MissingFact, RiskLevel
+from hacienda_gpt.decision.taxonomy import SupportedIntent, required_facts_for_intent
 
 
 class Intent(str, Enum):
@@ -43,7 +44,13 @@ class InterpretationResult(BaseModel):
 
     intent: Intent
     confidence: float = Field(ge=0.0, le=1.0)
+    # `extracted_facts`: facts pulled from THIS turn's user input only.
+    # `all_facts`: those merged with the facts already on the case (the
+    # accumulated view). Kept distinct on purpose — persistence and the audit
+    # trail need the accumulated set, while the per-turn explainer ("Hechos
+    # detectados … en este turno") must show only this turn's.
     extracted_facts: list[Fact] = Field(default_factory=list)
+    all_facts: list[Fact] = Field(default_factory=list)
     uncertainties: list[Uncertainty] = Field(default_factory=list)
     missing_facts: list[MissingFact] = Field(default_factory=list)
     next_questions: list[QuestionPrompt] = Field(default_factory=list)
@@ -110,7 +117,20 @@ def _build_missing_and_questions(
     missing_facts: list[MissingFact] = []
     next_questions: list[QuestionPrompt] = []
 
-    if "menciona_ingresos" not in fact_names and "tipo_renta" not in fact_names:
+    # `tipo_renta` handling, fixing two coupled defects:
+    #  1) It is a DISTINCT fact from `menciona_ingresos` (which only signals
+    #     that income was mentioned, not how it is classified). Gating the
+    #     question on `menciona_ingresos` deadlocked IRPF cases — the IRPF rule
+    #     requires `tipo_renta`, but the dialog stopped asking for it once the
+    #     user mentioned income, leaving the rule blocked on a fact nobody asked.
+    #  2) It is only relevant where the intent's taxonomy actually requires it
+    #     (today: IRPF). Asking it for IVA/autónomo was noise. So: ask whenever
+    #     the intent requires it and the classification itself is still missing.
+    try:
+        intent_required_facts = set(required_facts_for_intent(SupportedIntent(intent.value)))
+    except ValueError:
+        intent_required_facts = set()
+    if "tipo_renta" in intent_required_facts and "tipo_renta" not in fact_names:
         missing_facts.append(
             MissingFact(
                 fact_name="tipo_renta",
@@ -194,8 +214,9 @@ def interpret_turn(
     except ValueError:
         intent = Intent.UNKNOWN
 
-    facts = _merge_facts(payload.extracted_facts, current_case_state)
-    fact_names = {fact.name for fact in facts}
+    turn_facts = payload.extracted_facts
+    all_facts = _merge_facts(turn_facts, current_case_state)
+    fact_names = {fact.name for fact in all_facts}
 
     missing_facts, next_questions = _build_missing_and_questions(intent, fact_names)
     gave_up = set(getattr(current_case_state, "gave_up_facts", []) or [])
@@ -225,7 +246,8 @@ def interpret_turn(
     return InterpretationResult(
         intent=intent,
         confidence=payload.intent_confidence,
-        extracted_facts=facts,
+        extracted_facts=turn_facts,
+        all_facts=all_facts,
         uncertainties=uncertainties,
         missing_facts=missing_facts,
         next_questions=next_questions,

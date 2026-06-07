@@ -22,23 +22,40 @@ def _thread_safe_singleton(factory: Callable[[], T]) -> Callable[[], T]:
     cache miss and run ``factory()`` in parallel. For ``_build_qa_chain``
     that meant loading the 1.1 GB MLX embedder twice into RAM. This
     decorator wraps the factory in double-checked locking so the work
-    happens exactly once. Exposes ``cache_clear()`` for tests.
+    happens exactly once.
+
+    A FAILED build is cached too: a misconfiguration (missing OPENAI_API_KEY,
+    absent FAISS index, a model that won't load) would otherwise re-run the
+    expensive factory — reloading the multi-GB embedder — on *every* request.
+    The cached exception is re-raised cheaply instead. ``cache_clear()`` resets
+    both success and failure so a fixed deployment can recover in-process (and
+    so tests start clean).
     """
     lock = threading.Lock()
     holder: list[T] = []
+    error_holder: list[Exception] = []
 
     def wrapper() -> T:
         if holder:
             return holder[0]
+        if error_holder:
+            raise error_holder[0]
         with lock:
             if holder:
                 return holder[0]
-            holder.append(factory())
+            if error_holder:
+                raise error_holder[0]
+            try:
+                holder.append(factory())
+            except Exception as exc:
+                error_holder.append(exc)
+                raise
             return holder[0]
 
     def cache_clear() -> None:
         with lock:
             holder.clear()
+            error_holder.clear()
 
     wrapper.cache_clear = cache_clear  # type: ignore[attr-defined]
     return wrapper
@@ -46,7 +63,12 @@ def _thread_safe_singleton(factory: Callable[[], T]) -> Callable[[], T]:
 from hacienda_gpt.decision.audit import build_recommendation_audit_event
 from hacienda_gpt.decision.fact_extractor import FactExtractor, default_fact_extractor
 from hacienda_gpt.decision.planner import Planner
-from hacienda_gpt.decision.schemas import CaseState, Fact, MissingFact
+from hacienda_gpt.decision.schemas import (
+    CaseState,
+    Fact,
+    MissingFact,
+    ObligationCandidate,
+)
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.decision.turn_service import process_turn
 from hacienda_gpt.llm.grounding import AnswerEnvelope
@@ -128,6 +150,10 @@ class TurnResponse(BaseModel):
     facts: list[Fact]
     missing_facts: list[MissingFact]
     candidate_obligation_ids: list[str]
+    # Full candidate objects (title/risk/confidence/evidence). The web UI
+    # renders these directly; `candidate_obligation_ids` stays for
+    # backward-compatible consumers that only need the ids.
+    obligations: list[ObligationCandidate] = Field(default_factory=list)
     next_questions: list[str]
     degraded: bool = False
     degraded_facts: list[str] = Field(default_factory=list)
@@ -218,6 +244,7 @@ def post_turn(
         facts=updated.facts,
         missing_facts=updated.missing_facts,
         candidate_obligation_ids=[o.obligation_id for o in updated.obligation_candidates],
+        obligations=list(updated.obligation_candidates),
         next_questions=[q.question_text for q in outcome.selected_questions],
         degraded=bool(updated.gave_up_facts),
         degraded_facts=list(updated.gave_up_facts),
@@ -250,17 +277,39 @@ def _build_qa_chain():
 def get_qa_chain():
     """FastAPI dependency returning the cached retrieval chain.
 
-    Kept as a thin wrapper so tests can still override it via
-    ``app.dependency_overrides`` without building a real chain.
+    Translates a failed chain build (missing OPENAI_API_KEY, absent FAISS index,
+    a model that won't load) into a clean 503 instead of an opaque 500. The
+    failure is cached by ``_build_qa_chain`` so repeated requests fail fast
+    rather than re-running the expensive build. Kept as a thin wrapper so tests
+    can still override it via ``app.dependency_overrides``.
     """
-    return _build_qa_chain()
+    try:
+        return _build_qa_chain()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"El servicio de consulta no está disponible: {exc}",
+        ) from exc
 
 
 @app.post("/qa", response_model=AnswerEnvelope)
 def post_qa(payload: QARequest, chain=Depends(get_qa_chain)) -> AnswerEnvelope:
     from hacienda_gpt.llm.chain import answer_with_grounding
 
-    return answer_with_grounding(chain, query=payload.query, chat_history=payload.chat_history)
+    try:
+        return answer_with_grounding(chain, query=payload.query, chat_history=payload.chat_history)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        # The chain built fine but answering failed (retrieval, the OpenAI call,
+        # grounding…). Surface a clean error instead of an opaque 500. This is
+        # per-request, so — unlike a build failure — it is NOT cached.
+        raise HTTPException(
+            status_code=503,
+            detail=f"No se pudo procesar la consulta: {exc}",
+        ) from exc
 
 
 @app.get("/cases/{case_id}/audit/export")

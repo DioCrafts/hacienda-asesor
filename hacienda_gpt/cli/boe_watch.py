@@ -136,6 +136,30 @@ def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _resolve_target(output_dir: Path, subdir: str, boe_id: str, local: dict) -> Path:
+    """Resolve WHERE to (over)write the re-downloaded consolidated HTML.
+
+    The manifest keys chunks by file path, so rotating each re-download into a
+    fresh dated snapshot makes the manifest treat it as a NEW file and index a
+    second copy of the same law next to the old one. To avoid that we overwrite
+    the path the document already occupies, which the manifest sees as a
+    *modified* file (same path, new SHA) and re-chunks in place:
+
+    1. Reuse the path recorded on the previous download (steady state).
+    2. First time we touch it, overwrite an existing on-disk copy — e.g. the one
+       ``boe_seed`` wrote in its dated snapshot — so the manifest sees a
+       modification, not a new file.
+    3. Nothing on disk yet → a stable, non-dated location that future runs reuse.
+    """
+    prev = local.get("path")
+    if prev:
+        return Path(prev)
+    existing = sorted(output_dir.rglob(f"{subdir}/{boe_id}.html"))
+    if existing:
+        return existing[-1]
+    return output_dir / "boe-watch" / subdir / f"{boe_id}.html"
+
+
 # --------------------------------------------------------------------- #
 # Catalog parsing
 # --------------------------------------------------------------------- #
@@ -165,14 +189,6 @@ def _load_catalog(catalog_path: Path) -> list[dict]:
     "snapshot rotations.",
 )
 @click.option(
-    "--snapshot-date",
-    default=None,
-    help="Snapshot folder name (YYYY-MM-DD). Defaults to today UTC. The "
-    "redownloaded HTML is written under "
-    "<output-dir>/<snapshot>/<subdir>/<ID>.html so the next "
-    "``processor --incremental`` run picks it up via SHA-256 diff.",
-)
-@click.option(
     "--only",
     default=None,
     help="Comma-separated list of BOE IDs to check (subset of catalog).",
@@ -195,7 +211,6 @@ def _load_catalog(catalog_path: Path) -> list[dict]:
 def cli(
     catalog: Path,
     output_dir: Path,
-    snapshot_date: str | None,
     only: str | None,
     dry_run: bool,
     polite_delay: float,
@@ -209,9 +224,6 @@ def cli(
     season or after major reforms.
     """
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-
-    snapshot = snapshot_date or datetime.now(UTC).strftime("%Y-%m-%d")
-    snapshot_root = output_dir / snapshot
 
     catalog_entries = _load_catalog(catalog)
     if only:
@@ -271,11 +283,13 @@ def cli(
             continue
 
         if verdict in ("NEW", "CHANGED"):
-            # Re-download the consolidated HTML and save to the snapshot
-            # folder of today. The processor's --incremental pass picks
-            # it up via SHA-256 diff against the manifest entry.
+            # Re-download the consolidated HTML and OVERWRITE the path the
+            # document already occupies (never a fresh dated snapshot), so the
+            # processor's --incremental pass sees a *modified* file and replaces
+            # the old chunks instead of indexing a second copy. See
+            # _resolve_target for the path rules.
             subdir = entry.get("subdir", "boe-seed")
-            target = snapshot_root / subdir / f"{boe_id}.html"
+            target = _resolve_target(output_dir, subdir, boe_id, local)
             try:
                 body = _fetch_html(boe_id)
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -307,6 +321,9 @@ def cli(
                 "sha256": new_sha,
                 "title": meta.get("titulo"),
                 "subdir": subdir,
+                # Remember WHERE we wrote it so the next change overwrites the
+                # same file in place (keeps the manifest dedup by path honest).
+                "path": str(target),
                 "estatus_derogacion": meta.get("estatus_derogacion"),
                 "estado_consolidacion": (
                     meta.get("estado_consolidacion", {}).get("texto")

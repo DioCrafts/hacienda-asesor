@@ -13,6 +13,7 @@ import pytest
 from hacienda_gpt.crawler.teac import (
     DYCTEA_NOT_FOUND_MARKER,
     TEACCrawler,
+    _normalise_vinculante,
     parse_teac_criterio,
 )
 
@@ -21,6 +22,17 @@ FIXTURES = Path(__file__).parent / "fixtures" / "teac"
 
 def _read(name: str) -> str:
     return (FIXTURES / name).read_text(encoding="utf-8")
+
+
+def test_normalise_vinculante_negation_wins_over_prefix() -> None:
+    # Regression: a value carrying both the label and a negation ("No vinculante",
+    # "Vinculante: No") must resolve to False, not True via startswith("vinculante").
+    assert _normalise_vinculante("No vinculante") is False
+    assert _normalise_vinculante("Vinculante: No") is False
+    assert _normalise_vinculante("Vinculante") is True
+    assert _normalise_vinculante("Sí") is True
+    assert _normalise_vinculante("No") is False
+    assert _normalise_vinculante(None) is None
 
 
 def test_parse_returns_none_for_not_found_page() -> None:
@@ -169,7 +181,7 @@ def test_crawler_persists_only_existing_criteria(
         raise AssertionError("crawl subprocess timed out")
     assert proc.exitcode == 0, "crawl subprocess failed"
 
-    snapshot_dir = tmp_path / snapshot_date
+    snapshot_dir = tmp_path / snapshot_date / "teac"
     saved_jsons = sorted(snapshot_dir.glob("*.json"))
     saved_htmls = sorted(snapshot_dir.glob("*.html"))
 

@@ -164,6 +164,21 @@ def test_evaluate_rules_reuses_cached_engine_per_directory() -> None:
     assert _engine_for_directory("rules") is not first  # cache cleared -> fresh build
 
 
+def test_evaluate_rules_loads_rules_from_any_cwd(tmp_path, monkeypatch) -> None:
+    # Regression: the rules directory must resolve to an absolute path so the
+    # engine loads rules regardless of the process working directory (uvicorn /
+    # Streamlit may start elsewhere). Before the fix the relative "rules" default
+    # found nothing from another CWD and RuleSet(min_length=1) raised, stalling
+    # every turn with a 500 instead of detecting obligations.
+    clear_rules_cache()
+    monkeypatch.chdir(tmp_path)  # a CWD that is NOT the repo root
+    case = _case_with_facts(_fact("residencia_fiscal", "ES"))
+    recent = [_fact("menciona_ingresos", True)]
+    result = evaluate_rules(case_state=case, recent_facts=recent)
+    assert result.rule_traces, "rules must load from an absolute path, not the CWD"
+    clear_rules_cache()
+
+
 def test_rule_version_is_memoized() -> None:
     rule = DecisionRule.model_validate(
         {
