@@ -6,7 +6,7 @@ import threading
 from typing import Annotated, TypeVar
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -61,6 +61,12 @@ def _thread_safe_singleton(factory: Callable[[], T]) -> Callable[[], T]:
     return wrapper
 
 
+from hacienda_gpt.api.observability import ApiMetrics, observability_middleware
+from hacienda_gpt.api.security import (
+    RateLimiter,
+    make_rate_limit_middleware,
+    require_api_key,
+)
 from hacienda_gpt.decision.audit import build_recommendation_audit_event
 from hacienda_gpt.decision.fact_extractor import FactExtractor, OpenAIExtractionError, default_fact_extractor
 from hacienda_gpt.decision.planner import Planner
@@ -74,7 +80,7 @@ from hacienda_gpt.decision.state_store import CaseVersionConflictError
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.decision.turn_service import process_turn
 from hacienda_gpt.llm.grounding import AnswerEnvelope
-from hacienda_gpt.settings import DECISION_STATE_DB_PATH
+from hacienda_gpt.settings import API_RATE_LIMIT_PER_MIN, DECISION_STATE_DB_PATH
 
 app = FastAPI(title="HaciendaGPT Decision API", version="1.0.0")
 
@@ -94,9 +100,18 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_ALLOWED_ORIGINS,
     allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "X-API-Key"],
     allow_credentials=False,
 )
+
+# Observability + rate limiting. Registration order matters: Starlette runs the
+# LAST-registered middleware OUTERMOST, so register the limiter first and the
+# observability layer second — the latter then times/logs/meters every request
+# including the ones the limiter rejects with 429.
+app.state.api_metrics = ApiMetrics()
+_rate_limiter = RateLimiter(API_RATE_LIMIT_PER_MIN)
+app.middleware("http")(make_rate_limit_middleware(_rate_limiter))
+app.middleware("http")(observability_middleware)
 
 
 @_thread_safe_singleton
@@ -166,7 +181,19 @@ def health() -> dict[str, str]:
     return {"status": "ok", "ts": datetime.now(UTC).isoformat()}
 
 
-@app.post("/cases", response_model=CaseState)
+@app.get("/metrics")
+def metrics() -> Response:
+    """Prometheus-format HTTP metrics (request counts, errors, latency).
+
+    Exempt from auth and rate limiting so scrapers always reach it.
+    """
+    return Response(
+        content=app.state.api_metrics.prometheus_text(),
+        media_type="text/plain; version=0.0.4",
+    )
+
+
+@app.post("/cases", response_model=CaseState, dependencies=[Depends(require_api_key)])
 def create_case(
     payload: CreateCaseRequest,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
@@ -207,7 +234,7 @@ def get_case_audit(
     return {"case_id": case_id, "events": store.list_audit_events(case_id)}
 
 
-@app.post("/cases/{case_id}/turn", response_model=TurnResponse)
+@app.post("/cases/{case_id}/turn", response_model=TurnResponse, dependencies=[Depends(require_api_key)])
 def post_turn(
     case_id: str,
     payload: TurnRequest,
@@ -313,7 +340,7 @@ def get_qa_chain():
         ) from exc
 
 
-@app.post("/qa", response_model=AnswerEnvelope)
+@app.post("/qa", response_model=AnswerEnvelope, dependencies=[Depends(require_api_key)])
 def post_qa(payload: QARequest, chain=Depends(get_qa_chain)) -> AnswerEnvelope:
     from hacienda_gpt.llm.chain import answer_with_grounding
 
