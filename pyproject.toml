@@ -38,10 +38,14 @@ dependencies = [
     # don't need sentence-transformers / langchain-huggingface anywhere.
     "transformers>=4.51.0,<6.0.0",
     # MLX backend for Apple Silicon — bf16 weights, no quantization. The
-    # project targets Apple Silicon Macs; this dep is non-optional. Pinned to
-    # the versions the conversion was verified against.
-    "mlx==0.31.2",
-    "mlx-embeddings==0.1.0",
+    # project targets Apple Silicon Macs at runtime; this dep is non-optional
+    # there. Pinned to the versions the conversion was verified against. The
+    # ``sys_platform``/``platform_machine`` markers keep ``uv sync`` working on
+    # Linux/x86 (CI, type-checking) where MLX has no wheels — those environments
+    # run the test suite with the MLX paths stubbed (see tests/conftest.py),
+    # never the real inference path.
+    "mlx==0.31.2 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "mlx-embeddings==0.1.0 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
     # BM25 sparse retriever for hybrid retrieval (RRF with dense FAISS).
     # Used via ``langchain_community.retrievers.BM25Retriever``.
     "rank-bm25>=0.2.2,<1.0",

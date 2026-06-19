@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import threading
 from collections.abc import Callable
 from datetime import UTC, datetime
+import threading
 from typing import Annotated, TypeVar
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -60,8 +60,15 @@ def _thread_safe_singleton(factory: Callable[[], T]) -> Callable[[], T]:
     wrapper.cache_clear = cache_clear  # type: ignore[attr-defined]
     return wrapper
 
+
+from hacienda_gpt.api.observability import ApiMetrics, observability_middleware
+from hacienda_gpt.api.security import (
+    RateLimiter,
+    make_rate_limit_middleware,
+    require_api_key,
+)
 from hacienda_gpt.decision.audit import build_recommendation_audit_event
-from hacienda_gpt.decision.fact_extractor import FactExtractor, default_fact_extractor
+from hacienda_gpt.decision.fact_extractor import FactExtractor, OpenAIExtractionError, default_fact_extractor
 from hacienda_gpt.decision.planner import Planner
 from hacienda_gpt.decision.schemas import (
     CaseState,
@@ -69,10 +76,11 @@ from hacienda_gpt.decision.schemas import (
     MissingFact,
     ObligationCandidate,
 )
+from hacienda_gpt.decision.state_store import CaseVersionConflictError
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.decision.turn_service import process_turn
 from hacienda_gpt.llm.grounding import AnswerEnvelope
-from hacienda_gpt.settings import DECISION_STATE_DB_PATH
+from hacienda_gpt.settings import API_RATE_LIMIT_PER_MIN, DECISION_STATE_DB_PATH
 
 app = FastAPI(title="HaciendaGPT Decision API", version="1.0.0")
 
@@ -92,9 +100,18 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_ALLOWED_ORIGINS,
     allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "X-API-Key"],
     allow_credentials=False,
 )
+
+# Observability + rate limiting. Registration order matters: Starlette runs the
+# LAST-registered middleware OUTERMOST, so register the limiter first and the
+# observability layer second — the latter then times/logs/meters every request
+# including the ones the limiter rejects with 429.
+app.state.api_metrics = ApiMetrics()
+_rate_limiter = RateLimiter(API_RATE_LIMIT_PER_MIN)
+app.middleware("http")(make_rate_limit_middleware(_rate_limiter))
+app.middleware("http")(observability_middleware)
 
 
 @_thread_safe_singleton
@@ -164,7 +181,19 @@ def health() -> dict[str, str]:
     return {"status": "ok", "ts": datetime.now(UTC).isoformat()}
 
 
-@app.post("/cases", response_model=CaseState)
+@app.get("/metrics")
+def metrics() -> Response:
+    """Prometheus-format HTTP metrics (request counts, errors, latency).
+
+    Exempt from auth and rate limiting so scrapers always reach it.
+    """
+    return Response(
+        content=app.state.api_metrics.prometheus_text(),
+        media_type="text/plain; version=0.0.4",
+    )
+
+
+@app.post("/cases", response_model=CaseState, dependencies=[Depends(require_api_key)])
 def create_case(
     payload: CreateCaseRequest,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
@@ -205,7 +234,7 @@ def get_case_audit(
     return {"case_id": case_id, "events": store.list_audit_events(case_id)}
 
 
-@app.post("/cases/{case_id}/turn", response_model=TurnResponse)
+@app.post("/cases/{case_id}/turn", response_model=TurnResponse, dependencies=[Depends(require_api_key)])
 def post_turn(
     case_id: str,
     payload: TurnRequest,
@@ -216,14 +245,31 @@ def post_turn(
     if case is None:
         raise HTTPException(status_code=404, detail="case not found")
 
-    outcome = process_turn(
-        case=case,
-        user_input=payload.user_input,
-        extractor=extractor,
-        chat_history=payload.chat_history,
-    )
-    updated = outcome.case_state
-    store.save_case(updated)
+    try:
+        outcome = process_turn(
+            case=case,
+            user_input=payload.user_input,
+            extractor=extractor,
+            chat_history=payload.chat_history,
+        )
+    except OpenAIExtractionError as exc:
+        # The fact extractor (LLM) failed after its own retries. Surface a clean
+        # 503 instead of an opaque 500 — and never silently fall back to the
+        # weaker regex extractor, which could persist wrong fiscal facts.
+        raise HTTPException(
+            status_code=503,
+            detail=f"No se pudieron extraer los hechos de la consulta: {exc}",
+        ) from exc
+
+    try:
+        updated = store.save_case(outcome.case_state)
+    except CaseVersionConflictError as exc:
+        # Another turn updated this case between our read and write. Ask the
+        # client to retry against the fresh state rather than clobber it.
+        raise HTTPException(
+            status_code=409,
+            detail="El caso se modificó concurrentemente; vuelve a cargarlo y reintenta.",
+        ) from exc
 
     # execute planner for side effect of validation and auditability
     Planner().plan(updated, outcome.rules_result.candidate_obligations)
@@ -294,7 +340,7 @@ def get_qa_chain():
         ) from exc
 
 
-@app.post("/qa", response_model=AnswerEnvelope)
+@app.post("/qa", response_model=AnswerEnvelope, dependencies=[Depends(require_api_key)])
 def post_qa(payload: QARequest, chain=Depends(get_qa_chain)) -> AnswerEnvelope:
     from hacienda_gpt.llm.chain import answer_with_grounding
 

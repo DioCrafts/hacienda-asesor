@@ -75,6 +75,55 @@ def test_rules_engine_emits_candidate_and_trace_when_rule_matches() -> None:
     assert len(result.rule_traces[0].activation_reasons) == 2
 
 
+def test_matched_obligation_carries_rule_source_refs_as_evidence() -> None:
+    # A matched rule's normative source_refs must surface on the obligation's
+    # evidence_refs so the audit trail / explainer can cite the backing norm.
+    zero_hash = "0" * 64
+    ruleset = RuleSet(
+        rules=[
+            DecisionRule.model_validate(
+                {
+                    "id": "r_evidence",
+                    "jurisdiction": "ES",
+                    "valid_from": "2024-01-01",
+                    "valid_to": "2026-12-31",
+                    "conditions": [{"fact": "residencia_fiscal", "operator": "eq", "value": "ES"}],
+                    "required_facts": ["residencia_fiscal"],
+                    "generated_obligation": {
+                        "obligation_id": "obl_ev",
+                        "title": "Posible IRPF",
+                        "description": "desc",
+                        "status": "candidate",
+                    },
+                    "base_confidence": 0.8,
+                    "risk_level": "medium",
+                    "source_refs": [
+                        {
+                            "source_id": "BOE-A-2006-20764",
+                            "locator": "boe://BOE-A-2006-20764",
+                            "content_hash": zero_hash,
+                            "last_reviewed_at": "2024-12-01",
+                            "notes": "Ley 35/2006 IRPF",
+                        }
+                    ],
+                }
+            )
+        ]
+    )
+
+    engine = RulesEngine(ruleset)
+    case = _case_with_facts(_fact("residencia_fiscal", "ES"))
+    result = engine.evaluate(case_state=case, recent_facts=[])
+
+    obligation = result.candidate_obligations[0]
+    assert len(obligation.evidence_refs) == 1
+    evidence = obligation.evidence_refs[0]
+    assert evidence.evidence_id == "BOE-A-2006-20764"
+    assert evidence.locator == "boe://BOE-A-2006-20764"
+    assert evidence.title == "Ley 35/2006 IRPF"
+    assert evidence.hash == zero_hash
+
+
 def test_rules_engine_reports_missing_facts_and_no_candidate() -> None:
     ruleset = RuleSet(
         rules=[
@@ -156,9 +205,7 @@ def test_evaluate_rules_reuses_cached_engine_per_directory() -> None:
     # Two turns through the cached path produce identical obligation ids.
     r1 = evaluate_rules(case_state=case, recent_facts=recent)
     r2 = evaluate_rules(case_state=case, recent_facts=recent)
-    assert [o.obligation_id for o in r1.candidate_obligations] == [
-        o.obligation_id for o in r2.candidate_obligations
-    ]
+    assert [o.obligation_id for o in r1.candidate_obligations] == [o.obligation_id for o in r2.candidate_obligations]
 
     clear_rules_cache()
     assert _engine_for_directory("rules") is not first  # cache cleared -> fresh build

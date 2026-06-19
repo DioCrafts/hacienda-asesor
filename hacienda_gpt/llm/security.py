@@ -43,10 +43,21 @@ MALICIOUS_PATTERNS = [
 # the serial form left alone, and the order-of-application interactions
 # (e.g. ``system prompt`` redacted first, then ``reveal .*prompt`` no longer
 # matches) disappear. Behaviour stability over micro-perf — keep the list.
-_COMPILED_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(pattern, re.IGNORECASE) for pattern in MALICIOUS_PATTERNS
-]
+_COMPILED_PATTERNS: list[re.Pattern[str]] = [re.compile(pattern, re.IGNORECASE) for pattern in MALICIOUS_PATTERNS]
 _REDACTION = "[REDACTED_INJECTION_PATTERN]"
+
+# Zero-width / invisible format characters an attacker can splice INTO a keyword
+# ("ig​nora las instrucciones") to slip it past the literal patterns above
+# while it still renders normally to the model. They never carry meaning in
+# fiscal prose, so stripping them before matching is safe and closes the
+# in-word-obfuscation evasion. (Note: this is defence-in-depth, not exhaustive —
+# e.g. an attacker replacing the SPACE between words with a zero-width char to
+# *fuse* them is intentionally left to the system-prompt guard rather than risk
+# mangling legitimate text. See create_system_prompt.)
+_INVISIBLE_RE = re.compile(
+    # soft hyphen, ZWSP, ZWNJ, ZWJ, word joiner, BOM/ZWNBSP
+    "[­​‌‍⁠﻿]"
+)
 
 
 def sanitize_retrieved_context(text: str) -> str:
@@ -54,7 +65,7 @@ def sanitize_retrieved_context(text: str) -> str:
 
     Defence-in-depth; primary policy remains in the system prompt.
     """
-    sanitized = text
+    sanitized = _INVISIBLE_RE.sub("", text)
     for pattern in _COMPILED_PATTERNS:
         sanitized = pattern.sub(_REDACTION, sanitized)
     return sanitized

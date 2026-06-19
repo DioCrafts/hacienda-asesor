@@ -61,6 +61,41 @@ def test_save_case_upsert_updates_existing_record(tmp_path: pytest.TempPathFacto
     assert fetched.updated_at == t2
 
 
+def test_save_case_bumps_version_on_update(tmp_path: pytest.TempPathFactory) -> None:
+    store = SQLiteCaseStateStore(str(tmp_path / "state.db"))
+    now = datetime.now(UTC)
+
+    created = store.save_case(_build_case("case_1", "user_1", now))
+    assert created.version == 0  # creation keeps the supplied version
+
+    reloaded = store.get_case("case_1")
+    assert reloaded is not None and reloaded.version == 0
+    bumped = store.save_case(reloaded)
+    assert bumped.version == 1
+    assert store.get_case("case_1").version == 1  # type: ignore[union-attr]
+
+
+def test_save_case_raises_on_stale_version(tmp_path: pytest.TempPathFactory) -> None:
+    from hacienda_gpt.decision.state_store import CaseVersionConflictError
+
+    store = SQLiteCaseStateStore(str(tmp_path / "state.db"))
+    now = datetime.now(UTC)
+    store.save_case(_build_case("case_1", "user_1", now))
+
+    # Two readers both observe version 0 (concurrent turns on the same case).
+    reader_a = store.get_case("case_1")
+    reader_b = store.get_case("case_1")
+    assert reader_a is not None and reader_b is not None
+
+    # First write wins and advances the row to version 1.
+    store.save_case(reader_a)
+
+    # Second write still expects version 0 → optimistic-concurrency conflict
+    # instead of silently clobbering reader_a's update (lost update).
+    with pytest.raises(CaseVersionConflictError):
+        store.save_case(reader_b)
+
+
 def test_list_cases_by_user_sorted_desc(tmp_path: pytest.TempPathFactory) -> None:
     db = tmp_path / "state.db"
     store = SQLiteCaseStateStore(str(db))

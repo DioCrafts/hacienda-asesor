@@ -272,13 +272,19 @@ class OpenAIFactExtractor:
         self._model = (
             model or os.environ.get("DECISION_EXTRACTOR_MODEL") or os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
         )
+        # A single hung request used to stall a whole turn indefinitely (no
+        # timeout) and a transient 5xx/rate-limit tumbled it straight to a 500.
+        # Bound both: the OpenAI SDK applies exponential backoff that honours
+        # Retry-After headers, so we lean on it rather than a naive loop.
+        self._timeout = float(os.environ.get("DECISION_EXTRACTOR_TIMEOUT", "30"))
+        self._max_retries = int(os.environ.get("DECISION_EXTRACTOR_MAX_RETRIES", "2"))
 
     def _ensure_client(self) -> Any:
         if self._client is not None:
             return self._client
         from openai import OpenAI
 
-        self._client = OpenAI()
+        self._client = OpenAI(timeout=self._timeout, max_retries=self._max_retries)
         return self._client
 
     def extract(
@@ -308,7 +314,17 @@ class OpenAIFactExtractor:
         intent = data.get("intent", "unknown")
         if intent not in KNOWN_INTENTS:
             intent = "unknown"
-        confidence = float(data.get("intent_confidence", 0.0))
+        # Defend against a malformed `intent_confidence` (null / non-numeric /
+        # out of range) even though the JSON schema asks for [0,1]: a bad value
+        # used to raise straight out of the extractor (unhandled `float(None)`)
+        # or push InterpretationResult.confidence past its `le=1.0` validator,
+        # aborting the whole turn instead of degrading. Mirror the per-fact
+        # clamp in `_materialize_facts`.
+        try:
+            confidence = float(data.get("intent_confidence", 0.0))
+        except (TypeError, ValueError):
+            confidence = 0.0
+        confidence = max(0.0, min(1.0, confidence))
 
         facts = self._materialize_facts(data.get("facts", []))
         return ExtractionPayload(intent=intent, intent_confidence=confidence, extracted_facts=facts)
@@ -405,11 +421,36 @@ class OpenAIFactExtractor:
 # --------------------------------------------------------------------------- #
 
 
-# Grabs the first number-like token, separators included ("45.000,50", "12.5").
+# Grabs number-like tokens, separators included ("45.000,50", "12.5").
 _NUMERIC_TOKEN_RE = re.compile(r"-?\d[\d.,]*\d|-?\d")
 # Strict thousands-grouping shapes: "45.000", "1.234.567" / "45,000", "1,234,567".
 _THOUSANDS_DOT_RE = re.compile(r"^-?\d{1,3}(?:\.\d{3})+$")
 _THOUSANDS_COMMA_RE = re.compile(r"^-?\d{1,3}(?:,\d{3})+$")
+
+
+def _select_amount_token(tokens: list[str]) -> str | None:
+    """Pick the token most likely to be the monetary amount.
+
+    The previous code took the *first* numeric token, which silently mis-parsed
+    "año 2024 facturé 45.000€" as 2024 — a wrong fiscal figure feeding the
+    rules engine. Heuristic instead, two stages:
+
+    1. Prefer tokens that carry a thousands/decimal separator ("45.000,00",
+       "45.000", "12,5") over bare digit runs like a year ("2024"); a euro
+       amount is far more likely to be written with one.
+    2. Among the remaining candidates, take the one with the most digits
+       (largest written magnitude), so "facturé 45000 en 2024" still resolves
+       to 45000 rather than the year.
+
+    The LLM extractor's ``value_number`` remains authoritative; this string
+    fallback only runs for the regex extractor or when the model puts the
+    amount in ``value_string``.
+    """
+    if not tokens:
+        return None
+    separated = [t for t in tokens if "." in t or "," in t]
+    pool = separated or tokens
+    return max(pool, key=lambda t: len(re.sub(r"\D", "", t)))
 
 
 def _parse_number_from_string(value: str) -> float | None:
@@ -425,11 +466,14 @@ def _parse_number_from_string(value: str) -> float | None:
       3-digit grouping ("45,000" → 45000);
     * only ``.``    → thousands grouping ("45.000" → 45000) unless it is a decimal
       point ("12.5" → 12.5).
+
+    Worded negatives ("menos 3.000") are NOT inferred — only an explicit leading
+    ``-`` sign yields a negative; rely on the LLM's signed ``value_number`` for
+    losses described in prose.
     """
-    match = _NUMERIC_TOKEN_RE.search(value)
-    if not match:
+    token = _select_amount_token(_NUMERIC_TOKEN_RE.findall(value))
+    if token is None:
         return None
-    token = match.group(0)
     has_dot = "." in token
     has_comma = "," in token
 

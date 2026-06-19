@@ -17,7 +17,26 @@ from hacienda_gpt.decision.schemas import (
     ObligationCandidate,
     ObligationStatus,
     RiskLevel,
+    parse_fiscal_year,
 )
+
+
+@pytest.mark.parametrize(
+    "raw, expected",
+    [
+        ("2024", 2024),
+        ("2024-Q1", 2024),
+        ("2024/12", 2024),
+        (" 2024", 2024),
+        # Over-long digit run must be rejected, not truncated to 9999.
+        ("99999", None),
+        ("203", None),
+        ("abcd", None),
+        ("", None),
+    ],
+)
+def test_parse_fiscal_year(raw: str, expected: int | None) -> None:
+    assert parse_fiscal_year(raw) == expected
 
 
 def build_fact(**overrides: object) -> Fact:

@@ -30,6 +30,10 @@ interface ChatTurn {
   obligations: ObligationCandidate[];
   nextQuestions: string[];
   errored?: boolean;
+  // The decision engine gave up asking for some facts after MAX_ASKS_PER_FACT
+  // attempts and returned a partial analysis; surface that honestly.
+  degraded?: boolean;
+  degradedFacts?: string[];
 }
 
 const INITIAL_GREETING =
@@ -66,6 +70,9 @@ export default function App() {
   // Memoized case-creation promise so concurrent first turns share ONE
   // POST /cases instead of creating duplicate (orphaned) cases.
   const caseCreateRef = useRef<Promise<string> | null>(null);
+  // Aborts the in-flight turn's requests on "Nueva consulta" or unmount, so a
+  // late response can't fire setState against stale/torn-down state.
+  const abortRef = useRef<AbortController | null>(null);
 
   // Stable per-browser identity. There is no auth yet, so a generated id
   // persisted in localStorage lets the backend group this user's cases.
@@ -101,16 +108,19 @@ export default function App() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [turns, busy]);
 
+  // Cancel any in-flight request if the component unmounts.
+  useEffect(() => () => abortRef.current?.abort(), []);
+
   // Runs the decision flow for one turn: creates the case on first use,
   // then posts the turn and returns the engine's real obligations and
   // follow-up questions. Throws on network/HTTP errors (handled below).
   // Resolves the case id, creating the case exactly once. Concurrent callers
   // share the same in-flight promise; on failure the memo is cleared so a
   // later turn can retry rather than reusing a rejected promise forever.
-  function ensureCaseId(): Promise<string> {
+  function ensureCaseId(signal: AbortSignal): Promise<string> {
     if (caseId) return Promise.resolve(caseId);
     if (!caseCreateRef.current) {
-      const pending = createCase({ userId, taxPeriod }).then((created) => {
+      const pending = createCase({ userId, taxPeriod, signal }).then((created) => {
         setCaseId(created.case_id);
         return created.case_id;
       });
@@ -124,10 +134,21 @@ export default function App() {
 
   async function runDecisionTurn(
     text: string,
-  ): Promise<{ obligations: ObligationCandidate[]; nextQuestions: string[] }> {
-    const id = await ensureCaseId();
-    const resp = await postTurn({ caseId: id, userInput: text, chatHistory });
-    return { obligations: resp.obligations, nextQuestions: resp.next_questions };
+    signal: AbortSignal,
+  ): Promise<{
+    obligations: ObligationCandidate[];
+    nextQuestions: string[];
+    degraded: boolean;
+    degradedFacts: string[];
+  }> {
+    const id = await ensureCaseId(signal);
+    const resp = await postTurn({ caseId: id, userInput: text, chatHistory, signal });
+    return {
+      obligations: resp.obligations,
+      nextQuestions: resp.next_questions,
+      degraded: resp.degraded,
+      degradedFacts: resp.degraded_facts,
+    };
   }
 
   async function handleSubmit(text: string) {
@@ -136,6 +157,8 @@ export default function App() {
     if (busyRef.current) return;
     busyRef.current = true;
     setBusy(true);
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       if (turns.length === 0) {
         const short = text.length > 60 ? text.slice(0, 57) + "…" : text;
@@ -145,7 +168,7 @@ export default function App() {
       // The grounded answer (/qa) and the decision flow (/cases + /turn) are
       // independent backend calls. We run them in parallel and degrade each
       // on its own — neither failure path may fabricate content.
-      const qaPromise = postQA({ query: text, chatHistory }).then(
+      const qaPromise = postQA({ query: text, chatHistory, signal: controller.signal }).then(
         (env) => ({ env, errored: false }),
         (err) => {
           console.error("postQA failed", err);
@@ -153,16 +176,22 @@ export default function App() {
         },
       );
 
-      const decisionPromise = runDecisionTurn(text).catch((err) => {
+      const decisionPromise = runDecisionTurn(text, controller.signal).catch((err) => {
         console.error("decision turn failed", err);
         // Show no obligations rather than fake ones; the answer still renders.
         return {
           obligations: [] as ObligationCandidate[],
           nextQuestions: [] as string[],
+          degraded: false,
+          degradedFacts: [] as string[],
         };
       });
 
       const [qa, decision] = await Promise.all([qaPromise, decisionPromise]);
+
+      // The turn was cancelled (new consultation / unmount) while in flight —
+      // drop the (possibly fallback) result instead of rendering stale state.
+      if (controller.signal.aborted) return;
 
       const turn: ChatTurn = {
         id: newId(),
@@ -171,15 +200,19 @@ export default function App() {
         obligations: decision.obligations,
         nextQuestions: decision.nextQuestions,
         errored: qa.errored,
+        degraded: decision.degraded,
+        degradedFacts: decision.degradedFacts,
       };
       setTurns((prev) => [...prev, turn]);
     } finally {
+      if (abortRef.current === controller) abortRef.current = null;
       busyRef.current = false;
       setBusy(false);
     }
   }
 
   function handleNewConsultation() {
+    abortRef.current?.abort();
     setTurns([]);
     setCaseTitle("Nueva consulta");
     setCaseId(null);
@@ -225,6 +258,15 @@ export default function App() {
                         ))}
                       </div>
                     </div>
+                  )}
+                  {t.degraded && (
+                    <p className="mt-2 text-[12px] text-muted">
+                      Análisis parcial: seguimos sin algunos datos necesarios
+                      {t.degradedFacts && t.degradedFacts.length > 0
+                        ? ` (${t.degradedFacts.join(", ")})`
+                        : ""}
+                      , así que la valoración puede estar incompleta.
+                    </p>
                   )}
                   {t.errored && (
                     <p className="mt-2 text-[12px] text-risk-high-fg">

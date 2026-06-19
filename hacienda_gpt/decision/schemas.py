@@ -2,21 +2,29 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime
 from enum import Enum
+import re
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 SCHEMA_VERSION = "1.0.0"
+
+# A 4-digit year that is NOT immediately followed by another digit, so a
+# malformed "99999" is rejected outright instead of being silently truncated to
+# 9999 (which would then drive rule selection and planner due-dates).
+_FISCAL_YEAR_RE = re.compile(r"\s*(\d{4})(?!\d)")
 
 
 def parse_fiscal_year(tax_period: str) -> int | None:
     """Extract a 4-digit fiscal year from `tax_period`.
 
     Returns None if the value cannot be interpreted as a valid year in date()'s
-    supported range. Accepts forms like "2024", "2024-Q1", "2024/12".
+    supported range. Accepts forms like "2024", "2024-Q1", "2024/12"; rejects
+    over-long digit runs like "99999".
     """
-    if len(tax_period) < 4 or not tax_period[:4].isdigit():
+    match = _FISCAL_YEAR_RE.match(tax_period)
+    if not match:
         return None
-    year = int(tax_period[:4])
+    year = int(match.group(1))
     if not 1 <= year <= 9999:
         return None
     return year
@@ -150,6 +158,11 @@ class CaseState(BaseModel):
     case_id: str = Field(min_length=1)
     user_id: str = Field(min_length=1)
     status: CaseStatus = CaseStatus.OPEN
+    # Optimistic-concurrency token. The store bumps it on every persisted
+    # update and refuses a write whose expected version no longer matches the
+    # row, so two concurrent turns on the same case can't silently clobber each
+    # other's accumulated facts. New cases start at 0.
+    version: int = Field(default=0, ge=0)
     jurisdiction: str = Field(min_length=2)
     tax_period: str = Field(min_length=1)
     facts: list[Fact] = Field(default_factory=list)

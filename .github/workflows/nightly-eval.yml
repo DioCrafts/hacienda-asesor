@@ -1,0 +1,83 @@
+name: nightly-eval
+
+# Continuous evaluation that doesn't need a PR. Runs the real deterministic
+# decision pipeline against the critical cases and the normative drift detector,
+# so regressions and source drift surface even on quiet days.
+#
+# NOTE on RAGAS: the full retrieval-quality eval (scripts/ragas_eval.py) needs
+# the built FAISS index AND the local MLX models (embedder, reranker, judge),
+# which only exist on Apple Silicon. It cannot run on GitHub-hosted Linux. To
+# wire it, register a self-hosted arm64 macOS runner with the models + index in
+# place and uncomment the `ragas` job template at the bottom of this file.
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # daily at 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  critical-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync
+      - name: Critical regression (real deterministic pipeline)
+        run: |
+          uv run python -m hacienda_gpt.cli.check_critical_regressions \
+            --dataset eval_data/critical_cases/tramite_year_critical_cases.jsonl \
+            --min-intent-accuracy 0.80 \
+            --min-fact-f1 0.75 \
+            --max-unsafe-rate 0.05
+
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync
+      - name: Normative drift report
+        # No crawler snapshot is committed, so sources resolve as
+        # "unverified" rather than "changed"; the run still validates that every
+        # rule's source_refs are well-formed and the governance pipeline
+        # executes. On infra that has ./data populated, add --fail-on-changed to
+        # turn this into a blocking gate before promoting a snapshot.
+        run: |
+          uv run python -m hacienda_gpt.cli.drift_check \
+            --rules-dir rules \
+            --snapshot-root ./data \
+            --output reports/drift.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: drift-report
+          path: reports/drift.json
+
+  # ---------------------------------------------------------------------------
+  # RAGAS retrieval-quality eval — requires a self-hosted arm64 macOS runner
+  # with the MLX models and a built FAISS index. Uncomment and set the runner
+  # label once that infra exists.
+  #
+  # ragas:
+  #   runs-on: [self-hosted, macos, arm64]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: astral-sh/setup-uv@v5
+  #       with:
+  #         python-version: "3.13"
+  #     - run: uv sync
+  #     - name: RAGAS eval (local MLX judge)
+  #       env:
+  #         FAISS_INDEX_PATH: ./data/faiss
+  #         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  #       run: |
+  #         uv run python scripts/ragas_eval.py --out reports/ragas.json --label nightly
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ragas-report
+  #         path: reports/ragas.json

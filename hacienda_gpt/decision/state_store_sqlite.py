@@ -10,7 +10,7 @@ from threading import RLock
 from typing import Any
 
 from hacienda_gpt.decision.schemas import CaseState
-from hacienda_gpt.decision.state_store import CaseStateStore
+from hacienda_gpt.decision.state_store import CaseStateStore, CaseVersionConflictError
 
 
 class SQLiteCaseStateStore(CaseStateStore):
@@ -71,10 +71,17 @@ class SQLiteCaseStateStore(CaseStateStore):
                     user_id TEXT NOT NULL,
                     status TEXT NOT NULL,
                     schema_version TEXT NOT NULL,
+                    version INTEGER NOT NULL DEFAULT 0,
                     updated_at TEXT NOT NULL,
                     payload_json TEXT NOT NULL
                 )
                 """)
+            # Migration for databases created before optimistic-concurrency
+            # tracking: add the column if it's missing. SQLite has no
+            # "ADD COLUMN IF NOT EXISTS", so probe the schema first.
+            cols = {row["name"] for row in conn.execute("PRAGMA table_info(case_states)")}
+            if "version" not in cols:
+                conn.execute("ALTER TABLE case_states ADD COLUMN version INTEGER NOT NULL DEFAULT 0")
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS audit_events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,29 +102,70 @@ class SQLiteCaseStateStore(CaseStateStore):
             return None
         return CaseState.model_validate_json(row["payload_json"])
 
-    def save_case(self, case_state: CaseState) -> None:
-        payload_json = case_state.model_dump_json()
+    def save_case(self, case_state: CaseState) -> CaseState:
+        """Persist with optimistic concurrency; return the stored state.
+
+        Creation (no existing row) keeps the supplied ``version`` as-is. An
+        update requires the persisted ``version`` to still equal the in-memory
+        one — if another turn advanced it in between we raise
+        :class:`CaseVersionConflictError` rather than overwrite the newer state. The
+        SELECT + write run under ``self._lock`` on the single shared connection,
+        so the check-then-write is atomic against other store callers.
+        """
         with self._lock, self._connect() as conn:
-            conn.execute(
+            row = conn.execute("SELECT version FROM case_states WHERE case_id = ?", (case_state.case_id,)).fetchone()
+
+            if row is None:
+                stored = case_state
+                conn.execute(
+                    """
+                    INSERT INTO case_states
+                        (case_id, user_id, status, schema_version, version, updated_at, payload_json)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        stored.case_id,
+                        stored.user_id,
+                        stored.status.value,
+                        stored.schema_version,
+                        stored.version,
+                        stored.updated_at.isoformat(),
+                        stored.model_dump_json(),
+                    ),
+                )
+                return stored
+
+            current_version = int(row["version"])
+            if current_version != case_state.version:
+                raise CaseVersionConflictError(case_state.case_id, expected=case_state.version, found=current_version)
+
+            stored = case_state.model_copy(update={"version": current_version + 1})
+            cursor = conn.execute(
                 """
-                INSERT INTO case_states (case_id, user_id, status, schema_version, updated_at, payload_json)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ON CONFLICT(case_id) DO UPDATE SET
-                    user_id = excluded.user_id,
-                    status = excluded.status,
-                    schema_version = excluded.schema_version,
-                    updated_at = excluded.updated_at,
-                    payload_json = excluded.payload_json
+                UPDATE case_states SET
+                    user_id = ?,
+                    status = ?,
+                    schema_version = ?,
+                    version = ?,
+                    updated_at = ?,
+                    payload_json = ?
+                WHERE case_id = ? AND version = ?
                 """,
                 (
-                    case_state.case_id,
-                    case_state.user_id,
-                    case_state.status.value,
-                    case_state.schema_version,
-                    case_state.updated_at.isoformat(),
-                    payload_json,
+                    stored.user_id,
+                    stored.status.value,
+                    stored.schema_version,
+                    stored.version,
+                    stored.updated_at.isoformat(),
+                    stored.model_dump_json(),
+                    stored.case_id,
+                    current_version,
                 ),
             )
+            if cursor.rowcount == 0:
+                # Lost the race between the SELECT and the UPDATE.
+                raise CaseVersionConflictError(case_state.case_id, expected=case_state.version, found=current_version)
+            return stored
 
     def list_cases(self, user_id: str) -> list[CaseState]:
         with self._lock, self._connect() as conn:

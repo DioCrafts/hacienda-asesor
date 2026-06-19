@@ -44,10 +44,10 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 import json
 import logging
+import os
 from pathlib import Path
 import re
 import time
-from typing import Any
 
 import click
 import requests
@@ -76,12 +76,12 @@ _NUM_CONSULTA_IN_DOC_RE = re.compile(r'class="NUM-CONSULTA"[^>]*>([^<]+)</p>')
 # que no es objeto de publicación" — those create the anomalous
 # directory names we saw in early crawls.
 _SEARCH_ROW_RE = re.compile(
-    r'id="doc_(\d+)"[^>]*>'              # capture doc_id
-    r'.*?'                                # any HTML in between
-    r'class="NUM-CONSULTA"[^>]*>'         # the NUM-CONSULTA span
-    r'\s*<strong>\s*'
-    r'([VN]\d{4}-\d{2})'                  # capture V0058-25 / N1234-23 only
-    r'\b',                                # word boundary — stops at extra text
+    r'id="doc_(\d+)"[^>]*>'  # capture doc_id
+    r".*?"  # any HTML in between
+    r'class="NUM-CONSULTA"[^>]*>'  # the NUM-CONSULTA span
+    r"\s*<strong>\s*"
+    r"([VN]\d{4}-\d{2})"  # capture V0058-25 / N1234-23 only
+    r"\b",  # word boundary — stops at extra text
     re.DOTALL,
 )
 
@@ -106,7 +106,15 @@ def _build_session() -> requests.Session:
     returns 401.
     """
     session = requests.Session()
-    session.verify = False  # petete uses Hacienda's internal CA — trust skipped.
+    # Keep TLS verification ON. ``petete.tributos.hacienda.gob.es`` is a public
+    # host with a publicly-trusted certificate, so the old ``verify=False`` (and
+    # the global ``disable_warnings`` that hid it) needlessly exposed this ingest
+    # to a MITM able to inject forged doctrine into the corpus. If a deployment
+    # genuinely sits behind a TLS-intercepting proxy with a private CA, point
+    # ``DGT_CA_BUNDLE`` at that bundle rather than disabling verification.
+    ca_bundle = os.environ.get("DGT_CA_BUNDLE")
+    if ca_bundle:
+        session.verify = ca_bundle
     session.headers.update(_REQUIRED_HEADERS)
 
     # Bootstrap the JSESSIONID cookie.
@@ -116,13 +124,6 @@ def _build_session() -> requests.Session:
     # Activate form state.
     resp = session.post(f"{_BASE}/consultas/do/form", data="", timeout=30)
     resp.raise_for_status()
-
-    # Silence the urllib3 InsecureRequestWarning we trigger by skipping verify
-    # — adding the internal CA to the trust store would be heavier than this
-    # standalone CLI deserves.
-    import urllib3
-
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     return session
 
@@ -156,15 +157,28 @@ def _search_month(
     # value side is empty; missing tuples slow the query path noticeably.
     date_range = f"01/{month:02d}/{year}..{last_day:02d}/{month:02d}/{year}"
     data: list[tuple[str, str]] = [
-        ("NMCMP_1", "NUM-CONSULTA"), ("OPCMP_1", ".Y"), ("VLCMP_1", ""),
-        ("NMCMP_2", "FECHA-SALIDA"), ("OPCMP_2", ".Y"), ("VLCMP_2", date_range),
-        ("NMCMP_3", "NORMATIVA"), ("OPCMP_3", ".Y"), ("VLCMP_3", ""),
-        ("NMCMP_4", "CUESTION-PLANTEADA"), ("OPCMP_4", ".Y"), ("VLCMP_4", ""),
-        ("NMCMP_5", "DESCRIPCION-HECHOS"), ("OPCMP_5", ".Y"), ("VLCMP_5", ""),
-        ("NMCMP_6", "FreeText"), ("OPCMP_6", ".Y"), ("VLCMP_6", ""),
+        ("NMCMP_1", "NUM-CONSULTA"),
+        ("OPCMP_1", ".Y"),
+        ("VLCMP_1", ""),
+        ("NMCMP_2", "FECHA-SALIDA"),
+        ("OPCMP_2", ".Y"),
+        ("VLCMP_2", date_range),
+        ("NMCMP_3", "NORMATIVA"),
+        ("OPCMP_3", ".Y"),
+        ("VLCMP_3", ""),
+        ("NMCMP_4", "CUESTION-PLANTEADA"),
+        ("OPCMP_4", ".Y"),
+        ("VLCMP_4", ""),
+        ("NMCMP_5", "DESCRIPCION-HECHOS"),
+        ("OPCMP_5", ".Y"),
+        ("VLCMP_5", ""),
+        ("NMCMP_6", "FreeText"),
+        ("OPCMP_6", ".Y"),
+        ("VLCMP_6", ""),
         # VLCMP_7 (CRITERIO) is a checkbox in the UI ("only criterio of interés");
         # omitted = no filter on criterio.
-        ("NMCMP_7", "CRITERIO"), ("VLCMP_7", ""),
+        ("NMCMP_7", "CRITERIO"),
+        ("VLCMP_7", ""),
         ("type2", "on"),  # vinculantes tab
         # The UI date helpers — server ignores them (date is in VLCMP_2) but
         # we send them anyway to match the form's serialize() output exactly.
@@ -366,11 +380,7 @@ def cli(
     snapshot_root.mkdir(parents=True, exist_ok=True)
 
     start_date = datetime.strptime(start, "%Y-%m").date()
-    end_date = (
-        datetime.strptime(end, "%Y-%m").date()
-        if end
-        else date.today().replace(day=1)
-    )
+    end_date = datetime.strptime(end, "%Y-%m").date() if end else date.today().replace(day=1)
 
     click.echo(f"DGT seed crawl: {start_date:%Y-%m} → {end_date:%Y-%m}, snapshot={snapshot}, delay={delay}s")
     click.echo(f"Output → {snapshot_root}/dgt-vinculantes/<year>/<num>.html")
@@ -420,7 +430,9 @@ def cli(
             wait = _BACKOFF_SECONDS[min(refresh_backoff_step, len(_BACKOFF_SECONDS) - 1)]
             logger.error(
                 "Session refresh itself failed (backoff step %d): %s — sleeping %ds",
-                refresh_backoff_step, exc, wait,
+                refresh_backoff_step,
+                exc,
+                wait,
             )
             refresh_backoff_step += 1
             time.sleep(wait)
@@ -440,9 +452,12 @@ def cli(
                     # so a single transient blip doesn't kill the crawl.
                     consecutive_failures += 1
                     logger.warning(
-                        "Search failed for %04d-%02d page %d: %s "
-                        "(consecutive=%d) — retrying once after 30s",
-                        year, month, page, e, consecutive_failures,
+                        "Search failed for %04d-%02d page %d: %s " "(consecutive=%d) — retrying once after 30s",
+                        year,
+                        month,
+                        page,
+                        e,
+                        consecutive_failures,
                     )
                     if consecutive_failures >= _SESSION_REFRESH_THRESHOLD:
                         _refresh_session()
@@ -490,7 +505,9 @@ def cli(
                         consecutive_failures += 1
                         logger.warning(
                             "Document fetch failed: doc=%s %s (consecutive=%d)",
-                            doc_id, e, consecutive_failures,
+                            doc_id,
+                            e,
+                            consecutive_failures,
                         )
                         if consecutive_failures >= _SESSION_REFRESH_THRESHOLD:
                             _refresh_session()

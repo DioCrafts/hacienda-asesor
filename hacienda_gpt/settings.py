@@ -19,9 +19,7 @@ OPENAI_TEMPERATURE = float(os.environ.get("OPENAI_TEMPERATURE", "0"))
 # Docling HybridChunker uses for token-aware chunk splitting — so a single
 # ``EMBEDDING_MODEL`` path serves indexing, querying, and chunking. Convert a
 # new model with ``scripts/convert_to_mlx.py``.
-EMBEDDING_MODEL = os.environ.get(
-    "EMBEDDING_MODEL", "data/models/qwen3-emb-mlx-bf16"
-)
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "data/models/qwen3-emb-mlx-bf16")
 # How many chunks the embedder processes per forward pass. Default 32 is the
 # empirical optimum on M-series for Qwen3-Embedding-0.6B. Counter-intuitively,
 # larger batches slow things down because the underlying tokenizer pads each
@@ -123,9 +121,7 @@ CONTEXTUAL_EMBEDDINGS_ENABLED = _env_bool("CONTEXTUAL_EMBEDDINGS_ENABLED", defau
 # Local MLX bf16 model that generates the prefix. Qwen3-1.7B is the
 # sweet spot: Qwen3-0.6B echoes the prompt schema instead of filling it,
 # Qwen3-4B + would make the full-corpus pass too slow.
-CONTEXTUAL_MODEL_PATH = os.environ.get(
-    "CONTEXTUAL_MODEL_PATH", "data/models/qwen3-1.7b-instruct-mlx-bf16"
-)
+CONTEXTUAL_MODEL_PATH = os.environ.get("CONTEXTUAL_MODEL_PATH", "data/models/qwen3-1.7b-instruct-mlx-bf16")
 # Per-chunk generation budget. 80 tokens is enough for a single Spanish
 # sentence (~30 words) plus end-of-turn marker; smaller values risk
 # truncating, larger ones inflate ingest wall-clock without quality gain.
@@ -139,9 +135,7 @@ CONTEXTUAL_MAX_TOKENS = int(os.environ.get("CONTEXTUAL_MAX_TOKENS", "80"))
 # default points at Qwen3-4B-Instruct-2507 (July-2025 refresh): native
 # non-thinking mode, IFEval 83.4, ~8 GB on disk in bf16. Override with
 # ``RAGAS_JUDGE_MODEL_PATH`` to A/B against a different judge.
-RAGAS_JUDGE_MODEL_PATH = os.environ.get(
-    "RAGAS_JUDGE_MODEL_PATH", "data/models/qwen3-4b-instruct-2507-mlx-bf16"
-)
+RAGAS_JUDGE_MODEL_PATH = os.environ.get("RAGAS_JUDGE_MODEL_PATH", "data/models/qwen3-4b-instruct-2507-mlx-bf16")
 # Generation budget for the judge. RAGAS faithfulness emits one JSON
 # object listing every statement in the answer with its verdict —
 # answers with many statements need a generous budget to avoid
@@ -166,6 +160,13 @@ API_BASE_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000")
 
 GROUNDING_MIN_CITATIONS = int(os.environ.get("GROUNDING_MIN_CITATIONS", "1"))
 GROUNDING_SNIPPET_CHARS = int(os.environ.get("GROUNDING_SNIPPET_CHARS", "240"))
+
+# --- API edge (auth + rate limiting) ----------------------------------------
+# Both opt-in; defaults keep local dev and tests unauthenticated/unthrottled.
+# Set HACIENDA_API_KEY (enforced via the X-API-Key header) and a positive
+# API_RATE_LIMIT_PER_MIN before exposing the API beyond localhost — /qa spends
+# OpenAI tokens and loads multi-GB models per process.
+API_RATE_LIMIT_PER_MIN = int(os.environ.get("API_RATE_LIMIT_PER_MIN", "0"))
 
 # --- Retrieval thresholds ---------------------------------------------------
 # Cosine-similarity floor applied by the EmbeddingsFilter compressor in the

@@ -30,6 +30,25 @@ jobs:
       - run: uv sync
       - run: uv run pytest -q
 
+  # Apple-Silicon job: the runtime target is arm64 macOS and the MLX deps only
+  # have wheels there, so the Linux jobs above install WITHOUT mlx (platform
+  # markers) and never exercise the real inference imports. This job proves
+  # `uv sync` resolves and installs the full dependency set — mlx / mlx-lm /
+  # mlx-embeddings included — on the real platform, and that the production
+  # modules import under a genuine MLX install. (Heavy model weights aren't
+  # downloaded, so the batched reranker/embedder math is still covered by the
+  # stubbed unit tests, not real GPU inference.)
+  test-macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync
+      - run: uv run pytest -q
+
   typecheck:
     runs-on: ubuntu-latest
     # mypy is not enforced yet (never run in CI before); keep it informational
