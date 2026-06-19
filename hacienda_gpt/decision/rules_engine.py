@@ -14,10 +14,36 @@ from hacienda_gpt.decision.rules import (
     DecisionRule,
     RuleCondition,
     RuleSet,
+    RuleSourceRef,
     load_rules_from_directory,
 )
-from hacienda_gpt.decision.schemas import CaseState, Fact, ObligationCandidate, parse_fiscal_year
+from hacienda_gpt.decision.schemas import (
+    CaseState,
+    EvidenceRef,
+    EvidenceSourceType,
+    Fact,
+    ObligationCandidate,
+    parse_fiscal_year,
+)
 from hacienda_gpt.settings import RULES_DIR
+
+
+def _source_ref_to_evidence(ref: RuleSourceRef, confidence: float) -> EvidenceRef:
+    """Project a rule's normative ``RuleSourceRef`` onto an ``EvidenceRef``.
+
+    The obligation-level evidence is what downstream consumers (audit trail,
+    explainer, planner) cite, so it must carry the same locator + content hash
+    the drift detector tracks. ``title`` falls back to the source id when the
+    rule author left ``notes`` empty (the schema forbids an empty title).
+    """
+    return EvidenceRef(
+        evidence_id=ref.source_id,
+        source_type=EvidenceSourceType.RULE_CATALOG,
+        title=ref.notes or ref.source_id,
+        locator=ref.locator,
+        confidence=max(0.0, min(1.0, confidence)),
+        hash=ref.content_hash,
+    )
 
 
 class ConditionTrace(BaseModel):
@@ -187,7 +213,12 @@ class RulesEngine:
             confidence=rule.base_confidence,
             trigger_facts=[cond.fact for cond in rule.conditions],
             blocking_missing_facts=missing_facts,
-            evidence_refs=[],
+            # Carry the rule's normative backing onto the obligation so the
+            # audit trail, the explainer's "Fuentes" section and the planner
+            # checklist can cite the BOE/AEAT source that justifies the
+            # recommendation. Previously hardcoded to ``[]``, which left every
+            # engine-generated obligation untraceable.
+            evidence_refs=[_source_ref_to_evidence(ref, rule.base_confidence) for ref in rule.source_refs],
             created_at=now,
             updated_at=now,
         )

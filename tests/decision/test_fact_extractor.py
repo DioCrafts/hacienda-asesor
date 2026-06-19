@@ -90,6 +90,11 @@ def test_coerce_number_accepts_numeric_slot() -> None:
         ("1,234.50", 1234.50),
         ("45,000", 45000.0),
         ("facturo 45.000 euros", 45000.0),
+        # Token SELECTION: a year (or any earlier number) must not win over the
+        # actual amount. Previously these returned 2024 / 2023 (first token).
+        ("año 2024 facturé 45.000€", 45000.0),
+        ("en 2024 ingresé 45.000,50 euros", 45000.50),
+        ("facturé 45000 en 2024", 45000.0),
     ],
 )
 def test_coerce_number_parses_localized_strings(raw: str, expected: float) -> None:

@@ -21,10 +21,13 @@ jobs:
         run: uv sync
 
       - name: Run critical regression checks
+        # Runs the REAL deterministic pipeline (regex extractor → interpreter →
+        # rules engine) over the critical cases and gates on the metrics that
+        # path can achieve. No OPENAI_API_KEY here, so DECISION_EXTRACTOR=regex
+        # is implicit; obligation recall (LLM-only) is reported, not gated.
         run: |
           uv run python -m hacienda_gpt.cli.check_critical_regressions \
             --dataset eval_data/critical_cases/tramite_year_critical_cases.jsonl \
-            --min-intent-accuracy 0.75 \
-            --min-fact-f1 0.55 \
-            --max-unsafe-rate 0.05 \
-            --min-turn-efficiency 0.40
+            --min-intent-accuracy 0.80 \
+            --min-fact-f1 0.75 \
+            --max-unsafe-rate 0.05

@@ -17,6 +17,7 @@ Identity tokens live in ``hacienda_gpt/ui/assets/style.css`` and
 ``hacienda_gpt/ui/assets/logo.svg`` — no hot-link to any tax-authority
 asset.
 """
+
 from __future__ import annotations
 
 import base64
@@ -30,7 +31,8 @@ import requests
 import streamlit as st
 
 from hacienda_gpt.decision.fact_extractor import FactExtractor, default_fact_extractor
-from hacienda_gpt.decision.schemas import CaseState, ObligationCandidate, RiskLevel
+from hacienda_gpt.decision.schemas import CaseState, RiskLevel
+from hacienda_gpt.decision.state_store import CaseVersionConflictError
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.decision.turn_service import TurnOutcome, process_turn
 from hacienda_gpt.llm.chain import answer_with_grounding, create_openai_chain
@@ -161,26 +163,38 @@ def _persist_turn_local(
     extractor: FactExtractor | None = None,
     chat_history: list[dict[str, str]] | None = None,
 ) -> TurnOutcome:
-    now = datetime.now(UTC)
-    existing = store.get_case(case_id)
     user_id = st.session_state.get("user_id", "streamlit_user")
+    active_extractor = extractor or default_fact_extractor()
 
-    case = existing or CaseState(
-        case_id=case_id,
-        user_id=user_id,
-        jurisdiction="ES",
-        tax_period=str(now.year),
-        created_at=now,
-        updated_at=now,
-    )
+    # Reload-and-retry on an optimistic-concurrency conflict (e.g. the same case
+    # open in two tabs): re-read the fresh state and reprocess once rather than
+    # crash or clobber the newer revision.
+    outcome: TurnOutcome | None = None
+    for attempt in range(2):
+        now = datetime.now(UTC)
+        existing = store.get_case(case_id)
+        case = existing or CaseState(
+            case_id=case_id,
+            user_id=user_id,
+            jurisdiction="ES",
+            tax_period=str(now.year),
+            created_at=now,
+            updated_at=now,
+        )
+        outcome = process_turn(
+            case=case,
+            user_input=user_input,
+            extractor=active_extractor,
+            chat_history=chat_history,
+        )
+        try:
+            store.save_case(outcome.case_state)
+            break
+        except CaseVersionConflictError:
+            if attempt == 1:
+                raise
 
-    outcome = process_turn(
-        case=case,
-        user_input=user_input,
-        extractor=extractor or default_fact_extractor(),
-        chat_history=chat_history,
-    )
-    store.save_case(outcome.case_state)
+    assert outcome is not None
     store.append_audit_event(case_id, {"event_type": "turn_persisted", "user_input": user_input})
     store.append_audit_event(case_id, {"event_type": "assistant_responded", "assistant_output": assistant_output})
     return outcome
@@ -218,7 +232,7 @@ def _render_trust_strip(envelope: AnswerEnvelope) -> None:
         f'<div class="trust-strip {css_cls}">'
         f'<span class="label">{html.escape(label)}</span>'
         f'<span class="reason">— {html.escape(reason)}</span>'
-        f'</div>',
+        f"</div>",
         unsafe_allow_html=True,
     )
 
@@ -236,39 +250,31 @@ def _render_source_cards(envelope: AnswerEnvelope) -> None:
     st.markdown(
         f'<div class="sources-block">'
         f'<div class="sources-heading">{html.escape(heading)}</div>'
-        f'{cards_html}'
-        f'</div>',
+        f"{cards_html}"
+        f"</div>",
         unsafe_allow_html=True,
     )
 
 
 def _format_source_card(c: Citation) -> str:
     title = html.escape(c.title or "Fuente sin título")
-    section = (
-        f'<span class="section">— {html.escape(c.section)}</span>' if c.section else ""
-    )
+    section = f'<span class="section">— {html.escape(c.section)}</span>' if c.section else ""
     locator = html.escape(c.locator or "")
-    locator_html = (
-        f'<div><span class="locator">{locator}</span></div>' if locator else ""
-    )
-    snippet_html = (
-        f'<div class="snippet">«{html.escape(c.snippet.strip())}»</div>'
-        if c.snippet
-        else ""
-    )
+    locator_html = f'<div><span class="locator">{locator}</span></div>' if locator else ""
+    snippet_html = f'<div class="snippet">«{html.escape(c.snippet.strip())}»</div>' if c.snippet else ""
     link_html = ""
     if c.locator and c.locator.startswith(("http://", "https://")):
         link_html = (
             f'<a class="link" href="{html.escape(c.locator)}" target="_blank" rel="noopener">'
-            f'Abrir fuente original ↗</a>'
+            f"Abrir fuente original ↗</a>"
         )
     return (
         f'<div class="source-card">'
         f'<div class="title">{title}{section}</div>'
-        f'{locator_html}'
-        f'{snippet_html}'
-        f'{link_html}'
-        f'</div>'
+        f"{locator_html}"
+        f"{snippet_html}"
+        f"{link_html}"
+        f"</div>"
     )
 
 
@@ -302,9 +308,10 @@ def _build_obligation_cards(case_state: CaseState) -> list[dict[str, str]]:
     cards: list[dict[str, str]] = []
     for o in case_state.obligation_candidates:
         css_cls, risk_label = _RISK_CSS.get(o.risk_level, ("medium", o.risk_level.value))
-        sources = ", ".join(
-            sorted({e.title for e in o.evidence_refs if getattr(e, "title", None)})
-        ) or "Sin fuentes asociadas"
+        sources = (
+            ", ".join(sorted({e.title for e in o.evidence_refs if getattr(e, "title", None)}))
+            or "Sin fuentes asociadas"
+        )
         cards.append(
             {
                 "title": o.title,
@@ -332,15 +339,15 @@ def _format_obligation_card(card: dict[str, str]) -> str:
         f'<div class="heading">'
         f'<span class="title">{html.escape(card["title"])}</span>'
         f'<span class="risk-badge {card["risk_css"]}">{html.escape(card["risk_label"])}</span>'
-        f'</div>'
+        f"</div>"
         f'<div class="confidence-row">'
         f'<div class="confidence-bar"><div class="fill" style="width:{card["pct"]}%"></div></div>'
         f'<span class="pct">{card["pct"]}%</span>'
-        f'</div>'
+        f"</div>"
         f'<div class="label">Base normativa</div>'
         f'<div class="sources-line">{html.escape(card["sources"])}</div>'
-        f'{missing_block}'
-        f'</div>'
+        f"{missing_block}"
+        f"</div>"
     )
 
 
@@ -393,7 +400,7 @@ def _render_brand_header() -> None:
         f'<div class="brand-text">'
         f'<span class="brand-title">HaciendaGPT</span>'
         f'<span class="brand-subtitle">Asistente fiscal con citas</span>'
-        f'</div></div>',
+        f"</div></div>",
         unsafe_allow_html=True,
     )
 
@@ -401,12 +408,9 @@ def _render_brand_header() -> None:
 def _render_sidebar_scope() -> None:
     """List of topics the assistant can answer about, rendered as chips
     so the user immediately understands the scope."""
-    chips_html = "".join(
-        f'<span class="chip">{html.escape(t)}</span>' for t in _TOPICS_SUPPORTED
-    )
+    chips_html = "".join(f'<span class="chip">{html.escape(t)}</span>' for t in _TOPICS_SUPPORTED)
     st.sidebar.markdown(
-        f'<div class="scope-label">Qué cubre hoy</div>'
-        f'<div class="chip-row">{chips_html}</div>',
+        f'<div class="scope-label">Qué cubre hoy</div>' f'<div class="chip-row">{chips_html}</div>',
         unsafe_allow_html=True,
     )
 
@@ -415,14 +419,10 @@ def _render_sidebar_recents() -> None:
     """Show the last few user prompts as captions. Not interactive in
     this pass — re-submitting requires more session-state plumbing than
     fits this redesign."""
-    user_prompts: list[str] = [
-        m["content"] for m in st.session_state.get("messages", []) if m["role"] == "user"
-    ]
+    user_prompts: list[str] = [m["content"] for m in st.session_state.get("messages", []) if m["role"] == "user"]
     if not user_prompts:
         return
-    st.sidebar.markdown(
-        '<div class="scope-label">Recientes</div>', unsafe_allow_html=True
-    )
+    st.sidebar.markdown('<div class="scope-label">Recientes</div>', unsafe_allow_html=True)
     for q in reversed(user_prompts[-5:]):
         snippet = q if len(q) <= 90 else q[:87].rstrip() + "…"
         st.sidebar.caption(f"• {snippet}")
@@ -461,7 +461,7 @@ def _render_suggested_questions() -> str | None:
         with col:
             if st.button(q, key=f"chip-{hash(q)}", use_container_width=True):
                 chosen = q
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
     return chosen
 
 
@@ -544,9 +544,7 @@ def main():
     if not query:
         return
 
-    prior_history = [
-        {"role": m["role"], "content": m["content"]} for m in st.session_state.messages
-    ]
+    prior_history = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
     st.session_state.messages.append({"role": "user", "content": query})
     with st.chat_message("user"):
         st.markdown(query)
@@ -563,9 +561,7 @@ def main():
     # Persist the envelope so the trust strip + source cards survive a
     # rerun (e.g. when the user clicks a suggested-question chip). Only
     # the envelope is stored; the message log keeps its plain-text role.
-    st.session_state.messages.append(
-        {"role": "assistant", "content": response, "__envelope": envelope}
-    )
+    st.session_state.messages.append({"role": "assistant", "content": response, "__envelope": envelope})
 
     if UI_USE_API:
         try:

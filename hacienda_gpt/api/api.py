@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import threading
 from collections.abc import Callable
 from datetime import UTC, datetime
+import threading
 from typing import Annotated, TypeVar
 from uuid import uuid4
 
@@ -60,8 +60,9 @@ def _thread_safe_singleton(factory: Callable[[], T]) -> Callable[[], T]:
     wrapper.cache_clear = cache_clear  # type: ignore[attr-defined]
     return wrapper
 
+
 from hacienda_gpt.decision.audit import build_recommendation_audit_event
-from hacienda_gpt.decision.fact_extractor import FactExtractor, default_fact_extractor
+from hacienda_gpt.decision.fact_extractor import FactExtractor, OpenAIExtractionError, default_fact_extractor
 from hacienda_gpt.decision.planner import Planner
 from hacienda_gpt.decision.schemas import (
     CaseState,
@@ -69,6 +70,7 @@ from hacienda_gpt.decision.schemas import (
     MissingFact,
     ObligationCandidate,
 )
+from hacienda_gpt.decision.state_store import CaseVersionConflictError
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.decision.turn_service import process_turn
 from hacienda_gpt.llm.grounding import AnswerEnvelope
@@ -216,14 +218,31 @@ def post_turn(
     if case is None:
         raise HTTPException(status_code=404, detail="case not found")
 
-    outcome = process_turn(
-        case=case,
-        user_input=payload.user_input,
-        extractor=extractor,
-        chat_history=payload.chat_history,
-    )
-    updated = outcome.case_state
-    store.save_case(updated)
+    try:
+        outcome = process_turn(
+            case=case,
+            user_input=payload.user_input,
+            extractor=extractor,
+            chat_history=payload.chat_history,
+        )
+    except OpenAIExtractionError as exc:
+        # The fact extractor (LLM) failed after its own retries. Surface a clean
+        # 503 instead of an opaque 500 — and never silently fall back to the
+        # weaker regex extractor, which could persist wrong fiscal facts.
+        raise HTTPException(
+            status_code=503,
+            detail=f"No se pudieron extraer los hechos de la consulta: {exc}",
+        ) from exc
+
+    try:
+        updated = store.save_case(outcome.case_state)
+    except CaseVersionConflictError as exc:
+        # Another turn updated this case between our read and write. Ask the
+        # client to retry against the fresh state rather than clobber it.
+        raise HTTPException(
+            status_code=409,
+            detail="El caso se modificó concurrentemente; vuelve a cargarlo y reintenta.",
+        ) from exc
 
     # execute planner for side effect of validation and auditability
     Planner().plan(updated, outcome.rules_result.candidate_obligations)
