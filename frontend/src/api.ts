@@ -86,56 +86,119 @@ export interface TurnResponse {
 // origin so this remains an empty prefix.
 const API_BASE = (import.meta.env.VITE_API_BASE as string) || "/api";
 
+// Abort any single request that outlives this budget, so a hung backend
+// surfaces a clear timeout instead of leaving the UI stuck on "Consultando…".
+const DEFAULT_TIMEOUT_MS = 30_000;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+// Runtime shape guards. A 200 with an unexpected/partial body must NOT be cast
+// blindly to the typed interface — that would defer the failure to a confusing
+// `undefined.map` deep in render. We validate the fields the UI actually reads
+// (extra keys are ignored) and throw a clear error otherwise.
+function isAnswerEnvelope(value: unknown): value is AnswerEnvelope {
+  return (
+    isRecord(value) &&
+    typeof value.answer === "string" &&
+    (value.mode === "cited" || value.mode === "uncited" || value.mode === "abstained") &&
+    Array.isArray(value.citations) &&
+    typeof value.min_citations_required === "number"
+  );
+}
+
+function isTurnResponse(value: unknown): value is TurnResponse {
+  return (
+    isRecord(value) &&
+    typeof value.case_id === "string" &&
+    Array.isArray(value.obligations) &&
+    Array.isArray(value.next_questions) &&
+    Array.isArray(value.candidate_obligation_ids)
+  );
+}
+
+function isCaseState(value: unknown): value is CaseState {
+  return isRecord(value) && typeof value.case_id === "string";
+}
+
+interface RequestOptions {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+}
+
+async function request<T>(
+  path: string,
+  body: unknown,
+  validate: (value: unknown) => value is T,
+  { signal, timeoutMs = DEFAULT_TIMEOUT_MS }: RequestOptions = {},
+): Promise<T> {
+  // Either the caller (e.g. "Nueva consulta" / unmount) or the timeout can
+  // abort the request; combine both signals into one.
+  const timeout = AbortSignal.timeout(timeoutMs);
+  const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
+
+  let resp: Response;
+  try {
+    resp = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: combined,
+    });
+  } catch (err) {
+    // A timeout gets a clear message; a caller-cancel or genuine network
+    // failure propagates the original error (already an AbortError on cancel).
+    if (timeout.aborted) throw new Error(`${path}: tiempo de espera agotado`, { cause: err });
+    throw err;
+  }
+
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => "");
+    throw new Error(`${path} ${resp.status}: ${text || resp.statusText}`);
+  }
+
+  const data: unknown = await resp.json();
+  if (!validate(data)) {
+    throw new Error(`${path}: respuesta con formato inesperado del servidor`);
+  }
+  return data;
+}
+
 interface QAOptions {
   query: string;
   chatHistory?: Array<{ role: "user" | "assistant"; content: string }>;
+  signal?: AbortSignal;
 }
 
-export async function postQA({ query, chatHistory = [] }: QAOptions): Promise<AnswerEnvelope> {
-  const resp = await fetch(`${API_BASE}/qa`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, chat_history: chatHistory }),
-  });
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`/qa ${resp.status}: ${text || resp.statusText}`);
-  }
-  return resp.json();
-}
-
-async function postJSON<T>(path: string, body: unknown): Promise<T> {
-  const resp = await fetch(`${API_BASE}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`${path} ${resp.status}: ${text || resp.statusText}`);
-  }
-  return resp.json() as Promise<T>;
+export function postQA({ query, chatHistory = [], signal }: QAOptions): Promise<AnswerEnvelope> {
+  return request("/qa", { query, chat_history: chatHistory }, isAnswerEnvelope, { signal });
 }
 
 export function createCase(opts: {
   userId: string;
   taxPeriod: string;
   jurisdiction?: string;
+  signal?: AbortSignal;
 }): Promise<CaseState> {
-  return postJSON<CaseState>("/cases", {
-    user_id: opts.userId,
-    tax_period: opts.taxPeriod,
-    jurisdiction: opts.jurisdiction ?? "ES",
-  });
+  return request(
+    "/cases",
+    { user_id: opts.userId, tax_period: opts.taxPeriod, jurisdiction: opts.jurisdiction ?? "ES" },
+    isCaseState,
+    { signal: opts.signal },
+  );
 }
 
 export function postTurn(opts: {
   caseId: string;
   userInput: string;
   chatHistory?: Array<{ role: "user" | "assistant"; content: string }>;
+  signal?: AbortSignal;
 }): Promise<TurnResponse> {
-  return postJSON<TurnResponse>(`/cases/${encodeURIComponent(opts.caseId)}/turn`, {
-    user_input: opts.userInput,
-    chat_history: opts.chatHistory ?? [],
-  });
+  return request(
+    `/cases/${encodeURIComponent(opts.caseId)}/turn`,
+    { user_input: opts.userInput, chat_history: opts.chatHistory ?? [] },
+    isTurnResponse,
+    { signal: opts.signal },
+  );
 }
