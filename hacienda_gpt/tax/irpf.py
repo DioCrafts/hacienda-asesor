@@ -117,6 +117,17 @@ class IRPFInput(BaseModel):
     gastos_cuidado_familiares: Decimal = Field(default=ZERO, ge=0)
     # Ascendants or descendants with a disability who depend on the taxpayer.
     num_familiares_discapacidad_a_cargo: int = Field(default=0, ge=0, le=20)
+    # Inputs of regional deductions beyond the family ones (see params.CAMPOS_*).
+    menores_acogidos: int = Field(default=0, ge=0, le=20)
+    hijos_adoptados_en_el_ejercicio: int = Field(default=0, ge=0, le=20)
+    donativos_autonomicos: Decimal = Field(default=ZERO, ge=0)  # to the entities the regional law names
+    inversion_vivienda_habitual: Decimal = Field(default=ZERO, ge=0)  # paid to buy or rehabilitate the main home
+    inversion_empresas_nueva_creacion: Decimal = Field(default=ZERO, ge=0)
+    gastos_eficiencia_energetica: Decimal = Field(default=ZERO, ge=0)
+    gastos_salud: Decimal = Field(default=ZERO, ge=0)
+    gastos_deporte_cultura: Decimal = Field(default=ZERO, ge=0)
+    viudedad: bool = False
+    vivienda_en_municipio_rural: bool = False
     # Lives in a municipality the regional law treats as small, rural or at risk of depopulation.
     municipio_rural_o_despoblacion: bool = False
 

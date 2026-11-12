@@ -317,6 +317,8 @@ CAMPOS_UNIDAD = frozenset(
         "num_ascendientes_mayores_75",
         "num_hijos_gastos_educativos",
         "num_familiares_discapacidad_a_cargo",
+        "menores_acogidos",
+        "hijos_adoptados_en_el_ejercicio",
     }
 )
 CAMPOS_GASTO = frozenset(
@@ -329,10 +331,23 @@ CAMPOS_GASTO = frozenset(
         "gastos_uniformes_escolares",
         "cotizaciones_empleada_hogar",
         "gastos_cuidado_familiares",
+        "donativos_autonomicos",
+        "inversion_vivienda_habitual",
+        "inversion_empresas_nueva_creacion",
+        "gastos_eficiencia_energetica",
+        "gastos_salud",
+        "gastos_deporte_cultura",
     }
 )
 CAMPOS_REQUISITO = frozenset(
-    {"familia_numerosa", "familia_numerosa_especial", "familia_monoparental", "municipio_rural_o_despoblacion"}
+    {
+        "familia_numerosa",
+        "familia_numerosa_especial",
+        "familia_monoparental",
+        "municipio_rural_o_despoblacion",
+        "viudedad",
+        "vivienda_en_municipio_rural",
+    }
 )
 
 
