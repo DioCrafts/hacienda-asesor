@@ -422,8 +422,43 @@ Claude. Otros ajustes: `AGENT_MAX_STEPS` (8), `AGENT_MAX_REVISIONS` (1),
 
 > ⚠️ Con modelos locales pequeños la calidad del *tool calling* y del
 > verificador baja mucho; el bucle tolera argumentos mal formados, pero no
-> sustituye a un modelo capaz. `/qa`, el extractor de hechos de `/cases` y el
-> frontend siguen usando OpenAI: migrarlos al agente es el siguiente paso.
+> sustituye a un modelo capaz.
+
+El frontend React usa `/agent` (una llamada por turno, con el expediente
+adjunto) y el extractor de hechos de `/cases` sigue a `LLM_PROVIDER`
+(`DECISION_EXTRACTOR=regex|openai|provider` para forzarlo). Solo la cadena
+legacy `/qa` y la UI de Streamlit siguen dependiendo de OpenAI.
+
+---
+
+### Evaluación del agente con consultas de la DGT
+
+Cada consulta vinculante de la DGT es un caso de prueba ya resuelto por un
+experto: hechos, pregunta y contestación. `eval_agent` las convierte en un
+conjunto de evaluación y mide el agente contra él:
+
+```bash
+# 1) Generar el conjunto (una llamada al LLM por consulta; descarta las no aptas)
+uv run python -m hacienda_gpt.cli.eval_agent build \
+  --dgt-dir data/html/<snapshot>/dgt-vinculantes --out eval_data/dgt_golden.jsonl \
+  --sample 200 --since-year 2022
+
+# 2) Evaluar el agente y, para comparar, la cadena /qa
+uv run python -m hacienda_gpt.cli.eval_agent run --dataset eval_data/dgt_golden.jsonl \
+  --system agent --out reports/eval_agent.json
+uv run python -m hacienda_gpt.cli.eval_agent run --dataset eval_data/dgt_golden.jsonl \
+  --system qa --out reports/eval_qa.json
+```
+
+Al evaluar el agente, la consulta de origen de cada caso **se oculta del
+retrieval** (`--exclude-source`, por defecto), para que tenga que llegar a la
+conclusión desde la ley y otra doctrina y no leyendo la solución. Un juez LLM
+compara cada respuesta con la conclusión de la DGT (`correcta` / `parcial` /
+`incorrecta` / `sin_respuesta`). La métrica a vigilar es
+`wrong_when_confident`: respuestas presentadas como verificadas que
+contradicen a la DGT. Ambos comandos avisan de cuántas llamadas van a hacer y
+piden confirmación (`--yes` para omitirla); `--limit N` permite una prueba
+corta antes de la ejecución completa.
 
 ---
 
