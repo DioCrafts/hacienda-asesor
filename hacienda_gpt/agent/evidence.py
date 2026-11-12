@@ -55,6 +55,8 @@ def source_type_for(authority: str | None, metadata: dict[str, Any] | None = Non
     if not authority:
         return None
     upper = authority.upper()
+    if upper == "CALCULADORA":
+        return "calculo"
     if upper.startswith("TS") or upper in ("TC", "AN", "TSJ", "TJUE"):
         return "jurisprudencia"
     if upper in ("DGT", "TEAC", "TEAR"):

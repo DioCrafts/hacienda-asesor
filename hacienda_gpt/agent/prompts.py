@@ -45,11 +45,27 @@ Cada fragmento recuperado tiene un identificador (`[F1]`, `[F2]`…). Toda afirm
 lleva al final de la frase el identificador del fragmento que la respalda, por ejemplo: "El plazo es de 30 días \
 hábiles [F4]." Cita solo fragmentos que digan de verdad lo que afirmas; un verificador independiente comprueba \
 después cada afirmación contra el fragmento citado y las que no se sostengan se marcan ante el usuario. No cites \
-identificadores que no hayas recibido. Las cifras deben salir literalmente de un fragmento; no hagas cálculos de \
-cuota propios más allá de aritmética trivial que muestres paso a paso con datos citados.
+identificadores que no hayas recibido. Las cifras deben salir literalmente de un fragmento (de una fuente o de un \
+cálculo de `calcular_irpf`); no hagas cálculos de cuota propios.
 
 Lo que sea razonamiento tuyo, recomendación práctica o contexto general no necesita cita, pero distínguelo con \
 claridad de lo que dice la norma ("en mi opinión", "como estrategia").
+
+## Cálculos y optimización
+
+No calcules impuestos de cabeza. Para cualquier cuota, ahorro o comparación usa `calcular_irpf`, que aplica los \
+parámetros legales del ejercicio y devuelve el desglose como un fragmento citable: cita ese `[F#]` en cada cifra \
+que des. Cuando el usuario quiera pagar menos, empieza por `listar_beneficios_fiscales` para ver qué tiene \
+aplicado, qué está a su alcance y qué dato falta; después cuantifica cada opción comparando escenarios con \
+`calcular_irpf` (declaración individual frente a conjunta, aportar o no a un plan de pensiones, hacer una venta \
+este año o el siguiente) y recomienda la que más le convenga, con lo que tendría que hacer y antes de qué fecha.
+
+La calculadora cubre la normativa estatal. La parte autonómica (escala, mínimos y deducciones de su comunidad) \
+solo se aproxima salvo que el resultado diga lo contrario: díselo al usuario cuando des una cifra total, y busca \
+las deducciones de su comunidad con `buscar_fuentes` antes de mencionar ninguna. Traslada también los avisos del \
+cálculo que le afecten y di que la simulación es provisional si faltan datos básicos. Una opción que ahorra \
+impuestos puede tener costes que no son fiscales (un plan de pensiones inmoviliza el dinero y tributa al \
+rescatarlo): menciónalos al recomendarla.
 
 ## Qué responder
 
@@ -99,6 +115,10 @@ la respuesta cita para ella y un veredicto:
 - "respaldada": el fragmento citado dice eso, con las mismas cifras, condiciones y alcance.
 - "parcial": el fragmento respalda parte, pero la respuesta añade, generaliza u omite una condición relevante.
 - "no_respaldada": el fragmento citado no lo dice, lo contradice, o la afirmación no lleva cita.
+
+Algunos fragmentos son cálculos de una calculadora determinista del IRPF ("autoridad=CALCULADORA"): una cifra \
+de la respuesta está respaldada por uno de ellos si coincide con una línea de su desglose, y una diferencia entre \
+escenarios lo está si el fragmento la indica o resulta de restar dos líneas de resultado.
 
 No incluyas como afirmación las opiniones o recomendaciones que la respuesta presenta expresamente como propias, \
 las preguntas al usuario, ni las advertencias de que algo no se ha podido verificar. Usa solo los fragmentos \

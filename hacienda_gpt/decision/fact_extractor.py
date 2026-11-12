@@ -43,6 +43,12 @@ EXPECTED_FACT_TYPE: dict[str, FactValueType] = {
     "tema_tributario": FactValueType.STRING,
 }
 
+# Fiscal-profile facts (family, income breakdown, deductions) that feed the IRPF
+# calculator. Declared next to the calculator input they map onto.
+from hacienda_gpt.tax.profile import PROFILE_FACT_TYPES  # noqa: E402
+
+EXPECTED_FACT_TYPE.update(PROFILE_FACT_TYPES)
+
 KNOWN_FACT_NAMES: tuple[str, ...] = tuple(EXPECTED_FACT_TYPE.keys())
 
 
@@ -195,6 +201,36 @@ y el resto deben ir a `null`. Si te equivocas de slot el hecho se descarta.
   value_boolean  (sí/no):
     menciona_ingresos           → true si el usuario menciona ingresos/rendimientos
     alta_actividad_economica    → true si el usuario está dado de alta en actividad económica
+
+PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
+
+  value_string:
+    comunidad_autonoma                  → nombre de la comunidad ("Madrid", "Cataluña", "Andalucía"…)
+    estado_civil                        → "soltero" | "casado" | "pareja_de_hecho" | "separado" | "divorciado" | "viudo"
+
+  value_number (importes anuales en euros; recuentos como enteros):
+    edad                                → años cumplidos
+    grado_discapacidad                  → porcentaje reconocido (33, 65…)
+    num_descendientes                   → hijos a cargo (0 si dice que no tiene)
+    num_descendientes_menores_3         → de ellos, menores de tres años
+    num_ascendientes_mayores_65         → padres/abuelos mayores de 65 que conviven y dependen de él
+    num_ascendientes_mayores_75         → de ellos, mayores de 75
+    rendimiento_trabajo_bruto           → salario bruto anual
+    cotizaciones_seguridad_social       → cotizaciones a la Seguridad Social pagadas por el trabajador
+    retenciones                         → IRPF retenido en el año
+    rendimiento_actividad_neto          → beneficio neto anual de la actividad económica
+    rendimiento_alquiler_neto           → rendimiento neto de inmuebles alquilados
+    rendimiento_capital_mobiliario      → intereses y dividendos
+    ganancias_patrimoniales             → ganancias (o pérdidas, en negativo) por ventas de acciones, fondos, inmuebles…
+    aportacion_plan_pensiones           → aportado por él a planes de pensiones en el año
+    contribucion_empresa_plan_pensiones → aportado por su empresa
+    donativos                           → donado a ONG/fundaciones en el año
+    pagos_vivienda_habitual_pre2013     → pagado en el año por la hipoteca de una vivienda habitual comprada antes de 2013
+    gastos_guarderia                    → pagado a guarderías en el año
+
+  "gano 38.000 brutos al año, vivo en Valencia, tengo dos hijos, uno de 2 años"
+    → rendimiento_trabajo_bruto value_number=38000 · comunidad_autonoma value_string="Comunidad Valenciana"
+    → residencia_fiscal value_string="ES" · num_descendientes value_number=2 · num_descendientes_menores_3 value_number=1
 
 EJEMPLOS de mapeo concreto (sigue el mismo patrón):
 

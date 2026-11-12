@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from decimal import Decimal
 import json
 import logging
 from typing import Any
@@ -19,7 +20,11 @@ from hacienda_gpt.agent.search import CorpusSearcher, SearchFilters, normalize_d
 from hacienda_gpt.decision.fact_extractor import EXPECTED_FACT_TYPE, KNOWN_FACT_NAMES, _coerce_value
 from hacienda_gpt.decision.interpreter import _merge_facts
 from hacienda_gpt.decision.rules_engine import evaluate_rules
-from hacienda_gpt.decision.schemas import CaseState, Fact
+from hacienda_gpt.decision.schemas import CaseState, Fact, parse_fiscal_year
+from hacienda_gpt.tax.beneficios import evaluar_beneficios
+from hacienda_gpt.tax.irpf import IRPFInput, IRPFResult, calcular_irpf
+from hacienda_gpt.tax.params import EjercicioNoDisponibleError, ejercicios_disponibles, load_params
+from hacienda_gpt.tax.profile import DatosInvalidosError, build_input, missing_core_fields
 
 logger = logging.getLogger(__name__)
 
@@ -128,6 +133,78 @@ EVALUATE_RULES_TOOL = ToolSpec(
 )
 
 
+_INPUT_FIELDS_DOC = (
+    "comunidad_autonoma, tributacion ('individual' | 'conjunta_biparental' | 'conjunta_monoparental'), edad, "
+    "grado_discapacidad, num_descendientes, num_descendientes_menores_3, descendientes_compartidos (bool), "
+    "num_ascendientes_mayores_65, num_ascendientes_mayores_75, rendimiento_trabajo_bruto, "
+    "cotizaciones_seguridad_social, otros_gastos_deducibles_trabajo, rendimiento_actividad_neto, "
+    "rendimiento_alquiler_neto, otras_rentas_base_general, rendimiento_capital_mobiliario, ganancias_patrimoniales, "
+    "aportacion_plan_pensiones, contribucion_empresa_plan_pensiones, donativos, donativos_recurrentes (bool), "
+    "pagos_vivienda_habitual_pre2013, hijos_deduccion_maternidad, gastos_guarderia, retenciones"
+)
+
+CALCULATE_TOOL = ToolSpec(
+    name="calcular_irpf",
+    description=(
+        "Calcula la declaración del IRPF de forma determinista con los parámetros legales del ejercicio (escalas, "
+        "mínimos, reducciones y deducciones estatales) y devuelve el desglose línea a línea con su referencia legal, "
+        "como un fragmento citable [F#]. Úsala SIEMPRE que haga falta una cuota, un ahorro o una comparación: no "
+        "calcules impuestos por tu cuenta. Parte de los datos del expediente del usuario si lo hay; `datos` añade o "
+        "sustituye cifras. Para comparar alternativas (individual frente a conjunta, aportar o no a un plan de "
+        "pensiones, vender este año o el siguiente), pasa `escenarios`: cada uno aplica sus `cambios` sobre los "
+        "datos base y el resultado indica la diferencia con el primero. Importes anuales en euros. "
+        f"Campos admitidos en `datos` y `cambios`: {_INPUT_FIELDS_DOC}. Lee los avisos del resultado: dicen qué no "
+        "se ha modelado (en particular, la parte autonómica) y debes trasladar al usuario los que le afecten."
+    ),
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "ejercicio": {"type": "integer", "description": "Año fiscal. Por defecto, el del expediente."},
+            "datos": {
+                "type": "object",
+                "description": "Cifras del contribuyente que añadir o corregir sobre el expediente.",
+            },
+            "escenarios": {
+                "type": "array",
+                "description": "Alternativas a comparar. Omítelo para un único cálculo.",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "nombre": {"type": "string", "description": "Etiqueta corta, p. ej. 'Con plan de pensiones'."},
+                        "cambios": {"type": "object", "description": "Campos que cambian respecto a los datos base."},
+                    },
+                    "required": ["nombre", "cambios"],
+                },
+            },
+        },
+    },
+)
+
+BENEFITS_TOOL = ToolSpec(
+    name="listar_beneficios_fiscales",
+    description=(
+        "Revisa el catálogo de reducciones, mínimos y deducciones ESTATALES del IRPF contra la situación del "
+        "usuario y devuelve, para cada uno, si ya está aplicado, si está disponible (con el ahorro estimado por la "
+        "calculadora), o qué dato falta para saberlo. Es el punto de partida para responder a «¿cómo pago menos?». "
+        "No incluye deducciones autonómicas: el resultado indica cómo buscarlas. Admite los mismos `datos` que "
+        "calcular_irpf."
+    ),
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "ejercicio": {"type": "integer", "description": "Año fiscal. Por defecto, el del expediente."},
+            "datos": {
+                "type": "object",
+                "description": "Cifras del contribuyente que añadir o corregir sobre el expediente.",
+            },
+        },
+    },
+)
+
+
 @dataclass(frozen=True)
 class ToolOutcome:
     content: str
@@ -137,6 +214,28 @@ class ToolOutcome:
 
 def _error(message: str) -> ToolOutcome:
     return ToolOutcome(content=message, summary=message[:120], is_error=True)
+
+
+_CASE_ONLY_TOOLS = frozenset({READ_CASE_TOOL.name, RECORD_FACTS_TOOL.name, EVALUATE_RULES_TOOL.name})
+
+
+def _money(value: Decimal) -> str:
+    """1234.5 → '1.234,50 €' (Spanish formatting, sign preserved)."""
+    text = f"{abs(value):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"{'-' if value < 0 else ''}{text} €"
+
+
+def _render_result(nombre: str, result: IRPFResult) -> str:
+    lines = [f"Cálculo del IRPF {result.ejercicio} — {nombre} (tributación {result.tributacion.replace('_', ' ')})"]
+    for line in result.lineas:
+        ref = f" [{line.referencia}]" if line.referencia else ""
+        lines.append(f"- {line.concepto}: {_money(line.importe)}{ref}")
+    lines.append(f"- Tipo medio efectivo: {result.tipo_medio_efectivo} %")
+    if result.avisos:
+        lines.append("Avisos (lo que este cálculo no cubre o da por supuesto):")
+        lines.extend(f"  * {aviso}" for aviso in result.avisos)
+    lines.append(f"Parámetros: {result.fuente}.")
+    return "\n".join(lines)
 
 
 class Toolbox:
@@ -157,7 +256,7 @@ class Toolbox:
         self._default_k = default_k
 
     def specs(self) -> list[ToolSpec]:
-        specs = [SEARCH_TOOL]
+        specs = [SEARCH_TOOL, CALCULATE_TOOL, BENEFITS_TOOL]
         if self.case is not None:
             specs.extend([READ_CASE_TOOL, RECORD_FACTS_TOOL, EVALUATE_RULES_TOOL])
         return specs
@@ -167,12 +266,14 @@ class Toolbox:
             return _error(f"No se pudo interpretar la llamada: {call.arguments_error}. Reenvíala con JSON válido.")
         handlers = {
             SEARCH_TOOL.name: self._search,
+            CALCULATE_TOOL.name: self._calculate,
+            BENEFITS_TOOL.name: self._benefits,
             READ_CASE_TOOL.name: self._read_case,
             RECORD_FACTS_TOOL.name: self._record_facts,
             EVALUATE_RULES_TOOL.name: self._evaluate_rules,
         }
         handler = handlers.get(call.name)
-        if handler is None or (call.name != SEARCH_TOOL.name and self.case is None):
+        if handler is None or (call.name in _CASE_ONLY_TOOLS and self.case is None):
             return _error(f"Herramienta no disponible: {call.name}.")
         try:
             return handler(call.arguments)
@@ -223,6 +324,121 @@ class Toolbox:
         return ToolOutcome(
             content=body,
             summary=f"{len(unique)} fragmentos: {', '.join(f.fragment_id for f in unique)}",
+        )
+
+    # ------------------------------------------------------------------ #
+    # Tax computation
+    # ------------------------------------------------------------------ #
+
+    def _scenario_base(self, arguments: dict[str, Any]) -> tuple[int, dict[str, Any], dict[str, Any]]:
+        """Resolve (fiscal year, case facts, explicit data) for a computation."""
+        datos = arguments.get("datos") or {}
+        if not isinstance(datos, dict):
+            raise DatosInvalidosError("'datos' debe ser un objeto {campo: valor}.")
+        facts = {fact.name: fact.value for fact in self.case.facts} if self.case is not None else {}
+        raw_year = arguments.get("ejercicio")
+        if isinstance(raw_year, int) and not isinstance(raw_year, bool):
+            year = raw_year
+        else:
+            case_year = parse_fiscal_year(self.case.tax_period) if self.case is not None else None
+            year = case_year if case_year is not None else max(ejercicios_disponibles())
+        return year, facts, datos
+
+    def _calculate(self, arguments: dict[str, Any]) -> ToolOutcome:
+        try:
+            year, facts, datos = self._scenario_base(arguments)
+            params = load_params(year)
+            raw_scenarios = arguments.get("escenarios") or [{"nombre": "Situación actual", "cambios": {}}]
+            if not isinstance(raw_scenarios, list) or len(raw_scenarios) > 6:
+                return _error("'escenarios' debe ser una lista de hasta 6 alternativas.")
+            scenarios: list[tuple[str, IRPFInput]] = []
+            for item in raw_scenarios:
+                if not isinstance(item, dict) or not isinstance(item.get("nombre"), str) or not item["nombre"].strip():
+                    return _error("Cada escenario necesita un 'nombre' y un objeto 'cambios'.")
+                cambios = item.get("cambios") or {}
+                if not isinstance(cambios, dict):
+                    return _error("'cambios' debe ser un objeto {campo: valor}.")
+                scenarios.append(
+                    (item["nombre"].strip(), build_input(ejercicio=year, facts=facts, datos=datos, cambios=cambios))
+                )
+        except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
+            return _error(str(exc))
+
+        results = [(nombre, calcular_irpf(inp, params)) for nombre, inp in scenarios]
+        provided = {name for name in (*facts, *datos) if name in IRPFInput.model_fields}
+        missing = missing_core_fields(scenarios[0][1], provided)
+
+        blocks: list[str] = []
+        fragment_ids: list[str] = []
+        base_name, base_result = results[0]
+        for nombre, result in results:
+            # Each scenario is registered as evidence: the answer cites it like
+            # any other source and the verifier checks figures against it.
+            fragment = self.ledger.register(
+                text=_render_result(nombre, result),
+                metadata={
+                    "title": f"Cálculo IRPF {result.ejercicio} — {nombre}",
+                    "source": f"calculadora://irpf/{result.ejercicio}/{len(self.ledger) + 1}",
+                    "source_authority": "CALCULADORA",
+                    "section": "Simulación determinista",
+                },
+            )
+            fragment_ids.append(fragment.fragment_id)
+            block = f"[{fragment.fragment_id}] " + _render_result(nombre, result)
+            if nombre != base_name:
+                diff = base_result.resultado - result.resultado
+                verb = "ahorra" if diff > 0 else "cuesta"
+                block += (
+                    f"\nFrente a «{base_name}»: {verb} {_money(abs(diff))}."
+                    if diff
+                    else f"\nFrente a «{base_name}»: sin diferencia."
+                )
+            blocks.append(block)
+        if missing:
+            blocks.append(
+                "DATOS NO APORTADOS (el cálculo los ha tomado como cero o sin informar): "
+                + ", ".join(missing)
+                + ". Pídeselos al usuario si pueden cambiar el resultado, y dile que el cálculo es provisional sin ellos."
+            )
+        return ToolOutcome(
+            content="\n\n".join(blocks),
+            summary=f"{len(results)} cálculo(s): {', '.join(fragment_ids)}",
+        )
+
+    def _benefits(self, arguments: dict[str, Any]) -> ToolOutcome:
+        try:
+            year, facts, datos = self._scenario_base(arguments)
+            params = load_params(year)
+            inp = build_input(ejercicio=year, facts=facts, datos=datos)
+        except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
+            return _error(str(exc))
+        conocidos = {name for name in (*facts, *datos) if name in IRPFInput.model_fields or name == "estado_civil"}
+        beneficios = evaluar_beneficios(inp, conocidos=conocidos, params=params)
+        payload = {
+            "ejercicio": year,
+            "beneficios": [
+                {
+                    "nombre": b.nombre,
+                    "estado": b.estado,
+                    "detalle": b.detalle,
+                    "ahorro_estimado_eur": float(b.ahorro_estimado) if b.ahorro_estimado is not None else None,
+                    "requisitos": b.requisitos,
+                    "referencia": b.referencia,
+                    "parametros_verificados": b.verificado,
+                    "datos_que_faltan": b.datos_que_faltan,
+                }
+                for b in beneficios
+            ],
+            "nota": (
+                "Los ahorros estimados salen de la calculadora con los datos disponibles; para citarlos ante el "
+                "usuario, calcula el escenario con calcular_irpf y cita ese fragmento. Las condiciones de cada "
+                "beneficio deben contrastarse con buscar_fuentes antes de afirmarlas."
+            ),
+        }
+        disponibles = sum(1 for b in beneficios if b.estado == "disponible")
+        return ToolOutcome(
+            content=json.dumps(payload, ensure_ascii=False),
+            summary=f"{len(beneficios)} beneficios revisados, {disponibles} disponibles",
         )
 
     def _case_snapshot(self) -> dict[str, Any]:

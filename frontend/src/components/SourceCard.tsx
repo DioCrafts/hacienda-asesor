@@ -2,7 +2,7 @@
 // whether it binds the Administration, and the literal passage — and is the
 // jump target of the [F#] chips in the answer.
 
-import { Book, ExternalLink, Gavel, Landmark, Library, ScrollText } from "lucide-react";
+import { Book, Calculator, ExternalLink, Gavel, Landmark, Library, ScrollText } from "lucide-react";
 import clsx from "clsx";
 
 import type { Citation } from "../api";
@@ -13,6 +13,7 @@ const SOURCE_ICON = {
   manual: Book, // AEAT handbook / informative page
   dgt: ScrollText, // DGT binding consulta
   court: Gavel, // TEAC / TS / TC
+  calc: Calculator, // deterministic IRPF computation
   other: Library,
 } as const;
 

@@ -62,12 +62,14 @@ def test_malformed_call_unknown_tool_and_searcher_crash_become_error_results() -
 
 def test_case_tools_only_offered_with_a_case() -> None:
     without = Toolbox(searcher=FakeSearcher([]), ledger=EvidenceLedger())
-    assert [spec.name for spec in without.specs()] == ["buscar_fuentes"]
+    assert [spec.name for spec in without.specs()] == ["buscar_fuentes", "calcular_irpf", "listar_beneficios_fiscales"]
     assert without.execute(_call("consultar_expediente")).is_error
 
     with_case = Toolbox(searcher=FakeSearcher([]), ledger=EvidenceLedger(), case=_case())
     assert {spec.name for spec in with_case.specs()} == {
         "buscar_fuentes",
+        "calcular_irpf",
+        "listar_beneficios_fiscales",
         "consultar_expediente",
         "registrar_hechos",
         "evaluar_obligaciones",

@@ -1,0 +1,124 @@
+{
+  "ejercicio": 2026,
+  "fuente_principal": {
+    "norma": "Ley 35/2006, de 28 de noviembre, del IRPF (texto consolidado)",
+    "boe_id": "BOE-A-2006-20764",
+    "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764",
+    "consolidado_a": "2026-11-11",
+    "consultado_el": "2026-11-12",
+    "sha256_html": "0c33f3f6cb9d4f6fa5d4c7cc4f3ef9f19d8f90b802dc4526101fc270b660f9f5"
+  },
+  "trabajo": {
+    "otros_gastos": "2000",
+    "reduccion": {
+      "umbral_superior": "19747.5",
+      "umbral_inferior": "14852",
+      "umbral_medio": "17673.52",
+      "importe_maximo": "7302",
+      "pendiente_tramo_1": "1.75",
+      "importe_tramo_2": "2364.34",
+      "pendiente_tramo_2": "1.14",
+      "max_otras_rentas": "6500"
+    },
+    "fuente": {"referencia": "arts. 19.2.f) y 20 LIRPF", "en_vigor_desde": "2024-06-28", "verificado": true}
+  },
+  "tributacion_conjunta": {
+    "reduccion_biparental": "3400",
+    "reduccion_monoparental": "2150",
+    "fuente": {"referencia": "art. 84.2.3.º y 4.º LIRPF", "en_vigor_desde": "2010-01-01", "verificado": true}
+  },
+  "prevision_social": {
+    "limite_general": "1500",
+    "incremento_contribucion_empresarial": "8500",
+    "porcentaje_rendimientos": "0.30",
+    "fuente": {"referencia": "art. 52.1 LIRPF", "en_vigor_desde": "2023-01-01", "verificado": true}
+  },
+  "minimos": {
+    "contribuyente": "5550",
+    "incremento_mayor_65": "1150",
+    "incremento_mayor_75": "1400",
+    "descendientes": ["2400", "2700", "4000", "4500"],
+    "incremento_descendiente_menor_3": "2800",
+    "ascendiente": "1150",
+    "incremento_ascendiente_mayor_75": "1400",
+    "discapacidad": "3000",
+    "discapacidad_65": "9000",
+    "gastos_asistencia": "3000",
+    "fuente": {"referencia": "arts. 57 a 60 LIRPF", "en_vigor_desde": "2015-01-01", "verificado": true}
+  },
+  "escala_general_estatal": {
+    "tramos": [
+      {"hasta": "12450", "tipo": "0.095"},
+      {"hasta": "20200", "tipo": "0.12"},
+      {"hasta": "35200", "tipo": "0.15"},
+      {"hasta": "60000", "tipo": "0.185"},
+      {"hasta": "300000", "tipo": "0.225"},
+      {"hasta": null, "tipo": "0.245"}
+    ],
+    "fuente": {"referencia": "art. 63.1 LIRPF", "en_vigor_desde": "2021-01-01", "verificado": true}
+  },
+  "escala_ahorro_estatal": {
+    "tramos": [
+      {"hasta": "6000", "tipo": "0.095"},
+      {"hasta": "50000", "tipo": "0.105"},
+      {"hasta": "200000", "tipo": "0.115"},
+      {"hasta": "300000", "tipo": "0.135"},
+      {"hasta": null, "tipo": "0.15"}
+    ],
+    "fuente": {"referencia": "art. 66.1 LIRPF", "en_vigor_desde": "2024-12-22", "verificado": true}
+  },
+  "escala_ahorro_autonomica": {
+    "tramos": [
+      {"hasta": "6000", "tipo": "0.095"},
+      {"hasta": "50000", "tipo": "0.105"},
+      {"hasta": "200000", "tipo": "0.115"},
+      {"hasta": "300000", "tipo": "0.135"},
+      {"hasta": null, "tipo": "0.15"}
+    ],
+    "fuente": {"referencia": "art. 76 LIRPF", "en_vigor_desde": "2024-12-22", "verificado": true}
+  },
+  "escalas_generales_autonomicas": {},
+  "deduccion_rendimientos_trabajo": {
+    "umbral_superior": "20048.45",
+    "umbral_inferior": "17094",
+    "importe_maximo": "590.89",
+    "pendiente": "0.2",
+    "max_otras_rentas": "6500",
+    "fuente": {"referencia": "disposición adicional 61.ª LIRPF", "en_vigor_desde": "2026-02-20", "verificado": true}
+  },
+  "donativos": {
+    "tramo_primero": "250",
+    "tipo_primero": "0.80",
+    "tipo_resto": "0.40",
+    "tipo_resto_recurrente": "0.45",
+    "limite_base_liquidable": "0.10",
+    "fuente": {
+      "referencia": "art. 19 Ley 49/2002 (BOE-A-2002-25039); límite del 10 % de la base liquidable: art. 69.1 LIRPF",
+      "en_vigor_desde": "2024-01-01",
+      "verificado": true,
+      "nota": "Escala verificada en la Ley 49/2002. El límite del 10 % (art. 69.1 LIRPF) no se ha contrastado en esta revisión."
+    }
+  },
+  "maternidad": {
+    "importe_por_hijo": "1200",
+    "incremento_guarderia": "1000",
+    "fuente": {"referencia": "art. 81 LIRPF", "en_vigor_desde": "2023-01-01", "verificado": true}
+  },
+  "vivienda_habitual_transitoria": {
+    "tipo": "0.15",
+    "base_maxima": "9040",
+    "fuente": {
+      "referencia": "disposición transitoria 18.ª LIRPF y art. 68.1 en su redacción a 31-12-2012",
+      "en_vigor_desde": "2013-01-01",
+      "verificado": false,
+      "nota": "El régimen transitorio está verificado; el porcentaje (15 %) y la base máxima (9.040 €) proceden de la redacción de 2012, que no se ha contrastado en esta revisión."
+    }
+  },
+  "obligacion_declarar": {
+    "limite_trabajo_un_pagador": "22000",
+    "limite_trabajo_varios_pagadores": "15876",
+    "limite_segundo_pagador": "1500",
+    "limite_capital_y_ganancias_con_retencion": "1600",
+    "fuente": {"referencia": "art. 96.2 y 3 LIRPF", "en_vigor_desde": "2025-01-23", "verificado": true}
+  }
+}

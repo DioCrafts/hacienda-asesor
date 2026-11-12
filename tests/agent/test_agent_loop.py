@@ -40,7 +40,11 @@ def test_search_then_answer_verified() -> None:
     assert "[F1]" in provider.tool_results[0].content and "[F3]" in provider.tool_results[0].content
     assert provider.started["user_message"].endswith(QUESTION)
     assert "Fecha de hoy" in provider.started["user_message"]
-    assert [tool.name for tool in provider.started["tools"]] == ["buscar_fuentes"]
+    assert [tool.name for tool in provider.started["tools"]] == [
+        "buscar_fuentes",
+        "calcular_irpf",
+        "listar_beneficios_fiscales",
+    ]
 
     # The verifier got only the CITED fragments, not everything retrieved.
     verifier_input = provider.json_requests[0]["user"]
@@ -181,7 +185,7 @@ def test_case_tools_update_the_case_and_surface_it_to_the_caller() -> None:
     assert "updated_case" not in result.model_dump()
     assert "Ejercicio del expediente: 2025" in provider.started["user_message"]
     assert "consultar_expediente" in provider.started["system"]
-    assert len(provider.started["tools"]) == 4
+    assert len(provider.started["tools"]) == 6
 
 
 def test_untouched_case_is_not_returned_for_persistence() -> None:
@@ -225,3 +229,32 @@ def test_tool_call_truncated_by_max_tokens_is_never_executed() -> None:
 
     assert result.mode is AgentMode.ABSTAINED and "truncó" in result.warnings[0]
     assert searcher.calls == [] and result.tool_trace == []
+
+
+def test_calculated_figures_are_cited_and_verified_like_any_other_source() -> None:
+    compare = (
+        "calcular_irpf",
+        {
+            "ejercicio": 2026,
+            "datos": {"rendimiento_trabajo_bruto": 50000, "cotizaciones_seguridad_social": 3175},
+            "escenarios": [
+                {"nombre": "Actual", "cambios": {}},
+                {"nombre": "Con plan", "cambios": {"aportacion_plan_pensiones": 1500}},
+            ],
+        },
+    )
+    answer = "Aportar 1.500 € a un plan de pensiones te ahorra 555,00 € [F2]."
+    provider = ScriptedProvider(
+        [tool_turn(compare), text_turn(answer)],
+        [verdict("respuesta", ("Aportar 1.500 € ahorra 555,00 €", ["F2"], "respaldada"))],
+    )
+
+    result = _agent(provider).run("¿Me compensa un plan de pensiones?")
+
+    assert result.mode is AgentMode.VERIFIED
+    (citation,) = result.citations
+    assert (citation.fragment_id, citation.authority, citation.source_type) == ("F2", "CALCULADORA", "calculo")
+    assert citation.title == "Cálculo IRPF 2026 — Con plan"
+    # The verifier receives the full breakdown, including the comparison base figures.
+    assert "Reducción por aportaciones a sistemas de previsión social: -1.500,00 €" in provider.json_requests[0]["user"]
+    assert "ahorra 555,00 €" in provider.tool_results[0].content

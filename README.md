@@ -435,6 +435,45 @@ legacy `/qa` y la UI de Streamlit siguen dependiendo de OpenAI.
 
 ---
 
+### Calculadora del IRPF y optimización
+
+El agente no calcula impuestos: llama a una calculadora determinista
+(`hacienda_gpt/tax/irpf.py`) cuyos parámetros son **datos versionados por
+ejercicio** (`hacienda_gpt/tax/data/irpf_<año>.json`), cada uno con el
+precepto del que sale y un indicador `verificado`.
+
+- **`calcular_irpf`** — rendimientos del trabajo (gastos y reducción de los
+  arts. 19 y 20), base del ahorro, tributación conjunta, planes de pensiones,
+  mínimo personal y familiar, escalas general y del ahorro, deducciones por
+  donativos, vivienda anterior a 2013, rendimientos del trabajo (DA 61.ª) y
+  maternidad, y retenciones. Admite **escenarios** para comparar alternativas
+  («con y sin plan de pensiones», «individual o conjunta») y devuelve cada
+  desglose como un fragmento citable `[F#]`, que el verificador comprueba
+  igual que cualquier otra fuente.
+- **`listar_beneficios_fiscales`** — catálogo de beneficios estatales
+  contrastado con el perfil: qué está aplicado, qué está disponible (con el
+  ahorro que estima la calculadora) y qué dato falta.
+- **Perfil fiscal** — 20 hechos nuevos (comunidad autónoma, familia, desglose
+  de rentas, aportaciones, donativos…) que el extractor reconoce, se editan en
+  «Tu expediente» y alimentan la calculadora con el mismo nombre de campo.
+
+Los parámetros de 2026 se leyeron del texto consolidado de la Ley 35/2006
+(BOE-A-2006-20764, consolidado a 11-11-2026) y de la Ley 49/2002. **Límites
+actuales**, que la calculadora declara en los `avisos` de cada resultado:
+
+- **Parte autonómica aproximada.** No hay cargada ninguna escala autonómica
+  (`escalas_generales_autonomicas` está vacío): se usa una igual a la estatal.
+  Tampoco se modelan mínimos ni deducciones autonómicas.
+- **2025** usa los mismos parámetros salvo la deducción de la DA 61.ª, cuyas
+  cuantías de ese año no se pudieron contrastar y por eso no se aplica.
+- Rendimientos de actividades económicas y de alquileres entran como cifra
+  neta aportada por el usuario; no se calcula la compensación de pérdidas.
+- El porcentaje y la base máxima de la deducción por vivienda proceden de la
+  redacción de 2012 y están marcados como no verificados.
+
+Para añadir una escala autonómica, incluye sus tramos bajo
+`escalas_generales_autonomicas.<comunidad en minúsculas>` con su `fuente`.
+
 ### Evaluación del agente con consultas de la DGT
 
 Cada consulta vinculante de la DGT es un caso de prueba ya resuelto por un

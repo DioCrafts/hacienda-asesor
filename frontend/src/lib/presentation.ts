@@ -3,12 +3,13 @@
 
 import type { AnswerMode, Citation, ClaimCheck, ClaimVerdict, Fact, ProgressEvent, RiskLevel } from "../api";
 
-export type SourceKind = "boe" | "manual" | "dgt" | "court" | "other";
+export type SourceKind = "boe" | "manual" | "dgt" | "court" | "calc" | "other";
 
 /** Pick an icon family for a citation: the agent's explicit authority first,
  *  URL/title sniffing as a fallback for legacy /qa citations. */
 export function classifySource(c: Citation): SourceKind {
   const authority = (c.authority || "").toUpperCase();
+  if (authority === "CALCULADORA") return "calc";
   if (authority === "DGT") return "dgt";
   if (authority === "TEAC" || authority === "TEAR" || authority.startsWith("TS") || authority === "TC") return "court";
   if (authority === "AEAT") return "manual";
@@ -31,6 +32,7 @@ const AUTHORITY_LABEL: Record<string, string> = {
   TS: "Tribunal Supremo",
   TS_SALA_TERCERA: "Tribunal Supremo · Sala Tercera",
   AEAT: "Agencia Tributaria",
+  CALCULADORA: "Calculadora de HaciendaGPT · parámetros de la Ley del IRPF",
 };
 
 export function authorityLabel(authority: string | null | undefined): string | null {
@@ -171,6 +173,26 @@ const FACT_LABEL: Record<string, string> = {
   regimen_cotizacion: "Régimen de cotización",
   periodicidad_iva: "Periodicidad del IVA",
   tema_tributario: "Tema de la consulta",
+  comunidad_autonoma: "Comunidad autónoma",
+  estado_civil: "Estado civil",
+  edad: "Edad",
+  grado_discapacidad: "Grado de discapacidad (%)",
+  num_descendientes: "Hijos a cargo",
+  num_descendientes_menores_3: "Hijos menores de 3 años",
+  num_ascendientes_mayores_65: "Ascendientes a cargo mayores de 65",
+  num_ascendientes_mayores_75: "Ascendientes a cargo mayores de 75",
+  rendimiento_trabajo_bruto: "Salario bruto anual",
+  cotizaciones_seguridad_social: "Cotizaciones a la Seguridad Social",
+  retenciones: "IRPF retenido en el año",
+  rendimiento_actividad_neto: "Beneficio neto de la actividad",
+  rendimiento_alquiler_neto: "Rendimiento neto de alquileres",
+  rendimiento_capital_mobiliario: "Intereses y dividendos",
+  ganancias_patrimoniales: "Ganancias patrimoniales",
+  aportacion_plan_pensiones: "Aportación a plan de pensiones",
+  contribucion_empresa_plan_pensiones: "Aportación de la empresa al plan",
+  donativos: "Donativos",
+  pagos_vivienda_habitual_pre2013: "Pagos de hipoteca (vivienda anterior a 2013)",
+  gastos_guarderia: "Gastos de guardería",
 };
 
 // Enum values the backend stores as ASCII slugs.
@@ -184,9 +206,25 @@ const VALUE_LABEL: Record<string, string> = {
   estimacion_directa_simplificada: "Estimación directa simplificada",
   estimacion_objetiva: "Estimación objetiva (módulos)",
   modulos: "Estimación objetiva (módulos)",
+  pareja_de_hecho: "Pareja de hecho",
 };
 
-const MONEY_FACTS = new Set(["importe_renta_aproximado", "volumen_facturacion"]);
+const MONEY_FACTS = new Set([
+  "importe_renta_aproximado",
+  "volumen_facturacion",
+  "rendimiento_trabajo_bruto",
+  "cotizaciones_seguridad_social",
+  "retenciones",
+  "rendimiento_actividad_neto",
+  "rendimiento_alquiler_neto",
+  "rendimiento_capital_mobiliario",
+  "ganancias_patrimoniales",
+  "aportacion_plan_pensiones",
+  "contribucion_empresa_plan_pensiones",
+  "donativos",
+  "pagos_vivienda_habitual_pre2013",
+  "gastos_guarderia",
+]);
 const EUR = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
 /** "tipo_renta" → "Tipo de renta"; unknown names are de-snake-cased. */
@@ -236,8 +274,7 @@ const FACT_INPUT: Record<string, FactInput> = {
   categoria_contribuyente: choice(["asalariado", "autonomo", "pensionista", "sociedad", "estudiante", "desempleado"]),
   regimen_tributario: choice(["estimacion_directa_normal", "estimacion_directa_simplificada", "estimacion_objetiva"]),
   periodicidad_iva: choice(["trimestral", "mensual"]),
-  importe_renta_aproximado: { kind: "money" },
-  volumen_facturacion: { kind: "money" },
+  estado_civil: choice(["soltero", "casado", "pareja_de_hecho", "separado", "divorciado", "viudo"]),
   plantilla: { kind: "number" },
 };
 
@@ -253,6 +290,7 @@ const YES_NO: FactInput = {
  *  a number box for amounts, free text otherwise. */
 export function factInput(fact: Pick<Fact, "name" | "value">): FactInput {
   if (typeof fact.value === "boolean") return YES_NO;
+  if (MONEY_FACTS.has(fact.name)) return { kind: "money" };
   const known = FACT_INPUT[fact.name];
   if (known) {
     // A stored value outside the list (e.g. a country code) must stay editable as text.
