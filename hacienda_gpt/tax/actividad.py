@@ -138,6 +138,9 @@ class ResultadoActividad(BaseModel):
     rendimiento_neto_reducido: Decimal
     # The value for IRPFInput.rendimiento_actividad_neto (= rendimiento_neto_reducido).
     rendimiento_actividad_neto: Decimal
+    # Whether last year's turnover allows the simplified method ("no supere" the limit of art. 30.1 LIRPF);
+    # None when ``cifra_negocios_ano_anterior`` was not given.
+    modalidad_simplificada_aplicable: bool | None = None
     lineas: list[Linea]
     avisos: list[str]
     parametros_no_verificados: list[str]
@@ -229,6 +232,121 @@ def cumple_supuesto_d_retencion(
     return (
         integros_actividades_letra_d < r.supuesto_d_limite_ingresos
         and integros_actividades_letra_d > r.supuesto_d_min_proporcion * integros_actividades_y_trabajo
+    )
+
+
+class RetencionProfesionalInput(BaseModel):
+    """Who issues the invoice, for the withholding rate of art. 95.1 RIRPF."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    ejercicio: int
+    # The taxpayer states that the start-up rate applies (period of the start or the following ones the
+    # article allows, no professional activity in the year before the start, payer informed).
+    inicio_actividad: bool = False
+    # One of the cases of the fourth paragraph of art. 95.1 (letters a to d).
+    supuesto: SupuestoRetencion | None = None
+    # The income is entitled to the deduction of art. 68.4 LIRPF (Ceuta or Melilla): the rate is cut.
+    ceuta_melilla: bool = False
+    # Letter d), both of the PREVIOUS year: gross income of the activities of that letter, and gross income
+    # from economic activities plus work. Both or neither; with them the figures of the letter are checked.
+    integros_actividades_letra_d: Decimal | None = Field(default=None, ge=0)
+    integros_actividades_y_trabajo: Decimal | None = Field(default=None, ge=0)
+
+    @model_validator(mode="after")
+    def _coherencia(self) -> RetencionProfesionalInput:
+        letra_d, total = self.integros_actividades_letra_d, self.integros_actividades_y_trabajo
+        if (letra_d is None) != (total is None):
+            raise ValueError(
+                "Para comprobar la letra d) del art. 95.1 RIRPF hacen falta las dos cifras del año anterior: los "
+                "rendimientos íntegros de esas actividades y los de actividades económicas y del trabajo."
+            )
+        if letra_d is not None and total is not None and letra_d > total:
+            raise ValueError(
+                "Los rendimientos íntegros de las actividades de la letra d) forman parte de los de actividades "
+                "económicas y del trabajo: no pueden superarlos."
+            )
+        return self
+
+
+class ResultadoRetencionProfesional(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    ejercicio: int
+    # The rate as a fraction (0.15) and in percentage points (15), so that a rate such as 2.8 % survives a
+    # rounding to the cent.
+    tipo: Decimal
+    tipo_porcentaje: Decimal
+    # Whether the figures of letter d) hold; None when they were not given.
+    cumple_supuesto_d: bool | None = None
+    avisos: list[str]
+    parametros_no_verificados: list[str]
+    fuente: str
+
+
+def calcular_retencion_profesional(
+    inp: RetencionProfesionalInput, params: AutonomosParams | None = None
+) -> ResultadoRetencionProfesional:
+    """Withholding rate a professional puts on an invoice (art. 95.1 RIRPF), with what was not checked."""
+    p = params or load_autonomos_params(inp.ejercicio)
+    r = p.retencion_profesionales
+    t = Traza()
+    t.usa(r.fuente)
+    cumple: bool | None = None
+    if inp.integros_actividades_letra_d is not None and inp.integros_actividades_y_trabajo is not None:
+        cumple = cumple_supuesto_d_retencion(p, inp.integros_actividades_letra_d, inp.integros_actividades_y_trabajo)
+    cifras_d = (
+        f"rendimientos íntegros de esas actividades en el año anterior inferiores a {r.supuesto_d_limite_ingresos} € "
+        f"y de más del {r.supuesto_d_min_proporcion * 100:.0f} % de la suma de los de actividades económicas y del "
+        "trabajo"
+    )
+    supuesto = inp.supuesto
+    if supuesto == "actividad_ingresos_reducidos":
+        if cumple is False:
+            supuesto = None
+            t.aviso(
+                f"No se cumplen las cifras de la letra d) del art. 95.1 RIRPF ({cifras_d}): no se aplica su tipo, "
+                "sino el que corresponde sin ese supuesto."
+            )
+        else:
+            if cumple is None:
+                t.aviso(
+                    f"Tipo de la letra d) del art. 95.1 RIRPF aplicado sin comprobar sus cifras ({cifras_d}): indica "
+                    "esos importes del año anterior para comprobarlas."
+                )
+            t.aviso(
+                "La letra d) del art. 95.1 RIRPF solo alcanza a las actividades de los grupos y agrupaciones del IAE "
+                "que enumera y a ciertos servicios de artistas y técnicos de las artes escénicas, audiovisuales y "
+                "musicales, y exige comunicarlo por escrito al pagador; no se comprueba."
+            )
+    elif supuesto is not None:
+        t.aviso(
+            "Tipo del cuarto párrafo del art. 95.1 RIRPF aplicado porque has indicado que el perceptor es "
+            f"«{supuesto.replace('_', ' ')}»; no se comprueba."
+        )
+    if inp.inicio_actividad and supuesto is None:
+        t.aviso(
+            "Tipo de inicio de actividad aplicado porque lo has indicado: el art. 95.1 RIRPF lo limita al período de "
+            "inicio y a los siguientes que señala, exige no haber ejercido actividad profesional alguna en el año "
+            "anterior al inicio y comunicarlo por escrito al pagador. No se comprueba."
+        )
+    if inp.ceuta_melilla:
+        t.aviso(
+            f"Tipo reducido en un {r.reduccion_ceuta_melilla * 100:.0f} % porque has indicado que los rendimientos "
+            "tienen derecho a la deducción del art. 68.4 LIRPF (Ceuta o Melilla); no se comprueba."
+        )
+    for aviso in r.avisos:
+        t.aviso(aviso)
+    tipo = tipo_retencion_profesional(p, inp.inicio_actividad, supuesto=supuesto, ceuta_melilla=inp.ceuta_melilla)
+    t.cerrar()
+    return ResultadoRetencionProfesional(
+        ejercicio=inp.ejercicio,
+        tipo=tipo,
+        tipo_porcentaje=tipo * 100,
+        cumple_supuesto_d=cumple,
+        avisos=t.avisos,
+        parametros_no_verificados=t.no_verificados,
+        fuente=p.fuente_texto("BOE-A-2007-6820", "BOE-A-2006-20764"),
     )
 
 
@@ -419,13 +537,19 @@ def calcular_rendimiento_actividad(inp: ActividadInput, params: AutonomosParams 
         "Cálculo para estimación directa simplificada, con todas las actividades del contribuyente sumadas y en "
         "tributación individual. No se calculan la estimación objetiva (módulos) ni la estimación directa normal."
     )
-    if inp.cifra_negocios_ano_anterior is None:
+    # The limit is either printed (not checked) or compared: every result relies on it.
+    t.usa(eds.fuente)
+    simplificada = (
+        None
+        if inp.cifra_negocios_ano_anterior is None
+        else inp.cifra_negocios_ano_anterior <= eds.limite_cifra_negocios
+    )
+    if simplificada is None:
         t.aviso(
             f"La modalidad simplificada exige que la cifra de negocios del año anterior no supere "
             f"{eds.limite_cifra_negocios} € y no haber renunciado a ella; no se ha comprobado."
         )
-    elif inp.cifra_negocios_ano_anterior > eds.limite_cifra_negocios:
-        t.usa(eds.fuente)
+    elif not simplificada:
         t.aviso(
             f"La cifra de negocios del año anterior supera {eds.limite_cifra_negocios} €: no corresponde la modalidad "
             f"simplificada sino la normal ({eds.fuente.referencia}), en la que no existe el porcentaje de gastos de "
@@ -473,6 +597,7 @@ def calcular_rendimiento_actividad(inp: ActividadInput, params: AutonomosParams 
         reduccion_aplicada=reduccion_aplicada,
         rendimiento_neto_reducido=reducido,
         rendimiento_actividad_neto=reducido,
+        modalidad_simplificada_aplicable=simplificada,
         lineas=t.lineas,
         avisos=t.avisos,
         parametros_no_verificados=t.no_verificados,

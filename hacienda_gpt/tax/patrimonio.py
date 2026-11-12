@@ -162,6 +162,8 @@ class ResultadoPatrimonio(BaseModel):
     obligado_a_declarar: bool
     motivo_obligacion: str
 
+    # Whether the ITSGF applies to this accrual (art. 3.Veintiocho Ley 38/2022 and its extension).
+    itsgf_vigente: bool
     # None = the ITSGF is not in force for this year.
     itsgf: ResultadoITSGF | None
     # Wealth tax plus ITSGF.
@@ -415,6 +417,8 @@ def calcular_patrimonio(inp: PatrimonioInput, params: PatrimonioParams | None = 
     # 6 (first half). ITSGF quota: needed before the regional allowance.
     g = p.itsgf
     vigente = g.vigencia.vigente
+    # Whether there is an ITSGF at all is decided by this flag in every result.
+    t.usa(g.vigencia.fuente)
     itsgf_sujeto = False
     itsgf_minimo = itsgf_base_liquidable = itsgf_cuota = itsgf_reduccion = itsgf_tras_limite = ZERO
     # Same limit under the other reading of art. 3.Doce (only the part of the wealth-tax quota open to limitation).
@@ -480,6 +484,8 @@ def calcular_patrimonio(inp: PatrimonioInput, params: PatrimonioParams | None = 
                     -itsgf_reduccion,
                     g.limite_conjunto.fuente,
                 )
+            # The deduction of art. 3.Quince is applied (possibly as zero) whenever the taxpayer is subject.
+            t.usa(g.deduccion_patrimonio.fuente)
             if deduccion:
                 t.linea(
                     "ITSGF: deducción de la cuota del Impuesto sobre el Patrimonio",
@@ -487,7 +493,6 @@ def calcular_patrimonio(inp: PatrimonioInput, params: PatrimonioParams | None = 
                     g.deduccion_patrimonio.fuente,
                 )
             t.linea("ITSGF: cuota a ingresar", itsgf_a_ingresar, "art. 3 Ley 38/2022")
-            t.usa(g.vigencia.fuente)
             t.aviso(
                 "El Impuesto Temporal de Solidaridad de las Grandes Fortunas sigue aplicándose por la prórroga de la "
                 "disposición adicional 5.ª del Real Decreto-ley 8/2023 («en tanto no se produzca la revisión de la "
@@ -593,6 +598,7 @@ def calcular_patrimonio(inp: PatrimonioInput, params: PatrimonioParams | None = 
         cuota_a_ingresar=_round(cuota_a_ingresar),
         obligado_a_declarar=obligado,
         motivo_obligacion=motivo,
+        itsgf_vigente=vigente,
         itsgf=itsgf,
         total_a_ingresar=_round(cuota_a_ingresar + itsgf_a_ingresar),
         aplicable_2025=p.aplicable_2025 and comunidad.aplicable_2025,

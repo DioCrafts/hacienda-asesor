@@ -230,6 +230,9 @@ class ResultadoSociedades(BaseModel):
     # Positive: to pay. Negative: refund.
     cuota_diferencial: Decimal
     tipo_medio: Decimal  # cuota íntegra / base imponible tras nivelación, in %
+    # Whether the turnover of the 12 months before the period reaches the threshold of the minimum tax of
+    # art. 30 bis LIS — which is NOT computed: only said. None when no turnover was given.
+    tributacion_minima_aplicable: bool | None = None
     lineas: list[Linea]
     avisos: list[str]
     parametros_no_verificados: list[str]
@@ -540,8 +543,12 @@ def calcular_sociedades(inp: SociedadesInput, params: SociedadesParams | None = 
     t.linea("Cuota diferencial (a ingresar si es positiva, a devolver si es negativa)", diferencial, "art. 41 LIS")
 
     umbral_minima = p.tributacion_minima.umbral_cifra_negocios
-    if cifra_12 is not None and cifra_12 >= umbral_minima:
+    minima: bool | None = None
+    if cifra_12 is not None:
+        # The threshold decides the answer either way.
         t.usa(p.tributacion_minima.fuente)
+        minima = cifra_12 >= umbral_minima
+    if minima:
         t.aviso(
             f"Con una cifra de negocios de al menos {_eur(umbral_minima)} euros se aplica la tributación mínima del "
             "art. 30 bis LIS, que este cálculo NO tiene en cuenta: la cuota líquida puede ser mayor."
@@ -571,6 +578,7 @@ def calcular_sociedades(inp: SociedadesInput, params: SociedadesParams | None = 
         cuota_liquida=_round(cuota_liquida),
         cuota_diferencial=diferencial,
         tipo_medio=_round(cuota_integra / liquidable * _CIEN) if liquidable > 0 else ZERO,
+        tributacion_minima_aplicable=minima,
         lineas=t.lineas,
         avisos=t.avisos,
         parametros_no_verificados=t.no_verificados,
@@ -910,8 +918,12 @@ def _avisos_cotizaciones(inp: ComparacionInput) -> list[str]:
     return avisos
 
 
-def comparar_autonomo_vs_sociedad(inp: ComparacionInput) -> ComparacionResult:
-    """Taxes on the same profit as self-employed (a) and through a company (b). No verdict."""
+def comparar_autonomo_vs_sociedad(inp: ComparacionInput, params: SociedadesParams | None = None) -> ComparacionResult:
+    """Taxes on the same profit as self-employed (a) and through a company (b). No verdict.
+
+    ``params``: the corporate tax parameters to use (by default, those of ``inp.ejercicio``); the IRPF side always
+    uses the IRPF parameters of the year.
+    """
     cot_empresa = inp.cotizaciones_empresa or ZERO
     cot_socio = inp.cotizaciones_socio or ZERO
     cuota_reta = inp.cuota_autonomos or ZERO
@@ -920,7 +932,7 @@ def comparar_autonomo_vs_sociedad(inp: ComparacionInput) -> ComparacionResult:
             "El salario (más las cotizaciones a cargo de la sociedad) no puede superar el beneficio antes de la "
             "retribución del socio."
         )
-    p = load_sociedades_params(inp.ejercicio)
+    p = params or load_sociedades_params(inp.ejercicio)
     ci = p.comparacion_irpf
     t = Traza()
     t.usa(ci.fuente)

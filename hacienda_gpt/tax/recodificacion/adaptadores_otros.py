@@ -21,7 +21,9 @@ Limits that are stated to the operator instead of hidden:
 * the loop reads the articles and provisions of ONE law. A group may also rest on quotes of another law, of a
   preamble or of a ministerial order: those quotes are *inherited* untouched, a figure that only they print cannot
   change, and a proposal for such a group is always left to a person;
-* a group no calculator turns into an amount has no test cases: it is always left to a person as well.
+* a group no calculator turns into an amount has no test cases: it is always left to a person as well. Today
+  only the two figure-less rules of the inheritance tax that the calculator explains but does not apply (which
+  community's law applies, and the accumulation of earlier gifts) are such groups.
 """
 
 from __future__ import annotations
@@ -134,8 +136,11 @@ class Familia:
     # Prefix the self-check gives to the problems of the group at a path.
     prefijo: Callable[[Sequence[str]], str]
     calculos: dict[str, Calculo]
-    # Names of the group models no calculator turns into an amount.
+    # Names of the group models no calculator turns into an amount: always left to a person.
     sin_evaluador: frozenset[str]
+    # Group model name -> which calculator and result line make ITS figures decide a case, for the reviewer (only
+    # where the line is not one of the obvious amounts).
+    pistas: dict[str, str] = field(default_factory=dict)
     # "fin": the tax accrues at the end of the year (or on a day within it); "inicio": the file holds what applies
     # to periods STARTING in its year.
     devengo: Literal["fin", "inicio"] = "fin"
@@ -219,38 +224,6 @@ def _calculo(
     return cargar
 
 
-class RetencionInput(BaseModel):
-    """Who issues the invoice, for the withholding rate of art. 95.1 RIRPF."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    ejercicio: int
-    inicio_actividad: bool = False
-    supuesto: (
-        Literal["recaudador_municipal", "mediador_seguros", "delegado_loterias", "actividad_ingresos_reducidos"] | None
-    ) = None
-    ceuta_melilla: bool = False
-
-
-class ResultadoRetencion(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    # The rate in percentage points (15 % -> 15), so that it survives the rounding of a test case to the cent.
-    tipo_porcentaje: Decimal
-
-
-def _retencion() -> tuple[type[BaseModel], Callable[[Any, Any], Any]]:
-    from hacienda_gpt.tax.actividad import tipo_retencion_profesional
-
-    def calcular(inp: RetencionInput, params: Any) -> ResultadoRetencion:
-        tipo = tipo_retencion_profesional(
-            params, inp.inicio_actividad, supuesto=inp.supuesto, ceuta_melilla=inp.ceuta_melilla
-        )
-        return ResultadoRetencion(tipo_porcentaje=tipo * 100)
-
-    return RetencionInput, calcular
-
-
 def _problemas(comprobar: Callable[..., list[str]]) -> Callable[[Any, Sequence[str] | None], list[str]]:
     return lambda params, ruta: comprobar(params, None)
 
@@ -314,17 +287,30 @@ AUTONOMOS = Familia(
     calculos={
         "rendimiento_actividad": Calculo(
             _calculo("actividad", "ActividadInput", "calcular_rendimiento_actividad"),
-            "net income of the activity for the year (estimación directa simplificada): hard-to-justify expenses and "
-            "the reductions of art. 32 LIRPF",
+            "net income of the activity for the year (estimación directa simplificada): hard-to-justify expenses, "
+            "the reductions of art. 32 LIRPF, and whether last year's turnover allows the simplified method "
+            "(`modalidad_simplificada_aplicable`, 1/0)",
         ),
         "modelo_130": Calculo(
             _calculo("pagos_fraccionados", "Modelo130Input", "calcular_modelo_130"),
             "quarterly payment on account (modelo 130)",
         ),
         "modelo_303": Calculo(_calculo("iva", "Modelo303Input", "calcular_modelo_303"), "quarterly VAT return"),
-        "retencion_profesional": Calculo(_retencion, "withholding rate a professional puts on an invoice"),
+        "retencion_profesional": Calculo(
+            _calculo("actividad", "RetencionProfesionalInput", "calcular_retencion_profesional"),
+            "withholding rate a professional puts on an invoice (`tipo_porcentaje`: 15 % -> 15) and whether the "
+            "figures of letter d) hold (`cumple_supuesto_d`, 1/0)",
+        ),
     },
-    sin_evaluador=frozenset({"EstimacionDirectaSimplificada"}),
+    sin_evaluador=frozenset(),
+    pistas={
+        "EstimacionDirectaSimplificada": "`rendimiento_actividad` with `cifra_negocios_ano_anterior` exactly at the "
+        "limit, just below and just above it; result line `modalidad_simplificada_aplicable` (1: the simplified "
+        "method is available, 0: it is not).",
+        "RetencionProfesionales": "`retencion_profesional`; result line `tipo_porcentaje` (with `inicio_actividad`, "
+        "`supuesto`, `ceuta_melilla`), and `cumple_supuesto_d` with `integros_actividades_letra_d` and "
+        "`integros_actividades_y_trabajo` of the previous year at and around both figures of letter d).",
+    },
     leer_cifra=lambda literal, ruta: autonomos_mod.cifra_a_decimal(literal),
     hojas=autonomos_mod._hojas,
     limpiar=autonomos_mod.load_autonomos_params.cache_clear,
@@ -405,14 +391,27 @@ SOCIEDADES = Familia(
     calculos={
         "impuesto_sociedades": Calculo(
             _calculo("sociedades", "SociedadesInput", "calcular_sociedades"),
-            "corporate tax of a period: reductions of the base, rate by kind of company, quota",
+            "corporate tax of a period: reductions of the base, rate by kind of company, quota, and whether the "
+            "turnover reaches the threshold of the minimum tax of art. 30 bis (`tributacion_minima_aplicable`, 1/0; "
+            "the minimum tax itself is not computed)",
         ),
         "pago_fraccionado": Calculo(
             _calculo("sociedades", "PagoFraccionadoSociedadesInput", "calcular_pago_fraccionado_sociedades"),
             "instalment payment (modelo 202)",
         ),
+        "comparacion_autonomo_sociedad": Calculo(
+            _calculo("sociedades", "ComparacionInput", "comparar_autonomo_vs_sociedad"),
+            "the same profit earned as self-employed or through a company paying a salary and a dividend: IRPF of "
+            "each option, corporate tax, and the withholding on the dividend (`retencion_dividendo`)",
+        ),
     },
-    sin_evaluador=frozenset({"ComparacionIRPF", "TributacionMinima"}),
+    sin_evaluador=frozenset(),
+    pistas={
+        "ComparacionIRPF": "`comparacion_autonomo_sociedad` with an explicit `salario` and `dividendo`; result line "
+        "`retencion_dividendo` (the withholding on that dividend).",
+        "TributacionMinima": "`impuesto_sociedades` with `cifra_negocios_12_meses_anteriores` exactly at the "
+        "threshold, just below and just above it; result line `tributacion_minima_aplicable` (1/0).",
+    },
     devengo="inicio",
     leer_cifra=lambda literal, ruta: sociedades_mod.cifra_a_decimal(literal),
     hojas=sociedades_mod._hojas,
@@ -465,10 +464,19 @@ PATRIMONIO = Familia(
     calculos={
         "patrimonio": Calculo(
             _patrimonio,
-            "wealth tax and ITSGF of one taxpayer in a community (`comunidad` defaults to the group's community)",
+            "wealth tax and ITSGF of one taxpayer in a community (`comunidad` defaults to the group's community; a "
+            "group of the State or of the ITSGF needs it)",
         )
     },
-    sin_evaluador=frozenset({"VigenciaITSGF", "_Grupo"}),
+    sin_evaluador=frozenset(),
+    pistas={
+        "VigenciaITSGF": "`patrimonio` (give `comunidad`); result line `itsgf_vigente` (1: the ITSGF applies to this "
+        "year's accrual, 0: it does not), or `total_a_ingresar` for a net wealth above the ITSGF threshold.",
+        # The figure-less group of art. 3.Quince Ley 38/2022 (``itsgf.deduccion_patrimonio``).
+        "_Grupo": "`patrimonio` with a net wealth above the ITSGF threshold, in a community with no allowance on the "
+        "wealth tax and in one whose allowance waives all of it whatever the ITSGF (nothing paid, nothing to "
+        "deduct); result line `itsgf.deduccion_patrimonio` (or `itsgf.cuota_a_ingresar`).",
+    },
     leer_cifra=patrimonio_mod.cifra_a_decimal,
     hojas=patrimonio_mod._hojas,
     limpiar=patrimonio_mod.load_patrimonio_params.cache_clear,
@@ -565,6 +573,10 @@ ISD = Familia(
             "`parentesco` or `grupo`, `edad`, `valor_recibido`…)",
         )
     },
+    # The two figure-less state rules (``estatal.puntos_conexion``, art. 32 Ley 22/2009, and ``estatal.acumulacion``,
+    # art. 30 Ley 29/1987) are prose the calculator shows, not rules it applies: the beneficiary's community is an
+    # input, and earlier gifts are not accumulated. A case run through the calculator would not depend on them, so
+    # they stay with a person.
     sin_evaluador=frozenset({"_Regla"}),
     limpiar=isd_mod.load_isd_params.cache_clear,
 )
@@ -787,10 +799,13 @@ class GrupoConEvidencia(Adaptador):
                 f"- `{nombre}` — {calculo.que}. Inputs: {', '.join(c for c in entrada.model_fields if c != 'ejercicio')}."
             )
         partes.append(
-            "A result line is a numeric field of the calculator's result (for example `cuota_integra`, "
+            "A result line is a numeric or yes/no field of the calculator's result (for example `cuota_integra`, "
             "`cuota_a_ingresar`, `gastos_dificil_justificacion`, `a_ingresar`, `itsgf.cuota_a_ingresar`) or "
             '"linea:<concepto>" for a line of its trace.'
         )
+        pista = self.familia.pistas.get(self.modelo.__name__)
+        if pista:
+            partes.append(f"For THIS group: {pista}")
         return "\n".join(partes)
 
     # -- composing the group --------------------------------------------- #
