@@ -181,19 +181,27 @@ class RulesEngine:
         if actual_value is None:
             return False
         if op is ConditionOperator.EQ:
-            return actual_value == expected
+            equal: bool = actual_value == expected
+            return equal
         if op is ConditionOperator.NEQ:
-            return actual_value != expected
+            different: bool = actual_value != expected
+            return different
         if op is ConditionOperator.IN:
             return isinstance(expected, list) and actual_value in expected
         if op is ConditionOperator.GTE:
             try:
-                return float(actual_value) >= float(expected)
+                actual = float(actual_value)
+                if expected is None or isinstance(expected, list):
+                    return False  # float() would raise TypeError, caught below
+                return actual >= float(expected)
             except (TypeError, ValueError):
                 return False
         if op is ConditionOperator.LTE:
             try:
-                return float(actual_value) <= float(expected)
+                actual = float(actual_value)
+                if expected is None or isinstance(expected, list):
+                    return False  # float() would raise TypeError, caught below
+                return actual <= float(expected)
             except (TypeError, ValueError):
                 return False
         return False

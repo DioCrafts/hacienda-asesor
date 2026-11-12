@@ -24,6 +24,7 @@ any warning.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 import hashlib
@@ -272,7 +273,7 @@ def diff_files_against_manifest(
     manifest: Manifest | None,
     content_dir: Path,
     *,
-    strategy_for: callable | None = None,  # type: ignore[type-arg]
+    strategy_for: Callable[[str], str | None] | None = None,
 ) -> FileDiff:
     """Three-way diff between disk state and manifest state.
 

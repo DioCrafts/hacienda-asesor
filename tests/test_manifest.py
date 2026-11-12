@@ -8,14 +8,13 @@ Docling, or any embedder.
 
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime
+import json
 from pathlib import Path
 
 import pytest
 
 from hacienda_gpt.processor import manifest as mf
-
 
 # --------------------------------------------------------------------------- #
 # Hashing + fingerprint
@@ -138,7 +137,10 @@ def test_load_manifest_rejects_unknown_schema_version(tmp_path: Path, caplog: py
     (tmp_path / mf.MANIFEST_FILENAME).write_text(json.dumps(payload), encoding="utf-8")
     with caplog.at_level("WARNING"):
         assert mf.load_manifest(tmp_path) is None
-    assert any("Unsupported manifest schema_version" in record.message or "Could not load manifest" in record.message for record in caplog.records)
+    assert any(
+        "Unsupported manifest schema_version" in record.message or "Could not load manifest" in record.message
+        for record in caplog.records
+    )
 
 
 def test_save_manifest_is_atomic(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -209,12 +211,18 @@ def test_diff_detects_unchanged_files(tmp_path: Path) -> None:
         updated_at="now",
         files={
             "x.html": mf.FileEntry(
-                sha256=sha, size_bytes=size, n_chunks=1, chunk_ids=["x-0"], ingested_at="now",
+                sha256=sha,
+                size_bytes=size,
+                n_chunks=1,
+                chunk_ids=["x-0"],
+                ingested_at="now",
             ),
         },
     )
     diff = mf.diff_files_against_manifest(
-        current_files=[str(file)], manifest=manifest, content_dir=tmp_path,
+        current_files=[str(file)],
+        manifest=manifest,
+        content_dir=tmp_path,
     )
     assert diff.unchanged == [str(file)]
     assert diff.new == []
@@ -235,14 +243,20 @@ def test_diff_detects_modified_file_by_content_when_size_matches(tmp_path: Path)
         updated_at="now",
         files={
             "x.html": mf.FileEntry(
-                sha256=sha, size_bytes=size, n_chunks=1, chunk_ids=["x-0"], ingested_at="now",
+                sha256=sha,
+                size_bytes=size,
+                n_chunks=1,
+                chunk_ids=["x-0"],
+                ingested_at="now",
             ),
         },
     )
     # Same size, different bytes.
     f.write_bytes(b"hellp")
     diff = mf.diff_files_against_manifest(
-        current_files=[str(f)], manifest=manifest, content_dir=tmp_path,
+        current_files=[str(f)],
+        manifest=manifest,
+        content_dir=tmp_path,
     )
     assert diff.modified == [str(f)]
     assert diff.unchanged == []
@@ -259,7 +273,11 @@ def test_diff_detects_modified_by_size_without_hashing(tmp_path: Path, monkeypat
         updated_at="now",
         files={
             "x.html": mf.FileEntry(
-                sha256="z" * 64, size_bytes=999_999, n_chunks=1, chunk_ids=["x-0"], ingested_at="now",
+                sha256="z" * 64,
+                size_bytes=999_999,
+                n_chunks=1,
+                chunk_ids=["x-0"],
+                ingested_at="now",
             ),
         },
     )
@@ -272,7 +290,9 @@ def test_diff_detects_modified_by_size_without_hashing(tmp_path: Path, monkeypat
 
     monkeypatch.setattr(mf, "compute_file_hash", spy_hash)
     diff = mf.diff_files_against_manifest(
-        current_files=[str(f)], manifest=manifest, content_dir=tmp_path,
+        current_files=[str(f)],
+        manifest=manifest,
+        content_dir=tmp_path,
     )
     assert diff.modified == [str(f)]
     assert hash_calls == [], "size mismatch must short-circuit the hash"
@@ -288,15 +308,25 @@ def test_diff_detects_new_and_removed_files(tmp_path: Path) -> None:
         updated_at="now",
         files={
             "a.html": mf.FileEntry(
-                sha256=sha_a, size_bytes=size_a, n_chunks=1, chunk_ids=["a-0"], ingested_at="now",
+                sha256=sha_a,
+                size_bytes=size_a,
+                n_chunks=1,
+                chunk_ids=["a-0"],
+                ingested_at="now",
             ),
             "c.html": mf.FileEntry(
-                sha256="ff" * 32, size_bytes=10, n_chunks=2, chunk_ids=["c-0", "c-1"], ingested_at="now",
+                sha256="ff" * 32,
+                size_bytes=10,
+                n_chunks=2,
+                chunk_ids=["c-0", "c-1"],
+                ingested_at="now",
             ),
         },
     )
     diff = mf.diff_files_against_manifest(
-        current_files=[str(p) for p in paths.values()], manifest=manifest, content_dir=tmp_path,
+        current_files=[str(p) for p in paths.values()],
+        manifest=manifest,
+        content_dir=tmp_path,
     )
     assert diff.unchanged == [str(paths["a.html"])]
     assert diff.new == [str(paths["b.html"])]
@@ -319,7 +349,9 @@ def test_diff_handles_file_vanishing_between_discover_and_diff(tmp_path: Path) -
     )
     current = [str(f), str(tmp_path / "ghost.html")]  # ghost.html doesn't exist
     diff = mf.diff_files_against_manifest(
-        current_files=current, manifest=manifest, content_dir=tmp_path,
+        current_files=current,
+        manifest=manifest,
+        content_dir=tmp_path,
     )
     # The ghost file was new on disk but vanished — should not appear anywhere.
     assert str(tmp_path / "ghost.html") not in diff.new + diff.modified + diff.removed + diff.unchanged
@@ -337,7 +369,11 @@ def test_update_manifest_full_rebuild_replaces_everything(tmp_path: Path) -> Non
     rewrite from `new_entries`."""
     new_entries = {
         "z.html": mf.FileEntry(
-            sha256="z" * 64, size_bytes=10, n_chunks=1, chunk_ids=["z-0"], ingested_at="now",
+            sha256="z" * 64,
+            size_bytes=10,
+            n_chunks=1,
+            chunk_ids=["z-0"],
+            ingested_at="now",
         ),
     }
     result = mf.update_manifest_after_run(
@@ -358,10 +394,18 @@ def test_update_manifest_incremental_preserves_unchanged_drops_removed_adds_new(
         updated_at="t0",
         files={
             "stable.html": mf.FileEntry(
-                sha256="s" * 64, size_bytes=10, n_chunks=1, chunk_ids=["s-0"], ingested_at="t0",
+                sha256="s" * 64,
+                size_bytes=10,
+                n_chunks=1,
+                chunk_ids=["s-0"],
+                ingested_at="t0",
             ),
             "gone.html": mf.FileEntry(
-                sha256="g" * 64, size_bytes=10, n_chunks=2, chunk_ids=["g-0", "g-1"], ingested_at="t0",
+                sha256="g" * 64,
+                size_bytes=10,
+                n_chunks=2,
+                chunk_ids=["g-0", "g-1"],
+                ingested_at="t0",
             ),
         },
     )
@@ -374,7 +418,11 @@ def test_update_manifest_incremental_preserves_unchanged_drops_removed_adds_new(
     )
     new_entries = {
         "new.html": mf.FileEntry(
-            sha256="n" * 64, size_bytes=20, n_chunks=3, chunk_ids=["n-0", "n-1", "n-2"], ingested_at="t1",
+            sha256="n" * 64,
+            size_bytes=20,
+            n_chunks=3,
+            chunk_ids=["n-0", "n-1", "n-2"],
+            ingested_at="t1",
         ),
     }
     result = mf.update_manifest_after_run(

@@ -54,7 +54,8 @@ def _http_get(url: str, *, retries: int = 2, backoff_s: float = 1.0) -> bytes:
         req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
         try:
             with urllib.request.urlopen(req, timeout=30) as response:
-                return response.read()
+                body: bytes = response.read()
+                return body
         except (HTTPError, URLError, TimeoutError) as exc:
             last = exc
             logger.warning("Attempt %d for %s failed: %s", attempt + 1, url, exc)

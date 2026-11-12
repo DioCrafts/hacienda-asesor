@@ -12,12 +12,11 @@ integración" of ``docs/incremental_indexing_plan.md``.
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-import pytest
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+import pytest
 
 from hacienda_gpt.processor import document_loader as dl
 from hacienda_gpt.processor import manifest as mf

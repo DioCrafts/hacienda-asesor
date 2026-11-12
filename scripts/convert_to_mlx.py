@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
+import sys
 
 
 def _verify_no_quantization(mlx_path: Path) -> None:

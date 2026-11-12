@@ -47,12 +47,12 @@ the file extension/size signal AND a peek that finds the canonical
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 import hashlib
 import logging
 import os
-import re
-from collections.abc import Sequence
 from pathlib import Path
+import re
 from typing import Any
 
 from langchain_core.documents import Document
@@ -115,7 +115,8 @@ class BoeConsolidadoTableStrategy(IngestStrategy):
         return bool(_BOE_TITLE_RE.search(head))
 
     def parse(self, file_path: str) -> Sequence[Document]:
-        from lxml import etree, html as lxml_html
+        from lxml import etree
+        from lxml import html as lxml_html
 
         from hacienda_gpt.processor.strategies.default import (
             _stable_chunk_id_for,
@@ -144,9 +145,7 @@ class BoeConsolidadoTableStrategy(IngestStrategy):
                 klass = elem.get("class") or ""
                 if "bloque" in klass.split():
                     # Serialise this block in isolation.
-                    bloque_html_fragments.append(
-                        lxml_html.tostring(elem, encoding="unicode", method="html")
-                    )
+                    bloque_html_fragments.append(lxml_html.tostring(elem, encoding="unicode", method="html"))
                 # Free the parsed subtree regardless of whether we kept
                 # it — without this, iterparse retains the whole tree.
                 elem.clear()
@@ -167,8 +166,7 @@ class BoeConsolidadoTableStrategy(IngestStrategy):
 
         if not bloque_html_fragments:
             logger.warning(
-                "BOE split: no <div class='bloque'> found in %s — "
-                "falling back to default Docling path.",
+                "BOE split: no <div class='bloque'> found in %s — " "falling back to default Docling path.",
                 file_path,
             )
             from hacienda_gpt.processor.strategies.default import parse_with_default
@@ -264,7 +262,8 @@ def _split_block_tables(block_html: str) -> list[str]:
     Implementation uses lxml DOM ops over **just the block's HTML** —
     safe because a block is at most a few MB even in pathological files.
     """
-    from lxml import etree, html as lxml_html
+    from lxml import etree
+    from lxml import html as lxml_html
 
     try:
         root = lxml_html.fragment_fromstring(block_html, create_parent="div")
@@ -272,9 +271,7 @@ def _split_block_tables(block_html: str) -> list[str]:
         logger.warning("Could not re-parse a BOE block (%s); emitting as-is.", exc)
         return [block_html]
 
-    big_tables = [
-        t for t in root.iter("table") if _count_rows(t) > MAX_ROWS_PER_TABLE
-    ]
+    big_tables = [t for t in root.iter("table") if _count_rows(t) > MAX_ROWS_PER_TABLE]
     if not big_tables:
         # Block is small enough to feed Docling whole.
         return [block_html]
@@ -308,12 +305,11 @@ def _split_table(table) -> list[str]:
     :data:`MAX_ROWS_PER_TABLE` rows each, each wrapped in a fresh
     ``<table>`` carrying the original ``<thead>`` so the sub-table is
     self-describing."""
-    from lxml import etree, html as lxml_html
+    from lxml import etree
+    from lxml import html as lxml_html
 
     thead = table.find(".//thead")
-    rows = table.findall(".//tbody/tr") or [
-        r for r in table.findall(".//tr") if not _is_in_thead(r)
-    ]
+    rows = table.findall(".//tbody/tr") or [r for r in table.findall(".//tr") if not _is_in_thead(r)]
 
     if not rows:
         return [lxml_html.tostring(table, encoding="unicode", method="html")]
@@ -336,16 +332,12 @@ def _split_table(table) -> list[str]:
             tbody.append(_deepcopy(r))
 
         annotation = etree.Element("p")
-        annotation.text = (
-            f"[Tabla parcial: filas {chunk_start + 1}-{chunk_end} de {total}]"
-        )
+        annotation.text = f"[Tabla parcial: filas {chunk_start + 1}-{chunk_end} de {total}]"
 
         wrapper = etree.Element("div")
         wrapper.append(annotation)
         wrapper.append(new_table)
-        fragments.append(
-            lxml_html.tostring(wrapper, encoding="unicode", method="html")
-        )
+        fragments.append(lxml_html.tostring(wrapper, encoding="unicode", method="html"))
     return fragments
 
 
@@ -378,12 +370,17 @@ def _deepcopy(element):
     """Deep-copy an lxml element. ``copy.deepcopy`` doesn't preserve
     namespaces in some lxml builds — using ``fromstring(tostring(...))``
     is the canonical idiom."""
-    from lxml import etree, html as lxml_html
+    from lxml import etree
+    from lxml import html as lxml_html
 
-    return lxml_html.fragment_fromstring(
-        lxml_html.tostring(element, encoding="unicode", method="html"),
-        create_parent=False,
-    ) if isinstance(element, etree._Element) else element
+    return (
+        lxml_html.fragment_fromstring(
+            lxml_html.tostring(element, encoding="unicode", method="html"),
+            create_parent=False,
+        )
+        if isinstance(element, etree._Element)
+        else element
+    )
 
 
 def _strip_tags(html: str) -> str:

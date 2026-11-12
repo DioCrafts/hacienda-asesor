@@ -60,8 +60,7 @@ def select_strategy(file_path: str) -> IngestStrategy:
             if strategy.probe(file_path):
                 return strategy
     raise RuntimeError(
-        f"No ingest strategy claimed {file_path!r}. Ensure the default "
-        f"fallback strategy is registered last."
+        f"No ingest strategy claimed {file_path!r}. Ensure the default " f"fallback strategy is registered last."
     )
 
 

@@ -126,12 +126,14 @@ def _build_chat_history(messages: list[dict[str, str]]) -> list[HumanMessage | A
 def _ensure_case_id() -> str:
     if "case_id" not in st.session_state:
         st.session_state["case_id"] = f"case_{uuid4().hex}"
-    return st.session_state["case_id"]
+    case_id: str = st.session_state["case_id"]
+    return case_id
 
 
 def _api_create_case_if_needed() -> str:
     if "api_case_id" in st.session_state:
-        return st.session_state["api_case_id"]
+        existing: str = st.session_state["api_case_id"]
+        return existing
     payload = {
         "user_id": st.session_state.get("user_id", "streamlit_user"),
         "jurisdiction": "ES",
@@ -139,7 +141,7 @@ def _api_create_case_if_needed() -> str:
     }
     r = requests.post(f"{API_BASE_URL}/cases", json=payload, timeout=20)
     r.raise_for_status()
-    case_id = r.json()["case_id"]
+    case_id: str = r.json()["case_id"]
     st.session_state["api_case_id"] = case_id
     return case_id
 
@@ -152,7 +154,8 @@ def _api_process_turn(user_input: str, chat_history: list[dict[str, str]] | None
         timeout=30,
     )
     r.raise_for_status()
-    return r.json()
+    turn: dict = r.json()
+    return turn
 
 
 def _persist_turn_local(

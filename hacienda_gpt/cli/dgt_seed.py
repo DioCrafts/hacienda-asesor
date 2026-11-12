@@ -400,19 +400,19 @@ def cli(
         )
 
     # Counter of consecutive network failures across the *current* session.
-    # When it crosses ``_SESSION_REFRESH_THRESHOLD`` the cookie jar +
+    # When it crosses ``session_refresh_threshold`` the cookie jar +
     # connection pool are rebuilt from scratch. Tomcat (the backing
     # servlet container at petete) invalidates JSESSIONID after ~30 min
     # of inactivity, and urllib3's connection pool can hold half-closed
     # sockets that look fine on this end but are dead server-side — both
     # surface as runs of failures we can only recover from by rebuilding.
     consecutive_failures = 0
-    _SESSION_REFRESH_THRESHOLD = 3
+    session_refresh_threshold = 3
     # Exponential backoff after refresh-itself failures (petete returning
     # 502 / timing out on the bootstrap GET): 5min, 10, 20, 40, capped at
     # 60. Resets after a successful refresh.
     refresh_backoff_step = 0
-    _BACKOFF_SECONDS = (300, 600, 1200, 2400, 3600)
+    backoff_seconds = (300, 600, 1200, 2400, 3600)
 
     def _refresh_session() -> None:
         nonlocal session, consecutive_failures, refresh_backoff_step
@@ -427,7 +427,7 @@ def cli(
             refresh_backoff_step = 0
             logger.info("Session refreshed; resuming crawl.")
         except requests.RequestException as exc:
-            wait = _BACKOFF_SECONDS[min(refresh_backoff_step, len(_BACKOFF_SECONDS) - 1)]
+            wait = backoff_seconds[min(refresh_backoff_step, len(backoff_seconds) - 1)]
             logger.error(
                 "Session refresh itself failed (backoff step %d): %s — sleeping %ds",
                 refresh_backoff_step,
@@ -459,7 +459,7 @@ def cli(
                         e,
                         consecutive_failures,
                     )
-                    if consecutive_failures >= _SESSION_REFRESH_THRESHOLD:
+                    if consecutive_failures >= session_refresh_threshold:
                         _refresh_session()
                     else:
                         time.sleep(30)
@@ -509,7 +509,7 @@ def cli(
                             e,
                             consecutive_failures,
                         )
-                        if consecutive_failures >= _SESSION_REFRESH_THRESHOLD:
+                        if consecutive_failures >= session_refresh_threshold:
                             _refresh_session()
                         else:
                             time.sleep(delay)

@@ -10,13 +10,12 @@ not in CI.
 
 from __future__ import annotations
 
+from pathlib import Path
 import sys
 import types
-from pathlib import Path
 
-import pytest
 from langchain_core.documents import Document
-
+import pytest
 
 # --------------------------------------------------------------------------- #
 # Stub helpers

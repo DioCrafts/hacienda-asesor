@@ -90,7 +90,8 @@ class AgenciaTributariaWebCrawler(scrapy.Spider):
 
     def _follow_domain_links(self, response: Response) -> Generator[scrapy.Request]:
         link_extractor = LinkExtractor(allow=self.allowed_patterns, allow_domains=["sede.agenciatributaria.gob.es"])
-        for link in link_extractor.extract_links(response):
+        # Scrapy types callbacks with the base Response; pages here are HTML (TextResponse).
+        for link in link_extractor.extract_links(response):  # type: ignore[arg-type]
             yield scrapy.Request(url=link.url, meta=self._get_meta_for_request(link.url), callback=self.parse)
 
     def _generate_screenshot_path(self, url: str) -> str:
@@ -126,7 +127,8 @@ class AgenciaTributariaPDFCrawler(scrapy.Spider):
     def parse(self, response: Response) -> Generator[scrapy.Request]:
         self.seen_urls.add(response.url)
         extractor = LinkExtractor(allow_domains=[self._extract_domain_from_start_url()], unique=True)
-        for link in extractor.extract_links(response):
+        # Scrapy types callbacks with the base Response; pages here are HTML (TextResponse).
+        for link in extractor.extract_links(response):  # type: ignore[arg-type]
             if link.url in self.seen_urls:
                 continue
             self.seen_urls.add(link.url)

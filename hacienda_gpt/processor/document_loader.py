@@ -289,9 +289,7 @@ def _docling_parse_paths(file_paths: list[str]) -> list[Document]:
         # The pool initialiser must have set this. Failing loudly here
         # surfaces a configuration bug; silently rebuilding would
         # silently drop the chunker tuning (max_tokens, etc.).
-        raise RuntimeError(
-            "_WORKER_CHUNKER is not initialised — pool initialiser did not run."
-        )
+        raise RuntimeError("_WORKER_CHUNKER is not initialised — pool initialiser did not run.")
     loader = DoclingLoader(
         file_path=list(file_paths),
         export_type=ExportType.DOC_CHUNKS,
@@ -662,9 +660,7 @@ class DocumentProcessor:
     # Manifest helpers
     # ----------------------------------------------------------------- #
 
-    def _build_entries(
-        self, files_processed: list[str], chunks: list[Document]
-    ) -> dict[str, FileEntry]:
+    def _build_entries(self, files_processed: list[str], chunks: list[Document]) -> dict[str, FileEntry]:
         """Group new chunks by their source file, then mint manifest entries.
 
         ``files_processed`` is the authoritative list of files we asked the
@@ -859,9 +855,7 @@ class DocumentProcessor:
 
         # Empty corpus on a full rebuild → loud failure.
         if diff is None and not files_to_process:
-            raise RuntimeError(
-                f"No indexable files found in {self.content_dir!r}; nothing to index."
-            )
+            raise RuntimeError(f"No indexable files found in {self.content_dir!r}; nothing to index.")
 
         # Set up starting state.
         # - Full rebuild (diff is None): db starts None and is lazy-initialized
@@ -872,9 +866,7 @@ class DocumentProcessor:
         existing_manifest: Manifest | None = None
         if diff is not None:
             try:
-                db = FAISS.load_local(
-                    self.output_dir, self.embeddings, allow_dangerous_deserialization=True
-                )
+                db = FAISS.load_local(self.output_dir, self.embeddings, allow_dangerous_deserialization=True)
                 existing_manifest = load_manifest(self.output_dir)
             except Exception as exc:  # noqa: BLE001
                 logging.error(
@@ -888,9 +880,7 @@ class DocumentProcessor:
                 existing_manifest = None
                 files_to_process = self.discover_files()
                 if not files_to_process:
-                    raise RuntimeError(
-                        f"No indexable files found in {self.content_dir!r}; nothing to index."
-                    ) from exc
+                    raise RuntimeError(f"No indexable files found in {self.content_dir!r}; nothing to index.") from exc
 
         # Apply removals once, up front — they're a single bookkeeping step,
         # not per-batch work.
@@ -947,8 +937,8 @@ class DocumentProcessor:
         manifest_holder: list[Manifest | None] = [existing_manifest]
         checkpoint_queue: queue.Queue = queue.Queue(maxsize=4)
         checkpoint_exc: list[BaseException] = []
-        # SENTINEL signals "no more checkpoints, please exit".
-        SENTINEL = object()
+        # sentinel signals "no more checkpoints, please exit".
+        sentinel = object()
 
         def _persist_checkpoint(
             files_w: list[str],
@@ -968,10 +958,7 @@ class DocumentProcessor:
             # batch in parallel.
             from hacienda_gpt import settings as _settings
 
-            if (
-                chunks_w
-                and _settings.CONTEXTUAL_EMBEDDINGS_ENABLED
-            ):
+            if chunks_w and _settings.CONTEXTUAL_EMBEDDINGS_ENABLED:
                 from hacienda_gpt.processor.contextualizer import get_contextualizer
 
                 contextualizer = get_contextualizer(
@@ -992,9 +979,7 @@ class DocumentProcessor:
             if chunks_w:
                 ids = [c.metadata["chunk_id"] for c in chunks_w]
                 if current_db is None:
-                    current_db = FAISS.from_documents(
-                        chunks_w, self.embeddings, ids=ids
-                    )
+                    current_db = FAISS.from_documents(chunks_w, self.embeddings, ids=ids)
                 else:
                     current_db.add_documents(chunks_w, ids=ids)
                 db_holder[0] = current_db
@@ -1026,7 +1011,7 @@ class DocumentProcessor:
             try:
                 while True:
                     item = checkpoint_queue.get()
-                    if item is SENTINEL:
+                    if item is sentinel:
                         return
                     files_w, chunks_w, ckpt_n = item
                     _persist_checkpoint(files_w, chunks_w, ckpt_n)
@@ -1087,7 +1072,7 @@ class DocumentProcessor:
             # Two failure modes to defend against:
             #
             # * Bg thread crashed (exception in ``_persist_checkpoint``) —
-            #   it's no longer reading the queue, so ``put(SENTINEL)`` would
+            #   it's no longer reading the queue, so ``put(sentinel)`` would
             #   block forever if the queue is full. Use a put with timeout
             #   inside a loop guarded by ``is_alive`` so we bail when the
             #   thread is gone.
@@ -1097,7 +1082,7 @@ class DocumentProcessor:
             #   queued checkpoints persisted before returning.
             while checkpoint_thread.is_alive():
                 try:
-                    checkpoint_queue.put(SENTINEL, timeout=5)
+                    checkpoint_queue.put(sentinel, timeout=5)
                     break
                 except queue.Full:
                     continue

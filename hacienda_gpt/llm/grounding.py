@@ -59,7 +59,7 @@ DEFAULT_ABSTAIN_PATTERNS: tuple[str, ...] = (
 # surface the specific gap in the abstain message (instead of a canned "no
 # encontré información"). The (label, regex) pairs feed both detection and the
 # human-readable rendering.
-_ENTITY_PATTERNS: tuple[tuple[str, "re.Pattern[str]"], ...] = (
+_ENTITY_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("modelo", re.compile(r"\bmodelo\s+(\d{3,4})\b", re.IGNORECASE)),
     ("Ley", re.compile(r"\bley\s+(\d{1,3}/\d{4})\b", re.IGNORECASE)),
     ("Real Decreto-ley", re.compile(r"\b(?:real\s+decreto-ley|rdl)\s+(\d{1,3}/\d{4})\b", re.IGNORECASE)),
@@ -187,7 +187,7 @@ class GroundingGate:
         lowered = answer.lower()
         return any(re.search(pattern, lowered) for pattern in self.abstain_patterns)
 
-    def _build_abstain_message(self, query: str, citations: list["Citation"]) -> str:
+    def _build_abstain_message(self, query: str, citations: list[Citation]) -> str:
         """Compose an abstain message that names what we DID find and what's
         missing. Falls back to the canned message when there's nothing useful
         to add (no query, no citations, no detected gap).
@@ -293,9 +293,7 @@ def _detect_missing_entities(query: str, citations: Sequence[Citation]) -> list[
     """
     if not query:
         return []
-    haystack = " ".join(
-        (c.title or "") + " " + (c.snippet or "") for c in citations
-    )
+    haystack = " ".join((c.title or "") + " " + (c.snippet or "") for c in citations)
     missing: list[str] = []
     seen: set[str] = set()
     for label, pattern in _ENTITY_PATTERNS:

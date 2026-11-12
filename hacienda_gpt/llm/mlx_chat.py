@@ -16,9 +16,9 @@ a complete response per turn.
 
 from __future__ import annotations
 
-import threading
 from collections.abc import Sequence
 from pathlib import Path
+import threading
 from typing import Any
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -31,7 +31,6 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
 from pydantic import ConfigDict
-
 
 _MODEL_CACHE: dict[str, tuple[Any, Any]] = {}
 _MODEL_CACHE_LOCK = threading.Lock()

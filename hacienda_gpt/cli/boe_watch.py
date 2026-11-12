@@ -43,9 +43,7 @@ import click
 
 logger = logging.getLogger(__name__)
 
-_BOE_META_URL = (
-    "https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/{id}/metadatos"
-)
+_BOE_META_URL = "https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/{id}/metadatos"
 _BOE_HTML_URL = "https://www.boe.es/buscar/act.php?id={id}"
 _DEFAULT_CATALOG = Path(__file__).resolve().parent / "boe_seed_catalog.json"
 _DEFAULT_OUTPUT = Path("./data/html")
@@ -71,7 +69,8 @@ def _load_state(output_dir: Path) -> dict:
     if not path.exists():
         return {"schema_version": 1, "entries": {}}
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        state: dict = json.loads(path.read_text(encoding="utf-8"))
+        return state
     except (json.JSONDecodeError, OSError) as exc:
         logger.warning("State file %s is unreadable (%s); starting fresh.", path, exc)
         return {"schema_version": 1, "entries": {}}
@@ -116,7 +115,8 @@ def _fetch_metadata(boe_id: str, timeout: int = 30) -> dict:
     data = payload.get("data") or []
     if not data:
         raise RuntimeError(f"BOE metadata empty payload for {boe_id}: {payload!r}")
-    return data[0] if isinstance(data, list) else data
+    entry: dict = data[0] if isinstance(data, list) else data
+    return entry
 
 
 def _fetch_html(boe_id: str, timeout: int = 60) -> bytes:
@@ -129,7 +129,8 @@ def _fetch_html(boe_id: str, timeout: int = 60) -> bytes:
         headers={"User-Agent": _USER_AGENT},
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return resp.read()
+        body: bytes = resp.read()
+        return body
 
 
 def _sha256(data: bytes) -> str:
@@ -165,7 +166,8 @@ def _resolve_target(output_dir: Path, subdir: str, boe_id: str, local: dict) -> 
 # --------------------------------------------------------------------- #
 def _load_catalog(catalog_path: Path) -> list[dict]:
     raw = json.loads(catalog_path.read_text(encoding="utf-8"))
-    return raw.get("documents", [])
+    documents: list[dict] = raw.get("documents", [])
+    return documents
 
 
 # --------------------------------------------------------------------- #
@@ -196,8 +198,7 @@ def _load_catalog(catalog_path: Path) -> list[dict]:
 @click.option(
     "--dry-run",
     is_flag=True,
-    help="Compare metadata against state but DO NOT redownload, write "
-    "state, or append to the change log.",
+    help="Compare metadata against state but DO NOT redownload, write " "state, or append to the change log.",
 )
 @click.option(
     "--polite-delay",

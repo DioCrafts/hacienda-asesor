@@ -81,8 +81,7 @@ class MLXEmbeddings(Embeddings):
                 )
 
         logger.info(
-            "MLX embedder ready: model=%s  batch_size=%d  max_seq_length=%d  "
-            "query_prefix=%r",
+            "MLX embedder ready: model=%s  batch_size=%d  max_seq_length=%d  " "query_prefix=%r",
             model_path,
             batch_size,
             max_seq_length,

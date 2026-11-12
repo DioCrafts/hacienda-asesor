@@ -192,7 +192,7 @@ class RegionalBoletinCrawler(scrapy.Spider):
                     dont_filter=True,
                 )
 
-    def parse_listing_response(self, response: Response, spec_key: str, term: str) -> None:
+    def parse_listing_response(self, response: Response, spec_key: str, term: str) -> Generator[scrapy.Request]:
         spec = BUNDLED_SPECS[spec_key]
         rows = parse_listing(spec, response.text)
         out_dir = os.path.join(self.folder, spec.key)

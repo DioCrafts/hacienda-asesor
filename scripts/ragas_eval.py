@@ -33,9 +33,9 @@ import argparse
 import json
 import logging
 import os
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from typing import Any
 
 # Make both ``hacienda_gpt`` (project root) and ``qa_battery_test``
@@ -103,11 +103,12 @@ def _build_judge():
     The newer ``ragas.metrics.collections`` API requires Instructor-style
     LLMs which would force an OpenAI client; we explicitly want to avoid
     that here."""
-    from hacienda_gpt.llm.embeddings import create_embeddings
-    from hacienda_gpt.llm.mlx_chat import MLXChatLLM
-    from hacienda_gpt import settings as S
     from ragas.embeddings import LangchainEmbeddingsWrapper
     from ragas.llms import LangchainLLMWrapper
+
+    from hacienda_gpt import settings
+    from hacienda_gpt.llm.embeddings import create_embeddings
+    from hacienda_gpt.llm.mlx_chat import MLXChatLLM
 
     # The judge model and its token budget are configured separately from
     # the contextualizer (see ``settings.RAGAS_JUDGE_MODEL_PATH``). The
@@ -116,8 +117,8 @@ def _build_judge():
     # scenarios per eval) and high quality bar (structured JSON, yes/no
     # verdicts that drive RAG comparison decisions).
     judge_llm = MLXChatLLM(
-        model_path=S.RAGAS_JUDGE_MODEL_PATH,
-        max_tokens=S.RAGAS_JUDGE_MAX_TOKENS,
+        model_path=settings.RAGAS_JUDGE_MODEL_PATH,
+        max_tokens=settings.RAGAS_JUDGE_MAX_TOKENS,
         temperature=0.0,
     )
     judge_emb = create_embeddings()  # same MLX embedder as retrieval
@@ -136,8 +137,8 @@ def _run_ragas(samples: list[dict[str, Any]]) -> dict[str, Any]:
     blocking call."""
     from ragas import EvaluationDataset, SingleTurnSample, evaluate
     from ragas.metrics import (
-        Faithfulness,
         AnswerRelevancy,
+        Faithfulness,
         LLMContextPrecisionWithoutReference,
     )
 

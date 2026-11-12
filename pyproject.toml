@@ -89,6 +89,10 @@ select = ["E", "F", "I", "UP", "N"]
 # pydantic/JSON serialization of the decision schemas.
 ignore = ["E501", "UP042"]
 
+[tool.ruff.lint.per-file-ignores]
+# api.py: first-party imports deliberately come after the module-level setup.
+"hacienda_gpt/api/api.py" = ["E402"]
+
 [tool.ruff.lint.isort]
 force-sort-within-sections = true
 no-lines-before = ["local-folder"]

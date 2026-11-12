@@ -14,10 +14,9 @@ from __future__ import annotations
 
 import sys
 import types
-from typing import Any
 
-import pytest
 from langchain_core.documents import Document
+import pytest
 
 
 @pytest.fixture
@@ -44,8 +43,6 @@ def stub_mlx(monkeypatch):
 
     # ``_get_model`` still runs (to populate the cache) but its tuple is
     # never used because ``_score`` doesn't read it.
-    original_get_model = r._get_model
-
     def patched_get_model(path):
         if path not in r._MODEL_CACHE:
             # Populate with placeholder so the cache-singleton test passes.
@@ -189,6 +186,7 @@ def test_model_cache_is_thread_safe(stub_mlx) -> None:
 
     # Replace the (already-patched) _get_model with the counter wrapper.
     import hacienda_gpt.llm.reranker as r
+
     r._get_model = counting_get_model
 
     barrier = threading.Barrier(8)

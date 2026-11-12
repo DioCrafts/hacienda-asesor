@@ -199,7 +199,9 @@ def _create_retriever(
         # source them from the FAISS docstore so both retrievers operate
         # on identical chunk units — RRF only makes sense when the two
         # ranked lists draw from the same universe of documents.
-        all_docs = list(faiss.docstore._dict.values())
+        # FAISS.load_local yields an InMemoryDocstore; the abstract Docstore
+        # base has no public way to enumerate documents.
+        all_docs = list(faiss.docstore._dict.values())  # type: ignore[attr-defined]
         bm25 = BM25Retriever.from_documents(all_docs)
         bm25.k = BM25_K
         first_stage = EnsembleRetriever(
@@ -218,9 +220,7 @@ def _create_retriever(
         from hacienda_gpt.llm.reranker import MLXReranker
 
         reranker = MLXReranker(model_path=RERANKER_MODEL, top_k=RERANKER_TOP_K)
-        compressed = ContextualCompressionRetriever(
-            base_retriever=compressed, base_compressor=reranker
-        )
+        compressed = ContextualCompressionRetriever(base_retriever=compressed, base_compressor=reranker)
     return SanitizingRetriever(inner=compressed)
 
 
@@ -257,13 +257,12 @@ def create_openai_chain(
     path is byte-for-byte the previous behaviour — and is opt-in per caller; see
     ``_build_metadata_filter`` for the (recall-safe) matching semantics.
     """
-    llm = ChatOpenAI(temperature=OPENAI_TEMPERATURE, model=OPENAI_MODEL, api_key=openai_api_key)
+    # pydantic coerces the plain str to SecretStr at validation time.
+    llm = ChatOpenAI(temperature=OPENAI_TEMPERATURE, model=OPENAI_MODEL, api_key=openai_api_key)  # type: ignore[arg-type]
     # Embedder comes from the shared factory (default: local Qwen3-Embedding).
     # The OpenAI key is still used for the chat LLM above, not for embeddings.
     embeddings = create_embeddings()
-    retriever = _create_retriever(
-        embeddings, llm, profile_name=profile_name, metadata_filter=metadata_filter
-    )
+    retriever = _create_retriever(embeddings, llm, profile_name=profile_name, metadata_filter=metadata_filter)
 
     contextualize_prompt = ChatPromptTemplate.from_messages(
         [
@@ -282,7 +281,8 @@ def create_openai_chain(
         ]
     )
     qa_chain = create_stuff_documents_chain(llm, qa_prompt)
-    return create_retrieval_chain(history_aware_retriever, qa_chain)
+    retrieval_chain: Runnable = create_retrieval_chain(history_aware_retriever, qa_chain)
+    return retrieval_chain
 
 
 def default_grounding_gate() -> GroundingGate:

@@ -238,7 +238,13 @@ def test_abstain_message_flags_missing_modelo_number() -> None:
     """When the user names a specific tax form that's absent from the
     citations, the abstain message must point it out by number."""
     query = "Tengo cripto en el extranjero. ¿Qué es el modelo 721?"
-    docs = [_doc(title="Modelo 720 — declaración bienes extranjero", source_url="https://aeat/x", content="bienes en el extranjero")]
+    docs = [
+        _doc(
+            title="Modelo 720 — declaración bienes extranjero",
+            source_url="https://aeat/x",
+            content="bienes en el extranjero",
+        )
+    ]
     gate = GroundingGate(min_citations=1)
 
     envelope = gate.evaluate(answer="Hmm, no estoy seguro.", documents=docs, query=query)

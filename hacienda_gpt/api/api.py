@@ -5,7 +5,7 @@ from datetime import UTC, date, datetime
 import json
 import queue
 import threading
-from typing import Annotated, TypeVar
+from typing import Annotated
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Response
@@ -13,10 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-T = TypeVar("T")
 
-
-def _thread_safe_singleton(factory: Callable[[], T]) -> Callable[[], T]:
+def _thread_safe_singleton[T](factory: Callable[[], T]) -> Callable[[], T]:
     """Lazy, thread-safe replacement for ``functools.lru_cache(maxsize=1)``.
 
     ``functools.lru_cache`` is documented as **not** thread-safe for

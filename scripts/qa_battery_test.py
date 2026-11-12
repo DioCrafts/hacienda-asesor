@@ -22,11 +22,10 @@ import argparse
 import json
 import logging
 import os
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from typing import Any
-
 
 # Each scenario carries:
 #   id   — short stable id for diffing across runs

@@ -57,7 +57,7 @@ _NUM_RESOLUCION_PATTERN = re.compile(r"\b\d{2}/\d{4,6}/\d{4}(?:/\d{2}/\d{2})?\b"
 _DATE_PATTERN = re.compile(r"\b(\d{2})/(\d{2})/(\d{4})\b")
 
 
-def parse_teac_criterio(html: str, *, criterio_id: int | None = None) -> dict[str, Any] | None:
+def parse_teac_criterio(html: str, *, criterio_id: int | str | None = None) -> dict[str, Any] | None:
     """Parse a DYCTEA resolution detail page into a structured dict.
 
     Returns None when the page is the "criterio no existe" error placeholder,
