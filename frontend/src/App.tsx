@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { AnswerEnvelope, ObligationCandidate } from "./api";
-import { createCase, postQA, postTurn } from "./api";
+import { createCase, postAgent } from "./api";
 import {
   AssistantBubble,
   Markdownish,
@@ -28,18 +28,15 @@ interface ChatTurn {
   userText: string;
   envelope: AnswerEnvelope;
   obligations: ObligationCandidate[];
-  nextQuestions: string[];
+  // How many corpus searches the agent ran for this answer (0 on error).
+  searches: number;
   errored?: boolean;
-  // The decision engine gave up asking for some facts after MAX_ASKS_PER_FACT
-  // attempts and returned a partial analysis; surface that honestly.
-  degraded?: boolean;
-  degradedFacts?: string[];
 }
 
 const INITIAL_GREETING =
   "Hola, soy HaciendaGPT. Puedo ayudarte con IRPF, IVA, autónomos, " +
-  "Modelo 720 y otras consultas fiscales. Cuéntame tu caso y citaré la " +
-  "normativa aplicable.";
+  "Modelo 720 y otras consultas fiscales. Cuéntame tu caso: buscaré la " +
+  "normativa aplicable y comprobaré cada afirmación contra su fuente.";
 
 // Honest, empty abstention used when the backend is unreachable. In a tax
 // domain we must NEVER surface fabricated answers or citations: no body,
@@ -52,7 +49,6 @@ function offlineFallback(err: unknown): AnswerEnvelope {
     mode: "abstained",
     citations: [],
     reason: String(err),
-    min_citations_required: 0,
   };
 }
 
@@ -111,9 +107,6 @@ export default function App() {
   // Cancel any in-flight request if the component unmounts.
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  // Runs the decision flow for one turn: creates the case on first use,
-  // then posts the turn and returns the engine's real obligations and
-  // follow-up questions. Throws on network/HTTP errors (handled below).
   // Resolves the case id, creating the case exactly once. Concurrent callers
   // share the same in-flight promise; on failure the memo is cleared so a
   // later turn can retry rather than reusing a rejected promise forever.
@@ -132,25 +125,6 @@ export default function App() {
     return caseCreateRef.current;
   }
 
-  async function runDecisionTurn(
-    text: string,
-    signal: AbortSignal,
-  ): Promise<{
-    obligations: ObligationCandidate[];
-    nextQuestions: string[];
-    degraded: boolean;
-    degradedFacts: string[];
-  }> {
-    const id = await ensureCaseId(signal);
-    const resp = await postTurn({ caseId: id, userInput: text, chatHistory, signal });
-    return {
-      obligations: resp.obligations,
-      nextQuestions: resp.next_questions,
-      degraded: resp.degraded,
-      degradedFacts: resp.degraded_facts,
-    };
-  }
-
   async function handleSubmit(text: string) {
     // Synchronous lock first: blocks reentrancy even before `busy` (state)
     // commits and disables the inputs.
@@ -165,44 +139,51 @@ export default function App() {
         setCaseTitle(short);
       }
 
-      // The grounded answer (/qa) and the decision flow (/cases + /turn) are
-      // independent backend calls. We run them in parallel and degrade each
-      // on its own — neither failure path may fabricate content.
-      const qaPromise = postQA({ query: text, chatHistory, signal: controller.signal }).then(
-        (env) => ({ env, errored: false }),
-        (err) => {
-          console.error("postQA failed", err);
-          return { env: offlineFallback(err), errored: true };
-        },
-      );
-
-      const decisionPromise = runDecisionTurn(text, controller.signal).catch((err) => {
-        console.error("decision turn failed", err);
-        // Show no obligations rather than fake ones; the answer still renders.
-        return {
-          obligations: [] as ObligationCandidate[],
-          nextQuestions: [] as string[],
-          degraded: false,
-          degradedFacts: [] as string[],
-        };
+      // One call per turn: the agent searches the corpus, reads/records the
+      // case facts, runs the rules engine and has its answer verified. The
+      // case is best-effort — without it the agent still answers (search-only).
+      const activeCaseId = await ensureCaseId(controller.signal).catch((err) => {
+        console.error("case creation failed; continuing without a case", err);
+        return null;
       });
 
-      const [qa, decision] = await Promise.all([qaPromise, decisionPromise]);
+      let turn: ChatTurn;
+      try {
+        const resp = await postAgent({
+          query: text,
+          chatHistory,
+          caseId: activeCaseId,
+          signal: controller.signal,
+        });
+        turn = {
+          id: newId(),
+          userText: text,
+          envelope: {
+            answer: resp.answer,
+            mode: resp.mode,
+            citations: resp.citations,
+            raw_answer: resp.raw_answer,
+            warnings: resp.warnings,
+          },
+          obligations: resp.obligations,
+          searches: resp.tool_trace.filter((t) => t.tool === "buscar_fuentes" && !t.is_error).length,
+        };
+      } catch (err) {
+        console.error("postAgent failed", err);
+        // Never fabricate content on failure: empty abstention, no sources.
+        turn = {
+          id: newId(),
+          userText: text,
+          envelope: offlineFallback(err),
+          obligations: [],
+          searches: 0,
+          errored: true,
+        };
+      }
 
       // The turn was cancelled (new consultation / unmount) while in flight —
       // drop the (possibly fallback) result instead of rendering stale state.
       if (controller.signal.aborted) return;
-
-      const turn: ChatTurn = {
-        id: newId(),
-        userText: text,
-        envelope: qa.env,
-        obligations: decision.obligations,
-        nextQuestions: decision.nextQuestions,
-        errored: qa.errored,
-        degraded: decision.degraded,
-        degradedFacts: decision.degradedFacts,
-      };
       setTurns((prev) => [...prev, turn]);
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
@@ -237,42 +218,31 @@ export default function App() {
                 <AssistantBubble>
                   <Markdownish text={t.envelope.answer} />
                   <TrustStrip mode={t.envelope.mode} reason={t.envelope.reason} />
-                  <SourceCardList citations={t.envelope.citations} />
-                  <ObligationCardList obligations={t.obligations} />
-                  {t.nextQuestions.length > 0 && (
-                    <div className="mt-4">
-                      <p className="mb-2 text-[12px] font-medium text-muted">
-                        Para afinar el análisis, puedo preguntarte:
+                  {t.envelope.warnings && t.envelope.warnings.length > 0 && (
+                    <div className="mb-3 rounded-lg border border-grounding-uncited-bd bg-grounding-uncited-bg px-4 py-3">
+                      <p className="mb-1 text-[12px] font-semibold text-grounding-uncited-fg">
+                        Avisos de la verificación
                       </p>
-                      <div className="flex flex-wrap gap-2">
-                        {t.nextQuestions.map((q, i) => (
-                          <button
-                            key={`${t.id}-q-${i}`}
-                            type="button"
-                            onClick={() => handleSubmit(q)}
-                            disabled={busy}
-                            className="rounded-pill border border-line bg-surface px-3 py-1.5 text-[13px] font-medium text-ink-soft transition hover:border-primary hover:bg-primary-soft hover:text-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {q}
-                          </button>
+                      <ul className="list-disc pl-5 text-[13px] text-ink-soft">
+                        {t.envelope.warnings.map((w, i) => (
+                          <li key={`${t.id}-w-${i}`}>{w}</li>
                         ))}
-                      </div>
+                      </ul>
                     </div>
                   )}
-                  {t.degraded && (
+                  <SourceCardList citations={t.envelope.citations} />
+                  {t.searches > 0 && (
                     <p className="mt-2 text-[12px] text-muted">
-                      Análisis parcial: seguimos sin algunos datos necesarios
-                      {t.degradedFacts && t.degradedFacts.length > 0
-                        ? ` (${t.degradedFacts.join(", ")})`
-                        : ""}
-                      , así que la valoración puede estar incompleta.
+                      {t.searches === 1
+                        ? "1 búsqueda en el corpus normativo."
+                        : `${t.searches} búsquedas en el corpus normativo.`}
                     </p>
                   )}
+                  <ObligationCardList obligations={t.obligations} />
                   {t.errored && (
                     <p className="mt-2 text-[12px] text-risk-high-fg">
-                      {t.obligations.length > 0
-                        ? "No se pudo generar la respuesta con citas (servicio de consulta no disponible); las obligaciones mostradas provienen del análisis del caso."
-                        : "Error de conexión con el servicio; no se ha generado ninguna respuesta a partir de la normativa."}
+                      Error de conexión con el servicio; no se ha generado ninguna respuesta a
+                      partir de la normativa.
                     </p>
                   )}
                 </AssistantBubble>
@@ -281,7 +251,7 @@ export default function App() {
             {busy && (
               <AssistantBubble>
                 <p className="text-[14px] italic text-muted">
-                  Consultando la normativa…
+                  Buscando en la normativa y verificando la respuesta…
                 </p>
               </AssistantBubble>
             )}

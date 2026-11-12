@@ -6,7 +6,16 @@
 //   hacienda_gpt/api/api.py              -> QARequest, TurnResponse
 // so if the backend grows a new field, only this file changes.
 
-export type AnswerMode = "cited" | "uncited" | "abstained";
+// "cited" / "uncited" come from the legacy /qa grounding gate; the rest are
+// the /agent verdicts (hacienda_gpt/agent/agent.py -> AgentMode).
+export type AnswerMode =
+  | "cited"
+  | "uncited"
+  | "abstained"
+  | "verified"
+  | "partially_verified"
+  | "unverified"
+  | "clarification";
 export type RiskLevel = "low" | "medium" | "high" | "critical";
 
 export interface Citation {
@@ -15,6 +24,13 @@ export interface Citation {
   document_type?: string | null;
   section?: string | null;
   snippet?: string | null;
+  // /agent only: the id the answer cites inline ("F2") and source provenance.
+  fragment_id?: string | null;
+  authority?: string | null;
+  source_type?: string | null;
+  binding?: boolean | null;
+  date?: string | null;
+  reference?: string | null;
 }
 
 export interface AnswerEnvelope {
@@ -23,7 +39,42 @@ export interface AnswerEnvelope {
   citations: Citation[];
   raw_answer?: string | null;
   reason?: string | null;
-  min_citations_required: number;
+  min_citations_required?: number;
+  // /agent only: claims the verifier could not back with the cited fragment.
+  warnings?: string[];
+}
+
+export type ClaimVerdict = "respaldada" | "parcial" | "no_respaldada";
+
+export interface ClaimCheck {
+  text: string;
+  fragment_ids: string[];
+  verdict: ClaimVerdict;
+  reason: string;
+}
+
+export interface ToolTraceEntry {
+  step: number;
+  tool: string;
+  arguments: Record<string, unknown>;
+  summary: string;
+  is_error: boolean;
+}
+
+// Mirrors hacienda_gpt/api/api.py -> AgentResponse.
+export interface AgentResponse {
+  answer: string;
+  mode: AnswerMode;
+  citations: Citation[];
+  claims: ClaimCheck[];
+  warnings: string[];
+  raw_answer?: string | null;
+  tool_trace: ToolTraceEntry[];
+  obligations: ObligationCandidate[];
+  case_id?: string | null;
+  case_updated: boolean;
+  provider: string;
+  model: string;
 }
 
 export interface ObligationCandidate {
@@ -89,6 +140,9 @@ const API_BASE = (import.meta.env.VITE_API_BASE as string) || "/api";
 // Abort any single request that outlives this budget, so a hung backend
 // surfaces a clear timeout instead of leaving the UI stuck on "Consultando…".
 const DEFAULT_TIMEOUT_MS = 30_000;
+// The agent runs several search → reason → verify rounds per question; a
+// thorough answer legitimately takes a few minutes.
+const AGENT_TIMEOUT_MS = 300_000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -105,6 +159,28 @@ function isAnswerEnvelope(value: unknown): value is AnswerEnvelope {
     (value.mode === "cited" || value.mode === "uncited" || value.mode === "abstained") &&
     Array.isArray(value.citations) &&
     typeof value.min_citations_required === "number"
+  );
+}
+
+const AGENT_MODES: ReadonlySet<string> = new Set([
+  "verified",
+  "partially_verified",
+  "unverified",
+  "clarification",
+  "abstained",
+]);
+
+function isAgentResponse(value: unknown): value is AgentResponse {
+  return (
+    isRecord(value) &&
+    typeof value.answer === "string" &&
+    typeof value.mode === "string" &&
+    AGENT_MODES.has(value.mode) &&
+    Array.isArray(value.citations) &&
+    Array.isArray(value.claims) &&
+    Array.isArray(value.warnings) &&
+    Array.isArray(value.tool_trace) &&
+    Array.isArray(value.obligations)
   );
 }
 
@@ -201,4 +277,17 @@ export function postTurn(opts: {
     isTurnResponse,
     { signal: opts.signal },
   );
+}
+
+export function postAgent(opts: {
+  query: string;
+  chatHistory?: Array<{ role: "user" | "assistant"; content: string }>;
+  // Attach the case so the agent can read/record the user's facts and run the
+  // rules engine; omit to get a search-only answer.
+  caseId?: string | null;
+  signal?: AbortSignal;
+}): Promise<AgentResponse> {
+  const body: Record<string, unknown> = { query: opts.query, chat_history: opts.chatHistory ?? [] };
+  if (opts.caseId) body.case_id = opts.caseId;
+  return request("/agent", body, isAgentResponse, { signal: opts.signal, timeoutMs: AGENT_TIMEOUT_MS });
 }

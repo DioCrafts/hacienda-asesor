@@ -10,6 +10,12 @@ export type SourceKind = "boe" | "manual" | "dgt" | "teac" | "other";
 export function classifySource(c: Citation): SourceKind {
   const loc = (c.locator || "").toLowerCase();
   const title = (c.title || "").toLowerCase();
+  // The agent reports the issuing authority explicitly; trust it over URL sniffing.
+  const authority = (c.authority || "").toUpperCase();
+  if (authority === "DGT") return "dgt";
+  if (authority === "TEAC" || authority.startsWith("TS") || authority === "TC") return "teac";
+  if (authority === "AEAT") return "manual";
+  if (authority === "BOE" || authority.startsWith("BOLETIN")) return "boe";
   if (loc.startsWith("boe://") || loc.includes("boe.es")) return "boe";
   if (loc.startsWith("aeat://") || loc.includes("agenciatributaria")) return "manual";
   if (loc.startsWith("dgt://") || loc.includes("petete.tributos") || /\bv\d{4}-\d{2}\b/i.test(title))
@@ -53,6 +59,26 @@ export const TRUST: Record<AnswerMode, TrustCopy> = {
     cls: "uncited",
     label: "Orientativo · sin citas verificadas",
     short: "Trátalo como una orientación y verifícalo.",
+  },
+  verified: {
+    cls: "cited",
+    label: "Respuesta verificada contra sus fuentes",
+    short: "Cada afirmación normativa ha sido comprobada con el fragmento que cita.",
+  },
+  partially_verified: {
+    cls: "uncited",
+    label: "Verificada en parte · revisa los avisos",
+    short: "Algunas afirmaciones no quedan respaldadas por la fuente citada.",
+  },
+  unverified: {
+    cls: "uncited",
+    label: "Orientativo · sin verificar",
+    short: "No se ha podido comprobar contra fuentes; trátalo como orientación.",
+  },
+  clarification: {
+    cls: "uncited",
+    label: "Necesito un dato para responder",
+    short: "La respuesta depende de información que aún no tengo.",
   },
   abstained: {
     cls: "abstain",

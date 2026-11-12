@@ -1,5 +1,5 @@
 // Source card: title + icon + locator chip + snippet quote + optional
-// outbound link. Renders one per Citation returned by /qa.
+// outbound link. Renders one per Citation returned by /agent (or /qa).
 
 import { Book, ExternalLink, Gavel, Landmark, Library, ScrollText } from "lucide-react";
 
@@ -17,6 +17,18 @@ const SOURCE_ICON = {
   teac: Gavel,       // TEAC criterio
   other: Library,
 } as const;
+
+/** "DGT · V0058-25 · 2025-01-20 · vinculante" — only the parts we actually have. */
+function provenance(c: Citation): string {
+  return [
+    c.authority,
+    c.reference,
+    c.date,
+    c.binding === true ? "vinculante" : c.binding === false ? "no vinculante" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
 
 interface SourceCardProps {
   citation: Citation;
@@ -36,6 +48,11 @@ export function SourceCard({ citation }: SourceCardProps) {
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">
           <h4 className="font-semibold text-ink leading-snug">
+            {citation.fragment_id && (
+              <span className="mr-2 rounded bg-primary-soft px-1.5 py-0.5 font-mono text-[12px] text-primary-dark">
+                {citation.fragment_id}
+              </span>
+            )}
             {citation.title}
           </h4>
           {isLink && (
@@ -55,6 +72,9 @@ export function SourceCard({ citation }: SourceCardProps) {
             {citation.locator}
             {citation.section && <span className="text-muted"> · {citation.section}</span>}
           </code>
+        )}
+        {provenance(citation) && (
+          <p className="mt-1 text-[12px] text-muted">{provenance(citation)}</p>
         )}
         {citation.snippet && (
           <p className="mt-2 text-[13px] italic text-ink-soft">

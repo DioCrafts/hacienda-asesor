@@ -37,6 +37,7 @@ def test_agent_endpoint_returns_verified_answer_with_citations_and_trace() -> No
     assert body["tool_trace"][0]["tool"] == "buscar_fuentes"
     assert body["claims"][0]["verdict"] == "respaldada"
     assert body["case_id"] is None and body["case_updated"] is False
+    assert body["obligations"] == []
     assert "updated_case" not in body
 
 
@@ -81,3 +82,32 @@ def test_agent_endpoint_errors() -> None:
     _override(Failing([]))
     failed = client.post("/agent", json={"query": "¿IVA?"})
     assert failed.status_code == 503 and "credenciales" in failed.json()["detail"]
+
+
+def test_agent_endpoint_returns_case_obligations_after_rules_run() -> None:
+    case_id = client.post("/cases", json={"user_id": "u-obl", "jurisdiction": "ES", "tax_period": "2025"}).json()[
+        "case_id"
+    ]
+    facts = [
+        {"nombre": "residencia_fiscal", "valor": "ES"},
+        {"nombre": "periodo_fiscal", "valor": "2025"},
+        {"nombre": "tipo_renta", "valor": "trabajo"},
+        {"nombre": "menciona_ingresos", "valor": True},
+    ]
+    _override(
+        ScriptedProvider(
+            [
+                tool_turn(("registrar_hechos", {"hechos": facts})),
+                tool_turn(("evaluar_obligaciones", {})),
+                text_turn("¿Cuánto ingresaste aproximadamente?"),
+            ],
+            [verdict("pregunta_aclaratoria")],
+        )
+    )
+
+    body = client.post("/agent", json={"query": "Trabajo en España en 2025", "case_id": case_id}).json()
+
+    assert [o["obligation_id"] for o in body["obligations"]] == ["obl_irpf_candidate"]
+    assert body["obligations"][0]["due_date"] == "2026-06-30"
+    stored = client.get(f"/cases/{case_id}").json()
+    assert [o["obligation_id"] for o in stored["obligation_candidates"]] == ["obl_irpf_candidate"]

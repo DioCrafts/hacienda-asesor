@@ -374,6 +374,8 @@ class AgentResponse(AgentResult):
     case_id: str | None = None
     # True when a tool changed the case and the change was persisted.
     case_updated: bool = False
+    # Candidate obligations on the attached case after this turn (empty without a case).
+    obligations: list[ObligationCandidate] = Field(default_factory=list)
 
 
 @_thread_safe_singleton
@@ -452,7 +454,13 @@ def post_agent(
             },
         )
 
-    return AgentResponse(**result.model_dump(), case_id=payload.case_id, case_updated=case_updated)
+    final_case = result.updated_case or case
+    return AgentResponse(
+        **result.model_dump(),
+        case_id=payload.case_id,
+        case_updated=case_updated,
+        obligations=list(final_case.obligation_candidates) if final_case is not None else [],
+    )
 
 
 @app.get("/cases/{case_id}/audit/export", dependencies=[Depends(require_api_key)])
