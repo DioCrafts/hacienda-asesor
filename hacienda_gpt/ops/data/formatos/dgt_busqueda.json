@@ -1,0 +1,12 @@
+{
+  "fuente": "dgt_busqueda",
+  "version": 1,
+  "descripcion": "Resultados del buscador de consultas de la DGT (Petete/Knosys, HTML): filas, paginación y consulta oculta. Comportamiento histórico del lector.",
+  "origen": "incorporada",
+  "reglas": {
+    "patron_fila": "(?s)id=\"doc_(\\d+)\"[^>]*>.*?class=\"NUM-CONSULTA\"[^>]*>\\s*<strong>\\s*([VN]\\d{4}-\\d{2})\\b",
+    "patron_documento": "id=\"doc_(\\d+)\"",
+    "patron_paginas": "id=\"total_pages\">(\\d+)<",
+    "patron_query": "id=\"query\"[^>]*value=\"([^\"]*)\""
+  }
+}

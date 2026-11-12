@@ -49,6 +49,7 @@ logger = logging.getLogger(__name__)
 
 _BOE_ID = re.compile(r"^BOE-[A-Z]-\d{4}-\d+$")
 MAX_HIJOS_MUESTRA = 3
+_SCRIPTS = re.compile(r"(?is)<(script|style)\b.*?</\1\s*>")
 
 
 def _grave(canario: str, detalle: str) -> Fallo:
@@ -403,9 +404,12 @@ def _canarios_teac(campos: Any, muestra: str, contexto: str, reglas: Any) -> Lec
 
 def _canarios_dgt(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
     datos = datos if isinstance(datos, dict) else {}
-    filas, con_numero = int(datos.get("filas") or 0), int(datos.get("con_numero") or 0)
+    filas_leidas = datos.get("filas")
+    filas_lista = [f for f in filas_leidas if isinstance(f, list | tuple)] if isinstance(filas_leidas, list) else []
+    filas = len(filas_lista)
+    con_numero = sum(1 for fila in filas_lista if len(fila) > 1 and fila[1])
     fallos: list[Fallo] = []
-    if not filas and not datos.get("total_paginas") and not datos.get("query"):
+    if not filas and datos.get("total_paginas") is None and not datos.get("query"):
         fallos.append(
             _grave("pagina", "La página de resultados no tiene filas, ni paginación, ni consulta: no se reconoce.")
         )
@@ -418,7 +422,42 @@ def _canarios_dgt(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectu
     return Lectura(fallos=fallos, metricas={"filas": filas})
 
 
+_NUMERO_DGT = re.compile(r"^[VN]\d{4}-\d{2}$")
+MIN_TEXTO_DGT = 300
+
+
+def _extraer_documento_dgt(reglas: Any, html: str) -> dict[str, Any]:
+    from hacienda_gpt.cli.dgt_seed import numero_de_documento
+
+    visible = " ".join(re.sub(r"<[^>]+>", " ", _SCRIPTS.sub("", html)).split())
+    return {"numero": numero_de_documento(reglas, html), "caracteres": len(visible)}
+
+
+def _canarios_documento_dgt(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
+    datos = datos if isinstance(datos, dict) else {}
+    numero, caracteres = datos.get("numero"), int(datos.get("caracteres") or 0)
+    pedido = contexto.split(":", 1)[1] if ":" in contexto else ""
+    fallos: list[Fallo] = []
+    if caracteres < MIN_TEXTO_DGT:
+        fallos.append(_grave("vacio", f"El documento apenas tiene texto ({caracteres} caracteres)."))
+    if not numero:
+        fallos.append(
+            _grave(
+                "numero",
+                "El documento no trae su número de consulta reconocible: si la fila de la búsqueda tampoco lo trae, "
+                "se guarda como «unknown-<id>» y no se puede deduplicar.",
+            )
+        )
+    elif not _NUMERO_DGT.match(str(numero)):
+        fallos.append(_leve("numero_raro", f"Número de consulta con forma desconocida: {numero!r}."))
+    elif pedido and numero != pedido:
+        fallos.append(_grave("otro_documento", f"Se pidió la consulta {pedido} y el documento es la {numero}."))
+    return Lectura(fallos=fallos, metricas={"caracteres": caracteres})
+
+
 def _registrar_dgt() -> None:
+    from hacienda_gpt.cli.dgt_seed import ReglasBusquedaDgt, ReglasDocumentoDgt, extraer_busqueda
+
     registrar(
         Fuente(
             clave="dgt_busqueda",
@@ -428,8 +467,98 @@ def _registrar_dgt() -> None:
                 'La página trae id="total_pages" y un campo oculto id="query" con la consulta Knosys, '
                 "imprescindible para descargar cada documento.",
             ),
+            reglas=ReglasBusquedaDgt,
+            extraer=extraer_busqueda,
             canarios=_canarios_dgt,
-            codigo="hacienda_gpt/cli/dgt_seed.py (_search_month y expresiones _SEARCH_ROW_RE, _DOC_ID_RE…)",
+            codigo="hacienda_gpt/cli/dgt_seed.py (_search_month, extraer_busqueda)",
+        )
+    )
+    registrar(
+        Fuente(
+            clave="dgt_documento",
+            descripcion="documento de una consulta de la DGT (Petete/Knosys, HTML); se observa uno por página",
+            expectativas=(
+                'El documento trae su número de consulta en un párrafo class="NUM-CONSULTA" («V0058-25»).',
+                "Es la consulta que la fila de la búsqueda prometía.",
+            ),
+            reglas=ReglasDocumentoDgt,
+            extraer=_extraer_documento_dgt,
+            canarios=_canarios_documento_dgt,
+            codigo="hacienda_gpt/cli/dgt_seed.py (_fetch_document, _parse_doc_num, numero_de_documento)",
+        )
+    )
+
+
+def _canarios_teac_listado(ids: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
+    ids = ids if isinstance(ids, list) else []
+    fallos: list[Fallo] = []
+    if not ids:
+        try:
+            desde, hasta = (date(*reversed([int(x) for x in parte.split("/")])) for parte in contexto.split(".."))
+            dias = (hasta - desde).days
+        except (ValueError, TypeError):
+            dias = 0
+        detalle = (
+            f"La primera página del listado ({contexto}) no enlaza ningún criterio: se da por terminado el rango "
+            "sin descargar nada."
+        )
+        fallos.append(_grave("enlaces", detalle) if dias >= 60 else _leve("enlaces", detalle + " (rango corto)"))
+    return Lectura(fallos=fallos, metricas={"criterios": len(ids)})
+
+
+def _titulo(html: str) -> str:
+    m = re.search(r"(?is)<title[^>]*>(.*?)</title>", html)
+    return " ".join(m.group(1).split()) if m else ""
+
+
+def _extraer_boe_seed(reglas: Any, html: str) -> dict[str, Any]:
+    return {"titulo": _titulo(html)[:300], "consolidado": 'id="textoxslt"' in html, "caracteres": len(html)}
+
+
+def _canarios_boe_seed(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
+    datos = datos if isinstance(datos, dict) else {}
+    fallos: list[Fallo] = []
+    titulo = str(datos.get("titulo") or "")
+    if contexto and contexto not in titulo:
+        fallos.append(
+            _grave(
+                "identificador",
+                f"Se pidió {contexto} y la página guardada se titula {titulo[:120]!r}: no es la norma pedida.",
+            )
+        )
+    return Lectura(fallos=fallos, metricas={"consolidado": float(bool(datos.get("consolidado")))})
+
+
+def _registrar_seeds() -> None:
+    from hacienda_gpt.cli.teac_seed import ReglasListadoTeac, ids_de_pagina
+
+    registrar(
+        Fuente(
+            clave="teac_listado",
+            descripcion="listado de criterios del TEAC por fechas (DYCTEA, criterios.aspx)",
+            expectativas=(
+                "Cada criterio del listado es un enlace href='criterio.aspx?id=<id compuesto>&amp;q=…'.",
+                "Un rango de dos meses o más tiene algún criterio; una página sin enlaces se toma como fin del "
+                "listado.",
+            ),
+            reglas=ReglasListadoTeac,
+            extraer=ids_de_pagina,
+            canarios=_canarios_teac_listado,
+            codigo="hacienda_gpt/cli/teac_seed.py (collect_criterio_ids, ids_de_pagina)",
+        )
+    )
+    registrar(
+        Fuente(
+            clave="boe_seed",
+            descripcion="descarga inicial de normas del BOE por identificador (boe_seed, buscar/act.php)",
+            expectativas=(
+                "act.php?id=<ID> devuelve la página de esa norma: su <title> empieza por el identificador (a "
+                "veces tras «BOE.es - »). Una norma no consolidada redirige a su texto original (doc.php), que "
+                "también vale.",
+            ),
+            canarios=_canarios_boe_seed,
+            extraer=_extraer_boe_seed,
+            codigo="hacienda_gpt/cli/boe_seed.py (fetch_document)",
         )
     )
 
@@ -477,6 +606,366 @@ def _registrar_rastreadores() -> None:
             codigo="hacienda_gpt/crawler/teac.py (extraer_criterio, _extract_field)",
         )
     )
+
+
+# --------------------------------------------------------------------------- #
+# CENDOJ / Tribunal Supremo (no network of our own: only the reads the operator already asked for)
+# --------------------------------------------------------------------------- #
+
+MAX_CENDOJ_MUESTRA = 30_000
+MIN_LOTE = 3
+
+
+def _recortar_cendoj(crudo: str) -> str:
+    """The start of the ruling without scripts or styles: the header (ROJ, ECLI, date, court) is there."""
+    return _SCRIPTS.sub("", crudo)[:MAX_CENDOJ_MUESTRA]
+
+
+def _canarios_cendoj(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
+    from hacienda_gpt.crawler.cendoj import MIN_CARACTERES_DOCUMENTO
+
+    datos = datos if isinstance(datos, dict) else {}
+    fallos: list[Fallo] = []
+    caracteres = int(datos.get("caracteres") or 0)
+    if caracteres < MIN_CARACTERES_DOCUMENTO:
+        fallos.append(
+            _grave(
+                "pagina_vacia",
+                f"La página apenas tiene texto ({caracteres} caracteres): es el armazón del portal o una página de "
+                "error, no una resolución.",
+            )
+        )
+    elif not datos.get("roj") and not datos.get("ecli"):
+        fallos.append(_grave("identificadores", "No se reconoce ni el ROJ ni el ECLI de la resolución."))
+    if caracteres >= MIN_CARACTERES_DOCUMENTO and not datos.get("fecha_resolucion"):
+        fallos.append(
+            _grave(
+                "fecha",
+                "No se reconoce ninguna fecha DD/MM/AAAA: sin ella una casación no se sitúa antes o después del "
+                "22/07/2016 y pierde prioridad.",
+            )
+        )
+    if caracteres >= MIN_CARACTERES_DOCUMENTO and not datos.get("sala"):
+        fallos.append(_leve("sala", "No se reconoce la sala."))
+    if caracteres >= MIN_CARACTERES_DOCUMENTO and not datos.get("ponente"):
+        fallos.append(_leve("ponente", "No se reconoce el ponente."))
+    return Lectura(fallos=fallos, metricas={"caracteres": caracteres})
+
+
+def _canarios_supremo(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
+    datos = datos if isinstance(datos, dict) else {}
+    n = {clave: int(datos.get(clave) or 0) for clave in datos if isinstance(datos.get(clave), int | float)}
+    fallos: list[Fallo] = []
+    analizadas = n.get("analizadas", 0)
+    if analizadas >= MIN_LOTE and n.get("con_fecha", 0) == 0:
+        fallos.append(_grave("fechas", f"Ninguna de las {analizadas} resoluciones leídas tiene fecha reconocible."))
+    if n.get("sala_tercera", 0) >= MIN_LOTE and n.get("sala_tercera_con_seccion", 0) == 0:
+        fallos.append(
+            _grave(
+                "seccion",
+                f"Ninguna de las {n['sala_tercera']} sentencias de la Sala Tercera tiene sección reconocible: sin ella "
+                "ninguna se conserva (la cabecera habrá cambiado).",
+            )
+        )
+    if analizadas >= MIN_LOTE and n.get("con_tipo_recurso", 0) == 0:
+        fallos.append(
+            _grave("tipo_recurso", f"En ninguna de las {analizadas} resoluciones se reconoce el tipo de recurso.")
+        )
+    if n.get("casacion_nueva", 0) >= 5 and n.get("fijan_doctrina", 0) == 0:
+        fallos.append(
+            _leve(
+                "doctrina",
+                f"Ninguna de las {n['casacion_nueva']} casaciones posteriores al 22/07/2016 fija doctrina según el "
+                "lector: ¿ha cambiado la redacción de los fundamentos?",
+            )
+        )
+    return Lectura(fallos=fallos, metricas={k: float(v) for k, v in n.items()})
+
+
+def _registrar_cendoj() -> None:
+    from hacienda_gpt.crawler.cendoj import ReglasCendoj, extraer_documento
+
+    registrar(
+        Fuente(
+            clave="cendoj_documento",
+            descripcion="resolución del CENDOJ (poderjudicial.es, HTML), leída una a una",
+            expectativas=(
+                "La página trae el texto de la resolución (no el armazón de JavaScript del buscador).",
+                "En el texto aparecen «ROJ: STS n/aaaa» y/o «ECLI:ES:TS:aaaa:n», una fecha DD/MM/AAAA, «Ponente:» "
+                "y la sala («Sala Tercera», «Sala de lo Contencioso…»).",
+                "Solo se observan las resoluciones que el operador ya ha pedido (lista de URL o ficheros locales): "
+                "la vigilancia no descarga nada del CENDOJ.",
+            ),
+            reglas=ReglasCendoj,
+            extraer=extraer_documento,
+            canarios=_canarios_cendoj,
+            recortar=_recortar_cendoj,
+            codigo="hacienda_gpt/crawler/cendoj.py (extraer_documento, parse_cendoj_document)",
+        )
+    )
+    registrar(
+        Fuente(
+            clave="supremo_lote",
+            descripcion="cabecera de las sentencias del Supremo en una ejecución de supremo_seed (recuentos)",
+            expectativas=(
+                "Entre varias sentencias leídas, alguna tiene fecha y tipo de recurso reconocibles.",
+                "Entre varias de la Sala Tercera, alguna tiene sección («Sección: 2», «Sección Segunda» o el código "
+                "del Id Cendoj).",
+                "Entre varias casaciones del régimen de la LO 7/2015, alguna fija doctrina.",
+            ),
+            canarios=_canarios_supremo,
+            guarda_muestras=False,
+            codigo="hacienda_gpt/doctrine/supremo.py (expresiones de cabecera, _detect_seccion, _detect_tipo_recurso, "
+            "_extract_doctrina), hacienda_gpt/cli/supremo_seed.py",
+        )
+    )
+
+
+# --------------------------------------------------------------------------- #
+# AEAT sede (HTML and PDF crawlers)
+# --------------------------------------------------------------------------- #
+
+MIN_TEXTO_SEDE = 300
+
+
+def _canarios_aeat_sede(enlaces: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
+    enlaces = enlaces if isinstance(enlaces, list) else []
+    fallos: list[Fallo] = []
+    visible = " ".join(re.sub(r"<[^>]+>", " ", _SCRIPTS.sub("", muestra)).split())
+    if len(visible) < MIN_TEXTO_SEDE:
+        fallos.append(
+            _grave("pagina_vacia", f"La página de entrada {contexto or ''} apenas tiene texto ({len(visible)} caracteres).")
+        )
+    elif not enlaces:
+        fallos.append(
+            _grave(
+                "enlaces",
+                f"Ningún enlace de la página de entrada {contexto or ''} casa con las rutas que sigue el rastreador: "
+                "la sede se habrá reorganizado y no se guardará nada más de esa sección.",
+            )
+        )
+    return Lectura(fallos=fallos, metricas={"enlaces": len(enlaces)})
+
+
+def _canarios_aeat_rastreo(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
+    datos = datos if isinstance(datos, dict) else {}
+    paginas, semillas = int(datos.get("paginas") or 0), int(datos.get("semillas") or 0)
+    fallidas = [f for f in datos.get("semillas_fallidas") or [] if isinstance(f, dict)]
+    http = [f for f in fallidas if f.get("http")]
+    fallos: list[Fallo] = []
+    if paginas == 0 and len(fallidas) < semillas:
+        fallos.append(_grave("paginas", "El rastreo de la sede ha terminado sin guardar ninguna página."))
+    if http:
+        detalle = "; ".join(f"{f.get('url')} (HTTP {f.get('http')})" for f in http[:5])
+        if semillas and len(http) * 2 > semillas:
+            fallos.append(_grave("semillas", f"Más de la mitad de las páginas de entrada ya no existen: {detalle}."))
+        else:
+            fallos.append(_leve("semillas", f"Páginas de entrada que ya no existen: {detalle}."))
+    return Lectura(fallos=fallos, metricas={"paginas": paginas, "semillas_fallidas_http": len(http)})
+
+
+def _canarios_aeat_pdf(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
+    datos = datos if isinstance(datos, dict) else {}
+    n = {clave: int(datos.get(clave) or 0) for clave in ("respuestas_pdf", "no_pdf", "guardados", "duplicados")}
+    fallos: list[Fallo] = []
+    if n["respuestas_pdf"] >= MIN_LOTE and n["guardados"] + n["duplicados"] == 0:
+        fallos.append(
+            _grave(
+                "no_pdf",
+                f"Ninguna de las {n['respuestas_pdf']} respuestas a enlaces .pdf era un PDF (¿llegan como visor HTML?): "
+                "no se ha guardado ninguno.",
+            )
+        )
+    elif n["respuestas_pdf"] and n["no_pdf"] * 2 > n["respuestas_pdf"]:
+        fallos.append(
+            _leve("no_pdf", f"{n['no_pdf']} de {n['respuestas_pdf']} respuestas a enlaces .pdf no eran un PDF.")
+        )
+    return Lectura(fallos=fallos, metricas={k: float(v) for k, v in n.items()})
+
+
+def _registrar_aeat() -> None:
+    from hacienda_gpt.crawler.crawlers import ReglasSedeAeat, extraer_enlaces
+
+    registrar(
+        Fuente(
+            clave="aeat_sede",
+            descripcion="páginas de entrada de la sede de la AEAT (HTML renderizado)",
+            expectativas=(
+                "Cada página de entrada (/Sede/irpf.html, /Sede/iva.html…) existe y tiene texto.",
+                "Algunos de sus enlaces casan con las «rutas_permitidas» del rastreador y están en sus «dominios»: "
+                "por ellos sigue el rastreo.",
+                "Una reorganización de la sede cambia las rutas: se añaden las nuevas junto a las antiguas.",
+            ),
+            reglas=ReglasSedeAeat,
+            extraer=extraer_enlaces,
+            canarios=_canarios_aeat_sede,
+            codigo="hacienda_gpt/crawler/crawlers.py (AgenciaTributariaWebCrawler.urls, extraer_enlaces)",
+        )
+    )
+    registrar(
+        Fuente(
+            clave="aeat_rastreo",
+            descripcion="ejecución del rastreador web de la sede de la AEAT (recuentos)",
+            expectativas=(
+                "Las páginas de entrada responden (no 404).",
+                "Una ejecución guarda páginas, en número parecido a las anteriores.",
+            ),
+            canarios=_canarios_aeat_rastreo,
+            caidas=(("paginas", 0.5),),
+            guarda_muestras=False,
+            codigo="hacienda_gpt/crawler/crawlers.py (AgenciaTributariaWebCrawler.urls)",
+        )
+    )
+    registrar(
+        Fuente(
+            clave="aeat_pdf",
+            descripcion="ejecución del rastreador de PDF de la sede de la AEAT (recuentos)",
+            expectativas=(
+                "Un enlace .pdf de la sede devuelve los bytes del PDF (empiezan por «%PDF»), no un visor HTML.",
+                "Una ejecución guarda PDF, en número parecido a las anteriores.",
+            ),
+            canarios=_canarios_aeat_pdf,
+            caidas=(("guardados", 0.5),),
+            guarda_muestras=False,
+            codigo="hacienda_gpt/crawler/crawlers.py (AgenciaTributariaPDFCrawler.parse_pdf)",
+        )
+    )
+
+
+# --------------------------------------------------------------------------- #
+# The BOE's autonomic codes (PDF) and the corpus conversion (Docling)
+# --------------------------------------------------------------------------- #
+
+
+def _canarios_ccaa_pdf(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
+    datos = datos if isinstance(datos, dict) else {}
+    fallos: list[Fallo] = []
+    no_pdf = [f for f in datos.get("no_pdf") or [] if isinstance(f, dict)]
+    http = [f for f in datos.get("http") or [] if isinstance(f, dict)]
+    guardados = list(datos.get("guardados") or [])
+    if no_pdf:
+        fallos.append(
+            _grave(
+                "no_pdf",
+                "Respuestas que no son un PDF: "
+                + "; ".join(f"{f.get('ccaa')} (HTTP {f.get('status')}, empieza por {f.get('inicio', '')[:30]!r})" for f in no_pdf[:5])
+                + ".",
+            )
+        )
+    conocidos = [f for f in http if f.get("conocido")]
+    if conocidos:
+        fallos.append(
+            _grave(
+                "fichero",
+                "El PDF de estos códigos ya no está donde se espera (abrir_pdf.php?fich=…): "
+                + ", ".join(f"{f.get('ccaa')} (HTTP {f.get('status')})" for f in conocidos)
+                + ".",
+            )
+        )
+    if len(http) > len(conocidos):
+        fallos.append(
+            _leve(
+                "fichero_no_verificado",
+                "Códigos sin nombre de fichero verificado que no responden: "
+                + ", ".join(f"{f.get('ccaa')} (HTTP {f.get('status')})" for f in http if not f.get("conocido"))
+                + ".",
+            )
+        )
+    if not guardados and int(datos.get("pedidos") or 0):
+        fallos.append(_grave("guardados", "No se ha guardado ningún código autonómico."))
+    return Lectura(fallos=fallos, metricas={"guardados": len(guardados)})
+
+
+def _canarios_ccaa_texto(codigos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
+    from hacienda_gpt.ops.formatos_corpus import rendimiento
+
+    codigos = [c for c in codigos if isinstance(c, dict)] if isinstance(codigos, list) else []
+    fallos: list[Fallo] = []
+    sin_texto = [c["fichero"] for c in codigos if not c.get("fragmentos") or not c.get("caracteres")]
+    if sin_texto:
+        fallos.append(
+            _grave(
+                "sin_texto",
+                "PDF descargado pero sin texto extraído (¿escaneado, o Docling ya no lo entiende?): "
+                + ", ".join(sin_texto[:10])
+                + ". Se indexa como vacío.",
+            )
+        )
+    sin_encabezados = [
+        c["fichero"] for c in codigos if c.get("caracteres") and c.get("fragmentos") and not c.get("con_encabezado")
+    ]
+    if sin_encabezados:
+        fallos.append(
+            _grave(
+                "sin_encabezados",
+                "Texto sin ningún encabezado «Artículo N» ni «Disposición …»: la conversión ha perdido la estructura "
+                "de la norma en " + ", ".join(sin_encabezados[:10]) + ".",
+            )
+        )
+    return Lectura(fallos=fallos, metricas={"codigos": len(codigos), "caracteres_por_kb": rendimiento(codigos)})
+
+
+def _canarios_corpus(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
+    datos = datos if isinstance(datos, dict) else {}
+    ficheros, fragmentos = int(datos.get("ficheros") or 0), int(datos.get("fragmentos") or 0)
+    vacios = int(datos.get("n_sin_fragmentos") or 0)
+    fallos: list[Fallo] = []
+    if ficheros and fragmentos == 0:
+        fallos.append(_grave("fragmentos", f"Ninguno de los {ficheros} ficheros convertidos ha dado un fragmento."))
+    elif ficheros >= 4 and vacios * 4 > ficheros:
+        ejemplos = ", ".join(str(f) for f in (datos.get("sin_fragmentos") or [])[:5])
+        fallos.append(_leve("sin_fragmentos", f"{vacios} de {ficheros} ficheros no han dado ningún fragmento ({ejemplos})."))
+    por_fichero = fragmentos / ficheros if ficheros else 0.0
+    return Lectura(fallos=fallos, metricas={"ficheros": ficheros, "fragmentos_por_fichero": por_fichero})
+
+
+def _registrar_ccaa() -> None:
+    registrar(
+        Fuente(
+            clave="boe_ccaa_pdf",
+            descripcion="PDF de los códigos electrónicos autonómicos del BOE (biblioteca_juridica/codigos)",
+            expectativas=(
+                "abrir_pdf.php?fich=<código>.pdf devuelve un PDF (empieza por «%PDF-») con estado 200.",
+                "El nombre de fichero de cada código del catálogo sigue siendo válido.",
+            ),
+            canarios=_canarios_ccaa_pdf,
+            codigo="hacienda_gpt/crawler/boe_consolidado.py (DEFAULT_CCAA_CODES, parse_pdf)",
+        )
+    )
+    registrar(
+        Fuente(
+            clave="boe_ccaa_texto",
+            descripcion="texto extraído (Docling) de los PDF de los códigos autonómicos",
+            expectativas=(
+                "Cada PDF de código produce fragmentos con texto.",
+                "El texto conserva encabezados «Artículo N» o «Disposición adicional/transitoria/derogatoria/final».",
+                "Los caracteres de texto por KB de PDF se parecen a los de ingestas anteriores.",
+            ),
+            canarios=_canarios_ccaa_texto,
+            caidas=(("caracteres_por_kb", 0.5),),
+            codigo="hacienda_gpt/processor/document_loader.py (Docling), hacienda_gpt/ops/formatos_corpus.py",
+        )
+    )
+    registrar(
+        Fuente(
+            clave="corpus_docling",
+            descripcion="conversión del corpus con Docling (recuentos por ingesta)",
+            expectativas=(
+                "Cada fichero HTML o PDF del corpus produce al menos un fragmento.",
+                "Los fragmentos por fichero se parecen a los de ingestas anteriores.",
+            ),
+            canarios=_canarios_corpus,
+            caidas=(("fragmentos_por_fichero", 0.5),),
+            guarda_muestras=False,
+            codigo="hacienda_gpt/processor/document_loader.py (process_documents, _process_one_file)",
+        )
+    )
+
+
+def _registrar_calendario() -> None:
+    from hacienda_gpt.ops.formatos_calendario import registrar_fuentes
+
+    registrar_fuentes()
 
 
 # --------------------------------------------------------------------------- #
@@ -559,7 +1048,17 @@ def _registrar_documentos() -> None:
     )
 
 
-for _grupo in (_registrar_boe, _registrar_dgt, _registrar_rastreadores, _registrar_documentos):
+for _grupo in (
+    _registrar_boe,
+    _registrar_dgt,
+    _registrar_rastreadores,
+    _registrar_seeds,
+    _registrar_cendoj,
+    _registrar_aeat,
+    _registrar_ccaa,
+    _registrar_calendario,
+    _registrar_documentos,
+):
     try:
         _grupo()
     except ImportError as exc:  # e.g. scrapy missing on an API-only install

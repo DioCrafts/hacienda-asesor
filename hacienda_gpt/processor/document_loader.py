@@ -1032,6 +1032,12 @@ class DocumentProcessor:
         )
         checkpoint_thread.start()
 
+        # Format watch: what Docling yielded per file (zero chunks, PDFs of the autonomic codes without text).
+        # Counting never raises and never changes what is indexed.
+        from hacienda_gpt.ops.formatos_corpus import RecuentoCorpus
+
+        recuento = RecuentoCorpus(self.content_dir)
+
         try:
             for file_path, file_chunks in self._iter_chunks_streaming(files_to_process):
                 # Surface bg-thread failures promptly so we don't accumulate
@@ -1039,6 +1045,7 @@ class DocumentProcessor:
                 if checkpoint_exc:
                     raise checkpoint_exc[0]
 
+                recuento.anotar(file_path, file_chunks)
                 files_window.append(file_path)
                 chunks_window.extend(file_chunks)
                 completed += 1
@@ -1091,6 +1098,7 @@ class DocumentProcessor:
         # If the bg thread errored, re-raise here (it dies silently otherwise).
         if checkpoint_exc:
             raise checkpoint_exc[0]
+        recuento.informar(contexto="incremental" if diff is not None else "completa")
 
         logging.info(
             "Local FAISS index successfully saved to %s (%d chunks across %d file(s))",

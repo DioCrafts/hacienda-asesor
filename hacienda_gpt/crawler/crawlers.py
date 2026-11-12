@@ -7,15 +7,18 @@ from typing import Any
 from urllib.parse import urlparse
 
 from pathvalidate import sanitize_filepath
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 import scrapy
-from scrapy.http import Response
+from scrapy.http import HtmlResponse, Response
 from scrapy.linkextractors import LinkExtractor
+from scrapy.spidermiddlewares.httperror import HttpError
 from scrapy_playwright.page import PageMethod
 
 from hacienda_gpt.crawler.boe_consolidado import BOECCAACrawler  # re-export
 from hacienda_gpt.crawler.boletin_autonomico import RegionalBoletinCrawler  # re-export
 from hacienda_gpt.crawler.cendoj import CENDOJCrawler  # re-export
 from hacienda_gpt.crawler.teac import TEACCrawler  # re-export
+from hacienda_gpt.ops import formatos
 
 __all__ = [
     "AgenciaTributariaWebCrawler",
@@ -25,6 +28,50 @@ __all__ = [
     "CENDOJCrawler",
     "TEACCrawler",
 ]
+
+
+SEDE_AEAT = "https://sede.agenciatributaria.gob.es/"
+_BASE_HREF_RE = re.compile(r"""<base\s[^>]*href\s*=\s*["']([^"']+)["']""", re.IGNORECASE)
+
+
+class ReglasSedeAeat(BaseModel):
+    """Which links of the AEAT sede the web crawler follows, as format-spec data (``aeat_sede``).
+
+    Version 1 holds ``AgenciaTributariaWebCrawler.allowed_paths`` and its
+    domain; a reviewed proposal may add the paths of a reorganised sede.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    # Regular expressions searched in each link's URL (Scrapy ``LinkExtractor(allow=…)``).
+    rutas_permitidas: tuple[str, ...] = Field(min_length=1)
+    dominios: tuple[str, ...] = Field(min_length=1)
+
+    @field_validator("rutas_permitidas")
+    @classmethod
+    def _patrones(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        return tuple(formatos.patron_seguro(patron) for patron in value)
+
+    @field_validator("dominios")
+    @classmethod
+    def _dominios(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        if any(not re.fullmatch(r"[a-z0-9.-]+\.gob\.es", dominio) for dominio in value):
+            raise ValueError("solo se admiten dominios de la Administración (*.gob.es)")
+        return value
+
+
+def extraer_enlaces(reglas: ReglasSedeAeat, html: str, url: str | None = None) -> list[str]:
+    """The links of one sede page the crawler follows under ``reglas``, in page order.
+
+    ``url`` is the page's address; without it, a ``<base href>`` in ``html``
+    (the format watch keeps one in its samples) or the sede's root is used.
+    """
+    if url is None:
+        base = _BASE_HREF_RE.search(html[:4096])
+        url = base.group(1) if base else SEDE_AEAT
+    response = HtmlResponse(url=url, body=html.encode("utf-8"), encoding="utf-8")
+    extractor = LinkExtractor(allow=[re.compile(p) for p in reglas.rutas_permitidas], allow_domains=list(reglas.dominios))
+    return [link.url for link in extractor.extract_links(response)]
 
 
 class AgenciaTributariaWebCrawler(scrapy.Spider):
@@ -61,16 +108,49 @@ class AgenciaTributariaWebCrawler(scrapy.Spider):
         snapshot_date = kwargs.get("snapshot_date") or datetime.now(UTC).strftime("%Y-%m-%d")
         self.folder = os.path.join(folder, snapshot_date)
         self.mode = mode
-        self.allowed_patterns: list[re.Pattern] = [re.compile(path) for path in self.allowed_paths]
+        # The paths to follow are the ``aeat_sede`` format spec (version 1: ``allowed_paths`` above).
+        self.reglas = _reglas_sede(self.allowed_paths)
+        self.allowed_patterns: list[re.Pattern] = [re.compile(path) for path in self.reglas.rutas_permitidas]
         self._ensure_folder_exists()
+        # Format watch: what this run read (reported once, when the spider closes).
+        self._semillas = set(self.urls)
+        self._paginas = 0
+        self._semillas_fallidas: list[dict[str, Any]] = []
 
     def start_requests(self) -> Generator[scrapy.Request]:
         for url in self.urls:
-            yield scrapy.Request(url, meta=self._get_meta_for_request(url), callback=self.parse)
+            yield scrapy.Request(
+                url, meta=self._get_meta_for_request(url), callback=self.parse, errback=self._semilla_fallida
+            )
 
     def parse(self, response: Response) -> Generator[scrapy.Request]:
         self._save_response_to_file(response)
+        self._paginas += 1
+        if response.url in self._semillas:
+            # Format watch (never raises): a reorganised sede still answers, with no link the crawler follows.
+            # The ``<base>`` keeps the page's address in the sample, so the links can be replayed from it.
+            formatos.observar(
+                "aeat_sede", f'<base href="{response.url}">' + getattr(response, "text", ""), contexto=response.url
+            )
         yield from self._follow_domain_links(response)
+
+    def _semilla_fallida(self, failure: Any) -> None:
+        request = getattr(failure, "request", None)
+        status = failure.value.response.status if failure.check(HttpError) else None
+        self._semillas_fallidas.append({"url": request.url if request else "?", "http": status})
+        self.logger.warning("AEAT seed page failed: %s (%s)", request.url if request else "?", failure.value)
+
+    def closed(self, reason: str) -> None:
+        formatos.observar(
+            "aeat_rastreo",
+            None,
+            extraccion={
+                "paginas": self._paginas,
+                "semillas": len(self._semillas),
+                "semillas_fallidas": self._semillas_fallidas,
+            },
+            contexto=reason,
+        )
 
     def _get_meta_for_request(self, url: str) -> dict[str, Any]:
         return {"playwright": True, "playwright_page_methods": self._get_page_methods(url)}
@@ -89,7 +169,7 @@ class AgenciaTributariaWebCrawler(scrapy.Spider):
             file_pointer.write(response.body)
 
     def _follow_domain_links(self, response: Response) -> Generator[scrapy.Request]:
-        link_extractor = LinkExtractor(allow=self.allowed_patterns, allow_domains=["sede.agenciatributaria.gob.es"])
+        link_extractor = LinkExtractor(allow=self.allowed_patterns, allow_domains=list(self.reglas.dominios))
         # Scrapy types callbacks with the base Response; pages here are HTML (TextResponse).
         for link in link_extractor.extract_links(response):  # type: ignore[arg-type]
             yield scrapy.Request(url=link.url, meta=self._get_meta_for_request(link.url), callback=self.parse)
@@ -123,6 +203,8 @@ class AgenciaTributariaPDFCrawler(scrapy.Spider):
         self.seen_urls: set[str] = set()
         self.seen_content_hashes: set[str] = set()
         os.makedirs(self.folder, exist_ok=True)
+        # Format watch: PDF answers, how many were not a PDF (a rendered viewer) and how many were saved.
+        self._recuento = {"respuestas_pdf": 0, "no_pdf": 0, "guardados": 0, "duplicados": 0}
 
     def parse(self, response: Response) -> Generator[scrapy.Request]:
         self.seen_urls.add(response.url)
@@ -144,8 +226,10 @@ class AgenciaTributariaPDFCrawler(scrapy.Spider):
         # here mirrors how AgenciaTributariaWebCrawler saves HTML.
         if not self._is_pdf_response(response):
             return
+        self._recuento["respuestas_pdf"] += 1
         body = response.body
         if not body or not body.startswith(b"%PDF"):
+            self._recuento["no_pdf"] += 1
             self.logger.warning(
                 "Skipping %s: response body is not a PDF (%d bytes); playwright may have rendered it.",
                 response.url,
@@ -154,12 +238,17 @@ class AgenciaTributariaPDFCrawler(scrapy.Spider):
             return
         content_hash = hashlib.sha256(body).hexdigest()
         if content_hash in self.seen_content_hashes:
+            self._recuento["duplicados"] += 1
             return
         self.seen_content_hashes.add(content_hash)
         path = self._generate_pdf_path(response.url)
         with open(path, "wb") as file_pointer:
             file_pointer.write(body)
+        self._recuento["guardados"] += 1
         self.logger.info("Saved PDF %s -> %s", response.url, path)
+
+    def closed(self, reason: str) -> None:
+        formatos.observar("aeat_pdf", None, extraccion=dict(self._recuento), contexto=reason)
 
     def _generate_pdf_path(self, url: str) -> str:
         # basename strips any directory component, so path traversal via the URL
@@ -178,3 +267,11 @@ class AgenciaTributariaPDFCrawler(scrapy.Spider):
 
     def _extract_domain_from_start_url(self) -> str:
         return urlparse(self.start_urls[0]).netloc
+
+
+def _reglas_sede(rutas_de_siempre: list[str]) -> ReglasSedeAeat:
+    """The ``aeat_sede`` rules in force; the crawler's own paths if the spec cannot be read."""
+    try:
+        return formatos.reglas_de("aeat_sede", ReglasSedeAeat)
+    except formatos.FormatoError:
+        return ReglasSedeAeat(rutas_permitidas=tuple(rutas_de_siempre), dominios=("sede.agenciatributaria.gob.es",))

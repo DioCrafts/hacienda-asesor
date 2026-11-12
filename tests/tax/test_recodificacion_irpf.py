@@ -388,7 +388,11 @@ def test_every_numeric_field_of_every_group_of_figures_has_a_rule() -> None:
         assert adaptador.tipo == f"cifras:{nombre}" and nucleo.adaptador_de(adaptador.tipo) is adaptador
         # The schema shown to the model is the code of the model itself, nested models included.
         assert f"class {adaptador.cifras.modelo.__name__}" in adaptador.esquema()
-        assert adaptador.casos_minimos(Objetivo.model_construct()) == (2 if adaptador.cifras.lineas else 0)
+        evaluable = bool(adaptador.cifras.lineas) or adaptador.cifras.evaluador is not None
+        assert adaptador.casos_minimos(Objetivo.model_construct()) == (2 if evaluable else 0)
+    # Only the group no calculator uses is left without an executable case, and it says why.
+    assert [n for n, a in CIFRAS.items() if a.casos_minimos(Objetivo.model_construct()) == 0] == ["obligacion_declarar"]
+    assert "ninguna calculadora usa estas cifras" in CIFRAS["obligacion_declarar"].cifras.sin_caso
 
 
 def test_every_shipped_group_is_located_in_its_law_or_said_to_be_out_of_reach() -> None:
@@ -616,15 +620,18 @@ def _objetivo_de(nombre: str, antes: dict[int, Any], ambito: str = "estado") -> 
 
 def test_groups_with_no_executable_case_or_with_figures_of_another_law_always_wait_for_a_person() -> None:
     raw = json.loads((DATA_DIR / "irpf_2026.json").read_text(encoding="utf-8"))
-    # No line of the calculator isolates the share borne by the regional tax: gate and reviewer only, and flagged.
-    reparto = CIFRAS["reparto_deducciones_estatales"]
-    objetivo = _objetivo_de("reparto_deducciones_estatales", {2026: raw["reparto_deducciones_estatales"]})
-    cita = ["El 50 por ciento del importe total de las deducciones previstas en esta ley."]
-    modelo, visto = reparto.controlar({"parte_autonomica": "0.50"}, cita, objetivo, efectos_desde=None, datos={})
-    assert modelo is not None and visto.ok and any("no tiene casos de prueba" in r for r in visto.revisar)
-    assert reparto.casos_minimos(objetivo) == 0 and "empty list" in reparto.guia_casos(objetivo)
+    # No calculator uses the limits of the obligation to file: gate and reviewer only, and flagged with the reason.
+    obligacion = CIFRAS["obligacion_declarar"]
+    objetivo = _objetivo_de("obligacion_declarar", {2026: raw["obligacion_declarar"]})
+    actual = {k: v for k, v in raw["obligacion_declarar"].items() if k != "fuente"}
+    citas = ["22.000 euros anuales", "15.876 euros anuales", "1.500 euros anuales", "1.600 euros anuales"]
+    citas = [f"no tendrán que declarar quienes no superen {c} en este supuesto" for c in citas]
+    modelo, visto = obligacion.controlar(actual, citas, objetivo, efectos_desde=None, datos={})
+    assert modelo is not None and visto.ok
+    assert any("no tiene casos de prueba" in r and "ninguna calculadora usa" in r for r in visto.revisar)
+    assert obligacion.casos_minimos(objetivo) == 0 and "empty list" in obligacion.guia_casos(objetivo)
     with pytest.raises(ValueError):
-        reparto.evaluar_caso(modelo, {"contribuyente": {}}, objetivo)
+        obligacion.evaluar_caso(modelo, {"contribuyente": {}}, objetivo)
 
     # The 10 % ceiling of donations is printed by another law: kept as each file has it, never proposed.
     donativos = CIFRAS["donativos"]

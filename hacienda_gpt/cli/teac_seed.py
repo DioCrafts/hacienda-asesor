@@ -27,8 +27,10 @@ import urllib.parse
 import urllib.request
 
 import click
+from pydantic import BaseModel, ConfigDict, field_validator
 
-from hacienda_gpt.crawler.teac import parse_teac_criterio
+from hacienda_gpt.crawler.teac import observar_criterio, parse_teac_criterio
+from hacienda_gpt.ops import formatos
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +48,38 @@ _CRITERIO_URL_TMPL = "https://serviciostelematicosext.hacienda.gob.es/TEAC/DYCTE
 _CRITERIO_LINK_RE = re.compile(r"""href=['"](criterio\.aspx\?id=([^'"&]+))[^'"]*['"]""", re.IGNORECASE)
 _DDMMYYYY_RE = re.compile(r"^\d{2}/\d{2}/\d{4}$")
 _DEFAULT_PAGE_LIMIT = 50
+
+
+class ReglasListadoTeac(BaseModel):
+    """How criterio links are found in a DYCTEA listing page, as format-spec data (``teac_listado``).
+
+    Version 1 holds ``_CRITERIO_LINK_RE`` (flags inline); a reviewed proposal may replace it.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    # Group 2: the criterio id (the compound "54/00218/2024/00/0/1").
+    patron_enlace: str
+
+    @field_validator("patron_enlace")
+    @classmethod
+    def _patron(cls, value: str) -> str:
+        formatos.patron_seguro(value)
+        if re.compile(value).groups < 2:
+            raise ValueError("el patrón debe capturar el id del criterio en el grupo 2")
+        return value
+
+
+def ids_de_pagina(reglas: ReglasListadoTeac, text: str) -> list[str]:
+    """The criterio ids linked from one listing page, in page order (repeats included)."""
+    return [match.group(2) for match in re.finditer(reglas.patron_enlace, text)]
+
+
+def _reglas_listado() -> ReglasListadoTeac:
+    try:
+        return formatos.reglas_de("teac_listado", ReglasListadoTeac)
+    except formatos.FormatoError:
+        return ReglasListadoTeac(patron_enlace="(?i)" + _CRITERIO_LINK_RE.pattern)
 
 
 def _http_get(url: str, *, retries: int = 2, backoff_s: float = 1.0) -> bytes:
@@ -76,12 +110,16 @@ def collect_criterio_ids(
     # `teac_seed._http_get` without having to reach into defaults.
     if fetcher is None:
         fetcher = _http_get
+    reglas = _reglas_listado()
     seen: list[str] = []
     seen_set: set[str] = set()
     for pg in range(1, page_limit + 1):
         body = fetcher(_LIST_URL_TMPL.format(fd=fd, fh=fh, pg=pg))
         text = body.decode("utf-8", errors="replace")
-        ids = [match.group(2) for match in _CRITERIO_LINK_RE.finditer(text)]
+        ids = ids_de_pagina(reglas, text)
+        if pg == 1:
+            # Format watch (never raises): links in another form read as "no criterios in this range".
+            formatos.observar("teac_listado", text, contexto=f"{fd}..{fh}")
         new = [cid for cid in ids if cid not in seen_set]
         if not new:
             # Empty page → we've exhausted results. (DYCTEA returns a blank
@@ -114,6 +152,7 @@ def fetch_criterio(criterio_id: str, target_dir: Path, *, fetcher=None) -> tuple
         # we don't index garbage.
         html_path.unlink(missing_ok=True)
         return html_path, None
+    observar_criterio(html, metadata, criterio_id)
     metadata_path = target_dir / f"{safe}.json"
     metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
     return html_path, metadata_path

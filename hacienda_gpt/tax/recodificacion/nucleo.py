@@ -30,6 +30,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Sequence
 from contextvars import ContextVar
+import copy
 from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
 import hashlib
@@ -63,7 +64,8 @@ from hacienda_gpt.tax.verificacion import VERSION_DIARIO, TextoDe, _comprimido
 logger = logging.getLogger(__name__)
 
 Estado = Literal["propuesta", "aplicada", "rechazada", "sin_converger"]
-Resultado = Literal["recodificada", "retirada"]
+# "sin_cambios": the article was amended and the group, re-read whole, still says what the files hold.
+Resultado = Literal["recodificada", "retirada", "sin_cambios"]
 MAX_ITER = 3
 # Times the reader may ask for further articles of the same law before it has to answer.
 MAX_AMPLIACIONES = 2
@@ -135,6 +137,9 @@ class Objetivo(_Registro):
     norma_texto: str | None = None
     # Number of the amended law as the amending norm cites it ("35/2006"), to find the passages about it.
     ley_citada: str = ""
+    # The article was amended (or changed since the files read it): besides a new encoding, the reader may answer
+    # that the group does not change, which the gate and the reviewer then have to bear out.
+    admite_sin_cambios: bool = False
 
 
 class Discrepancia(_Registro):
@@ -227,6 +232,7 @@ class Propuesta(_Registro):
     insertar_tras: str | None = None
     norma_texto: str | None = None
     ley_citada: str = ""
+    admite_sin_cambios: bool = False
     clave: str
     creada_el: datetime
     actualizada_el: datetime
@@ -242,7 +248,7 @@ class Propuesta(_Registro):
         """Passed the gate with nothing left to look at and the reviewer agreed; never a withdrawal."""
         return (
             self.estado == "propuesta"
-            and self.resultado == "recodificada"
+            and self.resultado in ("recodificada", "sin_cambios")
             and self.control is not None
             and self.control.ok
             and not self.control.revisar
@@ -427,6 +433,21 @@ class Adaptador(ABC):
         """Evaluable test cases the reviewer must bring for this group (0: no calculator can run a case for it)."""
         return self.min_casos
 
+    def valor_previo(self, anterior: Any) -> Any:
+        """What a file holds for the group, as a proposal would carry it: provenance and marks taken out.
+
+        Used to put the encoding in force through this adapter's own gate when the reader says that an amended
+        article does not change it. Default: the keys every adapter writes itself (``fuente``, ``evidencia``,
+        ``avisos``, ``recodificada_el``) are dropped, and the ``fuente`` of a nested object too.
+        """
+        if not isinstance(anterior, dict):
+            return anterior
+        valor = {k: copy.deepcopy(v) for k, v in anterior.items() if k not in _PROCEDENCIA}
+        for hijo in valor.values():
+            if isinstance(hijo, dict):
+                hijo.pop("fuente", None)
+        return valor
+
     # -- optional: letting the generic commands find this kind of group ------ #
 
     def grupos(self, raw: dict[str, Any]) -> list[list[str]]:
@@ -511,6 +532,8 @@ class Adaptador(ABC):
         """Clear the pending mark of the group at ``ruta``."""
 
 
+# Keys an adapter writes itself, never part of a proposed value.
+_PROCEDENCIA = frozenset({"fuente", "evidencia", "avisos", "recodificada_el"})
 _ADAPTADORES: dict[str, Adaptador] = {}
 # The parameter files (by year) of the run in course, for adapters whose test cases go through a whole calculator.
 _FICHEROS: ContextVar[dict[int, Any] | None] = ContextVar("recodificacion_ficheros", default=None)
@@ -607,6 +630,11 @@ def examinar(
     examen = _Examen(control=control, modelo=modelo, desde=desde, hasta=hasta)
     if desde is not None:
         examen.ejercicios, examen.excluidos = adaptador.ejercicios_afectados(desde, hasta, objetivo.ejercicios)
+    _notas_de_origen(objetivo, control)
+    return examen
+
+
+def _notas_de_origen(objetivo: Objetivo, control: Control) -> None:
     if objetivo.norma_texto is not None:
         control.revisar.append(
             f"leída del texto de la norma modificadora {objetivo.norma_texto}, que el BOE aún no había consolidado en "
@@ -617,6 +645,65 @@ def examinar(
             f"leída de la versión histórica {objetivo.version} indicada por el operador: compruebe que ninguna norma "
             "posterior la ha modificado con efectos retroactivos para los ejercicios afectados"
         )
+
+
+def citas_ausentes(citas: Iterable[str], comprimido: str) -> list[str]:
+    """Quotes of a previous encoding that are no longer in a text already compressed with ``_comprimido``.
+
+    Looked for as the weekly verification does: a quote a person stitched with "[...]" is looked for piece by piece.
+    """
+    faltan: list[str] = []
+    for cita in citas:
+        partes = [p for p in re.split(r"\[\.\.\.\]|…", cita) if len(_comprimido(p)) > 15] or [cita]
+        if any(_comprimido(parte) not in comprimido for parte in partes):
+            faltan.append(cita)
+    return faltan
+
+
+def examinar_sin_cambios(
+    adaptador: Adaptador, objetivo: Objetivo, texto: TextoLegal, *, citas: Sequence[str], datos: dict[int, Any]
+) -> _Examen:
+    """The deterministic gate of the answer "the amended article does not change this group".
+
+    Nothing a model said is taken on trust: every quote the encoding in force rested on must still be in the text
+    read, the quotes the reader adds (``citas`` beyond those) must be literal and in one piece, and the encoding in
+    force must pass this adapter's own gate with all of them (every figure inside a quote). The years it speaks
+    for are those whose file holds that same encoding; no effects date is involved, because nothing is written.
+    """
+    control = Control()
+    if not objetivo.admite_sin_cambios:
+        control.fallos.append("«sin_cambios» solo se admite cuando se pide confirmar un artículo modificado")
+    con_grupo = sorted(e for e, valor in objetivo.antes.items() if valor is not None)
+    if not con_grupo:
+        control.fallos.append("ningún fichero contiene este grupo: no hay codificación vigente que confirmar")
+        return _Examen(control=control)
+    previas = list(objetivo.citas_antes)
+    nuevas = [c for c in citas if c not in previas]
+    if not previas and not nuevas:
+        control.fallos.append(
+            "no hay citas de la codificación vigente con las que comprobarla: copia en «evidencia», literalmente, "
+            "los pasajes que imprimen cada una de sus cifras"
+        )
+    control.fallos += [
+        f"una cita de la codificación vigente ya no está en el texto: «{cita[:90]}»"
+        for cita in citas_ausentes(previas, texto.comprimido)
+    ]
+    if nuevas:
+        control.fallos += citas_no_literales(nuevas, texto.comprimido)
+    vigente = adaptador.valor_previo(objetivo.antes[con_grupo[-1]])
+    modelo, propio = adaptador.controlar(vigente, [*previas, *nuevas], objetivo, efectos_desde=None, datos=datos)
+    control.fallos += [f"la codificación vigente no supera el control: {fallo}" for fallo in propio.fallos]
+    control.revisar += propio.revisar
+    if modelo is None and control.ok:
+        control.fallos.append("la codificación vigente no se pudo validar con el modelo del grupo")
+    examen = _Examen(control=control, modelo=modelo)
+    examen.ejercicios = [e for e in con_grupo if adaptador.valor_previo(objetivo.antes[e]) == vigente]
+    examen.excluidos = {
+        e: "su fichero tiene otra codificación de este grupo: se comprueba aparte, con su propia redacción"
+        for e in con_grupo
+        if e not in examen.ejercicios
+    }
+    _notas_de_origen(objetivo, control)
     return examen
 
 
@@ -652,6 +739,7 @@ def clave_de(objetivo: Objetivo, texto: TextoLegal) -> str:
             {str(k): v for k, v in sorted(objetivo.antes.items())},
             objetivo.anotaciones,
             sorted(objetivo.motivo),
+            *(["admite_sin_cambios"] if objetivo.admite_sin_cambios else []),
         ],
         ensure_ascii=False,
         sort_keys=True,
@@ -729,19 +817,29 @@ def _mensaje_lector(objetivo: Objetivo, texto: TextoLegal, indice: list[str], pr
             if objetivo.motivo:
                 contenido += "\n\nPor qué se revisa: " + "; ".join(objetivo.motivo[:8])
             partes.append(prompts.etiquetar("codificacion_anterior", contenido, ejercicio=ejercicio))
+    if objetivo.admite_sin_cambios:
+        motivo = "; ".join(objetivo.motivo[:3]) or f"a norm amended {objetivo.boe_id}"
+        partes.append(
+            prompts.etiquetar("revision_tras_modificacion", prompts.REVISION_TRAS_MODIFICACION.format(motivo=motivo))
+        )
     if previas:
         ultima = previas[-1]
-        rechazada = json.dumps(
-            {"valor": ultima.valor, "evidencia": ultima.citas, "efectos_desde": ultima.efectos_desde},
-            ensure_ascii=False,
-            indent=1,
-        )
+        if ultima.resultado_lector == "sin_cambios":
+            rechazada = json.dumps({"resultado": "sin_cambios", "evidencia": ultima.citas}, ensure_ascii=False, indent=1)
+        else:
+            rechazada = json.dumps(
+                {"valor": ultima.valor, "evidencia": ultima.citas, "efectos_desde": ultima.efectos_desde},
+                ensure_ascii=False,
+                indent=1,
+            )
         partes.append(prompts.etiquetar("propuesta_rechazada", rechazada, iteracion=ultima.numero))
         partes.append(prompts.etiquetar("objeciones", "\n".join(f"- {o}" for o in ultima.objeciones)))
     return "\n\n".join(partes)
 
 
-def _mensaje_revisor(objetivo: Objetivo, texto: TextoLegal, valor: Any, citas: list[str]) -> str:
+def _mensaje_revisor(
+    objetivo: Objetivo, texto: TextoLegal, valor: Any, citas: list[str], *, sin_cambios: bool = False
+) -> str:
     partes = [
         prompts.etiquetar(
             "tarea",
@@ -754,7 +852,9 @@ def _mensaje_revisor(objetivo: Objetivo, texto: TextoLegal, valor: Any, citas: l
     if objetivo.anotaciones:
         partes.append(prompts.etiquetar("anotaciones_de_la_norma_modificadora", objetivo.anotaciones))
     propuesta = json.dumps({"valor": valor, "evidencia": citas}, ensure_ascii=False, indent=1)
-    partes.append(prompts.etiquetar("propuesta", propuesta))
+    partes.append(prompts.etiquetar("propuesta", propuesta, vigente="si" if sin_cambios else None))
+    if sin_cambios:
+        partes.append(prompts.etiquetar("revision_sin_cambios", prompts.REVISION_SIN_CAMBIOS))
     return "\n\n".join(partes)
 
 
@@ -823,7 +923,10 @@ def _objeciones_del_revisor(
     casos: list[CasoEvaluado],
     desde: date | None,
     min_casos: int | None = None,
+    *,
+    efectos: bool = True,
 ) -> list[str]:
+    """What keeps the reviewer from agreeing. ``efectos`` False: nothing is written, so no effects date is compared."""
     min_casos = adaptador.min_casos if min_casos is None else min_casos
     objeciones = [
         f"Revisor ({d.tipo}): {d.descripcion}" + (f" — «{d.cita[:300]}»" if d.cita else "")
@@ -833,7 +936,7 @@ def _objeciones_del_revisor(
     if not veredicto.conforme and not objeciones:
         objeciones.append("El revisor no da su conformidad y no concreta ninguna discrepancia.")
     segun_revisor = fecha_iso(veredicto.efectos_desde)
-    if segun_revisor is None or segun_revisor != desde:
+    if efectos and (segun_revisor is None or segun_revisor != desde):
         objeciones.append(
             f"Efectos: el lector lee que la redacción produce efectos desde {desde.isoformat() if desde else '?'} y el "
             f"revisor desde {veredicto.efectos_desde or '?'} («{veredicto.cita_efectos[:200]}»). Sin acuerdo no se sabe "
@@ -945,6 +1048,32 @@ def recodificar(
         comprimido = _con_anotaciones(texto, objetivo.anotaciones)[1]
         iteraciones.append(iteracion)
         resultado, examen = None, None
+        if iteracion.resultado_lector == "sin_cambios":
+            examen = examinar_sin_cambios(adaptador, objetivo, texto, citas=iteracion.citas, datos=datos)
+            iteracion.citas = list(dict.fromkeys([*objetivo.citas_antes, *iteracion.citas]))
+            iteracion.control = examen.control
+            if not examen.control.ok or examen.modelo is None:
+                iteracion.objeciones = [f"Control: {fallo}" for fallo in examen.control.fallos]
+                continue
+            usuario = _mensaje_revisor(
+                objetivo, texto, adaptador.normalizar(examen.modelo), iteracion.citas, sin_cambios=True
+            )
+            llamadas += 1
+            enviados += len(sistema_revisor) + len(usuario)
+            revisado = revisor.complete_json(
+                system=sistema_revisor,
+                user=usuario,
+                schema=prompts.esquema_revisor(extra),
+                schema_name="recodificacion_revision",
+            )
+            iteracion.veredicto = _veredicto(revisado, comprimido, extra)
+            iteracion.casos = _evaluar_casos(adaptador, examen.modelo, revisado, objetivo, comprimido)
+            iteracion.objeciones = _objeciones_del_revisor(
+                adaptador, examen.modelo, iteracion.veredicto, iteracion.casos, None, min_casos, efectos=False
+            )
+            if not iteracion.objeciones:
+                resultado, convergio = "sin_cambios", True
+            continue
         retirada = iteracion.resultado_lector == "no_calculable"
         if retirada and not adaptador.permite_retirada:
             iteracion.objeciones = [
@@ -1034,7 +1163,7 @@ def recodificar(
         anotaciones=objetivo.anotaciones,
         antes=objetivo.antes,
         citas_antes=objetivo.citas_antes,
-        despues=ultima.valor if ultima and resultado != "retirada" else None,
+        despues=ultima.valor if ultima and resultado not in ("retirada", "sin_cambios") else None,
         citas=ultima.citas if ultima and resultado != "retirada" else [],
         motivo_lector=ultima.motivo if ultima else "",
         cambios=ultima.cambios if ultima else "",
@@ -1051,6 +1180,7 @@ def recodificar(
         insertar_tras=objetivo.insertar_tras,
         norma_texto=objetivo.norma_texto,
         ley_citada=objetivo.ley_citada,
+        admite_sin_cambios=objetivo.admite_sin_cambios,
         clave=clave,
         creada_el=ahora,
         actualizada_el=ahora,
@@ -1085,6 +1215,7 @@ def _objetivo_de(propuesta: Propuesta) -> Objetivo:
         anotaciones=propuesta.anotaciones,
         norma_texto=propuesta.norma_texto,
         ley_citada=propuesta.ley_citada,
+        admite_sin_cambios=propuesta.admite_sin_cambios,
     )
 
 
@@ -1139,6 +1270,10 @@ def aplicar_propuesta(
                 f"{propuesta.fichero.format(ejercicio=ejercicio)} ya no contiene en {'/'.join(propuesta.ruta)} lo que "
                 f"la propuesta {propuesta.id} iba a sustituir: alguien lo ha cambiado. Vuelve a lanzar la recodificación."
             )
+    if propuesta.resultado == "sin_cambios":
+        return _confirmar_sin_cambios(
+            propuesta, adaptador, objetivo, texto, ficheros, almacen=almacen, automatica=automatica
+        )
     examen = examinar(
         adaptador,
         objetivo,
@@ -1203,6 +1338,44 @@ def aplicar_propuesta(
     if almacen is not None:
         almacen.guardar(aplicada)
     return aplicada
+
+
+def _confirmar_sin_cambios(
+    propuesta: Propuesta,
+    adaptador: Adaptador,
+    objetivo: Objetivo,
+    texto: TextoLegal,
+    ficheros: dict[int, dict[str, Any]],
+    *,
+    almacen: AlmacenPropuestas | None,
+    automatica: bool,
+) -> Propuesta:
+    """Accept "the amended article does not change this group": its gate is run again today and nothing is written."""
+    examen = examinar_sin_cambios(adaptador, objetivo, texto, citas=propuesta.citas, datos=ficheros)
+    if not examen.control.ok:
+        raise ControlFallidoError(
+            f"La propuesta {propuesta.id} no supera hoy el control: " + "; ".join(examen.control.fallos[:6])
+        )
+    if examen.ejercicios != propuesta.ejercicios:
+        raise ControlFallidoError(
+            f"Los ejercicios que hoy tienen esa codificación ({examen.ejercicios}) no son los de la propuesta "
+            f"({propuesta.ejercicios})."
+        )
+    if automatica and examen.control.revisar:
+        raise ControlFallidoError("Queda algo por revisar a mano: no se acepta sin una persona.")
+    ahora = datetime.now(UTC)
+    aceptada = propuesta.model_copy(
+        update={
+            "estado": "aplicada",
+            "aplicada_el": ahora,
+            "actualizada_el": ahora,
+            "aplicada_automaticamente": automatica,
+            "control": examen.control,
+        }
+    )
+    if almacen is not None:
+        almacen.guardar(aceptada)
+    return aceptada
 
 
 def rechazar_propuesta(
@@ -1474,7 +1647,7 @@ _ESTADOS = {
 def texto_del_aviso(propuestas: Sequence[Propuesta]) -> str:
     lineas: list[str] = []
     for p in propuestas:
-        que = "retirar" if p.resultado == "retirada" else "recodificar"
+        que = {"retirada": "retirar", "sin_cambios": "confirmar que no cambia"}.get(p.resultado or "", "recodificar")
         lineas.append(f"- [{_ESTADOS[p.estado]}] {p.etiqueta} ({p.ambito}): {que}")
         if p.ejercicios:
             lineas.append(f"  Ejercicios: {', '.join(map(str, p.ejercicios))} (efectos desde {p.efectos_desde}).")

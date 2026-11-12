@@ -59,7 +59,8 @@ with a dot, fractions for percentages unless the schema says otherwise):
 
 How to answer:
 - `resultado`: "codificada" when the text fits the schema exactly; "no_calculable" when it does not (then `motivo` \
-says exactly why and `valor_json` is "").
+says exactly why and `valor_json` is ""); "sin_cambios" ONLY when the task carries <revision_tras_modificacion> \
+and the text shown leaves the previous encoding exactly as it is (see there).
 - `articulos_necesarios`: if the text shown refers to rules that live in another article of the same law and you \
 need them (common income ceilings, definitions, incompatibilities), list those articles here ("13", "2 bis") using \
 the index in <indice_de_la_ley> and return `resultado` "no_calculable" with `motivo` "faltan artículos": you will be \
@@ -116,7 +117,7 @@ ESQUEMA_LECTOR: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
-        "resultado": {"type": "string", "enum": ["codificada", "no_calculable"]},
+        "resultado": {"type": "string", "enum": ["codificada", "no_calculable", "sin_cambios"]},
         "valor_json": {"type": "string"},
         "evidencia": {"type": "array", "items": {"type": "string"}},
         "efectos_desde": {"type": "string"},
@@ -138,6 +139,27 @@ ESQUEMA_LECTOR: dict[str, Any] = {
         "cambios",
     ],
 }
+
+
+REVISION_TRAS_MODIFICACION = """\
+This article was amended ({motivo}). The previous encoding (<codificacion_anterior>) may still be exactly right, or \
+the amendment may have changed it, possibly OUTSIDE the passages it quoted: a new condition, exception, limit, \
+figure or effects clause anywhere in the article. Read the WHOLE text shown, not only the old quotes.
+- If nothing in the current text changes this group, answer `resultado` "sin_cambios" with `valor_json` "", and in \
+`evidencia` copy verbatim the passages that print each figure of the previous encoding (the old quotes, when they \
+are still there, count already). A program checks that every old quote is still in the text and every figure is \
+inside a quote; an independent reviewer then looks for whatever you may have missed.
+- If anything changes it, encode the group as usual ("codificada" or "no_calculable").
+"""
+
+REVISION_SIN_CAMBIOS = """\
+The encoder says that this article, although amended, does NOT change the encoding under <propuesta>: it is the one \
+in force today, not a new proposal. Prove it wrong if you can. Look for any condition, exception, limit, figure, \
+income ceiling, period or effects clause in the text that the encoding does not reflect, or reflects differently; \
+each one is an "error". An empty list of discrepancies means you looked and found none. `efectos_desde` and \
+`cita_efectos`: the date from which the wording shown produces effects, as usual. The boundary cases are run with \
+this encoding.
+"""
 
 
 def esquema_revisor(extra: dict[str, Any]) -> dict[str, Any]:
@@ -232,6 +254,39 @@ ESQUEMA_DESGLOSE: dict[str, Any] = {
         }
     },
     "required": ["elementos"],
+}
+
+
+SISTEMA_PRECEPTOS = """\
+You are given passages of a Spanish AMENDING norm and the name of ONE law it may amend: {ley}. List every article or \
+provision of THAT law which the norm modifies, adds, replaces, suppresses or repeals. Nothing else is asked of you: \
+do not encode amounts or conditions, and do not list articles of other laws, nor articles of the amending norm itself.
+
+Rules (a program checks them and drops what breaks them):
+1. Only what the text between <texto_de_la_norma> tags says. Nothing from memory.
+2. `articulo`: the article as the amended law numbers it ("5", "9 bis", "68"), or a provision as "disposición \
+adicional 3" / "disposición transitoria 18" / "disposición final 2" (number in figures).
+3. `cita`: ONE contiguous passage copied verbatim from the text, of at least a few words, that NAMES that article or \
+provision as being modified, added or suppressed (the sentence "Se modifica el artículo 5…", "Uno. El apartado 2 del \
+artículo 9 queda redactado…").
+4. If the text does not say which articles of that law it changes, return an empty list.
+"""
+
+ESQUEMA_PRECEPTOS: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "preceptos": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {"articulo": {"type": "string"}, "cita": {"type": "string"}},
+                "required": ["articulo", "cita"],
+            },
+        }
+    },
+    "required": ["preceptos"],
 }
 
 

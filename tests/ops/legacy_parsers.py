@@ -339,3 +339,232 @@ def parse_listing(spec: RegionalBoletinSpec, html: str) -> list[dict[str, Any]]:
             }
         )
     return rows
+
+
+
+# --------------------------------------------------------------------------- #
+# CENDOJ document (hacienda_gpt/crawler/cendoj.py before the ``cendoj_documento`` spec).
+# Names prefixed with ``_cendoj`` only to coexist with the copies above.
+# --------------------------------------------------------------------------- #
+
+_CENDOJ_STRONG_TAX_KEYWORDS = (
+    "irpf",
+    "iva",
+    "impuesto sobre sociedades",
+    "impuesto sobre el valor añadido",
+    "impuesto sobre la renta",
+    "impuesto sobre sucesiones",
+    "impuesto sobre transmisiones",
+    "ley general tributaria",
+    "lgt",
+    "agencia tributaria",
+    "aeat",
+    "obligación tributaria",
+    "deuda tributaria",
+)
+_CENDOJ_WEAK_TAX_KEYWORDS = (
+    "tributario",
+    "tributaria",
+    "tributo",
+    "tributos",
+    "fiscal",
+    "hacienda",
+    "liquidación",
+    "sanción",
+    "sancionador",
+)
+
+_CENDOJ_ROJ_PATTERN = re.compile(r"\bROJ\s*:\s*(STS\s*\d+/\d{4})\b", re.IGNORECASE)
+_CENDOJ_ECLI_PATTERN = re.compile(r"\bECLI\s*:\s*([A-Z]{2}:[A-Z]+:\d{4}:\d+(?::[A-Z])?)\b", re.IGNORECASE)
+_CENDOJ_DATE_PATTERN = re.compile(r"\b(\d{2})[/-](\d{2})[/-](\d{4})\b")
+_CENDOJ_SALA_PATTERN = re.compile(r"Sala\s+(Tercera|3[ªa\.]+|de\s+lo\s+Contencioso[\w\s\-]*)", re.IGNORECASE)
+
+
+def parse_cendoj_document(html: str, *, source_url: str | None = None) -> dict[str, Any]:
+    selector = parsel.Selector(text=html)
+    body_text = " ".join(selector.xpath("//body//text()").getall())
+    cleaned = re.sub(r"\s+", " ", body_text).strip()
+
+    roj = _cendoj_first_match(_CENDOJ_ROJ_PATTERN, cleaned)
+    if roj:
+        roj = re.sub(r"\s+", " ", roj).strip()
+    ecli = _cendoj_first_match(_CENDOJ_ECLI_PATTERN, cleaned)
+    fecha = _cendoj_extract_first_date(cleaned)
+    ponente = _cendoj_extract_after_label(cleaned, "Ponente")
+    sala = _cendoj_normalise_sala(cleaned)
+
+    return {
+        "source_authority": (
+            "TS_SALA_TERCERA"
+            if "sala tercera" in (sala or "").lower() or "contencioso" in (sala or "").lower()
+            else "TS"
+        ),
+        "source_hierarchy_rank": 10,
+        "tribunal": "Tribunal Supremo",
+        "sala": sala,
+        "roj": roj,
+        "ecli": ecli,
+        "fecha_resolucion": fecha.isoformat() if fecha else None,
+        "ponente": ponente,
+        "source_url": source_url,
+        "is_tributario": _cendoj_classify_tributario(cleaned),
+        "tributos_detectados": _cendoj_detect_tributos(cleaned),
+        "ingested_at": datetime.now(UTC).isoformat(),
+    }
+
+
+def _cendoj_classify_tributario(text: str) -> bool:
+    lowered = text.lower()
+    if any(keyword in lowered for keyword in _CENDOJ_STRONG_TAX_KEYWORDS):
+        return True
+    weak_hits = sum(1 for keyword in _CENDOJ_WEAK_TAX_KEYWORDS if keyword in lowered)
+    return weak_hits >= 2
+
+
+def _cendoj_detect_tributos(text: str) -> list[str]:
+    lowered = text.lower()
+    detected: list[str] = []
+    catalog: list[tuple[str, list[tuple[str, bool]]]] = [
+        ("IRPF", [("irpf", True), ("impuesto sobre la renta de las personas físicas", False)]),
+        ("IVA", [("iva", True), ("impuesto sobre el valor añadido", False)]),
+        ("IS", [("impuesto sobre sociedades", False), ("is", True), ("lis", True)]),
+        ("ISD", [("isd", True), ("impuesto sobre sucesiones", False)]),
+        ("ITP_AJD", [("itp", True), ("ajd", True), ("impuesto sobre transmisiones patrimoniales", False)]),
+        ("IBI", [("ibi", True), ("impuesto sobre bienes inmuebles", False)]),
+        ("IAE", [("iae", True), ("impuesto sobre actividades económicas", False)]),
+    ]
+    for code, aliases in catalog:
+        for alias, needs_boundary in aliases:
+            if needs_boundary:
+                if re.search(rf"\b{re.escape(alias)}\b", lowered):
+                    detected.append(code)
+                    break
+            elif alias in lowered:
+                detected.append(code)
+                break
+    return detected
+
+
+def _cendoj_normalise_sala(text: str) -> str | None:
+    match = _CENDOJ_SALA_PATTERN.search(text)
+    if not match:
+        return None
+    raw = match.group(0)
+    if "tercera" in raw.lower() or "3" in raw:
+        return "Sala Tercera (Contencioso-Administrativo)"
+    if "contencioso" in raw.lower():
+        return "Sala de lo Contencioso-Administrativo"
+    return raw.strip()
+
+
+def _cendoj_extract_first_date(text: str) -> date | None:
+    match = _CENDOJ_DATE_PATTERN.search(text)
+    if not match:
+        return None
+    day, month, year = (int(group) for group in match.groups())
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return None
+
+
+def _cendoj_extract_after_label(text: str, label: str) -> str | None:
+    pattern = re.compile(rf"{re.escape(label)}\s*:?\s*([^\n.]{{1,80}})", re.IGNORECASE)
+    match = pattern.search(text)
+    if not match:
+        return None
+    value = match.group(1).strip().rstrip(".,;")
+    value = re.split(r"\s{2,}|\s—\s|\s-\s", value)[0]
+    return value.strip() or None
+
+
+def _cendoj_first_match(pattern: re.Pattern[str], text: str) -> str | None:
+    match = pattern.search(text)
+    return match.group(1) if match else None
+
+
+
+# --------------------------------------------------------------------------- #
+# AEAT sede: links the web crawler followed (hacienda_gpt/crawler/crawlers.py before the ``aeat_sede`` spec).
+# --------------------------------------------------------------------------- #
+
+_AEAT_ALLOWED_PATHS = [
+    r"/Sede/irpf",
+    r"/Sede/iva",
+    r"/Sede/no-residentes",
+    r"/Sede/censos-nif-domicilio-fiscal",
+    r"/Sede/colaborar-agencia-tributaria/modelos",
+    r"/Sede/recaudacion/aplazamientos-fraccionamientos-deudas-tributarias",
+    r"/Sede/colaborar-agencia-tributaria/calendario-contribuyente",
+    r"/Sede/ayuda/manuales-videos-folletos",
+    r"/Sede/informacion-administrativa/sanciones",
+    r"/Sede/declaraciones-informativas",
+    r"/Sede/declaracion-informativa",
+]
+
+
+def aeat_links_followed(url: str, html: str) -> list[str]:
+    """The URLs ``AgenciaTributariaWebCrawler._follow_domain_links`` requested from one page, in order."""
+    from scrapy.http import HtmlResponse
+    from scrapy.linkextractors import LinkExtractor
+
+    response = HtmlResponse(url=url, body=html.encode("utf-8"), encoding="utf-8")
+    allowed_patterns = [re.compile(path) for path in _AEAT_ALLOWED_PATHS]
+    link_extractor = LinkExtractor(allow=allowed_patterns, allow_domains=["sede.agenciatributaria.gob.es"])
+    return [link.url for link in link_extractor.extract_links(response)]
+
+
+
+# --------------------------------------------------------------------------- #
+# TEAC listing (hacienda_gpt/cli/teac_seed.py before the ``teac_listado`` spec).
+# --------------------------------------------------------------------------- #
+
+_TEAC_CRITERIO_LINK_RE = re.compile(r"""href=['"](criterio\.aspx\?id=([^'"&]+))[^'"]*['"]""", re.IGNORECASE)
+
+
+def teac_ids_de_pagina(text: str) -> list[str]:
+    """The ids ``collect_criterio_ids`` took from one listing page, in order (repeats included)."""
+    return [match.group(2) for match in _TEAC_CRITERIO_LINK_RE.finditer(text)]
+
+
+
+# --------------------------------------------------------------------------- #
+# DGT search results and document (hacienda_gpt/cli/dgt_seed.py before the ``dgt_*`` specs).
+# --------------------------------------------------------------------------- #
+
+_DGT_DOC_ID_RE = re.compile(r'id="doc_(\d+)"')
+_DGT_TOTAL_PAGES_RE = re.compile(r'id="total_pages">(\d+)<')
+_DGT_NUM_CONSULTA_IN_DOC_RE = re.compile(r'class="NUM-CONSULTA"[^>]*>([^<]+)</p>')
+_DGT_SEARCH_ROW_RE = re.compile(
+    r'id="doc_(\d+)"[^>]*>'  # capture doc_id
+    r".*?"  # any HTML in between
+    r'class="NUM-CONSULTA"[^>]*>'  # the NUM-CONSULTA span
+    r"\s*<strong>\s*"
+    r"([VN]\d{4}-\d{2})"  # capture V0058-25 / N1234-23 only
+    r"\b",  # word boundary — stops at extra text
+    re.DOTALL,
+)
+_DGT_CANONICAL_NUM_RE = re.compile(r"\b([VN]\d{4}-\d{2})\b")
+
+
+def dgt_resultados(html: str) -> tuple[list[tuple[str, str]], int, str]:
+    """(rows, total_pages, query) as ``_search_month`` computed them from the response."""
+    rows = _DGT_SEARCH_ROW_RE.findall(html)
+    if not rows:
+        rows = [(doc_id, "") for doc_id in _DGT_DOC_ID_RE.findall(html)]
+
+    total_pages_match = _DGT_TOTAL_PAGES_RE.search(html)
+    total_pages = int(total_pages_match.group(1)) if total_pages_match else 1
+
+    query_match = re.search(r'id="query"[^>]*value="([^"]*)"', html)
+    query = query_match.group(1) if query_match else ""
+    return rows, total_pages, query
+
+
+def dgt_parse_doc_num(html: str) -> str | None:
+    m = _DGT_NUM_CONSULTA_IN_DOC_RE.search(html)
+    if not m:
+        return None
+    raw = m.group(1).strip()
+    canonical = _DGT_CANONICAL_NUM_RE.search(raw)
+    return canonical.group(1) if canonical else raw

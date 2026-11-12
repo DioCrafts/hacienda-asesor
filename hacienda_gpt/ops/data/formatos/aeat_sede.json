@@ -1,0 +1,24 @@
+{
+  "fuente": "aeat_sede",
+  "version": 1,
+  "descripcion": "Enlaces de la sede de la AEAT que sigue el rastreador web (rutas permitidas y dominio). Comportamiento histórico del rastreador.",
+  "origen": "incorporada",
+  "reglas": {
+    "rutas_permitidas": [
+      "/Sede/irpf",
+      "/Sede/iva",
+      "/Sede/no-residentes",
+      "/Sede/censos-nif-domicilio-fiscal",
+      "/Sede/colaborar-agencia-tributaria/modelos",
+      "/Sede/recaudacion/aplazamientos-fraccionamientos-deudas-tributarias",
+      "/Sede/colaborar-agencia-tributaria/calendario-contribuyente",
+      "/Sede/ayuda/manuales-videos-folletos",
+      "/Sede/informacion-administrativa/sanciones",
+      "/Sede/declaraciones-informativas",
+      "/Sede/declaracion-informativa"
+    ],
+    "dominios": [
+      "sede.agenciatributaria.gob.es"
+    ]
+  }
+}

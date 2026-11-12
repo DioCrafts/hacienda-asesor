@@ -260,10 +260,12 @@ def test_low_income_reduction() -> None:
 
 
 def test_turnover_limit_warning_and_result_feeds_the_irpf_calculator() -> None:
-    assert _avisa(_actividad(ingresos_integros=D("1000")), "no se ha comprobado")
+    r = _actividad(ingresos_integros=D("1000"))
+    assert _avisa(r, "no se ha comprobado") and r.modalidad_simplificada_aplicable is None
     r = _actividad(ingresos_integros=D("700000"), cifra_negocios_ano_anterior=D("600000.01"))
-    assert _avisa(r, "no corresponde la modalidad simplificada")
-    assert not _avisa(_actividad(ingresos_integros=D("1"), cifra_negocios_ano_anterior=D("600000")), "no corresponde")
+    assert _avisa(r, "no corresponde la modalidad simplificada") and r.modalidad_simplificada_aplicable is False
+    r = _actividad(ingresos_integros=D("1"), cifra_negocios_ano_anterior=D("600000"))  # "no supere": inclusive
+    assert not _avisa(r, "no corresponde") and r.modalidad_simplificada_aplicable is True
 
     r = _actividad(ingresos_integros=D("40000"), otros_gastos=D("13000"))
     irpf = calcular_irpf(IRPFInput(ejercicio=2026, rendimiento_actividad_neto=r.rendimiento_actividad_neto))

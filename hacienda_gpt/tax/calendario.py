@@ -67,9 +67,17 @@ class Vencimiento(BaseModel):
     nota: str | None = None
 
 
+RUTA_CALENDARIO = DATA_DIR / "calendario.json"
+
+
+def leer_calendario(texto: str) -> _Calendario:
+    """Validate the calendar data (the content of ``calendario.json``). Raises on invalid data."""
+    return _Calendario.model_validate(json.loads(texto))
+
+
 @lru_cache(maxsize=1)
 def _load() -> _Calendario:
-    return _Calendario.model_validate(json.loads((DATA_DIR / "calendario.json").read_text(encoding="utf-8")))
+    return leer_calendario(RUTA_CALENDARIO.read_text(encoding="utf-8"))
 
 
 def _tiene_actividad(facts: dict[str, Any]) -> bool:
@@ -97,9 +105,15 @@ def _siguiente_habil(day: date) -> date:
     return day
 
 
-def proximos_vencimientos(facts: dict[str, Any], *, hoy: date, dias: int = 365) -> list[Vencimiento]:
-    """Deadlines that apply to ``facts`` from ``hoy`` through the next ``dias`` days."""
-    calendario = _load()
+def proximos_vencimientos(
+    facts: dict[str, Any], *, hoy: date, dias: int = 365, calendario: _Calendario | None = None
+) -> list[Vencimiento]:
+    """Deadlines that apply to ``facts`` from ``hoy`` through the next ``dias`` days.
+
+    ``calendario``: other calendar data to apply the same rules to (the format watch checks a
+    candidate this way); the bundled ``calendario.json`` by default.
+    """
+    calendario = calendario if calendario is not None else _load()
     limite = hoy + timedelta(days=dias)
     out: list[Vencimiento] = []
     for obligacion in calendario.obligaciones:

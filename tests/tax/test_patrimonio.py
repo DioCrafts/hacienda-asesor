@@ -136,6 +136,11 @@ def test_not_regulating_is_checked_against_the_full_text() -> None:
     ]
 
 
+def test_the_result_says_whether_the_itsgf_is_in_force() -> None:
+    pequeno = _calc("Castilla-La Mancha", depositos=100_000)
+    assert pequeno.itsgf_vigente and pequeno.itsgf is not None and not pequeno.itsgf.sujeto
+
+
 def test_allowances_tied_to_the_itsgf_need_the_itsgf_in_force() -> None:
     raw = load_patrimonio_params(2026).model_dump(mode="json")
     raw["itsgf"]["vigencia"]["vigente"] = False

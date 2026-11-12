@@ -19,7 +19,7 @@ the loop, the proposals and the commands do not change.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 import copy
 from dataclasses import dataclass
 from datetime import date
@@ -361,6 +361,11 @@ class DeduccionesAutonomicas(Adaptador):
     def normalizar(self, modelo: BaseModel) -> Any:
         return modelo.model_dump(mode="json", exclude_defaults=True, exclude={"recodificada_el"})
 
+    def valor_previo(self, anterior: Any) -> Any:
+        if not isinstance(anterior, dict):
+            return anterior
+        return {k: copy.deepcopy(v) for k, v in anterior.items() if k != "recodificada_el"}
+
     def evaluar_caso(self, modelo: BaseModel, datos: Any, objetivo: Objetivo) -> tuple[Decimal, str | None]:
         from hacienda_gpt.tax import autonomicas
         from hacienda_gpt.tax.irpf import IRPFInput
@@ -646,6 +651,9 @@ class Escalas(_CitasDeParametros):
     def normalizar(self, modelo: BaseModel) -> Any:
         return modelo.model_dump(mode="json", exclude_none=False)
 
+    def valor_previo(self, anterior: Any) -> Any:
+        return {"tramos": copy.deepcopy(anterior.get("tramos"))} if isinstance(anterior, dict) else anterior
+
     def evaluar_caso(self, modelo: BaseModel, datos: Any, objetivo: Objetivo) -> tuple[Decimal, str | None]:
         assert isinstance(modelo, EscalaLeida)
         if not isinstance(datos, dict):
@@ -856,9 +864,16 @@ class Cifras:
     # One sentence for the prompts.
     que: str
     autonomico: bool = False
-    # Lines of ``calcular_irpf`` a reviewer's test case may compare (by the start of their concept). None: the
-    # group has no executable test case and every proposal for it is left to a person.
+    # Lines of ``calcular_irpf`` a reviewer's test case may compare (by the start of their concept). Empty, and no
+    # ``evaluador`` either: the group has no executable test case and every proposal for it is left to a person.
     lineas: tuple[str, ...] = ()
+    # A pure function of the calculator that a case runs instead, for a group whose effect shows in no line:
+    # (proposed model, the case's ``datos``) -> (amount, note). ValueError: the case cannot be run.
+    evaluador: Callable[[BaseModel, dict[str, Any]], tuple[Decimal, str | None]] | None = None
+    # How the reviewer writes ``datos_json`` for ``evaluador``.
+    guia_evaluador: str = ""
+    # Why no case can be run for the group, when it has neither lines nor an evaluator (said to the operator).
+    sin_caso: str = ""
     # Fields the group's law does not print (they come from another law): kept as each file holds them.
     ajenos: frozenset[str] = frozenset()
     # A regime kept for old contracts, read from a superseded wording: re-read only when the operator names it.
@@ -878,7 +893,7 @@ class GrupoDeCifras(_CitasDeParametros):
         self.tipo = f"cifras:{cifras.nombre}"
         self.fichero = FICHERO_IRPF
         self.que = cifras.que
-        self.min_casos = 2 if cifras.lineas else 0
+        self.min_casos = 2 if cifras.lineas or cifras.evaluador is not None else 0
 
     # -- prompts ---------------------------------------------------------- #
 
@@ -906,6 +921,8 @@ class GrupoDeCifras(_CitasDeParametros):
         return sorted(set(IRPFInput.model_fields) - {"ejercicio"})
 
     def guia_casos(self, objetivo: Objetivo) -> str:
+        if self.cifras.evaluador is not None:
+            return self.cifras.guia_evaluador
         if not self.cifras.lineas:
             return (
                 "This group has no executable test case (no line of the calculator isolates it): return `casos` as an "
@@ -985,10 +1002,11 @@ class GrupoDeCifras(_CitasDeParametros):
             else:
                 control.fallos.append(fallo)
         control.revisar += cifras.revisar
-        if not self.cifras.lineas:
+        if not self.cifras.lineas and self.cifras.evaluador is None:
             control.revisar.append(
-                "este grupo no tiene casos de prueba ejecutables: la propuesta solo ha pasado el control de cifras y "
-                "la lectura del revisor; confírmela a mano"
+                "este grupo no tiene casos de prueba ejecutables"
+                + (f" ({self.cifras.sin_caso})" if self.cifras.sin_caso else "")
+                + ": la propuesta solo ha pasado el control de cifras y la lectura del revisor; confírmela a mano"
             )
         if self.cifras.ajenos:
             control.revisar.append(
@@ -1008,9 +1026,18 @@ class GrupoDeCifras(_CitasDeParametros):
     def normalizar(self, modelo: BaseModel) -> Any:
         return modelo.model_dump(mode="json", exclude={"fuente", *self.cifras.ajenos})
 
+    def valor_previo(self, anterior: Any) -> Any:
+        if not isinstance(anterior, dict):
+            return anterior
+        return {k: copy.deepcopy(v) for k, v in anterior.items() if k != "fuente" and k not in self.cifras.ajenos}
+
     def evaluar_caso(self, modelo: BaseModel, datos: Any, objetivo: Objetivo) -> tuple[Decimal, str | None]:
         from hacienda_gpt.tax.irpf import IRPFInput, calcular_irpf
 
+        if self.cifras.evaluador is not None:
+            if not isinstance(datos, dict):
+                raise ValueError("datos_json debe ser un objeto")
+            return self.cifras.evaluador(modelo, datos)
         if not self.cifras.lineas:
             raise ValueError("este grupo no tiene ninguna línea de la calculadora con la que comparar")
         if not isinstance(datos, dict) or not isinstance(datos.get("contribuyente"), dict):
@@ -1028,7 +1055,7 @@ class GrupoDeCifras(_CitasDeParametros):
         raw = (
             copy.deepcopy(base)
             if isinstance(base, dict)
-            else params_mod.load_params(ejercicio).model_dump(mode="json", exclude_none=True)
+            else params_mod.load_params(ejercicio).model_dump(mode="json")
         )
         if self.cifras.autonomico:
             contribuyente.setdefault("comunidad_autonoma", objetivo.ambito)
@@ -1202,6 +1229,32 @@ def _plano(texto: str) -> str:
     return " ".join(_sin_acentos(texto).lower().split())
 
 
+GUIA_CASOS_REPARTO = (
+    '`datos_json` of a case: {"deducciones_generales": "<euros>", "parte": "autonomica" | "estatal"}. '
+    "`deducciones_generales` is the total amount of the general State deductions the law splits between the State "
+    "and the regional tax (the deduction for donations, the transitional one for the main home); `parte` (default "
+    '"autonomica") says which share `importe_esperado` is: the amount THE LAW assigns to that tax, in euros with a '
+    "dot, rounded to the cent. The program runs the calculator's own split with the proposed figures. Choose round "
+    "and odd totals (one cent, an odd number of cents, a large amount)."
+)
+
+
+def _caso_de_reparto(modelo: BaseModel, datos: dict[str, Any]) -> tuple[Decimal, str | None]:
+    """A reviewer's case for the State/regional split, run through the calculator's own function."""
+    from hacienda_gpt.tax.irpf import repartir_deducciones_estatales
+
+    assert isinstance(modelo, RepartoDeducciones)
+    deducciones = _decimal(datos.get("deducciones_generales"), nombre="deducciones_generales", defecto=None)
+    if deducciones is None or deducciones < 0:
+        raise ValueError("falta «deducciones_generales» (un importe no negativo)")
+    parte = str(datos.get("parte") or "autonomica").strip().lower()
+    if parte not in ("autonomica", "estatal"):
+        raise ValueError("«parte» debe ser «autonomica» o «estatal»")
+    estatal, autonomica = repartir_deducciones_estatales(deducciones, modelo)
+    nota = f"parte estatal {estatal} €, parte autonómica {autonomica} €"
+    return (autonomica if parte == "autonomica" else estatal), nota
+
+
 def _cifras_del_irpf() -> list[Cifras]:
     arrendamiento = {
         campo: _modelo_del_campo(ReduccionArrendamiento, campo)
@@ -1247,6 +1300,8 @@ def _cifras_del_irpf() -> list[Cifras]:
             ("reparto_deducciones_estatales",),
             RepartoDeducciones,
             "the share of the State deductions borne by the regional tax (arts. 67 and 77 LIRPF)",
+            evaluador=_caso_de_reparto,
+            guia_evaluador=GUIA_CASOS_REPARTO,
         ),
         Cifras(
             "deduccion_rendimientos_trabajo",
@@ -1289,12 +1344,18 @@ def _cifras_del_irpf() -> list[Cifras]:
             ("obligacion_declarar",),
             ObligacionDeclarar,
             "the income limits below which there is no obligation to file (art. 96 LIRPF)",
+            sin_caso="ninguna calculadora usa estas cifras: el programa no decide si hay obligación de declarar",
         ),
         Cifras(
             "compensacion_ahorro",
             ("compensacion_ahorro",),
             CompensacionAhorroParams,
             "the limit for offsetting negative savings balances of one kind against the other (art. 49.1 LIRPF)",
+            lineas=(
+                "Compensación entre rendimientos y ganancias del ahorro",
+                "Compensación de saldos negativos de ejercicios anteriores",
+                "Base imponible del ahorro",
+            ),
         ),
         Cifras(
             "arrendamiento_2021",

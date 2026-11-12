@@ -494,6 +494,139 @@ _CON_EFECTOS_O_VIGOR = re.compile(
 
 
 # --------------------------------------------------------------------------- #
+# Which blocks of a law an amending norm changes
+# --------------------------------------------------------------------------- #
+
+# A sentence that changes something: "Se modifica…", "Uno. El artículo 5 queda redactado…", "Se añade…".
+_CAMBIA = re.compile(
+    r"\b(?:se\s+(?:modifica|modifican|anade|anaden|adiciona|adicionan|introduce|introducen|incorpora|incorporan|"
+    r"suprime|suprimen|deroga|derogan|sustituye|sustituyen|renumera|renumeran|da\s+nueva\s+redaccion)\b|"
+    r"queda(?:n)?\s+(?:redactad|modificad|suprimid|derogad|sin\s+contenido|anadid)|"
+    r"pasa(?:n)?\s+a\s+(?:tener|quedar)\s+la\s+siguiente|tendra(?:n)?\s+la\s+siguiente\s+redaccion|"
+    r"debe(?:n)?\s+(?:modificarse|anadirse|suprimirse)|\bmodificaci(?:on|ones)\s+de(?:l|\s+la|\s+los|\s+las)?\b)",
+    re.IGNORECASE,
+)
+# The number of a norm ("35/2006", "180/2024"); a date "31/12/2025" is not one.
+_NUMERO_DE_NORMA = re.compile(r"(?<![\d/])\d{1,4}/\d{4}(?![\d/])")
+_DISPOSICIONES_NOMBRADAS = re.compile(
+    r"\bdisposici(?:on|ones)\s+(adicional|transitoria|derogatoria|final)(?:es)?\s+", re.IGNORECASE
+)
+_ORDINAL_SUELTO = re.compile(r"(\d+)\s*(?:\.?\s*[ªa]\b)?|unica\b|([a-z]+)(?:\s+([a-z]+))?", re.IGNORECASE)
+
+
+def _disposiciones_nombradas(plana: str) -> list[str]:
+    """Provisions named in a sentence, in figures or in words: "disposición adicional tercera" → "da 3"."""
+    claves: list[str] = []
+    for match in _DISPOSICIONES_NOMBRADAS.finditer(plana):
+        clase, posicion = _CLASES_DISPOSICION[match.group(1).lower()], match.end()
+        while True:
+            ordinal = _ORDINAL_SUELTO.match(plana, posicion)
+            if ordinal is None:
+                break
+            if ordinal.group(1):
+                claves.append(f"{clase} {int(ordinal.group(1))}")
+            elif ordinal.group(0).lower().startswith("unica"):
+                claves.append(f"{clase} unica")
+            else:
+                dos = f"{ordinal.group(2)} {ordinal.group(3) or ''}".strip()
+                numero = _ORDINAL_A_NUMERO.get(_clave_ordinal(dos))
+                if numero is None:
+                    numero = _ORDINAL_A_NUMERO.get(_clave_ordinal(ordinal.group(2)))
+                    if numero is None:
+                        break
+                    fin = ordinal.start(2) + len(ordinal.group(2))
+                else:
+                    fin = ordinal.end()
+                claves.append(f"{clase} {numero}")
+                ordinal = re.match(r".{" + str(fin - ordinal.start()) + "}", plana[ordinal.start() :], re.S)
+                assert ordinal is not None
+            siguiente = re.match(r"\s*(?:,|\by\b)\s*", plana[ordinal.end() if ordinal.group(0) else posicion :])
+            if siguiente is None:
+                break
+            posicion = (ordinal.end() if ordinal.group(0) else posicion) + siguiente.end()
+    return claves
+
+
+def claves_nombradas(texto: str) -> list[str]:
+    """Blocks a sentence names, as keys of :func:`extraer_articulos`: "Se modifican los artículos 2 y 5 y la
+    disposición adicional tercera" → "2", "5", "da 3"."""
+    plana = _sin_acentos(texto)
+    return list(dict.fromkeys([*_articulos_en(plana), *_disposiciones_nombradas(plana)]))
+
+
+def clave_de_cabecera(linea: str) -> str | None:
+    """Key of the block a heading opens: "Artículo 10 bis. Deducción…" → "10 bis"; a provision → "da 5"."""
+    cabecera = _CABECERA_RE.match(_sin_acentos(linea))
+    if cabecera is not None:
+        return " ".join(cabecera.group(1).lower().split())
+    return clave_de_disposicion(linea)
+
+
+def articulos_que_modifica(pagina: str, *, ley: str) -> list[str]:
+    """Blocks of the law numbered ``ley`` ("13/1997") that an AMENDING norm changes, read from the norm's own text.
+
+    For the days before the BOE consolidates the norm, when its analysis names no article («determinados
+    preceptos»). Deterministic: only the norm's own sentences are read — "Se modifica el artículo 5…", "Uno. El
+    apartado 2 del artículo 9 queda redactado…", "Se añade una disposición adicional tercera…" — never the new
+    wording it quotes between «». A sentence counts for the law when it names it by its number, or when the
+    article or provision of the norm it sits in does ("Artículo 2. Modificación de la Ley 1/2020…"); one naming
+    another norm switches to that one. Errs on the side of listing more, which only means re-reading more.
+    """
+    if not ley:
+        return []
+    propia = re.compile(rf"(?<![\d/]){re.escape(ley)}(?![\d/])")
+    contexto: bool | None = None
+    profundidad = 0
+    claves: list[str] = []
+    for linea in lineas_de(pagina):
+        dentro = profundidad > 0 or linea.lstrip().startswith(("«", "“"))
+        profundidad = max(0, profundidad + linea.count("«") + linea.count("“") - linea.count("»") - linea.count("”"))
+        if dentro:
+            continue
+        plana = _sin_acentos(linea)
+        nombra_propia = bool(propia.search(plana))
+        otras = bool(_NUMERO_DE_NORMA.search(propia.sub(" ", plana)))
+        cambia = bool(_CAMBIA.search(plana))
+        if clave_de_cabecera(linea) is not None:
+            # A block of the norm starts: what it amends is whatever its heading names, if anything.
+            contexto = True if nombra_propia else (False if otras else None)
+        elif nombra_propia:
+            contexto = True
+        elif otras and cambia:
+            contexto = False
+        if cambia and contexto is True:
+            claves += claves_nombradas(linea)
+    return list(dict.fromkeys(claves))
+
+
+def _plano_de_referencia(texto: str) -> str:
+    return " ".join(_sin_acentos(texto).lower().split())
+
+
+def bloques_anotados(pagina: str, referencias: Iterable[str]) -> list[str]:
+    """Blocks of a consolidated page whose BOE notes ("Se modifica por el art. 2 de la Ley 3/2026… Ref. BOE-A-…",
+    "Téngase en cuenta…") name any of ``referencias``: a norm's BOE id, or its short name with its date."""
+    buscadas = [r for r in (_plano_de_referencia(x) for x in referencias) if len(r) >= 8]
+    claves: list[str] = []
+    for clave, lineas in _bloques(pagina):
+        for linea in lineas[1:]:
+            if _NOTA_FINAL_RE.match(_sin_acentos(linea)) and any(b in _plano_de_referencia(linea) for b in buscadas):
+                claves.append(clave)
+                break
+    return list(dict.fromkeys(claves))
+
+
+def pasajes_que_nombran(pagina: str, ley: str) -> str:
+    """The blocks of an amending norm that name the law numbered ``ley``; the whole text when it has no blocks."""
+    bloques = ["\n".join(lineas) for _, lineas in _bloques(pagina) if len(lineas) > 1]
+    suyos = [texto for texto in bloques if ley and ley in texto]
+    if suyos:
+        return "\n\n".join(suyos)
+    completo = "\n".join(lineas_de(pagina))
+    return completo if ley and ley in completo else ""
+
+
+# --------------------------------------------------------------------------- #
 # Quotes
 # --------------------------------------------------------------------------- #
 

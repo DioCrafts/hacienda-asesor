@@ -25,6 +25,7 @@ from hacienda_gpt.tax.patrimonio_params import PatrimonioParams
 from hacienda_gpt.tax.patrimonio_params import comprobar_evidencias as comprobar_patrimonio
 from hacienda_gpt.tax.recodificacion import (
     AlmacenPropuestas,
+    ControlFallidoError,
     Propuesta,
     adaptador_de,
     aplicar_propuesta,
@@ -179,17 +180,16 @@ def test_one_adapter_per_group_model_and_every_numeric_field_has_a_rule() -> Non
         # A Decimal the walker ignores is a count the file's own self-check reads ("cuatro años").
         assert (reglas.ignorar & campos_numericos(adaptador.modelo)) <= adaptador.familia.cuentas | {"en_vigor_desde"}
         assert adaptador.modelo.__name__ in adaptador.esquema() and "program" in adaptador.guia()
-    # Groups no calculator turns into an amount ask for no test cases and are always left to a person.
+    # Groups no calculator turns into an amount ask for no test cases and are always left to a person: only the two
+    # figure-less ISD rules the calculator explains but does not apply (which community, accumulation of gifts).
     sin_casos = sorted(a.tipo for a in otros.ADAPTADORES.values() if not a.evaluable)
-    assert sin_casos == [
-        "autonomos:EstimacionDirectaSimplificada",
-        "isd:Regla",
-        "patrimonio:Grupo",
-        "patrimonio:VigenciaITSGF",
-        "sociedades:ComparacionIRPF",
-        "sociedades:TributacionMinima",
-    ]
-    assert all(otros.ADAPTADORES[k].min_casos == 0 for k in [("isd", "_Regla"), ("patrimonio", "_Grupo")])
+    assert sin_casos == ["isd:Regla"]
+    assert otros.ADAPTADORES[("isd", "_Regla")].min_casos == 0
+    assert all(a.min_casos == 2 for a in otros.ADAPTADORES.values() if a.evaluable)
+    # A hint names a model of its family, and the reviewer of that group reads it.
+    for familia in otros.FAMILIAS:
+        nombres = {m.__name__ for m in familia.modelos()}
+        assert set(familia.pistas) <= nombres - familia.sin_evaluador, familia.clave
 
 
 # Groups with no quote of an article or provision of a law: none today (an annex or a preamble alone would be one).
@@ -226,6 +226,9 @@ def test_shipped_groups_pass_the_gate_with_their_own_quotes(
         if r.estado == "persona":
             assert r.revisar
     assert por_estado.get("ok"), "some group must be maintainable end to end"
+    # Only the two ISD rules the calculator explains without applying are left to a person for lack of cases.
+    sin_calculadora = {"/".join(r.ruta) for r in revisados if any("ninguna calculadora" in x for x in r.revisar)}
+    assert sin_calculadora == ({"estatal/puntos_conexion", "estatal/acumulacion"} if clave == "isd" else set())
 
 
 def test_a_group_is_read_from_the_law_of_its_own_legislator() -> None:
@@ -474,6 +477,70 @@ def test_a_group_that_also_rests_on_another_law_keeps_those_quotes_and_always_ne
     assert any("limite_anual" in f for f in peor.fallos)
 
 
+EDS_VIEJA = (
+    "1. La modalidad simplificada se aplicará cuando el importe neto de la cifra de negocios del conjunto de "
+    "actividades no supere los 600.000 euros en el año inmediato anterior."
+)
+EDS_NUEVA = EDS_VIEJA.replace("600.000 euros", "1.000.000 euros")
+LEY_EDS = pagina(28, "Ámbito de la modalidad simplificada", [EDS_NUEVA])
+EDS = ["estimacion_directa_simplificada"]
+C_EDS = [
+    caso("exactamente el límite: no lo supera", "rendimiento_actividad", {"ingresos_integros": "50000", "cifra_negocios_ano_anterior": "1000000"}, "modalidad_simplificada_aplicable", "1", EDS_NUEVA),
+    caso("un céntimo más: modalidad normal", "rendimiento_actividad", {"ingresos_integros": "50000", "cifra_negocios_ano_anterior": "1000000.01"}, "modalidad_simplificada_aplicable", "0", EDS_NUEVA),
+    caso("por encima del límite anterior", "rendimiento_actividad", {"ingresos_integros": "50000", "cifra_negocios_ano_anterior": "600000.01"}, "modalidad_simplificada_aplicable", "1", EDS_NUEVA),
+]  # fmt: skip
+
+
+def test_autonomos_turnover_limit_of_the_simplified_method_is_checked_by_cases(tmp_path: Path) -> None:
+    """The limit only decides whether the method applies: the calculator now says so in a yes/no line."""
+    carpeta = tmp_path / "data"
+    carpeta.mkdir()
+    for ejercicio in (2025, 2026):
+        raw = _leer(DATA_DIR / f"autonomos_{ejercicio}.json")
+        raw["fuentes_principales"][LEY] = FUENTE_LEY
+        raw["estimacion_directa_simplificada"] = {
+            "limite_cifra_negocios": "600000",
+            "fuente": {"referencia": "art. 28 de la ley sintética", "en_vigor_desde": "2020-01-02", "verificado": True},
+            "evidencia": [
+                {"boe_id": LEY, "articulo": "art. 28 de la ley sintética", "cita": EDS_VIEJA, "cifras": {"limite_cifra_negocios": "600.000 euros"}}
+            ],
+        }  # fmt: skip
+        assert comprobar_autonomos(AutonomosParams.model_validate(raw)) == []
+        _escribir(carpeta / f"autonomos_{ejercicio}.json", raw)
+    revisor = Guion(revision(C_EDS))
+    propuesta = _correr(
+        otros.AUTONOMOS,
+        carpeta,
+        LEY_EDS,
+        EDS,
+        Guion(lectura({"limite_cifra_negocios": "1000000"}, [EDS_NUEVA])),
+        revisor,
+    )
+    assert propuesta.tipo == "autonomos:EstimacionDirectaSimplificada" and propuesta.ejercicios == [2026]
+    assert propuesta.estado == "propuesta" and propuesta.aplicable_sin_persona, propuesta.objeciones_abiertas
+    assert [c.obtenido for c in propuesta.casos] == [D(1), D(0), D(1)]
+    assert "modalidad_simplificada_aplicable" in revisor.llamadas[0]["system"]
+    almacen = _aplicar_y_confirmar(carpeta, tmp_path, propuesta, LEY_EDS)
+    params = AutonomosParams.model_validate(_leer(carpeta / "autonomos_2026.json"))
+    assert comprobar_autonomos(params) == []
+    entrada = actividad.ActividadInput(
+        ejercicio=2026, ingresos_integros=D(50000), cifra_negocios_ano_anterior=D(800000)
+    )
+    resultado = actividad.calcular_rendimiento_actividad(entrada, params)
+    assert resultado.modalidad_simplificada_aplicable is True
+    assert any("recodificación automática pendiente de revisión humana" in a for a in resultado.avisos)
+    # Even when no turnover is given, the limit is printed to the user: they are told it is pending too.
+    sin_cifra = actividad.calcular_rendimiento_actividad(
+        entrada.model_copy(update={"cifra_negocios_ano_anterior": None}), params
+    )
+    assert sin_cifra.modalidad_simplificada_aplicable is None
+    assert any("1000000 €" in a for a in sin_cifra.avisos)
+    assert any("recodificación automática pendiente de revisión humana" in a for a in sin_cifra.avisos)
+    assert confirmar(pendientes_de_confirmar(carpeta), data_dir=carpeta, almacen=almacen) == 1
+    params = AutonomosParams.model_validate(_leer(carpeta / "autonomos_2026.json"))
+    assert not any("recodificación" in a for a in actividad.calcular_rendimiento_actividad(entrada, params).avisos)
+
+
 # --------------------------------------------------------------------------- #
 # Corporate tax: rates by kind of company
 # --------------------------------------------------------------------------- #
@@ -617,30 +684,126 @@ def test_sociedades_wording_with_effects_mid_year_does_not_reach_the_file_of_tha
     assert "no alcanza a todos los períodos iniciados en 2026" in propuesta.ejercicios_excluidos[2026]
 
 
-def test_a_group_no_calculator_evaluates_is_always_left_to_a_person(tmp_path: Path) -> None:
+TM_VIEJA = "1. Los contribuyentes cuyo importe neto de la cifra de negocios sea al menos de 20 millones de euros tributarán por la cuota mínima."
+TM_NUEVA = TM_VIEJA.replace("20 millones", "30 millones")
+LEY_TM = pagina(30, "Tributación mínima", [TM_NUEVA], EFECTOS_IS).replace("Artículo 30.", "Artículo 30 bis.")
+MINIMA = ["tributacion_minima"]
+C_TM = [
+    caso("exactamente 30 millones: alcanza el umbral", "impuesto_sociedades", {"resultado_contable": "1000000", "cifra_negocios_12_meses_anteriores": "30000000"}, "tributacion_minima_aplicable", "1", TM_NUEVA),
+    caso("un céntimo menos: no lo alcanza", "impuesto_sociedades", {"resultado_contable": "1000000", "cifra_negocios_12_meses_anteriores": "29999999.99"}, "tributacion_minima_aplicable", "0", TM_NUEVA),
+    caso("el umbral anterior ya no basta", "impuesto_sociedades", {"resultado_contable": "1000000", "cifra_negocios_12_meses_anteriores": "20000000"}, "tributacion_minima_aplicable", "0", TM_NUEVA),
+]  # fmt: skip
+
+
+@pytest.fixture
+def datos_tm(tmp_path: Path) -> Path:
     carpeta = tmp_path / "data"
     carpeta.mkdir()
     raw = _leer(DATA_DIR / "sociedades_2026.json")
     raw["fuentes_principales"][LEY] = FUENTE_LEY
-    vieja = "1. Los contribuyentes cuyo importe neto de la cifra de negocios sea al menos de 20 millones de euros tributarán por la cuota mínima."
-    nueva = vieja.replace("20 millones", "30 millones")
     raw["tributacion_minima"] = {
         "umbral_cifra_negocios": "20000000",
         "avisos": [],
         "fuente": {"referencia": "art. 30 bis de la ley sintética", "en_vigor_desde": "2022-01-01", "verificado": True},
         "evidencia": [
-            {"boe_id": LEY, "articulo": "art. 30 bis.1 LIS", "cita": vieja, "cifras": {"umbral_cifra_negocios": "20 millones de euros"}}
+            {"boe_id": LEY, "articulo": "art. 30 bis.1 LIS", "cita": TM_VIEJA, "cifras": {"umbral_cifra_negocios": "20 millones de euros"}}
         ],
     }  # fmt: skip
+    assert comprobar_sociedades(SociedadesParams.model_validate(raw)) == []
     _escribir(carpeta / "sociedades_2026.json", raw)
-    ley = pagina(30, "Tributación mínima", [nueva], EFECTOS_IS).replace("Artículo 30.", "Artículo 30 bis.")
-    lector = Guion(lectura({"umbral_cifra_negocios": "30000000"}, [nueva], EFECTOS_IS))
-    revisor = Guion(revision([], EFECTOS_IS))
-    propuesta = _correr(otros.SOCIEDADES, carpeta, ley, ["tributacion_minima"], lector, revisor)
+    return carpeta
+
+
+def test_sociedades_minimum_tax_threshold_is_checked_by_cases_and_applied_without_a_person(
+    datos_tm: Path, tmp_path: Path
+) -> None:
+    """The calculator does not compute art. 30 bis, but it says whether its threshold is reached: a case can see it."""
+    lector = Guion(lectura({"umbral_cifra_negocios": "30000000"}, [TM_NUEVA], EFECTOS_IS))
+    revisor = Guion(revision(C_TM, EFECTOS_IS))
+    propuesta = _correr(otros.SOCIEDADES, datos_tm, LEY_TM, MINIMA, lector, revisor)
     assert propuesta.tipo == "sociedades:TributacionMinima" and propuesta.articulos_ley == ["30 bis"]
+    assert propuesta.estado == "propuesta" and propuesta.aplicable_sin_persona, propuesta.objeciones_abiertas
+    assert [c.obtenido for c in propuesta.casos] == [D(1), D(0), D(0)]
+    assert "tributacion_minima_aplicable" in revisor.llamadas[0]["system"]
+    _aplicar_y_confirmar(datos_tm, tmp_path, propuesta, LEY_TM)
+    params = SociedadesParams.model_validate(_leer(datos_tm / "sociedades_2026.json"))
+    assert params.tributacion_minima.umbral_cifra_negocios == D(30000000)
+    grande = sociedades.SociedadesInput(
+        ejercicio=2026, resultado_contable=D(1000000), cifra_negocios_12_meses_anteriores=D(30000000)
+    )
+    resultado = sociedades.calcular_sociedades(grande, params)
+    assert resultado.tributacion_minima_aplicable is True and any("art. 30 bis" in a for a in resultado.avisos)
+    assert any("recodificación automática pendiente de revisión humana" in a for a in resultado.avisos)
+    # Below the threshold the group still decided the answer, so the user is told it is pending too.
+    pequena = grande.model_copy(update={"cifra_negocios_12_meses_anteriores": D(29999999)})
+    resultado = sociedades.calcular_sociedades(pequena, params)
+    assert resultado.tributacion_minima_aplicable is False
+    assert any("recodificación automática pendiente de revisión humana" in a for a in resultado.avisos)
+
+
+def test_sociedades_a_wrong_minimum_tax_threshold_is_caught_by_a_case(datos_tm: Path) -> None:
+    # "20 millones" stays printed in the law (in an unrelated sentence): the gate cannot tell; the case at 20 M can.
+    con_antiguo = TM_NUEVA + " Hasta 2025 el umbral era de 20 millones de euros."
+    ley = LEY_TM.replace(TM_NUEVA, con_antiguo)
+    antigua = lectura({"umbral_cifra_negocios": "20000000"}, [con_antiguo], EFECTOS_IS)
+    buena = lectura({"umbral_cifra_negocios": "30000000"}, [TM_NUEVA], EFECTOS_IS)
+    revisor = Guion(revision(C_TM, EFECTOS_IS), revision(C_TM, EFECTOS_IS))
+    propuesta = _correr(otros.SOCIEDADES, datos_tm, ley, MINIMA, Guion(antigua, buena), revisor)
+    # The gate accepted the old threshold (it is printed); only the cases below 30 M told it apart.
+    assert propuesta.iteraciones[0].control is not None and propuesta.iteraciones[0].control.ok
+    assert propuesta.estado == "propuesta" and len(propuesta.iteraciones) == 2
+    assert [c.coincide for c in propuesta.iteraciones[0].casos] == [True, False, False]
+    assert propuesta.despues["umbral_cifra_negocios"] == "30000000"
+
+
+# --------------------------------------------------------------------------- #
+# Inheritance tax: a rule the calculator explains but does not apply
+# --------------------------------------------------------------------------- #
+
+ACU_VIEJA = (
+    "1. Las donaciones que se otorguen por un mismo donante a un mismo donatario dentro del plazo de tres años se "
+    "considerarán como una sola transmisión a los efectos de la liquidación del impuesto."
+)
+ACU_NUEVA = ACU_VIEJA.replace("tres años", "cinco años")
+LEY_ACU = pagina(30, "Acumulación de donaciones", [ACU_NUEVA])
+ACUMULACION = ["estatal", "acumulacion"]
+ACU_VALOR = {
+    "articulo": "art. 30 de la ley sintética",
+    "resumen": "No se han acumulado donaciones anteriores: las del mismo donante al mismo donatario en un plazo de cinco años se liquidan como una sola.",
+    "en_vigor_desde": "2026-01-01",
+}  # fmt: skip
+
+
+def test_a_group_no_calculator_evaluates_is_always_left_to_a_person(tmp_path: Path) -> None:
+    carpeta = tmp_path / "data"
+    carpeta.mkdir()
+    raw = _leer(DATA_DIR / "isd_2026.json")
+    raw["fuentes_principales"][LEY] = FUENTE_LEY
+    raw["estatal"]["acumulacion"] = {
+        **ACU_VALOR,
+        "resumen": ACU_VALOR["resumen"].replace("cinco", "tres"),
+        "en_vigor_desde": "2021-07-11",
+        "evidencia": [{"boe_id": LEY, "articulo": "art. 30 de la ley sintética", "cita": ACU_VIEJA}],
+    }
+    assert comprobar_isd(ISDParams.model_validate(raw)) == []
+    _escribir(carpeta / "isd_2026.json", raw)
+    lector = Guion(lectura(ACU_VALOR, [ACU_NUEVA]))
+    revisor = Guion(revision([]))
+    propuesta = _correr(otros.ISD, carpeta, LEY_ACU, ACUMULACION, lector, revisor)
+    assert propuesta.tipo == "isd:Regla" and propuesta.articulos_ley == ["30"]
     assert propuesta.estado == "propuesta" and not propuesta.aplicable_sin_persona
     assert any("ninguna calculadora" in nota for nota in propuesta.control.revisar)
     assert "empty list" in revisor.llamadas[0]["system"]
+    almacen = AlmacenPropuestas(tmp_path / "propuestas")
+    almacen.guardar(propuesta)
+    with pytest.raises(ControlFallidoError, match="sin una persona"):
+        aplicar_propuesta(propuesta, texto_de(LEY_ACU), almacen=almacen, data_dir=carpeta, hoy=HOY, automatica=True)
+    # Applied by a person, the calculator tells every user it is pending review until it is confirmed.
+    aplicar_propuesta(propuesta, texto_de(LEY_ACU), almacen=almacen, data_dir=carpeta, hoy=HOY)
+    heredero = sucesiones.BeneficiarioISD(ejercicio=2026, valor_recibido=D(50000), **HIJO)
+    avisos = sucesiones.calcular_isd(heredero, ISDParams.model_validate(_leer(carpeta / "isd_2026.json"))).avisos
+    assert ACU_VALOR["resumen"] in avisos
+    assert any("«Acumulación»" in a and "recodificada automáticamente el 2026-11-12" in a for a in avisos)
 
 
 # --------------------------------------------------------------------------- #
@@ -757,6 +920,79 @@ def test_patrimonio_scale_that_does_not_add_up_is_refused_by_the_files_own_check
     torcido["tramos"][1]["hasta"] = "167123.43"
     _, peor = adaptador.controlar(torcido, objetivo.citas_antes, objetivo, efectos_desde=None, datos={2026: raw})
     assert not peor.ok and any("autocontrol del fichero" in f or "modelo" in f for f in peor.fallos)
+
+
+DED_VIEJA = (
+    "Quince. De la cuota resultante el sujeto pasivo podrá deducir la cuota del Impuesto sobre el Patrimonio del "
+    "ejercicio efectivamente satisfecha."
+)
+DED_NUEVA = DED_VIEJA.replace("cuota resultante", "cuota resultante de la aplicación de los apartados anteriores")
+DED_SIN = "Quince. De la cuota resultante no podrá deducirse cantidad alguna por el Impuesto sobre el Patrimonio."
+DEDUCCION = ["itsgf", "deduccion_patrimonio"]
+GRAN_PATRIMONIO = {"depositos": "5000000"}
+
+
+@pytest.fixture
+def datos_ded(tmp_path: Path) -> Path:
+    carpeta = tmp_path / "data"
+    carpeta.mkdir()
+    raw = _leer(DATA_DIR / "patrimonio_2026.json")
+    raw["fuentes_principales"][LEY] = FUENTE_LEY
+    raw["itsgf"]["deduccion_patrimonio"] = {
+        "fuente": {"referencia": "art. 3 de la ley sintética", "en_vigor_desde": "2020-01-02", "verificado": True},
+        "evidencia": [{"boe_id": LEY, "articulo": "art. 3 de la ley sintética", "cita": DED_VIEJA, "cifras": {}}],
+    }
+    assert comprobar_patrimonio(PatrimonioParams.model_validate(raw)) == []
+    _escribir(carpeta / "patrimonio_2026.json", raw)
+    return carpeta
+
+
+def _itsgf(comunidad: str, params: PatrimonioParams | None = None) -> patrimonio.ResultadoPatrimonio:
+    entrada = patrimonio.PatrimonioInput(ejercicio=2026, comunidad=comunidad, depositos=D(5000000))
+    return patrimonio.calcular_patrimonio(entrada, params)
+
+
+def test_patrimonio_a_figure_less_rule_the_calculator_applies_is_checked_by_cases(
+    datos_ded: Path, tmp_path: Path
+) -> None:
+    """Art. 3.Quince Ley 38/2022 has no figure, but the calculator applies it: a reworded text can be maintained."""
+    # What the law gives: no allowance in Castilla-La Mancha (the wealth tax paid is deducted, up to the ITSGF quota),
+    # a 100 % allowance whatever the ITSGF in Extremadura (nothing paid, nothing deducted).
+    clm = _itsgf("castilla_la_mancha")
+    assert clm.itsgf is not None and clm.cuota_a_ingresar > 0 and _itsgf("extremadura").cuota_a_ingresar == 0
+    pagado = min(clm.cuota_a_ingresar, clm.itsgf.cuota_tras_limite)
+    casos = [
+        caso("se deduce lo pagado por Patrimonio, hasta la cuota", "patrimonio", {**GRAN_PATRIMONIO, "comunidad": "castilla_la_mancha"}, "itsgf.deduccion_patrimonio", str(pagado), DED_NUEVA),
+        caso("nada pagado, nada que deducir", "patrimonio", {**GRAN_PATRIMONIO, "comunidad": "extremadura"}, "itsgf.deduccion_patrimonio", "0", DED_NUEVA),
+    ]  # fmt: skip
+    ley = pagina(3, "Impuesto temporal de solidaridad de las grandes fortunas", [DED_NUEVA])
+    revisor = Guion(revision(casos))
+    propuesta = _correr(otros.PATRIMONIO, datos_ded, ley, DEDUCCION, Guion(lectura({}, [DED_NUEVA])), revisor)
+    assert propuesta.tipo == "patrimonio:Grupo" and propuesta.despues == {}
+    assert propuesta.estado == "propuesta" and propuesta.aplicable_sin_persona, propuesta.objeciones_abiertas
+    assert "itsgf.deduccion_patrimonio" in revisor.llamadas[0]["system"]
+    _aplicar_y_confirmar(datos_ded, tmp_path, propuesta, ley)
+    params = PatrimonioParams.model_validate(_leer(datos_ded / "patrimonio_2026.json"))
+    assert comprobar_patrimonio(params) == []
+    resultado = _itsgf("castilla_la_mancha", params)
+    assert resultado.itsgf is not None and resultado.itsgf.deduccion_patrimonio == pagado
+    assert any("recodificación automática pendiente de revisión humana" in a for a in resultado.avisos)
+    # Applied as zero is applied all the same: the user relying on it is told.
+    assert any("recodificación automática" in a for a in _itsgf("extremadura", params).avisos)
+
+
+def test_patrimonio_a_law_that_drops_the_deduction_is_caught_by_the_calculator(datos_ded: Path) -> None:
+    """The text no longer allows the deduction; the calculator still applies it: no proposal goes through."""
+    ley = pagina(3, "Impuesto temporal de solidaridad de las grandes fortunas", [DED_SIN])
+    casos = [
+        caso("ya no se deduce", "patrimonio", {**GRAN_PATRIMONIO, "comunidad": "castilla_la_mancha"}, "itsgf.deduccion_patrimonio", "0", DED_SIN),
+        caso("ni aquí", "patrimonio", {**GRAN_PATRIMONIO, "comunidad": "extremadura"}, "itsgf.deduccion_patrimonio", "0", DED_SIN),
+    ]  # fmt: skip
+    lector = Guion(*[lectura({}, [DED_SIN])] * 3)
+    propuesta = _correr(otros.PATRIMONIO, datos_ded, ley, DEDUCCION, lector, Guion(*[revision(casos)] * 3))
+    assert propuesta.estado == "sin_converger" and not propuesta.aplicable_sin_persona
+    assert [c.coincide for c in propuesta.iteraciones[-1].casos] == [False, True]
+    assert any("según la ley corresponden 0.00" in o for o in propuesta.objeciones_abiertas)
 
 
 # --------------------------------------------------------------------------- #
@@ -920,3 +1156,132 @@ def test_calculators_surface_groups_that_were_silent() -> None:
     avisos = sucesiones.calcular_isd(heredero, ISDParams.model_validate(raw_isd)).avisos
     assert any("«Acumulación»" in a and "recodificada automáticamente el 2026-11-12" in a for a in avisos)
     assert not any("recodificada" in a for a in sucesiones.calcular_isd(heredero).avisos)
+
+
+# --------------------------------------------------------------------------- #
+# Every group that had no calculator before: its figures now decide a case
+# --------------------------------------------------------------------------- #
+
+
+def _candidato(clave: str, ejercicio: int, ruta: list[str], cambio: dict[str, Any] | None = None):
+    """The shipped group through the gate with its own quotes (optionally with one figure changed)."""
+    familia = otros.familia_de(clave)
+    raw = _leer(DATA_DIR / familia.fichero.format(ejercicio=ejercicio))
+    objetivo = otros.construir_objetivo(familia, ruta, {ejercicio: raw}, origen="x")
+    adaptador = adaptador_de(objetivo.tipo)
+    assert isinstance(adaptador, otros.GrupoConEvidencia) and adaptador.evaluable
+    valor = {**adaptador._sin_procedencia(objetivo.antes[ejercicio]), **(cambio or {})}
+    modelo, control = adaptador.controlar(
+        valor, objetivo.citas_antes, objetivo, efectos_desde=None, datos={ejercicio: raw}
+    )
+    return adaptador, modelo, objetivo, control
+
+
+EVALUADORES = [
+    # (file, year, group, case, what the shipped figures give, one figure changed, what the change gives)
+    ("autonomos", 2026, ["estimacion_directa_simplificada"], {"calculo": "rendimiento_actividad", "entrada": {"ingresos_integros": "1000", "cifra_negocios_ano_anterior": "600000"}, "resultado": "modalidad_simplificada_aplicable"}, "1", {"limite_cifra_negocios": "500000"}, "0"),
+    ("autonomos", 2025, ["estimacion_directa_simplificada"], {"calculo": "rendimiento_actividad", "entrada": {"ingresos_integros": "1000", "cifra_negocios_ano_anterior": "600000.01"}, "resultado": "modalidad_simplificada_aplicable"}, "0", {"limite_cifra_negocios": "700000"}, "1"),
+    ("autonomos", 2026, ["retencion_profesionales"], {"calculo": "retencion_profesional", "entrada": {"supuesto": "actividad_ingresos_reducidos", "integros_actividades_letra_d": "15000", "integros_actividades_y_trabajo": "15000"}, "resultado": "tipo_porcentaje"}, "15", {"supuesto_d_limite_ingresos": "20000"}, "7"),
+    ("autonomos", 2026, ["retencion_profesionales"], {"calculo": "retencion_profesional", "entrada": {"integros_actividades_letra_d": "12000", "integros_actividades_y_trabajo": "16000"}, "resultado": "cumple_supuesto_d"}, "0", {"supuesto_d_min_proporcion": "0.70"}, "1"),
+    ("autonomos", 2026, ["retencion_profesionales"], {"calculo": "retencion_profesional", "entrada": {"inicio_actividad": True, "ceuta_melilla": True}, "resultado": "tipo_porcentaje"}, "2.80", {"reduccion_ceuta_melilla": "0.50"}, "3.50"),
+    ("sociedades", 2026, ["tributacion_minima"], {"calculo": "impuesto_sociedades", "entrada": {"resultado_contable": "1000000", "cifra_negocios_12_meses_anteriores": "20000000"}, "resultado": "tributacion_minima_aplicable"}, "1", {"umbral_cifra_negocios": "30000000"}, "0"),
+    ("sociedades", 2026, ["comparacion_irpf"], {"calculo": "comparacion_autonomo_sociedad", "entrada": {"beneficio_antes_retribucion": "60000", "salario": "20000", "dividendo": "10000"}, "resultado": "retencion_dividendo"}, "1900", {"retencion_capital_mobiliario": "0.21"}, "2100"),
+    ("patrimonio", 2026, ["itsgf", "vigencia"], {"calculo": "patrimonio", "entrada": {"comunidad": "castilla_la_mancha", "depositos": "1000000"}, "resultado": "itsgf_vigente"}, "1", None, None),
+    ("patrimonio", 2026, ["itsgf", "deduccion_patrimonio"], {"calculo": "patrimonio", "entrada": {"comunidad": "extremadura", "depositos": "5000000"}, "resultado": "itsgf.deduccion_patrimonio"}, "0", None, None),
+]  # fmt: skip
+
+
+@pytest.mark.parametrize(("clave", "ejercicio", "ruta", "datos", "esperado", "cambio", "con_cambio"), EVALUADORES)
+def test_groups_that_had_no_calculator_now_decide_a_case(
+    clave: str,
+    ejercicio: int,
+    ruta: list[str],
+    datos: dict[str, Any],
+    esperado: str,
+    cambio: dict[str, Any] | None,
+    con_cambio: str | None,
+) -> None:
+    adaptador, modelo, objetivo, control = _candidato(clave, ejercicio, ruta)
+    assert modelo is not None and control.ok and adaptador.casos_minimos(objetivo) == 2
+    assert not any("ninguna calculadora" in nota for nota in control.revisar)
+    assert adaptador.evaluar_caso(modelo, datos, objetivo) == (D(esperado), None)
+    if cambio is not None:
+        # The figure is not printed in the law, so the gate refuses it; the case shows the calculator reads it.
+        _, otro, _, peor = _candidato(clave, ejercicio, ruta, cambio)
+        assert otro is not None and not peor.ok
+        assert adaptador.evaluar_caso(otro, datos, objetivo) == (D(str(con_cambio)), None)
+    # Without the inputs that decide a yes/no line, the case is unusable rather than silently 0.
+    if datos["resultado"] in ("modalidad_simplificada_aplicable", "tributacion_minima_aplicable", "cumple_supuesto_d"):
+        sin = {k: v for k, v in datos["entrada"].items() if not k.startswith(("cifra_", "integros_"))}
+        with pytest.raises(ValueError, match="no es un importe"):
+            adaptador.evaluar_caso(modelo, {**datos, "entrada": sin}, objetivo)
+
+
+def test_the_itsgf_cannot_be_switched_off_while_regional_allowances_depend_on_it() -> None:
+    _, _, _, control = _candidato("patrimonio", 2026, ["itsgf", "vigencia"], {"vigente": False})
+    assert any("bonificación ligada al ITSGF" in fallo for fallo in control.fallos)
+
+
+def _marcado(clave: str, ejercicio: int, ruta: list[str]) -> Any:
+    """The shipped file with the group at ``ruta`` written as the loop writes an applied proposal (pending review)."""
+    familia = otros.familia_de(clave)
+    raw = _leer(DATA_DIR / familia.fichero.format(ejercicio=ejercicio))
+    objetivo = otros.construir_objetivo(familia, ruta, {ejercicio: raw}, origen="x")
+    adaptador = adaptador_de(objetivo.tipo)
+    assert isinstance(adaptador, otros.GrupoConEvidencia)
+    anterior = objetivo.antes[ejercicio]
+    grupo, control, _, _ = adaptador.componer(
+        adaptador._sin_procedencia(anterior),
+        objetivo.citas_antes,
+        anterior,
+        ruta=ruta,
+        boe_id=objetivo.boe_id,
+        articulos=objetivo.articulos_ley,
+        efectos=f"{ejercicio}-01-01",
+        hoy=HOY,
+    )
+    assert control.ok and grupo["fuente"]["referencia"].endswith(otros.PENDIENTE)
+    padre = raw
+    for paso in ruta[:-1]:
+        padre = padre[paso]
+    padre[ruta[-1]] = grupo
+    return familia.raiz.model_validate(raw)
+
+
+def _calcular_con(clave: str, entrada: dict[str, Any], params: Any = None) -> list[str]:
+    if clave == "actividad":
+        return actividad.calcular_rendimiento_actividad(
+            actividad.ActividadInput(ejercicio=2026, **entrada), params
+        ).avisos
+    if clave == "retencion":
+        inp = actividad.RetencionProfesionalInput(ejercicio=2026, **entrada)
+        return actividad.calcular_retencion_profesional(inp, params).avisos
+    if clave == "sociedades":
+        return sociedades.calcular_sociedades(sociedades.SociedadesInput(ejercicio=2026, **entrada), params).avisos
+    if clave == "comparacion":
+        comparacion = sociedades.ComparacionInput(ejercicio=2026, **entrada)
+        return sociedades.comparar_autonomo_vs_sociedad(comparacion, params).avisos
+    return patrimonio.calcular_patrimonio(patrimonio.PatrimonioInput(ejercicio=2026, **entrada), params).avisos
+
+
+PROCEDENCIA = [
+    # (file, group, calculator, an input that uses the group, an input that does not — or None)
+    ("autonomos", ["estimacion_directa_simplificada"], "actividad", {"ingresos_integros": D(30000)}, None),
+    ("autonomos", ["retencion_profesionales"], "retencion", {}, None),
+    ("sociedades", ["tributacion_minima"], "sociedades", {"resultado_contable": D(1000), "cifra_negocios_anterior": D(500000)}, {"resultado_contable": D(1000)}),
+    ("sociedades", ["comparacion_irpf"], "comparacion", {"beneficio_antes_retribucion": D(60000), "salario": D(20000)}, None),
+    ("patrimonio", ["itsgf", "vigencia"], "patrimonio", {"comunidad": "madrid", "depositos": D(100000)}, None),
+    ("patrimonio", ["itsgf", "deduccion_patrimonio"], "patrimonio", {"comunidad": "castilla_la_mancha", "depositos": D(5000000)}, {"comunidad": "castilla_la_mancha", "depositos": D(1000000)}),
+]  # fmt: skip
+
+
+@pytest.mark.parametrize(("clave", "ruta", "calculadora", "usa", "no_usa"), PROCEDENCIA)
+def test_a_reencoded_group_is_announced_wherever_the_calculator_relies_on_it(
+    clave: str, ruta: list[str], calculadora: str, usa: dict[str, Any], no_usa: dict[str, Any] | None
+) -> None:
+    pendiente = "recodificación automática pendiente de revisión humana"
+    assert not any(pendiente in a for a in _calcular_con(calculadora, usa))
+    params = _marcado(clave, 2026, ruta)
+    assert any(pendiente in a for a in _calcular_con(calculadora, usa, params))
+    if no_usa is not None:
+        assert not any(pendiente in a for a in _calcular_con(calculadora, no_usa, params))

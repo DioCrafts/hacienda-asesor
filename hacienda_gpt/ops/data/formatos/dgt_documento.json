@@ -1,0 +1,10 @@
+{
+  "fuente": "dgt_documento",
+  "version": 1,
+  "descripcion": "Documento de una consulta de la DGT (Petete/Knosys, HTML): número de consulta. Comportamiento histórico del lector.",
+  "origen": "incorporada",
+  "reglas": {
+    "patron_numero": "class=\"NUM-CONSULTA\"[^>]*>([^<]+)</p>",
+    "patron_canonico": "\\b([VN]\\d{4}-\\d{2})\\b"
+  }
+}

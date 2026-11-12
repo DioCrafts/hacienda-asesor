@@ -33,6 +33,11 @@ ASUNTO_FORMATOS = "HaciendaGPT: un formato externo ha dejado de entenderse"
 PRECIOS_MAX_DIAS = 120
 
 
+def _hoy() -> date:
+    """Today (UTC). A function so that tests can pin it: the calendar check depends on the date."""
+    return datetime.now(UTC).date()
+
+
 def _canales() -> list[Any]:
     from hacienda_gpt.proactive.entrega import ConfiguracionCanalError, canales_configurados
 
@@ -70,6 +75,23 @@ def _proveedores() -> tuple[Any, Any]:
     return analista, revisor
 
 
+def modelos_configurados() -> dict[str, str]:
+    """Model ids the app is configured to call, with the setting that names each (local models excluded)."""
+    proveedor = settings.LLM_PROVIDER.strip().lower()
+    base = {"anthropic": "ANTHROPIC_MODEL", "claude": "ANTHROPIC_MODEL", "openai": "OPENAI_AGENT_MODEL"}.get(proveedor)
+    if base is None:
+        return {}
+    nombres = (base, "FORMAT_MODEL", "FORMAT_REVIEWER_MODEL", "RECODE_MODEL", "RECODE_REVIEWER_MODEL")
+    if not settings.VERIFIER_PROVIDER or settings.VERIFIER_PROVIDER.strip().lower() == proveedor:
+        nombres += ("VERIFIER_MODEL",)
+    out: dict[str, str] = {}
+    for nombre in nombres:
+        modelo = str(getattr(settings, nombre, "") or "").strip()
+        if modelo:
+            out.setdefault(modelo, nombre)
+    return out
+
+
 def avisos_de_datos_propios(hoy: date | None = None) -> list[str]:
     """Bundled data that ages without anyone noticing (not a format, but the same silent failure)."""
     hoy = hoy or datetime.now(UTC).date()
@@ -79,11 +101,24 @@ def avisos_de_datos_propios(hoy: date | None = None) -> list[str]:
 
         precios = cargar_precios()
         consultado = date.fromisoformat(str(precios.consultado_el))
-        if (hoy - consultado).days > PRECIOS_MAX_DIAS:
+        if consultado > hoy:
+            avisos.append(
+                f"La tabla de precios de los modelos dice haberse consultado el {consultado.isoformat()}, "
+                "una fecha futura: revisa «consultado_el»."
+            )
+        elif (hoy - consultado).days > PRECIOS_MAX_DIAS:
             avisos.append(
                 f"La tabla de precios de los modelos se consultó el {consultado.isoformat()} (hace más de "
                 f"{PRECIOS_MAX_DIAS} días): los costes y los límites en USD pueden estar desfasados."
             )
+        # A configured model without a price is recorded at no cost: it never counts towards a USD limit.
+        for modelo, ajuste in modelos_configurados().items():
+            precio = precios.precio_de(modelo)
+            if precio is None or precio.input is None or precio.output is None:
+                avisos.append(
+                    f"El modelo {modelo} ({ajuste}) no tiene precio de entrada y salida en la tabla: sus llamadas "
+                    "se registran sin coste y no cuentan para los límites diarios en USD."
+                )
     except Exception as exc:
         avisos.append(f"No se puede leer la tabla de precios de los modelos: {type(exc).__name__}: {exc}")
     return avisos
@@ -131,6 +166,10 @@ def check(diagnose: bool, notify: bool, fail_on_problem: bool) -> None:
     (solo si hay un modelo configurado; si no, lo dice y sigue).
     """
     with vigilado("formatos"):
+        # The calendar data is checked here: it is ours, it needs no network and it ages by the day.
+        from hacienda_gpt.ops.formatos_calendario import observar_calendario
+
+        observar_calendario(_hoy())
         estados = formatos.resumen()
         problemas = formatos.problemas()
         salida: dict[str, Any] = {
@@ -247,20 +286,49 @@ def sondear(hoy: date, descargar: Any = _descargar) -> list[str]:
     return errores
 
 
+def con_memoria(descargar: Any) -> Any:
+    """``descargar`` that fetches each URL once per probe (the IRPF law is read by both probes)."""
+    cache: dict[tuple[str, str], str | None] = {}
+
+    def una_vez(url: str, accept: str) -> str | None:
+        if (url, accept) not in cache:
+            cache[(url, accept)] = descargar(url, accept)
+        return cache[(url, accept)]
+
+    return una_vez
+
+
+SONDEADAS = (
+    "boe_sumario",
+    "boe_sumario_dias",
+    "boe_documento_xml",
+    "boe_metadatos",
+    "boe_consolidado_html",
+    "calendario_fiscal",
+    "calendario_boe",
+)
+
+
 @cli.command("probe")
 @click.option("--fail-on-problem", is_flag=True, help="Termina con código 1 si algo falla o no se pudo leer.")
 def probe(fail_on_problem: bool) -> None:
     """Lee ahora del BOE una muestra de cada formato y dice si se entiende. No usa ningún LLM.
 
-    Para ejecutarlo donde no corren las tareas diarias (GitHub Actions) o para
-    comprobar un cambio de spec. Solo necesita acceso a www.boe.es.
+    Comprueba además el calendario fiscal: su coherencia y que los artículos del
+    BOE que fijan sus plazos siguen diciendo lo mismo. Para ejecutarlo donde no
+    corren las tareas diarias (GitHub Actions) o para comprobar un cambio de
+    spec. Solo necesita acceso a www.boe.es.
     """
+    from hacienda_gpt.ops.formatos_calendario import sondear_calendario
+
     if not settings.FORMAT_WATCH:
         raise click.ClickException("FORMAT_WATCH está desactivado: la sonda no registraría nada.")
     with vigilado("formatos-probe"):
-        errores = sondear(datetime.now(UTC).date())
+        hoy = _hoy()
+        descargar = con_memoria(_descargar)
+        errores = sondear(hoy, descargar) + sondear_calendario(hoy, descargar)
         problemas = formatos.problemas()
-        sondeadas = ("boe_sumario", "boe_sumario_dias", "boe_documento_xml", "boe_metadatos", "boe_consolidado_html")
+        sondeadas = SONDEADAS
         estados = {item.fuente: item.estado for item in formatos.resumen() if item.fuente in sondeadas}
         click.echo(
             json.dumps({"estados": estados, "problemas": problemas, "errores": errores}, ensure_ascii=False, indent=2)

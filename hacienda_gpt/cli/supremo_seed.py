@@ -31,7 +31,14 @@ from urllib.parse import urlsplit
 import click
 import requests
 
-from hacienda_gpt.doctrine.supremo import analizar_documento, es_objetivo_prioritario, sidecar_metadata
+from hacienda_gpt.crawler.cendoj import observar_documento
+from hacienda_gpt.doctrine.supremo import (
+    analizar_documento,
+    es_casacion_nueva,
+    es_objetivo_prioritario,
+    sidecar_metadata,
+)
+from hacienda_gpt.ops import formatos
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +147,22 @@ def _validar_max_descargas(ctx: click.Context, param: click.Parameter, value: in
     return value
 
 
+def contar_para_vigilancia(lote: dict[str, int], sentencia: Any) -> None:
+    """Add one analysed ruling to the counters of the run (only what the header parser recognised)."""
+    sala_tercera = "tercera" in (sentencia.sala or "").lower() or "contencioso" in (sentencia.sala or "").lower()
+    for clave, cuenta in (
+        ("analizadas", True),
+        ("con_fecha", sentencia.fecha is not None),
+        ("sala_tercera", sala_tercera),
+        ("sala_tercera_con_seccion", sala_tercera and sentencia.seccion is not None),
+        ("tributarias", sentencia.es_tributaria),
+        ("con_tipo_recurso", sentencia.tipo_recurso is not None),
+        ("casacion_nueva", es_casacion_nueva(sentencia)),
+        ("fijan_doctrina", sentencia.fija_doctrina),
+    ):
+        lote[clave] = lote.get(clave, 0) + int(bool(cuenta))
+
+
 def _error_entry(origen: str, mensaje: str) -> dict[str, Any]:
     return {
         "origen": origen,
@@ -163,9 +186,18 @@ def procesar_documento(
     min_priority: int,
     dry_run: bool,
     slugs_vistos: set[str],
+    lote: dict[str, int] | None = None,
 ) -> dict[str, Any]:
-    """Analyse one document, write it if it qualifies and return its manifest entry."""
-    sentencia, base = analizar_documento(_decodificar(contenido), source_url=source_url)
+    """Analyse one document, write it if it qualifies and return its manifest entry.
+
+    ``lote``: counters of the run for the format watch (see :func:`contar_para_vigilancia`).
+    """
+    html = _decodificar(contenido)
+    sentencia, base = analizar_documento(html, source_url=source_url)
+    # Format watch (never raises): a page in another layout reads as a ruling without ROJ, date or section.
+    observar_documento(html, contexto=origen)
+    if lote is not None:
+        contar_para_vigilancia(lote, sentencia)
     slug = slug_documento(sentencia.roj, sentencia.ecli, contenido)
     motivos = list(sentencia.motivos)
 
@@ -269,6 +301,7 @@ def cli(
     rechazadas: list[str] = []
     omitidas: list[str] = []
     slugs_vistos: set[str] = set()
+    lote: dict[str, int] = {}
 
     def procesar(contenido: bytes, origen: str, source_url: str | None) -> None:
         entry = procesar_documento(
@@ -279,6 +312,7 @@ def cli(
             min_priority=min_priority,
             dry_run=dry_run,
             slugs_vistos=slugs_vistos,
+            lote=lote,
         )
         documentos.append(entry)
         estado = "conservada" if entry["conservada"] else "descartada"
@@ -329,6 +363,9 @@ def cli(
 
     conservadas = sum(1 for doc in documentos if doc["conservada"])
     errores = sum(1 for doc in documentos if doc["error"])
+    if lote.get("analizadas"):
+        # Format watch, per run: no ruling with a section or a kind of appeal is a header that moved.
+        formatos.observar("supremo_lote", None, extraccion={**lote, "conservadas": conservadas})
     descartadas = len(documentos) - conservadas - errores
     fijan_doctrina = sum(1 for doc in documentos if doc["conservada"] and doc["fija_doctrina"])
 

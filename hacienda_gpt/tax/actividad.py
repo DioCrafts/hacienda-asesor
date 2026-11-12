@@ -11,6 +11,10 @@ Limits, all repeated as ``avisos`` on the result: one taxpayer, the whole of
 their activities given as one set of totals, individual filing; expenses are
 taken as given (the calculator does not judge whether they are deductible);
 estimación objetiva and estimación directa normal are not computed.
+
+Also here: :func:`calcular_retencion_profesional`, the withholding rate a
+professional puts on an invoice (art. 95.1 RIRPF), with the figures of its
+letter d) checked when they are given.
 """
 
 from __future__ import annotations

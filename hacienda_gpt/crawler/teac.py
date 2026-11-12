@@ -62,12 +62,30 @@ _NO_EXTRAIDO = frozenset({"source_authority", "criterio_id", "ingested_at"})
 _NUM_RESOLUCION_PATTERN = re.compile(r"\b\d{2}/\d{4,6}/\d{4}(?:/\d{2}/\d{2})?\b")
 _DATE_PATTERN = re.compile(r"\b(\d{2})/(\d{2})/(\d{4})\b")
 
+# How a labelled value is looked up, as XPath templates where ``{alias}`` is a lowercase label. Groups are
+# tried in order; inside a group the first template that matches anything wins, and the group's value is its
+# non-blank text joined by spaces (an all-blank value moves on to the next group). Version 1 of the spec.
+_MINUSCULAS = "translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú')"
+PLANTILLAS_V1: tuple[tuple[str, ...], ...] = (
+    # dt/dd pattern (definition list)
+    (f"//dt[normalize-space({_MINUSCULAS})='{{alias}}']/following-sibling::dd[1]//text()",),
+    # tr/td pattern
+    (
+        f"//th[normalize-space({_MINUSCULAS})='{{alias}}']/following-sibling::td[1]//text()",
+        f"//td[normalize-space({_MINUSCULAS})='{{alias}}']/following-sibling::td[1]//text()",
+        f"//td[normalize-space({_MINUSCULAS})='{{alias}}:']/following-sibling::td[1]//text()",
+    ),
+    # label + span/strong pattern
+    (f"//*[normalize-space({_MINUSCULAS})='{{alias}}:']/following-sibling::*[1]//text()",),
+)
+
 
 class ReglasTeac(BaseModel):
     """What the parser knows about the DYCTEA page, as format-spec data (``teac_criterio``).
 
-    Version 1 of the spec holds ``DYCTEA_NOT_FOUND_MARKER``, ``_FIELD_ALIASES``
-    and the two patterns above; a reviewed proposal may replace them.
+    Version 1 of the spec holds ``DYCTEA_NOT_FOUND_MARKER``, ``_FIELD_ALIASES``,
+    the two patterns and the XPath templates above; a reviewed proposal may
+    replace them.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -77,6 +95,23 @@ class ReglasTeac(BaseModel):
     alias: dict[str, tuple[str, ...]]
     patron_numero: str
     patron_fecha: str
+    # Groups of XPath templates with an ``{alias}`` placeholder (see ``PLANTILLAS_V1``).
+    plantillas: tuple[tuple[str, ...], ...] = PLANTILLAS_V1
+
+    @field_validator("plantillas")
+    @classmethod
+    def _plantillas(cls, value: tuple[tuple[str, ...], ...]) -> tuple[tuple[str, ...], ...]:
+        if not value or any(not grupo for grupo in value):
+            raise ValueError("hace falta al menos un grupo de plantillas, y ningún grupo vacío")
+        prueba = parsel.Selector(text="<html><body></body></html>")
+        for plantilla in (p for grupo in value for p in grupo):
+            if plantilla.count("{alias}") != 1 or len(plantilla) > formatos.MAX_PATRON:
+                raise ValueError("cada plantilla lleva «{alias}» exactamente una vez y es breve")
+            try:
+                prueba.xpath(plantilla.replace("{alias}", "x"))
+            except ValueError as exc:
+                raise ValueError(f"XPath no válido: {exc}") from exc
+        return value
 
     @field_validator("patron_numero", "patron_fecha")
     @classmethod
@@ -108,7 +143,7 @@ def extraer_criterio(reglas: ReglasTeac, html: str) -> dict[str, Any] | None:
     selector = parsel.Selector(text=html)
     fields: dict[str, str | None] = {}
     for canonical, aliases in reglas.alias.items():
-        fields[canonical] = _extract_field(selector, aliases)
+        fields[canonical] = _extract_field(selector, aliases, reglas.plantillas)
 
     numero = fields.get("numero_resolucion") or _first_match(re.compile(reglas.patron_numero), html)
     fecha = _parse_date(fields.get("fecha_resolucion") or "", re.compile(reglas.patron_fecha))
@@ -146,41 +181,31 @@ def parse_teac_criterio(html: str, *, criterio_id: int | str | None = None) -> d
     }
 
 
-def _extract_field(selector: Any, aliases: tuple[str, ...]) -> str | None:
-    """Look up a labelled value tolerating dl/dt/dd, table tr/td and label/span layouts."""
+def observar_criterio(html: str, metadata: dict[str, Any], criterio_id: int | str) -> None:
+    """Format watch (never raises): a page whose labels changed still parses, with every field empty."""
+    formatos.observar(
+        "teac_criterio",
+        html,
+        extraccion={k: v for k, v in metadata.items() if k not in _NO_EXTRAIDO},
+        contexto=str(criterio_id),
+    )
+
+
+def _extract_field(
+    selector: Any, aliases: tuple[str, ...], plantillas: tuple[tuple[str, ...], ...] = PLANTILLAS_V1
+) -> str | None:
+    """Look up a labelled value tolerating dl/dt/dd, table tr/td and label/span layouts (``plantillas``)."""
     for alias in aliases:
-        # dt/dd pattern (definition list)
-        value = selector.xpath(
-            f"//dt[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}']/following-sibling::dd[1]//text()"
-        ).getall()
-        if value:
-            joined = " ".join(part.strip() for part in value if part.strip())
-            if joined:
-                return joined
-        # tr/td pattern
-        value = (
-            selector.xpath(
-                f"//th[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}']/following-sibling::td[1]//text()"
-            ).getall()
-            or selector.xpath(
-                f"//td[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}']/following-sibling::td[1]//text()"
-            ).getall()
-            or selector.xpath(
-                f"//td[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}:']/following-sibling::td[1]//text()"
-            ).getall()
-        )
-        if value:
-            joined = " ".join(part.strip() for part in value if part.strip())
-            if joined:
-                return joined
-        # label + span/strong pattern
-        value = selector.xpath(
-            f"//*[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}:']/following-sibling::*[1]//text()"
-        ).getall()
-        if value:
-            joined = " ".join(part.strip() for part in value if part.strip())
-            if joined:
-                return joined
+        for grupo in plantillas:
+            value: list[str] = []
+            for plantilla in grupo:
+                value = selector.xpath(plantilla.replace("{alias}", alias)).getall()
+                if value:
+                    break
+            if value:
+                joined = " ".join(part.strip() for part in value if part.strip())
+                if joined:
+                    return joined
     return None
 
 
@@ -284,13 +309,7 @@ class TEACCrawler(scrapy.Spider):
         if metadata is None:
             self.logger.debug("Criterio %s no existe; skipping.", criterio_id)
             return
-        # Format watch: a page whose labels changed still parses, with every field empty.
-        formatos.observar(
-            "teac_criterio",
-            html,
-            extraccion={k: v for k, v in metadata.items() if k not in _NO_EXTRAIDO},
-            contexto=str(criterio_id),
-        )
+        observar_criterio(html, metadata, criterio_id)
         self._persist(criterio_id, html, metadata)
 
     def _persist(self, criterio_id: int, html: str, metadata: dict[str, Any]) -> None:

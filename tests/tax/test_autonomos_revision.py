@@ -14,7 +14,9 @@ import pytest
 
 from hacienda_gpt.tax.actividad import (
     ActividadInput,
+    RetencionProfesionalInput,
     calcular_rendimiento_actividad,
+    calcular_retencion_profesional,
     cumple_supuesto_d_retencion,
     tipo_retencion_profesional,
 )
@@ -501,6 +503,49 @@ def test_withholding_rates_of_art_95_1() -> None:
     assert not cumple_supuesto_d_retencion(p, D("15000"), D("15000"))  # not below 15,000
     assert not cumple_supuesto_d_retencion(p, D("12000"), D("16000"))  # exactly 75 % is not "más del"
     assert cumple_supuesto_d_retencion(p, D("12000.01"), D("16000"))
+
+
+def _ret(**kwargs):
+    return calcular_retencion_profesional(RetencionProfesionalInput(ejercicio=2026, **kwargs))
+
+
+def test_withholding_calculator_checks_letter_d_and_says_what_it_does_not() -> None:
+    general = _ret()
+    assert (general.tipo, general.tipo_porcentaje, general.cumple_supuesto_d) == (D("0.15"), D("15.00"), None)
+    assert not general.parametros_no_verificados and RIRPF in general.fuente
+    # Start-up rate cut by 60 % (Ceuta or Melilla): 7 % -> 2.8 %, which only survives in percentage points.
+    reducido = _ret(inicio_actividad=True, ceuta_melilla=True)
+    assert reducido.tipo_porcentaje == D("2.80") and _avisa(reducido, "comunicarlo por escrito al pagador")
+    assert _avisa(reducido, "reducido en un 60 %")
+    # Letter d) with its figures: 15.000 is not "inferior a 15.000 euros" -> the rate without that case.
+    fuera = _ret(
+        supuesto="actividad_ingresos_reducidos",
+        integros_actividades_letra_d=D(15000),
+        integros_actividades_y_trabajo=D(15000),
+    )
+    assert fuera.cumple_supuesto_d is False and fuera.tipo == D("0.15") and _avisa(fuera, "No se cumplen las cifras")
+    # Same, but in the start-up period: the start-up rate still applies.
+    assert _ret(supuesto="actividad_ingresos_reducidos", inicio_actividad=True, integros_actividades_letra_d=D(15000), integros_actividades_y_trabajo=D(15000)).tipo == D("0.07")  # fmt: skip
+    dentro = _ret(
+        supuesto="actividad_ingresos_reducidos",
+        integros_actividades_letra_d=D("12000.01"),
+        integros_actividades_y_trabajo=D(16000),
+    )
+    assert (
+        dentro.cumple_supuesto_d is True
+        and dentro.tipo == D("0.07")
+        and _avisa(dentro, "grupos y agrupaciones del IAE")
+    )
+    sin_cifras = _ret(supuesto="actividad_ingresos_reducidos")
+    assert sin_cifras.tipo == D("0.07") and _avisa(sin_cifras, "sin comprobar sus cifras")
+    # The figures of letter d) are reported even when that case is not claimed; the rate does not change.
+    informativo = _ret(integros_actividades_letra_d=D(1000), integros_actividades_y_trabajo=D(1000))
+    assert informativo.cumple_supuesto_d is True and informativo.tipo == D("0.15")
+    assert _ret(supuesto="mediador_seguros").tipo == D("0.07")
+    with pytest.raises(ValueError, match="las dos cifras"):
+        _ret(integros_actividades_letra_d=D(1000))
+    with pytest.raises(ValueError, match="no pueden superarlos"):
+        _ret(integros_actividades_letra_d=D(2000), integros_actividades_y_trabajo=D(1000))
 
 
 def test_modelo_303_says_where_vat_does_not_apply() -> None:

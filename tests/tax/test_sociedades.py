@@ -356,6 +356,7 @@ def test_losses_limits_for_large_turnover_and_new_companies() -> None:
     r = _is(cifra_negocios_anterior=D(20000000), **kwargs)
     assert r.bases_negativas_compensadas == D("2000000.00")
     assert _aviso(r, "art. 30 bis")  # minimum taxation is not computed
+    assert r.tributacion_minima_aplicable is True
     assert _is(cifra_negocios_anterior=D(60000000), **kwargs).bases_negativas_compensadas == D("1000000.00")
     # Turnover unknown: 70 % x 4 M = 2,8 M, with a warning about the lower limits.
     r = _is(**kwargs)
@@ -764,6 +765,33 @@ def test_comparison_legal_references_and_dividend_withholding() -> None:
     assert (c.autonomo_cotizaciones, c.sociedad_cotizaciones, c.diferencia_con_cotizaciones) == (None, None, None)
     assert _aviso(c, "NO se incluyen las cotizaciones a la Seguridad Social")
     assert "BOE-A-2006-20764" in c.fuente
+
+
+def test_comparison_takes_the_parameters_it_is_given() -> None:
+    """What lets a test case run the comparison with a proposed encoding of its IRPF figures."""
+    raw = load_sociedades_params(2026).model_dump(mode="json")
+    raw["comparacion_irpf"]["retencion_capital_mobiliario"] = "0.21"
+    raw["comparacion_irpf"]["fuente"].update(verificado=False, referencia="art. 101.4 LIRPF sin contrastar")
+    entrada = ComparacionInput(
+        ejercicio=2026, beneficio_antes_retribucion=D(60000), salario=D(20000), dividendo=D(10000)
+    )
+    assert comparar_autonomo_vs_sociedad(entrada).retencion_dividendo == D("1900.00")
+    otra = comparar_autonomo_vs_sociedad(entrada, SociedadesParams.model_validate(raw))
+    assert otra.retencion_dividendo == D("2100.00")
+    assert _aviso(otra, "art. 101.4 LIRPF sin contrastar")
+
+
+def test_minimum_tax_threshold_is_reported_not_computed() -> None:
+    # Art. 30 bis.1: "al menos de 20 millones de euros durante los 12 meses anteriores".
+    al_limite = _is(resultado_contable=D(1000000), cifra_negocios_12_meses_anteriores=D(20000000))
+    assert al_limite.tributacion_minima_aplicable is True and _aviso(al_limite, "NO tiene en cuenta")
+    debajo = _is(resultado_contable=D(1000000), cifra_negocios_12_meses_anteriores=D("19999999.99"))
+    assert debajo.tributacion_minima_aplicable is False and not _aviso(debajo, "art. 30 bis")
+    # The previous period's turnover stands in for the 12 months when only it is given.
+    assert _is(resultado_contable=D(1000000), cifra_negocios_anterior=D(20000000)).tributacion_minima_aplicable
+    assert _is(resultado_contable=D(1000000)).tributacion_minima_aplicable is None
+    # Nothing else changes: the quota is the same on both sides of the threshold.
+    assert al_limite.cuota_liquida == debajo.cuota_liquida == D("250000.00")
 
 
 def test_comparison_with_the_contributions_the_user_supplies() -> None:

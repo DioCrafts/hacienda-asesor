@@ -33,6 +33,7 @@ from hacienda_gpt.tax.params import (
     Fuente,
     IRPFParams,
     Minimos,
+    RepartoDeducciones,
     _MadridEducacion,
     load_params,
     normalizar_comunidad,
@@ -47,6 +48,16 @@ Tributacion = Literal["individual", "conjunta_biparental", "conjunta_monoparenta
 
 def _round(value: Decimal) -> Decimal:
     return value.quantize(CENT, rounding=ROUND_HALF_UP)
+
+
+def repartir_deducciones_estatales(deducciones: Decimal, reparto: RepartoDeducciones) -> tuple[Decimal, Decimal]:
+    """(State share, regional share) of the general State deductions (arts. 67.1.b and 77.1.a LIRPF).
+
+    The regional share is ``parte_autonomica`` of the total, rounded to the cent; the State bears the rest. Used by
+    :func:`calcular_irpf` and, with proposed figures, by the re-encoding loop's test cases.
+    """
+    autonomica = _round(deducciones * reparto.parte_autonomica)
+    return _round(deducciones) - autonomica, autonomica
 
 
 class Descendiente(BaseModel):
@@ -1018,8 +1029,7 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
 
     # The general deductions are borne half by each tax; the community's own
     # deductions reduce only the regional tax. Neither tax can go below zero.
-    parte_autonomica = _round(deducciones * p.reparto_deducciones_estatales.parte_autonomica)
-    parte_estatal = _round(deducciones) - parte_autonomica
+    parte_estatal, parte_autonomica = repartir_deducciones_estatales(deducciones, p.reparto_deducciones_estatales)
     deducciones_autonomicas = ZERO
     if comunidad is not None and comunidad.deducciones_calculables:
         # Before the hand-coded ones: Madrid's art. 14 is a share of the tax left after every other deduction.

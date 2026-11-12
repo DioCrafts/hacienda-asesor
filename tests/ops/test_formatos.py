@@ -22,6 +22,7 @@ XML = "boe_documento_BOE-A-2023-26452.xml"
 HTML = "boe_consolidado_BOE-A-2006-20764_recorte.html"
 META = "boe_metadatos_BOE-A-2006-20764.json"
 T0 = datetime(2026, 11, 10, 8, 0, tzinfo=UTC)
+HOY = date(2026, 11, 12)
 
 
 @pytest.fixture
@@ -37,6 +38,8 @@ def vigilancia(tmp_path, monkeypatch):
         raise AssertionError("the tests must not touch the network")
 
     monkeypatch.setattr(vigia.urllib.request, "urlopen", no_network)
+    # ``ops formatos check`` also checks the calendar data, which depends on the date.
+    monkeypatch.setattr(cli_formatos, "_hoy", lambda: HOY)
     return tmp_path
 
 
@@ -372,7 +375,11 @@ def test_check_reports_the_deterministic_status_and_skips_the_llm_without_a_key(
 
     assert result.exit_code == 1, result.output
     salida = json.loads(result.output)
-    assert {f["fuente"]: f["estado"] for f in salida["fuentes"]} == {"boe_metadatos": "ok", "boe_sumario": "rota"}
+    assert {f["fuente"]: f["estado"] for f in salida["fuentes"]} == {
+        "boe_metadatos": "ok",
+        "boe_sumario": "rota",
+        "calendario_fiscal": "ok",
+    }
     assert "teac_criterio" in salida["sin_datos"]
     assert salida["diagnostico"]["pendientes"] == ["boe_sumario"]
     assert salida["diagnostico"]["llm"].startswith("no configurado") and salida["diagnostico"]["resultados"] == []
