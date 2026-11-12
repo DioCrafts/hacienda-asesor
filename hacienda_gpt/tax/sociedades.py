@@ -301,6 +301,8 @@ def _reserva_nivelacion(
             )
 
     pedida = inp.reserva_nivelacion_maxima or bool(inp.reserva_nivelacion)
+    # Every branch below quotes the figures of art. 105, applied or not: the result relies on that group.
+    t.usa(rn.fuente)
     regla = (
         f"minorar la base imponible positiva hasta el {_pct(rn.porcentaje)} de su importe, con el máximo de "
         f"{_eur(rn.limite)} euros al año, y sumar después lo minorado a la base de los {rn.anos_adicion} años "

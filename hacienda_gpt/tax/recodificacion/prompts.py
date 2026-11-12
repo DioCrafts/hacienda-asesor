@@ -26,7 +26,10 @@ rounded value). Encode what the law prints, with the field meant for it, or leav
 not approximate: answer "no_calculable" and say precisely which datum or formula is missing.
 6. THE WORDING SHOWN IS THE ONLY ONE YOU HAVE. The text is the consolidated wording published by the BOE, followed by \
 its annotations ("Se modifica, con efectos desde…, por…", "Redacción mostrada por el BOE: … en vigor a partir del…"). \
-Wordings announced for the future, or superseded, are not to be encoded.
+Wordings announced for the future, or superseded, are not to be encoded. When the task says the law is NOT YET \
+CONSOLIDATED, the text is instead the amending norm itself: encode the new wording it gives between quotation \
+marks. When a bracketed line says only one apartado of a long article is shown, the rest of the article exists and \
+you may ask for another apartado in `articulos_necesarios` ("5.uno").
 7. EFFECTS DATE. State from which date the wording you encoded produces effects (`efectos_desde`, AAAA-MM-DD) and \
 quote in `cita_efectos` the literal passage that says so. An effects clause ("con efectos desde el 1 de enero de \
 2025", "para los períodos impositivos iniciados a partir de…") always wins over the entry into force: laws are \
@@ -190,6 +193,46 @@ def esquema_revisor(extra: dict[str, Any]) -> dict[str, Any]:
         "properties": propiedades,
         "required": list(propiedades),
     }
+
+
+SISTEMA_DESGLOSE = """\
+You maintain the legal parameters of a Spanish tax calculator. You are given ONE article of a law (or the passage \
+of an amending norm that rewrites it) that may hold several independent items of this kind: {que}
+
+List every such item the text establishes — nothing else is asked of you now: do not encode amounts or conditions.
+
+Rules (a program checks them and drops what breaks them):
+1. Only what the text between <texto_legal> tags establishes. Nothing from memory.
+2. `etiqueta`: where the item is in the law, starting EXACTLY with «{etiqueta}» and followed by its apartado as the \
+law numbers it, joined by dots («{etiqueta}.Dos», «{etiqueta}.3», «{etiqueta}.Uno.a)»). When the article holds a single \
+item, the label is «{etiqueta}» itself. When one apartado holds two items with different amounts and conditions (a \
+general one and one for a special group), list it once: the encoder handles variants.
+3. `titulo`: the heading the law gives the item, in Spanish, or a short description when it has none.
+4. `cita`: ONE contiguous passage copied verbatim from the text, taken from that item (its heading or first sentence).
+5. Skip apartados that set common rules, definitions, limits or procedures and establish no item of their own, and \
+apartados printed as suppressed, repealed or annulled.
+"""
+
+ESQUEMA_DESGLOSE: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "elementos": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "etiqueta": {"type": "string"},
+                    "titulo": {"type": "string"},
+                    "cita": {"type": "string"},
+                },
+                "required": ["etiqueta", "titulo", "cita"],
+            },
+        }
+    },
+    "required": ["elementos"],
+}
 
 
 def fuente_de(

@@ -22,8 +22,9 @@ the text it was read from is no longer there.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from functools import lru_cache
+import hashlib
 import html
 import json
 from pathlib import Path
@@ -164,16 +165,112 @@ def _evidencia_deducciones() -> dict[str, dict[str, Any]]:
     return data
 
 
-def comprobaciones(params: IRPFParams, *, evidencia: dict[str, dict[str, Any]] | None = None) -> list[Comprobacion]:
+@lru_cache(maxsize=1)
+def _evidencia_parametros() -> dict[str, dict[str, Any]]:
+    path = DATA_DIR / "evidencia_parametros.json"
+    data: dict[str, dict[str, Any]] = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    return data
+
+
+_PROCEDENCIA = ("fuente", "recodificada_el")
+
+
+def huella_de_grupo(valor: Any) -> str:
+    """Fingerprint of the figures of a group, whatever way its JSON spells them ("0.10" and "0.1" are one).
+
+    Stored next to the quotes a re-encoding leaves in ``evidencia_parametros.json``: the quotes vouch for a group
+    only while the group still holds what they were read for.
+    """
+
+    def canon(x: Any) -> Any:
+        if isinstance(x, BaseModel):
+            return canon(x.model_dump(mode="json"))
+        if isinstance(x, dict):
+            return {str(k): canon(v) for k, v in sorted(x.items()) if k not in _PROCEDENCIA and v is not None}
+        if isinstance(x, list | tuple):
+            return [canon(v) for v in x]
+        if isinstance(x, bool) or x is None:
+            return x
+        if isinstance(x, int | float | Decimal | str):
+            try:
+                return format(Decimal(str(x)).normalize(), "f")
+            except InvalidOperation:
+                return str(x)
+        return str(x)
+
+    return hashlib.sha256(json.dumps(canon(valor), ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def _valor_en(params: Any, ruta: list[str]) -> Any:
+    """What a validated parameter file holds at ``ruta`` (None when nothing is there)."""
+    nodo: Any = params
+    for paso in ruta:
+        if isinstance(nodo, BaseModel):
+            nodo = getattr(nodo, paso, None)
+        elif isinstance(nodo, dict):
+            nodo = nodo.get(paso)
+        elif isinstance(nodo, list | tuple):
+            campo, hay_igual, valor = paso.partition("=")
+            if hay_igual:
+                nodo = next((item for item in nodo if str(getattr(item, campo, None)) == valor), None)
+            else:
+                nodo = nodo[int(paso)] if paso.isdigit() and int(paso) < len(nodo) else None
+        else:
+            return None
+        if nodo is None:
+            return None
+    return nodo
+
+
+def comprobaciones(
+    params: IRPFParams,
+    *,
+    evidencia: dict[str, dict[str, Any]] | None = None,
+    evidencia_parametros: dict[str, dict[str, Any]] | None = None,
+) -> list[Comprobacion]:
     """One check per group of parameters of ``params``.
 
     ``evidencia``: the quotes of the regional deductions, when they are not the ones shipped with the package.
+    ``evidencia_parametros``: likewise for the quotes an automatic re-encoding left for the other groups (scales,
+    minimums, groups of figures). A group that has them is checked by those quotes — against the law and version
+    they were read from — for as long as it holds the figures they were read for.
     """
     out: list[Comprobacion] = []
     estatal = params.fuente_principal.boe_id
+    todas = _evidencia_parametros() if evidencia_parametros is None else evidencia_parametros
+    recodificados: dict[str, Any] = todas.get(f"irpf_{params.ejercicio}.json", {})
+    usadas: set[str] = set()
+
+    def citas_de(ruta: list[str], valor: Any) -> dict[str, Any] | None:
+        entrada = recodificados.get("/".join(ruta))
+        if not isinstance(entrada, dict) or not entrada.get("citas"):
+            return None
+        if entrada.get("sha256_valor") not in (None, huella_de_grupo(valor)):
+            return None  # edited since: the quotes no longer speak for it
+        usadas.add("/".join(ruta))
+        return entrada
+
+    def por_citas(ruta: list[str], valor: Any, descripcion: str, entrada: dict[str, Any]) -> Comprobacion:
+        es_escala = isinstance(valor, Escala)
+        return Comprobacion(
+            boe_id=str(entrada.get("boe_id") or estatal),
+            version=entrada.get("version"),
+            ruta=ruta,
+            descripcion=descripcion,
+            tipo="tabla" if es_escala else "cita",
+            citas=list(entrada["citas"]),
+            cifras=_cifras_tabla(valor) if es_escala else [],
+        )
+
     for nombre in type(params).model_fields:
         value = getattr(params, nombre)
-        if not isinstance(value, BaseModel) or not hasattr(value, "fuente") or not value.fuente.verificado:
+        if not isinstance(value, BaseModel) or not hasattr(value, "fuente"):
+            continue
+        recodificado = citas_de([nombre], value)
+        if recodificado is not None:
+            out.append(por_citas([nombre], value, value.fuente.referencia, recodificado))
+            continue
+        if not value.fuente.verificado:
             # Parameters already flagged as not checked against the law are not re-checked either.
             continue
         if isinstance(value, Escala):
@@ -190,18 +287,27 @@ def comprobaciones(params: IRPFParams, *, evidencia: dict[str, dict[str, Any]] |
     for clave, comunidad in params.comunidades.items():
         boe_id = comunidad.fuente_principal.boe_id
         base = ["comunidades", clave]
-        out.append(
-            Comprobacion(
-                boe_id=boe_id,
-                version=comunidad.escala_general.fuente.version_historica,
-                ruta=[*base, "escala_general"],
-                descripcion=f"{comunidad.nombre}: escala ({comunidad.escala_general.fuente.referencia})",
-                tipo="tabla",
-                cifras=_cifras_tabla(comunidad.escala_general),
+        descripcion = f"{comunidad.nombre}: escala ({comunidad.escala_general.fuente.referencia})"
+        recodificado = citas_de([*base, "escala_general"], comunidad.escala_general)
+        if recodificado is not None:
+            out.append(por_citas([*base, "escala_general"], comunidad.escala_general, descripcion, recodificado))
+        else:
+            out.append(
+                Comprobacion(
+                    boe_id=boe_id,
+                    version=comunidad.escala_general.fuente.version_historica,
+                    ruta=[*base, "escala_general"],
+                    descripcion=descripcion,
+                    tipo="tabla",
+                    cifras=_cifras_tabla(comunidad.escala_general),
+                )
             )
-        )
         minimos = comunidad.minimos
-        if minimos is not None and "calculad" not in (minimos.fuente.nota or "").lower():
+        recodificado = citas_de([*base, "minimos"], minimos) if minimos is not None else None
+        if minimos is not None and recodificado is not None:
+            descripcion = f"{comunidad.nombre}: mínimos ({minimos.fuente.referencia})"
+            out.append(por_citas([*base, "minimos"], minimos, descripcion, recodificado))
+        elif minimos is not None and "calculad" not in (minimos.fuente.nota or "").lower():
             estatales = set(_cifras_de(params.minimos))
             # Only what the community sets itself; when it copies the State's amounts, its taxpayer minimum.
             propias = [c for c in _cifras_de(minimos) if c not in estatales] or [minimos.contribuyente]
@@ -215,13 +321,20 @@ def comprobaciones(params: IRPFParams, *, evidencia: dict[str, dict[str, Any]] |
                 )
             )
         if comunidad.deducciones_madrid is not None:
+            # Sub-groups re-encoded with quotes are checked by them (below); the rest, by their figures.
+            bloque = comunidad.deducciones_madrid
+            sin_citas = [
+                getattr(bloque, campo)
+                for campo in type(bloque).model_fields
+                if citas_de([*base, "deducciones_madrid", campo], getattr(bloque, campo)) is None
+            ]
             out.append(
                 Comprobacion(
                     boe_id=boe_id,
                     ruta=[*base, "deducciones_madrid"],
                     descripcion=f"{comunidad.nombre}: deducciones calculadas",
                     tipo="cifras",
-                    cifras=_como_se_imprimen(comunidad.deducciones_madrid),
+                    cifras=_como_se_imprimen(sin_citas),
                 )
             )
         # A year whose wording differs from today's keeps its own quotes, checked on that version.
@@ -242,6 +355,18 @@ def comprobaciones(params: IRPFParams, *, evidencia: dict[str, dict[str, Any]] |
                     cifras=[] if citas else _como_se_imprimen(deduccion),
                 )
             )
+    # Groups that have no check of their own (nested regimes, the sub-groups of a block) and were re-encoded.
+    emitidas = {"/".join(c.ruta) for c in out}
+    for ruta_texto, entrada in recodificados.items():
+        ruta = ruta_texto.split("/")
+        valor = _valor_en(params, ruta)
+        if ruta_texto in emitidas or valor is None or (ruta_texto not in usadas and citas_de(ruta, valor) is None):
+            continue
+        fuente = getattr(valor, "fuente", None)
+        descripcion = getattr(fuente, "referencia", None) or ruta_texto
+        if ruta[0] == "comunidades" and len(ruta) > 1 and ruta[1] in params.comunidades:
+            descripcion = f"{params.comunidades[ruta[1]].nombre}: {descripcion}"
+        out.append(por_citas(ruta, valor, descripcion, entrada))
     return out
 
 
@@ -289,7 +414,13 @@ def cargar_y_verificar(ejercicio: int, texto_de: TextoDe) -> list[Resultado]:
     return verificar(comprobaciones(load_params(ejercicio)), texto_de)
 
 
+# Not a version of a consolidated text: the norm as the daily BOE published it.
+VERSION_DIARIO = "diario"
+
+
 def url_de(boe_id: str, version: str | None = None) -> str:
+    if version == VERSION_DIARIO:
+        return f"https://www.boe.es/diario_boe/txt.php?id={boe_id}"
     base = f"https://www.boe.es/buscar/act.php?id={boe_id}"
     return f"{base}&tn=1&p={version}" if version else base
 

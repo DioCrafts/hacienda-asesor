@@ -284,9 +284,9 @@ def _bonificacion(
     )
 
 
-def calcular_patrimonio(inp: PatrimonioInput) -> ResultadoPatrimonio:
+def calcular_patrimonio(inp: PatrimonioInput, params: PatrimonioParams | None = None) -> ResultadoPatrimonio:
     """Wealth tax and ITSGF of one taxpayer; raises ``EjercicioNoDisponibleError`` or ``ComunidadNoDisponibleError``."""
-    p = load_patrimonio_params(inp.ejercicio)
+    p = params or load_patrimonio_params(inp.ejercicio)
     key, comunidad = _comunidad(inp.comunidad, p)
     e = p.estado
     t = Traza()
@@ -421,6 +421,8 @@ def calcular_patrimonio(inp: PatrimonioInput) -> ResultadoPatrimonio:
     itsgf_reduccion_alternativa = ZERO
     if vigente:
         itsgf_sujeto = base_imponible > g.hecho_imponible.umbral_patrimonio_neto
+        # The threshold decides whether there is ITSGF at all, also when the answer is "no".
+        t.usa(g.hecho_imponible.fuente)
         if itsgf_sujeto:
             itsgf_minimo = g.minimo_exento.importe or ZERO
             itsgf_base_liquidable = max(ZERO, base_imponible - itsgf_minimo)

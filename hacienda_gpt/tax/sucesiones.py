@@ -223,6 +223,11 @@ class _Traza:
 
     def usa(self, regla: _Regla, titulo: str) -> None:
         """Warnings every applied rule brings with it."""
+        if regla.recodificada_el:
+            self.aviso(
+                f"«{titulo}» ({regla.articulo}): regla recodificada automáticamente el {regla.recodificada_el} a "
+                "partir del BOE; pendiente de revisión humana."
+            )
         if regla.requisitos_no_comprobados:
             requisitos = "; ".join(r.rstrip(".") for r in regla.requisitos_no_comprobados)
             self.aviso(f"«{titulo}» ({regla.articulo}) se ha aplicado sin comprobar: {requisitos}.")
@@ -963,6 +968,9 @@ def _avisos_generales(
             "puede no valer para una fecha anterior al cambio."
         )
     t.aviso(estatal.acumulacion.resumen)
+    for regla, titulo in ((estatal.puntos_conexion, "Puntos de conexión"), (estatal.acumulacion, "Acumulación")):
+        if regla.recodificada_el:
+            t.usa(regla, titulo)
     for nota in estatal.notas:
         t.aviso(nota)
 

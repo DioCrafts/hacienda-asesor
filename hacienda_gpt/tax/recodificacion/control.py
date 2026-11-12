@@ -15,7 +15,7 @@ checks is never written to a parameter file.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -66,7 +66,14 @@ _FRONTERA_RE = re.compile(
     r"^(?:T[IÍ]TULO\b|CAP[IÍ]TULO\b|Secci[oó]n\s+\d|Subsecci[oó]n\s+\d|LIBRO\b|ANEXO\b|"
     r"Disposici[oó]n\s+(?:adicional|transitoria|derogatoria|final)\b)"
 )
+_DISPOSICION_RE = re.compile(
+    r"^disposicion\s+(adicional|transitoria|derogatoria|final)\s+([a-z ]+?|\d+)\s*(?:\.[ªa]?)?\s*[.:]", re.IGNORECASE
+)
 _UI_RE = re.compile(r"^(?:Seleccionar redacci[oó]n|Subir$|\[Bloque\b)", re.IGNORECASE)
+# An article longer than this is cut down to the apartado a group is read from (when it can be isolated).
+UMBRAL_ACOTAR = 20_000
+# A first-level apartado still longer than this is cut down to its sub-apartado.
+UMBRAL_APARTADO = 15_000
 _FORM_RE = re.compile(r"<form\b[^>]*>(.*?)</form>", re.S | re.I)
 _LABEL_RE = re.compile(r"<input\b[^>]*\bchecked\b[^>]*>\s*<label\b[^>]*>(.*?)</label>", re.S | re.I)
 _SALTO = frozenset({"p", "div", "br", "li", "tr", "table", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "hr"})
@@ -143,8 +150,75 @@ class TextoLegal:
         return _comprimido(self.texto)
 
 
+_ORDINALES_UNIDAD = "primera segunda tercera cuarta quinta sexta septima octava novena".split()
+_ORDINALES_DECENA = {
+    20: "vigesima",
+    30: "trigesima",
+    40: "cuadragesima",
+    50: "quincuagesima",
+    60: "sexagesima",
+    70: "septuagesima",
+    80: "octogesima",
+    90: "nonagesima",
+    100: "centesima",
+}
+_CLASES_DISPOSICION = {"adicional": "da", "transitoria": "dt", "derogatoria": "dd", "final": "df"}
+
+
+def _clave_ordinal(texto: str) -> str:
+    """Spelling-insensitive key of an ordinal: "vigésimo sexta", "vigesimosexta" and "vigésima sexta" are one."""
+    plano = re.sub(r"[^a-z0-9]", "", _sin_acentos(texto).lower())
+    return re.sub(r"(decim|esim)[oa]", r"\1a", plano)
+
+
+def _ordinales() -> dict[str, int]:
+    """Feminine ordinals in words, as the BOE heads its provisions, by their spelling-insensitive key."""
+    out: dict[str, int] = {}
+    for n in range(1, 200):
+        centena, resto = divmod(n, 100)
+        prefijo = "centesima" if centena else ""
+        if resto == 0:
+            formas = [prefijo]
+        elif resto < 10:
+            formas = [prefijo + _ORDINALES_UNIDAD[resto - 1]]
+        elif resto == 10:
+            formas = [prefijo + "decima"]
+        elif resto < 20:
+            formas = [prefijo + "decima" + _ORDINALES_UNIDAD[resto - 11]]
+            if resto == 11:
+                formas.append(prefijo + "undecima")
+            if resto == 12:
+                formas.append(prefijo + "duodecima")
+        else:
+            decena, unidad = resto - resto % 10, resto % 10
+            formas = [prefijo + _ORDINALES_DECENA[decena] + (_ORDINALES_UNIDAD[unidad - 1] if unidad else "")]
+        if resto % 10 == 8 and resto > 10:
+            # "decimoctava", "vigesimoctava": the vowel is elided.
+            formas.append(formas[0][: -len("aoctava")] + "octava")
+        for forma in formas:
+            out[_clave_ordinal(forma)] = n
+    return out
+
+
+_ORDINAL_A_NUMERO = _ordinales()
+
+
+def clave_de_disposicion(linea: str) -> str | None:
+    """Key of the provision a heading opens: "Disposición adicional sexagésima primera. …" → "da 61"."""
+    match = _DISPOSICION_RE.match(_sin_acentos(linea))
+    if match is None:
+        return None
+    clase, ordinal = _CLASES_DISPOSICION[match.group(1).lower()], match.group(2).strip().lower()
+    if ordinal.isdigit():
+        return f"{clase} {int(ordinal)}"
+    if ordinal == "unica":
+        return f"{clase} unica"
+    numero = _ORDINAL_A_NUMERO.get(_clave_ordinal(ordinal))
+    return f"{clase} {numero}" if numero is not None else None
+
+
 def _bloques(pagina: str) -> list[tuple[str, list[str]]]:
-    """(article number, lines) for every "Artículo N." block of the page, in order."""
+    """(key, lines) for every "Artículo N." block and every provision ("da 61") of the page, in order."""
     bloques: list[tuple[str, list[str]]] = []
     actual: list[str] | None = None
     for linea in lineas_de(pagina):
@@ -152,35 +226,136 @@ def _bloques(pagina: str) -> list[tuple[str, list[str]]]:
         if cabecera:
             actual = [linea]
             bloques.append((" ".join(cabecera.group(1).lower().split()), actual))
-        elif _BLOQUE_RE.match(linea) or _FRONTERA_RE.match(linea):
+        elif _BLOQUE_RE.match(linea):
             actual = None
+        elif _FRONTERA_RE.match(linea):
+            disposicion = clave_de_disposicion(linea)
+            actual = [linea] if disposicion is not None else None
+            if actual is not None and disposicion is not None:
+                bloques.append((disposicion, actual))
         elif actual is not None and not _UI_RE.match(linea):
             actual.append(linea)
     return bloques
 
 
-def extraer_articulos(pagina: str, bases: Iterable[str]) -> TextoLegal:
-    """Text of the articles named by ``bases`` ("5", "9 quater", "110-2").
+# --------------------------------------------------------------------------- #
+# References: which blocks of the law a group is read from
+# --------------------------------------------------------------------------- #
 
-    Works on the text, not on the markup. A block starts at a line "Artículo N."
-    and ends at the next article or structural heading. When a page prints the
-    same number twice (the approving decree and the consolidated text it
-    approves) every match is returned, each under its own heading.
+_SUFIJOS_EN_ORDEN = (
+    "",
+    "bis",
+    "ter",
+    "quater",
+    "quinquies",
+    "sexies",
+    "septies",
+    "octies",
+    "nonies",
+    "decies",
+    "undecies",
+    "duodecies",
+)
+_CORTE_REFERENCIA = re.compile(r"\s*(?:\(|;|,\s*redacci|,\s*anadid|\ben\s+(?:su|la)\s+redacci)", re.IGNORECASE)
+_ARTICULOS_RE = re.compile(r"\bart(?:iculo)?(s)?\.?\s*(?=\d)", re.IGNORECASE)
+_ITEM_RE = re.compile(rf"({_NUMERO})((?:\.(?:[a-z]\)|\d+\.?[ºª]|\d+|[a-z]+))*\)?)", re.IGNORECASE)
+_SEPARADOR_RE = re.compile(r"\s*(,|\by\b|\ba\b)\s*(?=\d)", re.IGNORECASE)
+_DISPOSICION_REF_RE = re.compile(
+    r"\bdisp(?:osicion|\.)\s+(adicional|transitoria|derogatoria|final)\s+(\d+|unica)", re.IGNORECASE
+)
+
+
+def _rango(desde: str, hasta: str) -> list[str]:
+    """Articles between two bases: "57"…"60", or "2 bis"…"2 quinquies"."""
+    n1, _, s1 = desde.partition(" ")
+    n2, _, s2 = hasta.partition(" ")
+    if n1 == n2 and s1 in _SUFIJOS_EN_ORDEN and s2 in _SUFIJOS_EN_ORDEN:
+        i, j = _SUFIJOS_EN_ORDEN.index(s1), _SUFIJOS_EN_ORDEN.index(s2)
+        return [f"{n1} {s}".strip() for s in _SUFIJOS_EN_ORDEN[i : j + 1]]
+    if n1.isdigit() and n2.isdigit() and not s1 and not s2 and 0 < int(n2) - int(n1) <= 40:
+        return [str(n) for n in range(int(n1), int(n2) + 1)]
+    return [desde, hasta]
+
+
+def articulos_de_referencia(referencia: str) -> list[str]:
+    """Blocks of the law a source reference names, as keys of :func:`extraer_articulos`.
+
+    "arts. 57 a 60 LIRPF" → 57, 58, 59, 60; "arts. 19.2.f) y 20" → 19, 20; "art. 96.2 y 3" → 96 (after a singular
+    "art." what follows "y" is a subdivision); "arts. 2 a 2 quater" → 2, 2 bis, 2 ter, 2 quater; "disposición
+    adicional 61.ª" → "da 61". Only the part before a parenthesis or "redacción de…" is read: what follows names
+    the amending norms, not the law.
     """
-    buscados = list(dict.fromkeys(bases))
+    principal = _CORTE_REFERENCIA.split(_sin_acentos(referencia), maxsplit=1)[0]
+    encontrados: list[tuple[int, str]] = []
+    for match in _DISPOSICION_REF_RE.finditer(principal):
+        ordinal = match.group(2).lower()
+        clave = f"{_CLASES_DISPOSICION[match.group(1).lower()]} {int(ordinal) if ordinal.isdigit() else ordinal}"
+        encontrados.append((match.start(), clave))
+    for match in _ARTICULOS_RE.finditer(principal):
+        plural, posicion, anterior = bool(match.group(1)), match.end(), None
+        while True:
+            item = _ITEM_RE.match(principal, posicion)
+            if item is None:
+                break
+            base = " ".join(item.group(1).lower().split())
+            if anterior is not None:
+                encontrados += [(match.start(), b) for b in _rango(anterior, base)[1:]]
+            else:
+                encontrados.append((match.start(), base))
+            separador = _SEPARADOR_RE.match(principal, item.end())
+            if separador is None or not plural:
+                break
+            anterior = base if separador.group(1).lower() == "a" else None
+            posicion = separador.end()
+    return list(dict.fromkeys(clave for _, clave in sorted(encontrados, key=lambda par: par[0])))
+
+
+def extraer_articulos(pagina: str, bases: Iterable[str]) -> TextoLegal:
+    """Text of the blocks named by ``bases`` ("5", "9 quater", "110-2", "da 61", "5.dos.1").
+
+    Works on the text, not on the markup. A block starts at a line "Artículo N." (or the heading of a provision)
+    and ends at the next article or structural heading. When a page prints the same number twice (the approving
+    decree and the consolidated text it approves) every match is returned, each under its own heading.
+
+    A base with an apartado ("5.dos.1": apartado Dos, number 1, of article 5) asks for that part only. It is
+    honoured when the article is very long (:data:`UMBRAL_ACOTAR`) and the apartado can be isolated without
+    doubt; otherwise the whole article is returned. ``encontrados`` says what was actually returned ("5.dos",
+    or "5"), so asking again with those names gives the same text.
+    """
+    buscados = list(dict.fromkeys(" ".join(b.lower().split()) for b in bases))
     bloques = _bloques(pagina)
-    partes: list[str] = []
-    encontrados: list[str] = []
-    for base in buscados:
-        suyos = ["\n".join(lineas) for numero, lineas in bloques if numero == base]
-        if suyos:
-            encontrados.append(base)
-            partes += suyos
-    texto = "\n\n".join(partes)
+    partes: list[tuple[str, str]] = []
+    faltan: list[str] = []
+    for pedido in buscados:
+        base, apartados = partir_base(pedido)
+        suyos = [lineas for numero, lineas in bloques if numero == base]
+        if not suyos:
+            faltan.append(pedido)
+            continue
+        nombre = base
+        textos: list[str] = []
+        for lineas in suyos:
+            acotado = acotar(lineas, apartados) if apartados else None
+            if acotado is not None:
+                nombre = ".".join([base, *acotado[0]])
+                textos.append("\n".join(acotado[1]))
+            else:
+                textos.append("\n".join(lineas))
+        partes += [(nombre, texto) for texto in textos]
+    # A whole article makes its apartados redundant; the same apartado asked for twice is shown once.
+    enteros = {nombre for nombre, _ in partes if "." not in nombre}
+    vistos: set[tuple[str, str]] = set()
+    finales: list[tuple[str, str]] = []
+    for nombre, texto in partes:
+        if (nombre.split(".")[0] in enteros and "." in nombre) or (nombre, texto) in vistos:
+            continue
+        vistos.add((nombre, texto))
+        finales.append((nombre, texto))
+    texto = "\n\n".join(t for _, t in finales)
     return TextoLegal(
         texto=texto,
-        encontrados=tuple(encontrados),
-        faltan=tuple(b for b in buscados if b not in encontrados),
+        encontrados=tuple(dict.fromkeys(nombre for nombre, _ in finales)),
+        faltan=tuple(faltan),
         sha256=hashlib.sha256(_comprimido(texto).encode("utf-8")).hexdigest(),
     )
 
@@ -194,14 +369,85 @@ def indice_de(pagina: str) -> list[str]:
     return list(vistos.values())
 
 
-def articulos_que_contienen(pagina: str, citas: Iterable[str]) -> list[str]:
-    """Articles of the page in which any of ``citas`` is found literally (where a previous encoding read from)."""
+def articulos_que_contienen(pagina: str, citas: Iterable[str], *, junto_a: Iterable[str] = ()) -> list[str]:
+    """Blocks of the page in which any of ``citas`` is found literally (where a previous encoding read from).
+
+    ``junto_a`` are the names already going to be read ("5.dos.1"): in a very long article they tell how its
+    apartados are numbered, so that a quote found in ANOTHER apartado of the same article (its common rules)
+    adds that apartado ("5.uno") and not the whole article.
+    """
     propias = [c for c in (_comprimido(cita) for cita in citas) if len(c) >= MIN_CITA]
+    pistas: dict[str, list[str]] = {}
+    for nombre in junto_a:
+        base, apartados = partir_base(" ".join(nombre.lower().split()))
+        if apartados:
+            pistas.setdefault(base, apartados)
     out: list[str] = []
     for numero, lineas in _bloques(pagina):
-        if numero not in out and any(c in _comprimido("\n".join(lineas)) for c in propias):
+        texto = "\n".join(lineas)
+        if not any(c in _comprimido(texto) for c in propias):
+            continue
+        if numero in pistas and len(texto) > UMBRAL_ACOTAR:
+            segmentos = _segmentos(lineas[1:], _familia(pistas[numero][0]))
+            for etiqueta, inicio, fin in segmentos or []:
+                trozo = _comprimido("\n".join(lineas[1:][inicio:fin]))
+                nombre = f"{numero}.{etiqueta}"
+                if nombre not in out and any(c in trozo for c in propias):
+                    out.append(nombre)
+            continue
+        if numero not in out:
             out.append(numero)
     return out
+
+
+def extraer_de_modificadora(pagina: str, bases: Iterable[str], *, ley: str = "") -> TextoLegal:
+    """What an AMENDING norm says about the articles ``bases`` of the law it amends, from the norm's own text.
+
+    For the days between the publication of an amending norm and the BOE consolidating it into the law. The
+    blocks of the norm (its own articles and provisions) that name any of those articles are returned, preferring
+    the ones that also name the amended law by its number (``ley``: "35/2006"), plus the provisions on entry into
+    force and effects. ``encontrados`` are the bases of the AMENDED law that some block names.
+    """
+    buscados = list(dict.fromkeys(partir_base(" ".join(b.lower().split()))[0] for b in bases))
+    bloques = [(numero, "\n".join(lineas)) for numero, lineas in _bloques(pagina) if len(lineas) > 1]
+
+    def nombra(texto: str, base: str) -> bool:
+        plano = _sin_acentos(texto).lower()
+        if base.startswith(("da ", "dt ", "dd ", "df ")):
+            clase = {v: k for k, v in _CLASES_DISPOSICION.items()}[base[:2]]
+            ordinal = base[3:]
+            for match in re.finditer(rf"disposicion\s+{clase}\s+([a-z ]+?|\d+)\s*[.,:ªa]", plano):
+                valor = match.group(1).strip()
+                numero = int(valor) if valor.isdigit() else _ORDINAL_A_NUMERO.get(_clave_ordinal(valor))
+                if str(numero) == ordinal or valor == ordinal:
+                    return True
+            return False
+        return any(" ".join(m.group(1).split()) == base for m in _ETIQUETA_RE.finditer(plano))
+
+    encontrados: list[str] = []
+    elegidos: list[int] = []
+    for base in buscados:
+        suyos = [i for i, (_, texto) in enumerate(bloques) if nombra(texto, base)]
+        con_ley = [i for i in suyos if ley and ley in bloques[i][1]]
+        if suyos:
+            encontrados.append(base)
+            elegidos += con_ley or suyos
+    if elegidos:
+        elegidos += [
+            i
+            for i, (numero, texto) in enumerate(bloques)
+            if numero.startswith(("df ", "dt ")) and _CON_EFECTOS_O_VIGOR.search(texto)
+        ]
+    texto = "\n\n".join(bloques[i][1] for i in sorted(set(elegidos)))
+    return TextoLegal(
+        texto=texto,
+        encontrados=tuple(encontrados),
+        faltan=tuple(b for b in buscados if b not in encontrados),
+        sha256=hashlib.sha256(_comprimido(texto).encode("utf-8")).hexdigest(),
+    )
+
+
+_CON_EFECTOS_O_VIGOR = re.compile(r"entrada\s+en\s+vigor|entrar[aá]\s+en\s+vigor|con\s+efectos|surtir[aá]", re.IGNORECASE)
 
 
 # --------------------------------------------------------------------------- #
@@ -287,6 +533,177 @@ def en_palabras(n: int) -> list[str]:
     return [f"{_CENTENAS[centena]} {u}" for u in en_palabras(resto)]
 
 
+# --------------------------------------------------------------------------- #
+# Apartados: cutting a very long article down to the part a group is read from
+# --------------------------------------------------------------------------- #
+
+_PALABRAS_APARTADO = {forma: n for n in range(1, 100) for forma in en_palabras(n)[:1]}
+_LETRAS = "abcdefghijklmnñopqrstuvwxyz"
+_BASE_CON_APARTADOS = re.compile(rf"^((?:d[atdf] \S+)|{_NUMERO})((?:\.(?:[a-zñ]+\)?|\d+\)?))*)$")
+_NOTA_FINAL_RE = re.compile(
+    r"^(?:Se\s+(?:modifica|anade|deroga|renumera|reenumera|suprime|declara|sustituye|corrige|deja|actualiza|introduce)|"
+    r"Redaccion mostrada|Tengase en cuenta|Vease\b|Texto (?:anadido|original)|Su anterior numeracion)",
+    re.IGNORECASE,
+)
+
+
+def partir_base(nombre: str) -> tuple[str, list[str]]:
+    """("5", ["dos", "1"]) for "5.dos.1"; a plain base has no apartados."""
+    match = _BASE_CON_APARTADOS.match(_sin_acentos_salvo_enye(nombre))
+    if match is None:
+        return nombre, []
+    return " ".join(match.group(1).split()), [a.rstrip(")") for a in match.group(2).split(".") if a]
+
+
+def ruta_de_etiqueta(etiqueta: str) -> str | None:
+    """Where a label points inside its law: "art. 5.Dos.1 (jóvenes)" → "5.dos.1", "art. 9 quáter" → "9 quater"."""
+    plano = _sin_acentos(etiqueta.replace("ñ", "\0")).replace("\0", "ñ")
+    match = _ETIQUETA_RE.search(plano)
+    if match is None:
+        return None
+    base = " ".join(match.group(1).lower().split())
+    resto = re.match(r"((?:\.(?:[A-Za-zñ]+\)?|\d+\)?))*)", plano[match.end() :])
+    apartados = [a.rstrip(")").lower() for a in (resto.group(1) if resto else "").split(".") if a]
+    return ".".join([base, *apartados])
+
+
+def _familia(apartado: str) -> str:
+    if apartado.isdigit():
+        return "numero"
+    if _sin_acentos(apartado) in _PALABRAS_APARTADO:
+        return "palabra"
+    return "letra" if 1 <= len(apartado) <= 2 else "otra"
+
+
+def _siguiente_letra(a: str, b: str) -> bool:
+    if len(a) == 1 and len(b) == 1:
+        i, j = _LETRAS.find(a), _LETRAS.find(b)
+        # Not every law uses the "ñ".
+        return i >= 0 and (j == i + 1 or (a == "n" and b == "o"))
+    if a == "z" and b == "aa":
+        return True
+    return len(a) == 2 and len(b) == 2 and a[0] == b[0] and _siguiente_letra(a[1], b[1])
+
+
+def _cabezas(lineas: Sequence[str], familia: str) -> list[tuple[int, str]]:
+    """(line, label) of every line that opens an apartado of ``familia``, at any depth."""
+    out: list[tuple[int, str]] = []
+    for i, linea in enumerate(lineas):
+        plano = _sin_acentos(linea.replace("ñ", "\0")).replace("\0", "ñ").lower()
+        if familia == "numero":
+            match = re.match(r"^(\d+)\.(?=\s|$)", plano)
+        elif familia == "letra":
+            match = re.match(r"^([a-zñ]{1,2})\)(?=\s|$)", plano)
+        else:
+            match = re.match(r"^([a-z]+(?: y [a-z]+)?)\.(?=\s|$)", plano)
+            if match is not None and match.group(1) not in _PALABRAS_APARTADO:
+                match = None
+        if match is not None:
+            out.append((i, match.group(1)))
+    return out
+
+
+def _segmentos(lineas: Sequence[str], familia: str) -> list[tuple[str, int, int]] | None:
+    """(label, first line, end) of the TOP-LEVEL apartados of ``familia`` in ``lineas``; None when in doubt.
+
+    Numbered and lettered lists nest ("7." holds its own "1.", "2."…), so the labels are followed with a stack. A
+    label that could continue the top level and a nested one at once, or no level at all, means the structure
+    cannot be told from the text: the caller then reads the whole article, which is always right.
+    """
+    if familia == "otra":
+        return None
+    cabezas = _cabezas(lineas, familia)
+    arriba: list[tuple[int, str]] = []
+    if familia == "palabra":
+        if len({etiqueta for _, etiqueta in cabezas}) != len(cabezas):
+            return None
+        arriba = cabezas
+    else:
+        if familia == "numero":
+
+            def sigue(a: str, b: str) -> bool:
+                return int(b) == int(a) + 1
+
+            primero, segundo = "1", "2"
+        else:
+            sigue, primero, segundo = _siguiente_letra, "a", "b"
+        pila: list[str] = []
+        for i, etiqueta in cabezas:
+            if etiqueta == primero:
+                if not pila:
+                    arriba.append((i, etiqueta))
+                pila.append(etiqueta)
+                continue
+            niveles = [k for k in range(len(pila)) if sigue(pila[k], etiqueta)]
+            if (len(niveles) > 1 and 0 in niveles) or not pila:
+                return None
+            if not niveles:
+                if etiqueta != segundo:
+                    return None
+                # A list whose first item is the unnumbered opening sentence ("12. … / 2. Límite conjunto").
+                pila.append(etiqueta)
+                continue
+            # Two nested levels that could both go on: which one does not change where the top level is cut.
+            pila = [*pila[: niveles[-1]], etiqueta]
+            if niveles[-1] == 0:
+                arriba.append((i, etiqueta))
+    if not arriba:
+        return None
+    finales = [i for i, _ in arriba[1:]] + [len(lineas)]
+    return [(etiqueta, inicio, fin) for (inicio, etiqueta), fin in zip(arriba, finales, strict=True)]
+
+
+def acotar(lineas: Sequence[str], apartados: Sequence[str]) -> tuple[list[str], list[str]] | None:
+    """The lines of one block cut down to ``apartados``; None when the block is short or it cannot be done safely.
+
+    Returns (the apartados actually used, the lines). Kept besides the apartado itself: the heading of the
+    article, whatever precedes its first apartado, the BOE's closing notes (they date the wording) and a bracketed
+    line listing the other apartados, so that the reader can ask for the one holding the common rules.
+    """
+    if len("\n".join(lineas)) <= UMBRAL_ACOTAR or not apartados:
+        return None
+    cuerpo = list(lineas[1:])
+    corte = len(cuerpo)
+    while corte and _NOTA_FINAL_RE.match(_sin_acentos(cuerpo[corte - 1])):
+        corte -= 1
+    cuerpo, notas = cuerpo[:corte], cuerpo[corte:]
+    usados: list[str] = []
+    antes: list[str] = []
+    indice: list[str] = []
+    for nivel, apartado in enumerate(apartados):
+        if nivel and len("\n".join(cuerpo)) <= UMBRAL_APARTADO:
+            break
+        segmentos = _segmentos(cuerpo[1:] if nivel else cuerpo, _familia(apartado))
+        desplazamiento = 1 if nivel else 0
+        elegido = next((s for s in segmentos or [] if s[0] == _sin_acentos_salvo_enye(apartado)), None)
+        if elegido is None:
+            break
+        _, inicio, fin = elegido
+        assert segmentos is not None
+        antes += cuerpo[: desplazamiento + segmentos[0][1]]
+        prefijo = ".".join(usados)
+        indice += [
+            f"{prefijo + '.' if prefijo else ''}{etiqueta}: {cuerpo[desplazamiento + i][:70]}"
+            for etiqueta, i, _ in segmentos
+            if etiqueta != elegido[0]
+        ]
+        cuerpo = cuerpo[desplazamiento + inicio : desplazamiento + fin]
+        usados.append(elegido[0])
+    if not usados:
+        return None
+    aviso = (
+        f"[Se muestra solo el apartado {'.'.join(usados)} de este artículo. Sus otros apartados no se muestran; "
+        "si necesitas alguno (normas comunes, límites, definiciones), pídelo como «<artículo>.<apartado>»: "
+        + " | ".join(indice)
+        + "]"
+    )
+    return usados, [lineas[0], *antes, aviso, *cuerpo, *notas]
+
+
+def _sin_acentos_salvo_enye(texto: str) -> str:
+    return _sin_acentos(texto.replace("ñ", "\0")).replace("\0", "ñ").lower()
+
+
 def normalizar_evidencia(citas: Iterable[str]) -> str:
     """The quotes as one text, with "35 000" read as "35.000"."""
     texto = unicodedata.normalize("NFKC", " ".join(citas))
@@ -365,6 +782,12 @@ class Reglas:
     grados: frozenset[str] = frozenset()
     # Fields that are not legal figures (provenance, sources).
     ignorar: frozenset[str] = frozenset()
+    # Plain numbers the law prints as they are stored ("multiplicar por 1,75").
+    literales: frozenset[str] = frozenset()
+    # Percentages stored either as points (5 = "5 por 100") or, below 1, as fractions (0.40 = "40 por 100").
+    porcentajes_mixtos: frozenset[str] = frozenset()
+    # Date fields that must be printed in a quote ("1 de diciembre de 2026"); other dates are not looked at.
+    fechas: frozenset[str] = frozenset()
 
 
 def cifras_sin_respaldo(valor: BaseModel, ev: str, reglas: Reglas) -> Control:
@@ -393,6 +816,12 @@ def cifras_sin_respaldo(valor: BaseModel, ev: str, reglas: Reglas) -> Control:
         elif nombre in reglas.porcentajes_de_tabla:
             if not hay_numero(ev, x * 100):
                 control.fallos.append(f"{donde} = {x}: el tipo no está en ninguna cita")
+        elif nombre in reglas.literales:
+            if not hay_numero(ev, x):
+                control.fallos.append(f"{donde} = {x}: el número no está en ninguna cita")
+        elif nombre in reglas.porcentajes_mixtos:
+            if not hay_porcentaje(ev, x if x < 1 else x / 100):
+                control.fallos.append(f"{donde} = {x}: el porcentaje no está en ninguna cita")
         elif nombre in reglas.factores:
             if x == 1 or hay_porcentaje(ev, abs(x - 1)) or hay_porcentaje(ev, x) or _factor_en_palabras(ev, x):
                 return
@@ -415,6 +844,10 @@ def cifras_sin_respaldo(valor: BaseModel, ev: str, reglas: Reglas) -> Control:
 
     def recorrer(donde: str, nombre: str, x: Any) -> None:
         if x is None or isinstance(x, bool | str):
+            return
+        if isinstance(x, date):
+            if nombre in reglas.fechas and not fecha_en_cita(ev, x):
+                control.fallos.append(f"{donde} = {x.isoformat()}: la fecha no está en ninguna cita")
             return
         if isinstance(x, Decimal):
             decimal(donde, nombre, x)

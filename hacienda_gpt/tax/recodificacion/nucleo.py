@@ -29,6 +29,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Sequence
+from contextvars import ContextVar
 from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
 import hashlib
@@ -53,6 +54,7 @@ from hacienda_gpt.tax.recodificacion.control import (
     controlar_efectos,
     es_literal,
     extraer_articulos,
+    extraer_de_modificadora,
     fecha_iso,
     indice_de,
 )
@@ -128,6 +130,11 @@ class Objetivo(_Registro):
     anotaciones: str = ""
     # A previous encoding to show the reader when no file holds the group any more (withdrawn at a rollover).
     referencia_anterior: Any = None
+    # BOE id of an amending norm whose OWN text is read instead of the consolidated law, for the days the BOE
+    # takes to consolidate it. Such a proposal is never applied without a person.
+    norma_texto: str | None = None
+    # Number of the amended law as the amending norm cites it ("35/2006"), to find the passages about it.
+    ley_citada: str = ""
 
 
 class Discrepancia(_Registro):
@@ -218,6 +225,8 @@ class Propuesta(_Registro):
     modelo_lector: str
     modelo_revisor: str
     insertar_tras: str | None = None
+    norma_texto: str | None = None
+    ley_citada: str = ""
     clave: str
     creada_el: datetime
     actualizada_el: datetime
@@ -402,6 +411,41 @@ class Adaptador(ABC):
     def evaluar_caso(self, modelo: BaseModel, datos: Any, objetivo: Objetivo) -> tuple[Decimal, str | None]:
         """Amount the calculator gives for a test case with the proposed value, and a note. ValueError: unusable case."""
 
+    def casos_minimos(self, objetivo: Objetivo) -> int:
+        """Evaluable test cases the reviewer must bring for this group (0: no calculator can run a case for it)."""
+        return self.min_casos
+
+    # -- optional: letting the generic commands find this kind of group ------ #
+
+    def grupos(self, raw: dict[str, Any]) -> list[list[str]]:
+        """Stable path of every group of this kind in one parameter file. Default: none (found some other way)."""
+        return []
+
+    def reconocer(self, ruta: Sequence[str], raw: dict[str, Any]) -> list[str] | None:
+        """The stable path of the group at ``ruta`` when this adapter maintains it, else None."""
+        return list(ruta) if list(ruta) in self.grupos(raw) else None
+
+    def objetivo(
+        self,
+        ruta: list[str],
+        ficheros: dict[int, dict[str, Any]],
+        *,
+        data_dir: Path,
+        origen: str,
+        motivo: Sequence[str] = (),
+        version: str | None = None,
+        anotaciones: str = "",
+    ) -> Objetivo:
+        """The target for the group at ``ruta`` in every year of ``ficheros`` (which law, which articles, its quotes)."""
+        raise RecodificacionError(f"El adaptador «{self.tipo}» no sabe localizar sus grupos en la ley.")
+
+    def desajustes(self, objetivo: Objetivo, ejercicio: int, texto_de: TextoDe, *, data_dir: Path) -> list[str] | None:
+        """Why the group no longer matches its law in ``ejercicio`` ([] = it matches).
+
+        None (the default) asks for the generic check: every stored quote must still be in the law.
+        """
+        return None
+
     def contrastar(self, modelo: BaseModel, extra: dict[str, Any]) -> list[str]:
         """Objections from comparing the proposal with the reviewer's independent readings."""
         return []
@@ -453,6 +497,26 @@ class Adaptador(ABC):
 
 
 _ADAPTADORES: dict[str, Adaptador] = {}
+# The parameter files (by year) of the run in course, for adapters whose test cases go through a whole calculator.
+_FICHEROS: ContextVar[dict[int, Any] | None] = ContextVar("recodificacion_ficheros", default=None)
+
+
+def ficheros_en_curso() -> dict[int, Any]:
+    """Each year's parameter file as the loop in course was given them (empty outside a run)."""
+    return _FICHEROS.get() or {}
+
+
+def _cargar_adaptadores() -> None:
+    """Import every module that registers adapters. The ones for the other parameter files are optional."""
+    import importlib
+
+    from hacienda_gpt.tax.recodificacion import adaptadores  # noqa: F401 - registers the IRPF adapters
+
+    try:
+        importlib.import_module("hacienda_gpt.tax.recodificacion.adaptadores_otros")
+    except ModuleNotFoundError as exc:
+        if exc.name != "hacienda_gpt.tax.recodificacion.adaptadores_otros":
+            raise
 
 
 def registrar(adaptador: Adaptador) -> Adaptador:
@@ -461,8 +525,8 @@ def registrar(adaptador: Adaptador) -> Adaptador:
 
 
 def adaptador_de(tipo: str) -> Adaptador:
-    if not _ADAPTADORES:
-        from hacienda_gpt.tax.recodificacion import adaptadores  # noqa: F401 - registers the built-in adapters
+    if tipo not in _ADAPTADORES:
+        _cargar_adaptadores()
     try:
         return _ADAPTADORES[tipo]
     except KeyError as exc:
@@ -470,8 +534,7 @@ def adaptador_de(tipo: str) -> Adaptador:
 
 
 def adaptadores_registrados() -> list[Adaptador]:
-    if not _ADAPTADORES:
-        from hacienda_gpt.tax.recodificacion import adaptadores  # noqa: F401
+    _cargar_adaptadores()
     return list(_ADAPTADORES.values())
 
 
@@ -529,6 +592,11 @@ def examinar(
     examen = _Examen(control=control, modelo=modelo, desde=desde, hasta=hasta)
     if desde is not None:
         examen.ejercicios, examen.excluidos = adaptador.ejercicios_afectados(desde, hasta, objetivo.ejercicios)
+    if objetivo.norma_texto is not None:
+        control.revisar.append(
+            f"leída del texto de la norma modificadora {objetivo.norma_texto}, que el BOE aún no había consolidado en "
+            f"{objetivo.boe_id}: compruébela contra el texto consolidado cuando se publique"
+        )
     if objetivo.version is not None:
         control.revisar.append(
             f"leída de la versión histórica {objetivo.version} indicada por el operador: compruebe que ninguna norma "
@@ -563,6 +631,7 @@ def clave_de(objetivo: Objetivo, texto: TextoLegal) -> str:
             objetivo.ruta,
             objetivo.boe_id,
             objetivo.version,
+            *([objetivo.norma_texto] if objetivo.norma_texto else []),
             texto.sha256,
             sorted(objetivo.ejercicios),
             {str(k): v for k, v in sorted(objetivo.antes.items())},
@@ -576,17 +645,37 @@ def clave_de(objetivo: Objetivo, texto: TextoLegal) -> str:
     return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
 
+from hacienda_gpt.tax.verificacion import VERSION_DIARIO  # noqa: E402
+
+
 def leer_texto(objetivo: Objetivo, texto_de: TextoDe, articulos: Sequence[str] | None = None) -> tuple[str, TextoLegal]:
-    """The law's page and the text of the group's articles. Raises :class:`SinTextoError`."""
-    pagina = texto_de(objetivo.boe_id, objetivo.version)
-    if not pagina:
-        raise SinTextoError(f"No se pudo leer {objetivo.boe_id} (versión {objetivo.version or 'vigente'}).")
-    texto = extraer_articulos(pagina, articulos if articulos is not None else objetivo.articulos_ley)
-    if texto.faltan and any(base in texto.faltan for base in objetivo.articulos_ley[:1]):
-        raise SinTextoError(
-            f"El artículo {objetivo.articulos_ley[0]} no aparece en {objetivo.boe_id}: puede haberse derogado o "
-            "renumerado. Revísalo a mano."
-        )
+    """The law's page and the text of the group's articles. Raises :class:`SinTextoError`.
+
+    With ``objetivo.norma_texto`` the page is the amending norm as the daily BOE published it, and the text is
+    what that norm says about the group's articles.
+    """
+    pedidos = list(articulos if articulos is not None else objetivo.articulos_ley)
+    if objetivo.norma_texto is not None:
+        pagina = texto_de(objetivo.norma_texto, VERSION_DIARIO)
+        if not pagina:
+            raise SinTextoError(f"No se pudo leer el texto de {objetivo.norma_texto} en el BOE del día.")
+        texto = extraer_de_modificadora(pagina, pedidos, ley=objetivo.ley_citada)
+        if not texto.encontrados:
+            raise SinTextoError(
+                f"{objetivo.norma_texto} no nombra en su texto el artículo {', '.join(pedidos)} de {objetivo.boe_id}: "
+                "habrá que esperar al texto consolidado."
+            )
+    else:
+        pagina = texto_de(objetivo.boe_id, objetivo.version)
+        if not pagina:
+            raise SinTextoError(f"No se pudo leer {objetivo.boe_id} (versión {objetivo.version or 'vigente'}).")
+        texto = extraer_articulos(pagina, pedidos)
+        primero = " ".join(objetivo.articulos_ley[0].lower().split()) if objetivo.articulos_ley else None
+        if primero is not None and primero in texto.faltan:
+            raise SinTextoError(
+                f"El artículo {objetivo.articulos_ley[0]} no aparece en {objetivo.boe_id}: puede haberse derogado o "
+                "renumerado. Revísalo a mano."
+            )
     if len(texto.texto) > MAX_CARACTERES_TEXTO:
         raise SinTextoError(
             f"Los artículos {', '.join(texto.encontrados)} de {objetivo.boe_id} ocupan {len(texto.texto)} caracteres: "
@@ -595,12 +684,21 @@ def leer_texto(objetivo: Objetivo, texto_de: TextoDe, articulos: Sequence[str] |
     return pagina, texto
 
 
+def _origen_del_texto(objetivo: Objetivo) -> str:
+    if objetivo.norma_texto is not None:
+        return (
+            f"TODAVÍA SIN CONSOLIDAR: se muestra el texto de la norma modificadora {objetivo.norma_texto}, que da la "
+            "nueva redacción entre comillas; codifica esa nueva redacción y toma los efectos de esa misma norma"
+        )
+    return "texto consolidado vigente" if objetivo.version is None else "versión " + objetivo.version
+
+
 def _mensaje_lector(objetivo: Objetivo, texto: TextoLegal, indice: list[str], previas: list[Iteracion]) -> str:
     partes = [
         prompts.etiquetar(
             "tarea",
             f"Grupo: {objetivo.etiqueta}\nÁmbito: {objetivo.ambito}\nNorma: {objetivo.boe_id}"
-            f" ({'texto consolidado vigente' if objetivo.version is None else 'versión ' + objetivo.version})\n"
+            f" ({_origen_del_texto(objetivo)})\n"
             f"Ejercicios pedidos: {', '.join(map(str, sorted(objetivo.ejercicios)))}\n"
             f"Artículos mostrados: {', '.join(texto.encontrados)}",
         ),
@@ -635,7 +733,8 @@ def _mensaje_revisor(objetivo: Objetivo, texto: TextoLegal, valor: Any, citas: l
     partes = [
         prompts.etiquetar(
             "tarea",
-            f"Grupo: {objetivo.etiqueta}\nÁmbito: {objetivo.ambito}\nNorma: {objetivo.boe_id}\n"
+            f"Grupo: {objetivo.etiqueta}\nÁmbito: {objetivo.ambito}\nNorma: {objetivo.boe_id}"
+            f" ({_origen_del_texto(objetivo)})\n"
             f"Ejercicio de los casos de prueba: {max(objetivo.ejercicios)}",
         ),
         prompts.etiquetar("texto_legal", texto.texto),
@@ -706,8 +805,14 @@ def _evaluar_casos(
 
 
 def _objeciones_del_revisor(
-    adaptador: Adaptador, modelo: BaseModel, veredicto: Veredicto, casos: list[CasoEvaluado], desde: date | None
+    adaptador: Adaptador,
+    modelo: BaseModel,
+    veredicto: Veredicto,
+    casos: list[CasoEvaluado],
+    desde: date | None,
+    min_casos: int | None = None,
 ) -> list[str]:
+    min_casos = adaptador.min_casos if min_casos is None else min_casos
     objeciones = [
         f"Revisor ({d.tipo}): {d.descripcion}" + (f" — «{d.cita[:300]}»" if d.cita else "")
         for d in veredicto.discrepancias
@@ -731,10 +836,10 @@ def _objeciones_del_revisor(
                 f"{caso.obtenido} €" + (f" ({caso.detalle})" if caso.detalle else "") + "."
             )
     evaluables = sum(1 for caso in casos if caso.error is None)
-    if evaluables < adaptador.min_casos:
+    if evaluables < min_casos:
         objeciones.append(
             f"El revisor solo aportó {evaluables} caso(s) de prueba evaluable(s); hacen falta al menos "
-            f"{adaptador.min_casos} para dar la propuesta por contrastada."
+            f"{min_casos} para dar la propuesta por contrastada."
         )
     return objeciones
 
@@ -759,10 +864,16 @@ def recodificar(
     adaptador = adaptador_de(objetivo.tipo)
     ahora = ahora or datetime.now(UTC)
     datos = datos or {}
-    pagina, _ = leer_texto(objetivo, texto_de)
-    articulos = list(dict.fromkeys([*objetivo.articulos_ley, *articulos_que_contienen(pagina, objetivo.citas_antes)]))
+    _FICHEROS.set(datos)
+    pagina, texto_base = leer_texto(objetivo, texto_de)
+    propios = [" ".join(a.lower().split()) for a in objetivo.articulos_ley]
+    consolidado = objetivo.norma_texto is None
+    # Where the previous encoding read from, too — unless the text is an amending norm, which has other articles.
+    otros = articulos_que_contienen(pagina, objetivo.citas_antes, junto_a=propios) if consolidado else []
+    articulos = list(dict.fromkeys([*propios, *otros]))
     _, texto = leer_texto(objetivo, texto_de, articulos)
-    indice = indice_de(pagina)
+    indice = indice_de(pagina) if consolidado else []
+    min_casos = adaptador.casos_minimos(objetivo)
     sistema_lector = prompts.SISTEMA_LECTOR.format(
         reglas=prompts.REGLAS_COMUNES, que=adaptador.que, guia=adaptador.guia(), esquema=adaptador.esquema()
     )
@@ -771,7 +882,7 @@ def recodificar(
         que=adaptador.que,
         guia=adaptador.guia(),
         esquema=adaptador.esquema(),
-        min_casos=adaptador.min_casos,
+        min_casos=min_casos,
         guia_casos=adaptador.guia_casos(objetivo),
     )
     extra = adaptador.extra_revisor()
@@ -804,7 +915,7 @@ def recodificar(
             if " ".join(a.lower().split()) not in articulos
         ]
         if pedidos:
-            ampliado = extraer_articulos(pagina, [*articulos, *pedidos])
+            ampliado = extraer_articulos(pagina, [*articulos, *pedidos]) if consolidado else texto
             servible = (
                 set(ampliado.encontrados) - set(texto.encontrados) and len(ampliado.texto) <= MAX_CARACTERES_TEXTO
             )
@@ -879,13 +990,13 @@ def recodificar(
         iteracion.veredicto = _veredicto(revisado, comprimido, extra)
         iteracion.casos = _evaluar_casos(adaptador, examen.modelo, revisado, objetivo, comprimido)
         iteracion.objeciones = _objeciones_del_revisor(
-            adaptador, examen.modelo, iteracion.veredicto, iteracion.casos, examen.desde
+            adaptador, examen.modelo, iteracion.veredicto, iteracion.casos, examen.desde, min_casos
         )
         if not iteracion.objeciones:
             resultado, convergio = "recodificada", True
 
     ultima = iteraciones[-1] if iteraciones else None
-    clave = clave_de(objetivo, extraer_articulos(pagina, objetivo.articulos_ley))
+    clave = clave_de(objetivo, texto_base)
     return Propuesta(
         id=f"{ahora:%Y%m%d-%H%M%S}-{_slug(objetivo.ambito)}-{_slug(objetivo.etiqueta)[:40]}-{clave[:6]}",
         estado="propuesta" if convergio else "sin_converger",
@@ -926,6 +1037,8 @@ def recodificar(
         modelo_lector=_modelo_de(lector),
         modelo_revisor=_modelo_de(revisor),
         insertar_tras=objetivo.insertar_tras,
+        norma_texto=objetivo.norma_texto,
+        ley_citada=objetivo.ley_citada,
         clave=clave,
         creada_el=ahora,
         actualizada_el=ahora,
@@ -958,6 +1071,8 @@ def _objetivo_de(propuesta: Propuesta) -> Objetivo:
         origen=propuesta.origen,
         insertar_tras=propuesta.insertar_tras,
         anotaciones=propuesta.anotaciones,
+        norma_texto=propuesta.norma_texto,
+        ley_citada=propuesta.ley_citada,
     )
 
 
@@ -966,6 +1081,7 @@ def _limpiar_caches() -> None:
 
     params.load_params.cache_clear()
     verificacion._evidencia_deducciones.cache_clear()
+    verificacion._evidencia_parametros.cache_clear()
 
 
 def aplicar_propuesta(
@@ -996,6 +1112,7 @@ def aplicar_propuesta(
         )
     ficheros: dict[int, dict[str, Any]] = {}
     sangrias: dict[int, int] = {}
+    _FICHEROS.set(ficheros)
     for ejercicio in ejercicios_en(data_dir, propuesta.fichero):
         contenido = (data_dir / propuesta.fichero.format(ejercicio=ejercicio)).read_text(encoding="utf-8")
         ficheros[ejercicio], sangrias[ejercicio] = json.loads(contenido), _sangria(contenido)
@@ -1138,6 +1255,83 @@ def confirmar(
             ):
                 almacen.guardar(propuesta.model_copy(update={"confirmada_el": ahora, "actualizada_el": ahora}))
     return len(hechas)
+
+
+# --------------------------------------------------------------------------- #
+# Splitting an article into the groups it holds
+# --------------------------------------------------------------------------- #
+
+
+class Elemento(_Registro):
+    """One group a reader found inside an article (a deduction of an article that holds several)."""
+
+    etiqueta: str
+    titulo: str
+    cita: str
+
+
+class Desglose(_Registro):
+    boe_id: str
+    articulos_ley: list[str]
+    elementos: list[Elemento] = Field(default_factory=list)
+    # What the reader listed and the program did not accept, with the reason.
+    descartados: list[str] = Field(default_factory=list)
+    llamadas_llm: int = 0
+    caracteres_enviados: int = 0
+
+
+def desglosar(objetivo: Objetivo, *, lector: Any, texto_de: TextoDe, etiqueta_articulo: str) -> Desglose:
+    """Ask a reader which groups the article of ``objetivo`` holds; each one then goes through the normal loop.
+
+    Nothing the reader says is used unverified: an item is kept only if its quote is literally in the article and
+    its label hangs from the article's own label (``etiqueta_articulo``: "art. 5" → "art. 5.Dos.1"). The reader
+    only LISTS; it encodes nothing here. Lets the provider's ``ProviderError`` through.
+    """
+    from hacienda_gpt.tax.recodificacion.control import ruta_de_etiqueta
+
+    adaptador = adaptador_de(objetivo.tipo)
+    _, texto = leer_texto(objetivo, texto_de)
+    sistema = prompts.SISTEMA_DESGLOSE.format(que=adaptador.que, etiqueta=etiqueta_articulo)
+    usuario = "\n\n".join(
+        [
+            prompts.etiquetar(
+                "tarea",
+                f"Norma: {objetivo.boe_id} ({_origen_del_texto(objetivo)})\nÁmbito: {objetivo.ambito}\n"
+                f"Artículo: {etiqueta_articulo}",
+            ),
+            prompts.etiquetar("texto_legal", texto.texto),
+        ]
+    )
+    leido = lector.complete_json(
+        system=sistema, user=usuario, schema=prompts.ESQUEMA_DESGLOSE, schema_name="recodificacion_desglose"
+    )
+    desglose = Desglose(
+        boe_id=objetivo.boe_id,
+        articulos_ley=list(texto.encontrados),
+        llamadas_llm=1,
+        caracteres_enviados=len(sistema) + len(usuario),
+    )
+    raiz = ruta_de_etiqueta(etiqueta_articulo)
+    vistas: set[str] = set()
+    brutos = leido.get("elementos")
+    for item in brutos if isinstance(brutos, list) else []:
+        if not isinstance(item, dict):
+            continue
+        etiqueta, titulo, cita = (_texto(item.get(k)) for k in ("etiqueta", "titulo", "cita"))
+        etiqueta = " ".join(etiqueta.split())
+        propia = ruta_de_etiqueta(etiqueta)
+        if raiz is None or propia is None or not (propia == raiz or propia.startswith(raiz + ".")):
+            desglose.descartados.append(f"«{etiqueta}»: la etiqueta no cuelga de «{etiqueta_articulo}»")
+        elif not etiqueta.startswith(etiqueta_articulo):
+            desglose.descartados.append(f"«{etiqueta}»: la etiqueta debe empezar por «{etiqueta_articulo}»")
+        elif not es_literal(cita, texto.comprimido):
+            desglose.descartados.append(f"«{etiqueta}»: su cita no es literal")
+        elif etiqueta in vistas:
+            desglose.descartados.append(f"«{etiqueta}»: repetida")
+        else:
+            vistas.add(etiqueta)
+            desglose.elementos.append(Elemento(etiqueta=etiqueta, titulo=titulo, cita=cita))
+    return desglose
 
 
 # --------------------------------------------------------------------------- #

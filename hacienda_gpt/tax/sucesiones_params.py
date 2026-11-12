@@ -177,6 +177,9 @@ class _Regla(_Model):
     # Legal conditions the calculator cannot see; repeated whenever the rule is applied.
     requisitos_no_comprobados: list[str] = Field(default_factory=list)
     evidencia: list[Cita] = Field(min_length=1)
+    # Set by the re-encoding loop (hacienda_gpt.tax.recodificacion) when it rewrote the rule from the
+    # BOE; cleared when a person confirms it. The calculator says so wherever the rule is applied.
+    recodificada_el: str | None = None
 
 
 class TramoReduccion(_Model):
