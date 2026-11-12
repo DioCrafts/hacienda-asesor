@@ -330,6 +330,46 @@ def _texto_del_boe() -> Any:
     return texto_de
 
 
+def _fila_de_verificacion(resultados: list[Any]) -> dict[str, Any]:
+    malos = [r for r in resultados if not r.ok]
+    return {
+        "comprobaciones": len(resultados),
+        "conformes": len(resultados) - len(malos),
+        "no_coinciden": [
+            {
+                "boe_id": r.comprobacion.boe_id,
+                "parametros": "/".join(r.comprobacion.ruta),
+                "descripcion": r.comprobacion.descripcion,
+                "tipo": r.comprobacion.tipo,
+                "falta": r.faltan[:8],
+            }
+            for r in malos
+        ],
+    }
+
+
+def _verificar_otros_ficheros(
+    texto_de: Any, ejercicios: tuple[int, ...], ficheros: tuple[str, ...]
+) -> dict[str, list[Any]]:
+    """The parameter files that are not the IRPF one (self-employed, companies, wealth, inheritance), by file name.
+
+    Their adapters module knows how to check them; when it is not installed there is nothing to add.
+    """
+    import importlib
+
+    try:
+        otros = importlib.import_module("hacienda_gpt.tax.recodificacion.adaptadores_otros")
+    except ModuleNotFoundError:
+        return {}
+    familias = [f for f in otros.FAMILIAS if not ficheros or f.clave in ficheros]
+    if not familias:
+        return {}
+    resultados: dict[str, list[Any]] = otros.verificar_ficheros(
+        texto_de, ejercicios=list(ejercicios) or None, familias=familias
+    )
+    return resultados
+
+
 @cli.command("params-verify")
 @click.option("--ejercicio", "ejercicios", type=int, multiple=True, help="Ejercicio a verificar (por defecto, todos).")
 @click.option(
@@ -338,35 +378,38 @@ def _texto_del_boe() -> Any:
     default=None,
     help="Leer las leyes de esta carpeta (<id>.html) en vez de descargarlas.",
 )
+@click.option(
+    "--fichero",
+    "ficheros",
+    multiple=True,
+    help="Solo estos ficheros de parámetros: irpf, autonomos, sociedades, patrimonio, isd (por defecto, todos).",
+)
 @click.option("--fail-on-mismatch", is_flag=True, help="Termina con código 1 si alguna comprobación falla.")
-def params_verify(ejercicios: tuple[int, ...], snapshot_dir: Path | None, fail_on_mismatch: bool) -> None:
-    """Reverifica cada parámetro de la calculadora contra el texto vigente de su ley.
+def params_verify(
+    ejercicios: tuple[int, ...], snapshot_dir: Path | None, ficheros: tuple[str, ...], fail_on_mismatch: bool
+) -> None:
+    """Reverifica cada parámetro de las calculadoras contra el texto vigente de su ley.
 
-    Dice qué grupos de parámetros (escalas, mínimos, deducciones) ya no
-    coinciden con lo que hoy publica el BOE. Sin LLM: son citas literales y
-    cifras buscadas en el texto.
+    Dice qué grupos de parámetros (escalas, mínimos, deducciones; y los de
+    autónomos, sociedades, patrimonio y sucesiones) ya no coinciden con lo que
+    hoy publica el BOE. Sin LLM: son citas literales y cifras buscadas en el
+    texto. Los ejercicios del IRPF van por año; los demás ficheros, bajo «otros».
     """
     texto_de = leer_snapshot(snapshot_dir) if snapshot_dir else _texto_del_boe()
     informe: dict[str, Any] = {}
     fallos = 0
-    for ejercicio in ejercicios or tuple(ejercicios_disponibles()):
-        resultados = cargar_y_verificar(ejercicio, texto_de)
-        malos = [r for r in resultados if not r.ok]
-        fallos += len(malos)
-        informe[str(ejercicio)] = {
-            "comprobaciones": len(resultados),
-            "conformes": len(resultados) - len(malos),
-            "no_coinciden": [
-                {
-                    "boe_id": r.comprobacion.boe_id,
-                    "parametros": "/".join(r.comprobacion.ruta),
-                    "descripcion": r.comprobacion.descripcion,
-                    "tipo": r.comprobacion.tipo,
-                    "falta": r.faltan[:8],
-                }
-                for r in malos
-            ],
-        }
+    if not ficheros or "irpf" in ficheros:
+        for ejercicio in ejercicios or tuple(ejercicios_disponibles()):
+            fila = _fila_de_verificacion(cargar_y_verificar(ejercicio, texto_de))
+            fallos += len(fila["no_coinciden"])
+            informe[str(ejercicio)] = fila
+    otros = {
+        nombre: _fila_de_verificacion(resultados)
+        for nombre, resultados in _verificar_otros_ficheros(texto_de, ejercicios, ficheros).items()
+    }
+    if otros:
+        informe["otros"] = otros
+        fallos += sum(len(fila["no_coinciden"]) for fila in otros.values())
     click.echo(json.dumps(informe, ensure_ascii=False, indent=2))
     if fail_on_mismatch and fallos:
         raise SystemExit(1)

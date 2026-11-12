@@ -1425,6 +1425,21 @@ def verificar_ficheros(
     return out
 
 
+def _ley_del_legislador(raw: dict[str, Any], ruta: Sequence[str]) -> str | None:
+    """BOE id of the law of the legislator the group belongs to: the nearest enclosing ``fuente_principal`` or
+    ``boe_id`` (a community's own text in the wealth and inheritance tax files); None when there is none."""
+    for corte in range(len(ruta) - 1, 0, -1):
+        nodo = leer_ruta(raw, ruta[:corte])
+        if not isinstance(nodo, dict):
+            continue
+        fuente = nodo.get("fuente_principal")
+        if isinstance(fuente, dict) and isinstance(fuente.get("boe_id"), str):
+            return str(fuente["boe_id"])
+        if isinstance(nodo.get("boe_id"), str):
+            return str(nodo["boe_id"])
+    return None
+
+
 def construir_objetivo(
     familia: Familia,
     ruta: Sequence[str],
@@ -1450,7 +1465,9 @@ def construir_objetivo(
     legibles = [e for e in grupo["evidencia"] if es_legible(str(e.get("articulo", "")))]
     if boe_id is None and legibles:
         leyes = [str(e["boe_id"]) for e in legibles]
-        boe_id = max(dict.fromkeys(leyes), key=leyes.count)
+        propia = _ley_del_legislador(raw, ruta)
+        # The law of whoever legislates the group (a community's own text), else the one most quotes come from.
+        boe_id = propia if propia in leyes else max(dict.fromkeys(leyes), key=leyes.count)
     propias = [e for e in legibles if e["boe_id"] == boe_id]
     if boe_id is None or not propias:
         raise RecodificacionError(

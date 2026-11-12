@@ -192,20 +192,6 @@ def test_one_adapter_per_group_model_and_every_numeric_field_has_a_rule() -> Non
     assert all(otros.ADAPTADORES[k].min_casos == 0 for k in [("isd", "_Regla"), ("patrimonio", "_Grupo")])
 
 
-CONOCIDOS_ISD = {
-    "estatal/reducciones_bienes/1",
-    "comunidades/cataluna/bonificaciones/1",
-    "comunidades/cataluna/bonificaciones/2",
-    "comunidades/aragon/bonificaciones/0",
-    "comunidades/aragon/bonificaciones/1",
-    "comunidades/asturias/coeficientes/0",
-    "comunidades/baleares/reducciones_bienes/0",
-    "comunidades/baleares/reducciones_bienes/1",
-    "comunidades/canarias/reducciones/0",
-    "comunidades/castilla_y_leon/reducciones_bienes/0",
-    "comunidades/extremadura/reducciones_bienes/0",
-    "comunidades/galicia/bonificaciones/0",
-}
 # Groups with no quote of an article or provision of a law: none today (an annex or a preamble alone would be one).
 ILEGIBLES: dict[str, set[str]] = {}
 
@@ -234,18 +220,24 @@ def test_shipped_groups_pass_the_gate_with_their_own_quotes(
         por_estado.setdefault(r.estado, set()).add("/".join(r.ruta))
     assert por_estado.get("ilegible", set()) == ILEGIBLES.get(clave, set())
     fallan = por_estado.get("falla", set())
-    if clave != "isd":
-        assert not fallan, [(r.ruta, r.fallos) for r in revisados if r.estado == "falla"]
-    else:
-        # Known: summaries written by hand that mention a figure none of the rule's own quotes prints. Data is not
-        # touched here; the list may only shrink.
-        assert fallan <= CONOCIDOS_ISD
-        assert all("menciona" in f for r in revisados if r.estado == "falla" for f in r.fallos)
+    assert not fallan, [(r.ruta, r.fallos) for r in revisados if r.estado == "falla"]
     # A group that rests on another law or on a disposition, or that no calculator evaluates, is never automatic.
     for r in revisados:
         if r.estado == "persona":
             assert r.revisar
     assert por_estado.get("ok"), "some group must be maintainable end to end"
+
+
+def test_a_group_is_read_from_the_law_of_its_own_legislator() -> None:
+    """Asturias's coefficients quote the State's table twice and their own article once: Asturias's law is read."""
+    familia = otros.ISD
+    raw = _leer(DATA_DIR / "isd_2026.json")
+    objetivo = otros.construir_objetivo(
+        familia, ["comunidades", "asturias", "coeficientes", "0"], {2026: raw}, origen="x"
+    )
+    assert objetivo.boe_id == "BOE-A-2015-945" and objetivo.articulos_ley == ["22"]
+    estatal = otros.construir_objetivo(familia, ["estatal", "ajuar"], {2026: raw}, origen="x")
+    assert estatal.boe_id == "BOE-A-1987-28141"
 
 
 def test_the_periodic_verification_covers_the_four_files() -> None:

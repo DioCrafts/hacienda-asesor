@@ -147,7 +147,7 @@
     }
   },
   "no_modelado": [
-    "Solo están cargadas tres comunidades (Madrid, Andalucía y Cataluña); para las demás se aplica únicamente la ley estatal y se avisa.",
+    "Solo están cargadas las comunidades autónomas de régimen común; para cualquier otro territorio se aplica únicamente la ley estatal y se avisa.",
     "Territorios forales (País Vasco y Navarra): tienen normativa propia que no se rige por la Ley 29/1987."
   ],
   "estatal": {
@@ -333,6 +333,11 @@
             "boe_id": "BOE-A-1987-28141",
             "articulo": "art. 20.6 Ley 29/1987",
             "cita": "6. En los casos de transmisión de participaciones \"ínter vivos\", en favor del cónyuge, descendientes o adoptados, de una empresa individual, un negocio profesional o de participaciones en entidades del donante a los que sea de aplicación la exención regulada en el apartado octavo del artículo 4 de la Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio, se aplicará una reducción en la base imponible para determinar la liquidable del 95 por 100 del valor de adquisición, siempre que concurran las condiciones siguientes:"
+          },
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.6.a) y b) Ley 29/1987",
+            "cita": "a) Que el donante tuviese sesenta y cinco o más años o se encontrase en situación de incapacidad permanente, en grado de absoluta o gran invalidez. b) Que, si el donante viniere ejerciendo funciones de dirección, dejara de ejercer y de percibir remuneraciones por el ejercicio de dichas funciones desde el momento de la transmisión."
           },
           {
             "boe_id": "BOE-A-1987-28141",
@@ -2151,6 +2156,11 @@
               "boe_id": "BOE-A-2024-6951",
               "articulo": "art. 633-4.5 Código tributario de Cataluña, libro sexto",
               "cita": "5. El porcentaje medio ponderado resultante debe tener solo dos decimales, de modo que se aproximan las milésimas a la centésima más próxima: si la milésima es igual o inferior a 5, se mantiene la centésima; si es superior a 5, se aproxima a la centésima superior."
+            },
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 631-2.a) Código tributario de Cataluña, libro sexto (grupo I)",
+              "cita": "a) Grupo I (adquisiciones por descendientes menores de veintiún años)"
             }
           ]
         },
@@ -2244,6 +2254,11 @@
               "boe_id": "BOE-A-2024-6951",
               "articulo": "art. 633-4.5 Código tributario de Cataluña, libro sexto",
               "cita": "5. El porcentaje medio ponderado resultante debe tener solo dos decimales, de modo que se aproximan las milésimas a la centésima más próxima: si la milésima es igual o inferior a 5, se mantiene la centésima; si es superior a 5, se aproxima a la centésima superior."
+            },
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 631-2.b) Código tributario de Cataluña, libro sexto (grupo II)",
+              "cita": "b) Grupo II (adquisiciones por descendientes de veintiún años o más, cónyuges y ascendientes)"
             }
           ]
         }
@@ -2657,6 +2672,11 @@
               "boe_id": "BOA-d-2005-90006",
               "articulo": "art. 131-12 DLeg 1/2005 (Aragón)",
               "cita": "En las adquisiciones lucrativas “mortis causa”, incluidas las de los beneficiarios de pólizas de seguro de vida, de los sujetos pasivos incluidos en el Grupo I de parentesco de los previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones, les será de aplicación una bonificación del 99 % en la cuota tributaria derivada de las mismas."
+            },
+            {
+              "boe_id": "BOE-A-1987-28141",
+              "articulo": "art. 20.2.a) Ley 29/1987 (Grupo I, al que remite el artículo)",
+              "cita": "Grupo I: adquisiciones por descendientes y adoptados menores de veintiún años"
             }
           ]
         },
@@ -2680,6 +2700,11 @@
               "boe_id": "BOA-d-2005-90006",
               "articulo": "art. 132-9 DLeg 1/2005 (Aragón)",
               "cita": "En las adquisiciones lucrativas “inter vivos” de los sujetos pasivos incluidos en el Grupo I de parentesco de los previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones, les será de aplicación una bonificación del 99 por 100 en la cuota tributaria derivada de las mismas. Será requisito necesario para la aplicación de esta bonificación que la autoliquidación correspondiente a la donación se presente dentro del plazo para el pago del impuesto en período voluntario."
+            },
+            {
+              "boe_id": "BOE-A-1987-28141",
+              "articulo": "art. 20.2.a) Ley 29/1987 (Grupo I, al que remite el artículo)",
+              "cita": "Grupo I: adquisiciones por descendientes y adoptados menores de veintiún años"
             }
           ]
         },
@@ -3131,7 +3156,7 @@
       "coeficientes": [
         {
           "articulo": "art. 22 DLeg 2/2014 (Asturias)",
-          "resumen": "En las herencias, coeficientes propios para el grupo I (0 con patrimonio preexistente hasta 402.678,11 €; 0,02, 0,03 y 0,04 en los tramos siguientes); para los grupos II, III y IV rigen los del art. 22 de la Ley 29/1987.",
+          "resumen": "En las herencias, coeficientes propios para el grupo I (0,0000 con patrimonio preexistente hasta 402.678,11 €; 0,0200, 0,0300 y 0,0400 en los tramos siguientes); para los grupos II, III y IV rigen los del art. 22 de la Ley 29/1987.",
           "en_vigor_desde": "2014-10-30",
           "cuando": {
             "modo": "sucesion"
@@ -3480,6 +3505,11 @@
             },
             {
               "boe_id": "BOE-A-2014-6925",
+              "articulo": "art. 25.2 a 4 DLeg 1/2014 (Illes Balears)",
+              "cita": "2. En los supuestos del apartado anterior, cuando no haya descendientes, la reducción será aplicable a las adquisiciones por ascendientes y colaterales, hasta el tercer grado, y con los mismos requisitos recogidos anteriormente. En todo caso, el cónyuge del causante tendrá derecho a la reducción del 95 %. 3. De acuerdo con la Ley 3/2015, de 23 de marzo, por la que se regula el consumo cultural y el mecenazgo cultural, científico y de desarrollo tecnológico, y se establecen medidas tributarias, cuando se trate de bienes y derechos afectos a una empresa cultural, científica o de desarrollo tecnológico la reducción es del 99 %. 4. De acuerdo con la Ley 6/2015, de 30 de marzo, por la que se regula el mecenazgo deportivo y se establecen medidas tributarias, cuando se trate de bienes y derechos afectos a una empresa deportiva la reducción es del 99%."
+            },
+            {
+              "boe_id": "BOE-A-2014-6925",
               "articulo": "art. 26.1 DLeg 1/2014 (Illes Balears)",
               "cita": "1. En los casos en que en la base imponible de una adquisición por causa de muerte que corresponda al cónyuge o a los descendientes del causante esté incluido el valor de participaciones en entidades a las que sea aplicable la exención que regula el apartado ocho del artículo 4 de la Ley del impuesto sobre el patrimonio, o el valor de derechos de usufructo sobre las citadas participaciones, o perciban los derechos debidos a la finalización del usufructo en forma de participaciones en la empresa, el negocio o la entidad afectados, para obtener la base liquidable se aplicará a la imponible, con independencia de las reducciones que sean procedentes de acuerdo con los artículos anteriores, una reducción del 95 % del citado valor."
             },
@@ -3498,7 +3528,7 @@
         {
           "clase": "patrimonio_historico",
           "articulo": "art. 30 DLeg 1/2014 (Illes Balears)",
-          "resumen": "Reducción del 95 % del valor de los bienes del patrimonio histórico español o del patrimonio histórico o cultural de otras comunidades heredados por el cónyuge o los descendientes, manteniéndolos cinco años. Para los bienes del patrimonio histórico o cultural de las Illes Balears la reducción es del 99 % (art. 29; no aplicado aquí).",
+          "resumen": "Reducción del 95 % del valor de los bienes del patrimonio histórico español o del patrimonio histórico o cultural de otras comunidades heredados por el cónyuge o los descendientes, manteniéndolos cinco años. Los bienes del patrimonio histórico o cultural de las Illes Balears tienen una reducción propia mayor (art. 29), que aquí no se aplica: figura entre las otras reducciones.",
           "en_vigor_desde": "2023-11-26",
           "cuando": {
             "modo": "sucesion",
@@ -4394,7 +4424,7 @@
           "clase": "parentesco",
           "caracter": "mejora",
           "articulo": "art. 20 DLeg 1/2009 (Canarias)",
-          "resumen": "Sustituye a la estatal. Grupo I: el 100 % de la base imponible con tope de 138.650 € (menores de 10 años), 92.150 € (de 10 a 14), 57.650 € (de 15 a 17) o 40.400 € (de 18 a 20). Grupo II: cónyuge 40.400 €, hijos 23.125 €, resto de descendientes y ascendientes 18.500 €. Grupo III: 9.300 €.",
+          "resumen": "Sustituye a la estatal. Grupo I: el 100 % de la base imponible con tope de 138.650 € (menores de 10 años), 92.150 € (de 10 años y menores de 15), 57.650 € (de 15 años y menores de 18) o 40.400 € (de 18 años y menores de 21). Grupo II: cónyuge 40.400 €, hijos 23.125 €, resto de descendientes y ascendientes 18.500 €. Grupo III: 9.300 €.",
           "en_vigor_desde": "2012-07-01",
           "cuando": {
             "modo": "sucesion"
@@ -6006,6 +6036,16 @@
             },
             {
               "boe_id": "BOCL-h-2013-90254",
+              "articulo": "art. 17.1.b) DLeg 1/2013 (Castilla y León)",
+              "cita": "b) Que los ingresos del causante procedentes de esta actividad supongan al menos el 50 por 100 de la suma de sus rendimientos de actividades económicas y del trabajo personal."
+            },
+            {
+              "boe_id": "BOCL-h-2013-90254",
+              "articulo": "art. 17.1.d) DLeg 1/2013 (Castilla y León)",
+              "cita": "d) Que la adquisición corresponda al cónyuge, descendientes o adoptados, ascendientes o adoptantes y colaterales, por consanguinidad, hasta el tercer grado de la persona fallecida."
+            },
+            {
+              "boe_id": "BOCL-h-2013-90254",
               "articulo": "art. 17.1.e) DLeg 1/2013 (Castilla y León)",
               "cita": "e) Que el adquirente mantenga en su patrimonio la adquisición durante los cinco años siguientes al fallecimiento del causante, salvo que falleciese el adquirente dentro de este plazo."
             },
@@ -6013,6 +6053,11 @@
               "boe_id": "BOCL-h-2013-90254",
               "articulo": "art. 17.2 DLeg 1/2013 (Castilla y León)",
               "cita": "2. Cuando en la base imponible de la adquisición esté incluido el valor de participaciones en entidades, que no coticen en mercados organizados, cuyo domicilio fiscal y social se encuentre en Castilla y León se aplicará una reducción propia de la Comunidad del 99 por 100 del mencionado valor, siempre que concurran las siguientes circunstancias:"
+            },
+            {
+              "boe_id": "BOCL-h-2013-90254",
+              "articulo": "art. 17.2.b) y c) DLeg 1/2013 (Castilla y León)",
+              "cita": "b) Que la participación del causante en el capital de la entidad sea, al menos, igual al 5 por 100 computado de forma individual o al 20 por 100 conjuntamente con el cónyuge, ascendientes, descendientes o colaterales hasta el cuarto grado de parentesco ya sea éste por consanguinidad, afinidad o adopción. c) Que el causante, o en el caso de participación conjunta, alguna de las personas del grupo familiar a que se refiere la letra anterior, ejerzan efectivamente funciones de dirección en la entidad y que la retribución que perciba por ello suponga, al menos, el 50 por 100 de la suma de sus rendimientos de actividades económicas y del trabajo personal."
             },
             {
               "boe_id": "BOCL-h-2013-90254",
@@ -7069,8 +7114,18 @@
             },
             {
               "boe_id": "BOE-A-2018-8159",
+              "articulo": "art. 19 bis.1.a) a f) DLeg 1/2018 (Extremadura)",
+              "cita": "a) Que el adquirente esté comprendido en los Grupos I, II y III previstos en el artículo 20.2 a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones, o en los supuestos de equiparaciones recogidos en el artículo 31 de esta Ley. b) Que sea de aplicación la exención regulada en el artículo 4.Ocho de la Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio. c) Que la entidad societaria no tenga como actividad principal la gestión de un patrimonio mobiliario o inmobiliario. d) Que la participación del causante en el capital de la entidad sea al menos del 5 % computado de forma individual, o del 20 % del grupo de parentesco formado conjuntamente con su cónyuge, ascendientes, descendientes o colaterales hasta el tercer grado, ya tenga su origen el parentesco en la consanguinidad, en la afinidad o en la adopción, así como en los supuestos de equiparación del artículo 31 de esta Ley. e) Que el causante o alguna de las personas del grupo de parentesco conforme a lo establecido en la letra anterior, teniendo participaciones en la entidad, ejerza efectivamente funciones de dirección en la entidad percibiendo por ello una remuneración que represente más del 50 por 100 de la totalidad de los rendimientos empresariales, profesionales y de trabajo personal. f) Que el causahabiente alcance al menos el 50 por 100 del capital social, ya sea computado de forma individual o conjuntamente con su cónyuge, descendientes, ascendientes o parientes colaterales hasta el tercer grado por consanguinidad, así como en los supuestos de equiparación del artículo 31 de esta Ley."
+            },
+            {
+              "boe_id": "BOE-A-2018-8159",
               "articulo": "art. 19 bis.1.h) DLeg 1/2018 (Extremadura)",
               "cita": "h) Que el adquirente mantenga en su patrimonio las participaciones en la entidad durante los cinco años siguientes al fallecimiento del causante, salvo que falleciere a su vez dentro de ese plazo."
+            },
+            {
+              "boe_id": "BOE-A-2018-8159",
+              "articulo": "art. 19 bis.3 DLeg 1/2018 (Extremadura)",
+              "cita": "3. La reducción prevista en este artículo, con los mismos requisitos de los apartados anteriores, será aplicable a aquellos adquirentes que estén comprendidos en el Grupo IV del artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones y que cumplan, además, los siguientes requisitos: a) Tener un contrato laboral o de prestación de servicios dentro de la empresa o negocio profesional del causante que esté vigente a la fecha del fallecimiento de este y acreditar una antigüedad mínima de cinco años en la empresa o negocio. b) Tener encomendadas tareas de responsabilidad en la gestión o dirección de la empresa o negocio a la fecha del fallecimiento del causante y con una antigüedad mínima de tres años ininterrumpidos en el ejercicio de éstas inmediatamente anteriores a la fecha del fallecimiento."
             }
           ]
         }
@@ -7795,6 +7850,11 @@
               "boe_id": "BOE-A-2011-18161",
               "articulo": "art. 11 DLeg 1/2011 (Galicia)",
               "cita": "En las adquisiciones mortis causa por sujetos pasivos incluidos en el Grupo I del artículo 6.Dos del presente texto refundido, incluidas las cantidades percibidas por las personas beneficiarias de seguros sobre la vida, se practicará una deducción del 99 % del importe de la cuota."
+            },
+            {
+              "boe_id": "BOE-A-2011-18161",
+              "articulo": "art. 6.Dos.a) DLeg 1/2011 (Galicia) (Grupo I, al que remite el artículo)",
+              "cita": "a) Grupo I: adquisiciones por descendientes y adoptados menores de 21 años"
             }
           ]
         }

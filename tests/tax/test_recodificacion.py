@@ -304,10 +304,26 @@ def test_failing_checks_become_targets_with_every_year_and_their_previous_quotes
     assert sin_cambios.objetivos == []
 
 
-def test_groups_without_adapter_are_reported_not_attempted(datos: Path) -> None:
-    hallazgo = objetivos_de_verificacion([2026], lambda boe_id, version=None: "<p>nada</p>", data_dir=datos)
-    assert any("minimos" in fila for fila in hallazgo.sin_adaptador)
-    assert all(o.tipo in ("deduccion_autonomica", "escala") for o in hallazgo.objetivos)
+def test_every_failing_group_of_the_irpf_file_has_an_adapter(datos: Path) -> None:
+    """A law that prints nothing makes every check fail: each failing group becomes a target, none is left over."""
+    nada = objetivos_de_verificacion([2026], lambda boe_id, version=None: "<p>nada</p>", data_dir=datos, solo_irpf=True)
+    assert nada.sin_adaptador == [] and nada.errores == []
+    tipos = {o.tipo for o in nada.objetivos}
+    assert {"deduccion_autonomica", "escala", "cifras:minimos", "cifras:trabajo", "cifras:minimos_autonomicos"} <= tipos
+    # The block of Madrid's hand-coded deductions fails as a whole and is taken on sub-group by sub-group.
+    assert {t for t in tipos if t.startswith("cifras:madrid_")} == {
+        "cifras:madrid_nacimiento",
+        "cifras:madrid_alquiler",
+        "cifras:madrid_gastos_educativos",
+        "cifras:madrid_cuidado",
+        "cifras:madrid_donativos",
+        "cifras:madrid_familias_ingresos_reducidos",
+    }
+    # "cifras" names the whole family of kinds.
+    solo_cifras = objetivos_de_verificacion(
+        [2026], lambda boe_id, version=None: "<p>nada</p>", data_dir=datos, tipos=["cifras"], solo_irpf=True
+    )
+    assert solo_cifras.objetivos and all(o.tipo.startswith("cifras:") for o in solo_cifras.objetivos)
 
 
 def test_an_article_can_be_asked_for_even_if_its_check_passes_and_a_missing_one_is_new(datos: Path) -> None:
@@ -321,6 +337,9 @@ def test_an_article_can_be_asked_for_even_if_its_check_passes_and_a_missing_one_
     nada = recodificar(nueva, lector=rendido, revisor=Guion(), texto_de=texto_de_ley())
     assert nada.estado == "sin_converger" and nada.objeciones_abiertas == ["No calculable: Solo fija normas comunes."]
     with pytest.raises(RecodificacionError, match="Ningún adaptador"):
+        objetivo_de_ruta([2026], ["comunidades", "galicia", "notas"], data_dir=datos)
+    # A group the fixture's Galicia does not have cannot be located in the law: said, not guessed.
+    with pytest.raises(RecodificacionError, match="ningún fichero contiene este grupo"):
         objetivo_de_ruta([2026], ["comunidades", "galicia", "minimos"], data_dir=datos)
 
 

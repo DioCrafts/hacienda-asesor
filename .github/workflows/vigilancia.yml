@@ -7,10 +7,14 @@ name: vigilancia
 #
 # Needs network access to www.boe.es and nothing else (no LLM, no secrets).
 #
-# Optional: with an ANTHROPIC_API_KEY secret, the parameters that no longer match
-# are re-read by a model and PROPOSALS of new data are uploaded as an artifact
-# (`recode-proposals`). Nothing is written to the repository: a person downloads
-# them and runs `params-apply`. Without the secret that step is skipped.
+# After the checks, `params-autopilot` closes the loop: norms published since the
+# last run that amend one of those laws → the groups of parameters hanging from
+# the articles they name → re-verification of every parameter file → (with an
+# ANTHROPIC_API_KEY secret) a model re-reads what no longer matches and leaves
+# PROPOSALS of new data, uploaded as an artifact (`recode-proposals`) together
+# with the report. Nothing is written to the repository: a person downloads the
+# proposals and runs `params-apply`. Without the secret the deterministic part
+# still runs and the report says which groups are waiting.
 
 on:
   schedule:
@@ -23,9 +27,6 @@ permissions:
 jobs:
   params-check:
     runs-on: ubuntu-latest
-    env:
-      # Secrets cannot be read in a step's `if:`; this boolean can.
-      HAY_CLAVE_LLM: ${{ secrets.ANTHROPIC_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -60,20 +61,26 @@ jobs:
         shell: bash
         run: |
           uv run python -m hacienda_gpt.cli.proactive params-verify --fail-on-mismatch | tee params-verify.json
-      - name: Restore earlier re-encoding proposals
-        # So that a group already proposed (or rejected) for the same legal text
-        # is not paid for again every Monday.
-        if: always() && env.HAY_CLAVE_LLM == 'true'
+      - name: Restore the autopilot's memory (proposals, novelties registry, state)
+        # So that a norm already handled, or a group already proposed (or rejected)
+        # for the same legal text, is not looked at or paid for again every Monday.
+        if: always()
         uses: actions/cache@v4
         with:
           path: recode-proposals
           key: recode-proposals-${{ github.run_id }}
           restore-keys: recode-proposals-
-      - name: Propose new data for the parameters that no longer match (LLM)
+      - name: "Autopilot: amending norms, verification, re-encoding proposals, report"
+        # One entry point: reads the BOE issues since the last run, finds the norms
+        # that amend a law the parameters come from and the groups hanging from the
+        # articles they name, re-verifies every parameter file and re-reads what no
+        # longer matches. The deterministic part needs no secret and always runs;
+        # the re-encoding runs only when ANTHROPIC_API_KEY is set (the command
+        # checks it itself and says so under `omitido`).
         # Proposals only: RECODE_AUTO_APPLY stays off here, the checkout is
         # read-only and nothing is committed. Every proposal has passed the
         # deterministic gate and a second model's boundary cases, or says why not.
-        if: always() && env.HAY_CLAVE_LLM == 'true'
+        if: always()
         shell: bash
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -84,15 +91,16 @@ jobs:
           DECISION_STATE_DB_PATH: ${{ runner.temp }}/vigilancia.db
           NOTIFY_WEBHOOK_URL: ${{ secrets.NOTIFY_WEBHOOK_URL }}
         run: |
-          uv run python -m hacienda_gpt.cli.proactive params-recode | tee params-recode.json
-      - name: Upload the proposals
-        if: always() && env.HAY_CLAVE_LLM == 'true'
+          uv run python -m hacienda_gpt.cli.proactive params-autopilot --output-dir recode-proposals/estado \
+            | tee params-autopilot.json
+      - name: Upload the proposals and the autopilot's report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: recode-proposals
           path: |
             recode-proposals
-            params-recode.json
+            params-autopilot.json
           if-no-files-found: ignore
       - name: Decree-laws awaiting validation
         # Informative: prints whether each decree-law some parameters depend on

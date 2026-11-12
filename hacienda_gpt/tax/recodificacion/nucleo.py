@@ -319,7 +319,11 @@ def leer_ruta(raw: dict[str, Any], ruta: Sequence[str]) -> Any:
 
 
 def escribir_ruta(raw: dict[str, Any], ruta: Sequence[str], valor: Any, *, insertar_tras: str | None = None) -> None:
-    """Put ``valor`` at ``ruta`` (None removes it). A missing list item is inserted after ``insertar_tras``."""
+    """Put ``valor`` at ``ruta`` (None removes it). A missing list item is inserted after ``insertar_tras``.
+
+    The last step of a path into a list is either "campo=valor" (the item whose field has that value) or a plain
+    index, for lists whose items have no field that tells them apart; an index must exist.
+    """
     padre: Any = raw
     for paso in ruta[:-1]:
         padre = _bajar(padre, paso)
@@ -329,6 +333,14 @@ def escribir_ruta(raw: dict[str, Any], ruta: Sequence[str], valor: Any, *, inser
             padre.pop(ultimo, None)
         else:
             padre[ultimo] = valor
+        return
+    if ultimo.isdigit():
+        if int(ultimo) >= len(padre):
+            raise IndexError(f"no hay elemento {ultimo} en la lista de {'/'.join(ruta[:-1])}")
+        if valor is None:
+            del padre[int(ultimo)]
+        else:
+            padre[int(ultimo)] = valor
         return
     indice = _indice(padre, ultimo)
     if valor is None:
@@ -438,6 +450,9 @@ class Adaptador(ABC):
     ) -> Objetivo:
         """The target for the group at ``ruta`` in every year of ``ficheros`` (which law, which articles, its quotes)."""
         raise RecodificacionError(f"El adaptador «{self.tipo}» no sabe localizar sus grupos en la ley.")
+
+    def limpiar_caches(self) -> None:
+        """Drop whatever caches the parameter file of this adapter after it has been written. Default: nothing."""
 
     def desajustes(self, objetivo: Objetivo, ejercicio: int, texto_de: TextoDe, *, data_dir: Path) -> list[str] | None:
         """Why the group no longer matches its law in ``ejercicio`` ([] = it matches).
@@ -1079,6 +1094,9 @@ def _limpiar_caches() -> None:
     params.load_params.cache_clear()
     verificacion._evidencia_deducciones.cache_clear()
     verificacion._evidencia_parametros.cache_clear()
+    # Each adapter knows which loader caches its own file.
+    for adaptador in list(_ADAPTADORES.values()):
+        adaptador.limpiar_caches()
 
 
 def aplicar_propuesta(

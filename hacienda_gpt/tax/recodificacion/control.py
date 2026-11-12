@@ -740,10 +740,20 @@ def _sin_acentos_salvo_enye(texto: str) -> str:
     return _sin_acentos(texto.replace("ñ", "\0")).replace("\0", "ñ").lower()
 
 
+# A figure whose thousands are separated by spaces ("35 000", "1 200 000"). It must not hang from a number already
+# written with a comma or a dot: in a table quoted in reading order, "0,00 167.129,45" and "1.168,68 808,25" are
+# two cells each, not one figure.
+_MILES_CON_ESPACIO = re.compile(r"(?<![\d.,])\d{1,3}(?: \d{3})+(?![\d.])")
+
+
 def normalizar_evidencia(citas: Iterable[str]) -> str:
-    """The quotes as one text, with "35 000" read as "35.000"."""
-    texto = unicodedata.normalize("NFKC", " ".join(citas))
-    return re.sub(r"(?<=\d)[  ](?=\d{3}(?!\d))", ".", texto)
+    """The quotes as one text, with "35 000" read as "35.000".
+
+    Only a run of digit groups that starts a number is joined. Limit: a row of bare three-digit cells ("600 750
+    900") is still read as one figure, so its cells are not found — a false rejection, never a false acceptance.
+    """
+    texto = unicodedata.normalize("NFKC", " ".join(citas)).replace("\u2009", " ")
+    return _MILES_CON_ESPACIO.sub(lambda m: m.group(0).replace(" ", "."), texto)
 
 
 def formas(n: Decimal) -> set[str]:

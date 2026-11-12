@@ -207,8 +207,14 @@ def test_cli_verify_and_decree_check(tmp_path: Path, monkeypatch, checks_2026: l
     for (boe_id, version), pagina in _leyes(checks_2026).items():
         (snapshot / (f"{boe_id}_p{version}.html" if version else f"{boe_id}.html")).write_text(pagina, encoding="utf-8")
     args = ["params-verify", "--ejercicio", "2026", "--snapshot-dir", str(snapshot), "--fail-on-mismatch"]
+    # Every parameter file is verified by default; the laws of the other four are not in this snapshot.
+    todos = CliRunner().invoke(cli_module.cli, args)
+    otros = json.loads(todos.output)["otros"]
+    assert todos.exit_code == 1 and {"autonomos_2026.json", "sociedades_2026.json", "isd_2026.json"} <= set(otros)
+    assert all(fila["no_coinciden"] for fila in otros.values())
+    args += ["--fichero", "irpf"]
     ok = CliRunner().invoke(cli_module.cli, args)
-    assert ok.exit_code == 0 and json.loads(ok.output)["2026"]["no_coinciden"] == []
+    assert ok.exit_code == 0 and json.loads(ok.output)["2026"]["no_coinciden"] == [] and "otros" not in ok.output
     (snapshot / f"{LEY_GALLEGA}.html").write_text("<p>nada</p>", encoding="utf-8")
     mal = CliRunner().invoke(cli_module.cli, args)
     assert mal.exit_code == 1 and {x["boe_id"] for x in json.loads(mal.output)["2026"]["no_coinciden"]} == {LEY_GALLEGA}
