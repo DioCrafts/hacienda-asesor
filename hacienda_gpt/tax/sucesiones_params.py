@@ -67,6 +67,12 @@ Parentesco = Literal[
 Requisito = Literal["escritura_publica"]
 ClaseReduccion = Literal["parentesco", "discapacidad", "edad", "otra"]
 ClaseBienes = Literal["empresa", "patrimonio_historico"]
+# The rule lists of a community, to say where a scoped assimilation is seen.
+Seccion = Literal[
+    "reducciones", "vivienda_habitual", "seguro_vida", "reducciones_bienes", "tarifas", "coeficientes", "bonificaciones"
+]
+# Kinds of reduction a "hasta completar" amount may leave out of its count.
+CategoriaReduccion = Literal["seguro_vida", "vivienda_habitual", "empresa", "patrimonio_historico", "otras_reducciones"]
 
 PARENTESCOS: tuple[str, ...] = get_args(Parentesco)
 PARENTESCO_ALIAS: dict[str, str] = {
@@ -174,21 +180,39 @@ class _Regla(_Model):
 
 
 class TramoReduccion(_Model):
-    """One amount of a personal reduction, for the beneficiaries who meet ``cuando``."""
+    """One amount of a personal reduction, for the beneficiaries who meet ``cuando``.
+
+    Either a fixed ``importe`` or ``porcentaje_base`` ("reducción del 100 por 100 de
+    la base imponible"), never both. A percentage is taken on the base imponible,
+    capped by ``maximo`` and by what is left of the base after the other reductions.
+    """
 
     cuando: CondicionesISD = Field(default_factory=CondicionesISD)
-    importe: Decimal
+    importe: Decimal | None = None
+    porcentaje_base: Decimal | None = None
     # "más X euros por cada año menos de veintiuno": importe + X × (edad_referencia − age), capped by ``maximo``.
     incremento_por_ano: Decimal | None = None
     edad_referencia: int | None = None
     maximo: Decimal | None = None
     # The law grants "the amount needed to reach ``importe`` together with the other reductions".
     hasta_completar: bool = False
+    # Reductions the law leaves OUT of that count ("excluida la relativa a los beneficiarios de pólizas de
+    # seguros de vida"): they are applied in full and do not eat into ``importe``.
+    hasta_completar_excluye: list[CategoriaReduccion] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _coherente(self) -> TramoReduccion:
         if (self.incremento_por_ano is None) != (self.edad_referencia is None):
             raise ValueError("incremento_por_ano y edad_referencia van juntos")
+        if (self.importe is None) == (self.porcentaje_base is None):
+            raise ValueError("un tramo lleva importe o porcentaje_base, uno de los dos")
+        if self.porcentaje_base is not None:
+            if not 0 < self.porcentaje_base <= 1:
+                raise ValueError("porcentaje_base fuera de rango (0-1)")
+            if self.incremento_por_ano is not None or self.hasta_completar:
+                raise ValueError("porcentaje_base no admite incremento_por_ano ni hasta_completar")
+        if self.hasta_completar_excluye and not self.hasta_completar:
+            raise ValueError("hasta_completar_excluye exige hasta_completar")
         return self
 
 
@@ -208,16 +232,32 @@ class Reduccion(_Regla):
     tramos: list[TramoReduccion] = Field(min_length=1)  # first match wins
     # ``clave`` of reductions that exclude this one when they have been applied.
     incompatible_con: list[str] = Field(default_factory=list)
+    # The community orders the state reduction to be applied instead whenever it is more favourable:
+    # the engine computes both and keeps the larger (only fixed-amount "mejora" tramos are compared).
+    estatal_si_mas_favorable: bool = False
+
+
+class TramoValorVivienda(_Model):
+    valor_hasta: Decimal | None  # total value of the property up to, inclusive; None = "más de"
+    porcentaje: Decimal
 
 
 class ReduccionVivienda(_Regla):
-    """Reduction for inheriting the deceased's main home (art. 20.2.c Ley 29/1987 and regional improvements)."""
+    """Reduction for inheriting the deceased's main home (art. 20.2.c Ley 29/1987 and regional improvements).
 
-    porcentaje: Decimal
+    The percentage is ``porcentaje`` or, when the law grades it by the total value of
+    the property ("valor real del inmueble"), the one of the bracket of ``tramos_valor``
+    that value falls in. One of the two.
+    """
+
+    porcentaje: Decimal | None = None
+    tramos_valor: list[TramoValorVivienda] = Field(default_factory=list)
     # Ceiling of the reduction per beneficiary. None with ``sin_limite`` false and no
     # ``limite_conjunto`` = the article does not restate a ceiling: the state one is kept.
     limite_por_sujeto: Decimal | None = None
     sin_limite: bool = False  # only when the law says so in as many words
+    # The article says in as many words that the state's limits remain (then no "please confirm" warning).
+    mantiene_limite_estatal: bool = False
     # Ceiling for the home as a whole, shared in proportion to each one's share...
     limite_conjunto: Decimal | None = None
     # ...with this floor for each beneficiary's share of it.
@@ -226,14 +266,26 @@ class ReduccionVivienda(_Regla):
     # Collateral relatives qualify only above this age (exclusive) and having lived with the deceased.
     colateral_mayor_de: int | None = None
     colateral_anos_convivencia: int | None = None
+    estatal_si_mas_favorable: bool = False  # see Reduccion
 
     @model_validator(mode="after")
     def _coherente(self) -> ReduccionVivienda:
+        if (self.porcentaje is None) == (not self.tramos_valor):
+            raise ValueError("la reducción por vivienda lleva porcentaje o tramos_valor, uno de los dos")
+        if self.tramos_valor and (
+            self.tramos_valor[-1].valor_hasta is not None or any(t.valor_hasta is None for t in self.tramos_valor[:-1])
+        ):
+            raise ValueError("solo el último tramo de valor queda abierto (valor_hasta: null)")
+        if self.mantiene_limite_estatal and (
+            self.sin_limite or self.limite_por_sujeto is not None or self.limite_conjunto is not None
+        ):
+            raise ValueError("mantiene_limite_estatal no admite límites propios")
         if self.sin_limite and (self.limite_por_sujeto is not None or self.limite_conjunto is not None):
             raise ValueError("sin_limite no admite límites")
         if self.limite_individual_minimo is not None and self.limite_conjunto is None:
             raise ValueError("limite_individual_minimo exige limite_conjunto")
-        if not 0 < self.porcentaje <= 1:
+        porcentajes = [t.porcentaje for t in self.tramos_valor] + ([self.porcentaje] if self.porcentaje else [])
+        if any(not 0 < p <= 1 for p in porcentajes):
             raise ValueError("porcentaje fuera de rango (0-1)")
         return self
 
@@ -243,6 +295,7 @@ class ReduccionSeguro(_Regla):
 
     porcentaje: Decimal
     limite: Decimal | None
+    estatal_si_mas_favorable: bool = False  # see Reduccion
 
 
 class ReduccionBienes(_Regla):
@@ -251,6 +304,7 @@ class ReduccionBienes(_Regla):
     clase: ClaseBienes
     porcentaje: Decimal
     anos_mantenimiento: int | None = None
+    estatal_si_mas_favorable: bool = False  # see Reduccion
 
 
 class ReglaTarifa(_Regla):
@@ -312,10 +366,27 @@ class ReglaBonificacion(_Regla):
 
 
 class Equiparacion(_Regla):
-    """The community treats one relationship as another for the whole tax (registered partners as spouses…)."""
+    """The community treats one relationship as another (registered partners as spouses…).
+
+    ``alcance`` is how far the law takes it. "todo": for the whole tax, state
+    reductions, scale and coefficients included. "autonomico": only for what the
+    community itself has legislated — its own rules see ``equivale_a`` (and the
+    kinship group that goes with it), while the state rules that still apply (and
+    the state coefficient) see the real relationship. ``solo_en`` narrows an
+    "autonomico" assimilation further, to some of the community's rule lists
+    ("a los efectos de los artículos 17 y 17 bis" = its allowances only).
+    """
 
     parentesco: Parentesco
     equivale_a: Parentesco
+    alcance: Literal["todo", "autonomico"] = "todo"
+    solo_en: list[Seccion] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _alcance(self) -> Equiparacion:
+        if self.solo_en and self.alcance != "autonomico":
+            raise ValueError("solo_en exige alcance «autonomico»")
+        return self
 
 
 class OtraReduccion(_Model):
@@ -341,6 +412,9 @@ class NormativaISD(_Model):
     tarifas: list[ReglaTarifa] = Field(default_factory=list)
     coeficientes: list[ReglaCoeficientes] = Field(default_factory=list)
     bonificaciones: list[ReglaBonificacion] = Field(default_factory=list)
+    # Allowances the law makes compatible with the ones above "and applied after them": the first that
+    # holds is taken on the tax left after the allowance of ``bonificaciones`` (or on all of it, if none).
+    bonificaciones_sucesivas: list[ReglaBonificacion] = Field(default_factory=list)
     otras_reducciones: list[OtraReduccion] = Field(default_factory=list)
     # Caveats the calculator repeats whenever these rules are used.
     notas: list[str] = Field(default_factory=list)
@@ -372,6 +446,9 @@ class NormativaAutonomicaISD(NormativaISD):
     nombre: str
     alias: list[str] = Field(default_factory=list)
     equiparaciones: list[Equiparacion] = Field(default_factory=list)
+    # Other norms its evidence quotes: when the community's text names a condition without printing its
+    # figure ("hijos menores de edad"), the figure is quoted from the norm that defines it.
+    fuentes_complementarias: list[FuentePrincipal] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _caracter(self) -> NormativaAutonomicaISD:
@@ -507,7 +584,7 @@ def _aparece(forma: str, cita: str) -> bool:
 
 
 def _clase_de(campo: str) -> Literal["importe", "porcentaje", "coeficiente"]:
-    if campo in {"porcentaje", "tipo"}:
+    if campo in {"porcentaje", "porcentaje_base", "tipo"}:
         return "porcentaje"
     return "coeficiente" if campo in get_args(Grupo) else "importe"
 
@@ -604,6 +681,12 @@ def comprobar_evidencias(params: ISDParams, textos: dict[str, str] | None = None
     for nombre, normativa in params.normativas().items():
         if normativa.fuente_principal.boe_id not in fuentes:
             problemas.append(f"{nombre}: su fuente_principal no figura en fuentes_principales")
+        if isinstance(normativa, NormativaAutonomicaISD):
+            problemas.extend(
+                f"{nombre}: la fuente complementaria {f.boe_id} no figura en fuentes_principales"
+                for f in normativa.fuentes_complementarias
+                if f.boe_id not in fuentes
+            )
         problemas.extend(comprobar_normativa(nombre, normativa, textos, fuentes))
     return problemas
 
