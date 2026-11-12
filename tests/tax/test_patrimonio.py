@@ -184,7 +184,13 @@ def test_nothing_to_pay_below_the_minimum_and_filing_threshold_of_two_million() 
     assert r.base_imponible == r.cuota_a_ingresar == 0
     assert r.obligado_a_declarar and "supera 2.000.000 €" in r.motivo_obligacion
     # Exactly 2.000.000 is not "superior a".
-    assert not _calc("aragon", bienes_exentos_empresa_familiar=2_000_000).obligado_a_declarar
+    r = _calc("aragon", bienes_exentos_empresa_familiar=2_000_000)
+    assert not r.obligado_a_declarar
+    # Art. 37 does not say whether exempt assets count: the prudent reading is always announced when no tax is due.
+    assert any("criterio prudente" in a and "no dice si cuentan los exentos" in a for a in r.avisos)
+    # Debts are not subtracted for that threshold: 2.500.000 of assets with 2.400.000 of debts still files.
+    r = _calc("aragon", depositos=2_500_000, otras_deudas=2_400_000)
+    assert r.base_imponible == D("100000.00") and r.cuota_a_ingresar == 0 and r.obligado_a_declarar
 
 
 def test_joint_limit_with_the_irpf() -> None:
@@ -232,6 +238,77 @@ def test_joint_limit_capped_at_80_percent_and_itsgf_limit() -> None:
     assert r.itsgf.deduccion_patrimonio == D("24581.60")
     assert r.itsgf.cuota_a_ingresar == 0 and not r.itsgf.obligado_a_declarar
     assert r.total_a_ingresar == D("30870.87")
+
+
+def test_itsgf_limit_adds_the_whole_wealth_tax_quota_left_by_its_own_limit() -> None:
+    # Form 718 (annex of Orden HFP/587/2023, replaced by Orden HAC/652/2026), box 180 = IRPF quotas + box 152
+    # "Cuota íntegra del Impuesto sobre el Patrimonio (casilla [40] de la declaración…)" + box 153 (limitable ITSGF part).
+    # Madrid, 8.000.000 in deposits, half of them unable to produce income; IRPF bases 50.000 (limit 30.000), quota 12.000.
+    # Patrimonio (state scale) on 7.300.000: 71.362,33 + 1.952.001,97 x 0,021 = 71.362,33 + 40.992,04137 = 112.354,37
+    #   limitable half 56.177,185: 12.000 + 56.177,185 - 30.000 = 38.177,185 -> reduction 38.177,19 (cap 89.883,50)
+    #   total cuota íntegra (box 40) = 74.177,18
+    # ITSGF on 7.300.000: 39.915,97 + 40.992,04137 = 80.908,01; limitable half 40.454,005
+    #   12.000 + 74.177,18 + 40.454,005 - 30.000 = 96.631,185, capped at 80 % x 80.908,01 = 64.726,41 -> 16.181,60
+    # Madrid's allowance: 74.177,18 - 16.181,60 = 57.995,58 -> Patrimonio 16.181,60, ITSGF 0.
+    r = _calc(
+        "madrid",
+        depositos=8_000_000,
+        irpf_base_imponible=50_000,
+        irpf_cuota_integra=12_000,
+        bienes_no_productivos=4_000_000,
+    )
+    assert (r.cuota_integra, r.reduccion_limite_conjunto, r.cuota_tras_limite) == (
+        D("112354.37"),
+        D("38177.19"),
+        D("74177.18"),
+    )
+    assert r.itsgf is not None
+    assert (r.itsgf.cuota_integra, r.itsgf.reduccion_limite_conjunto, r.itsgf.cuota_tras_limite) == (
+        D("80908.01"),
+        D("64726.41"),
+        D("16181.60"),
+    )
+    assert (r.bonificacion_autonomica, r.cuota_a_ingresar, r.itsgf.cuota_a_ingresar) == (
+        D("57995.58"),
+        D("16181.60"),
+        0,
+    )
+    # The stricter reading (only the limitable part of the wealth-tax quota: 12.000 + 18.000 + 40.454,005 - 30.000
+    # = 40.454,00 of reduction -> 40.454,01) is reported, not applied; so is the proration of art. 31.Uno.b.
+    assert any("modelo 718 (casilla 152)" in a for a in r.avisos)
+    assert any("40.454,01 €" in a and "16.181,60 €" in a for a in r.avisos)
+    assert any("prorrateado la cuota íntegra" in a and "(50,00 % de la cuota)" in a for a in r.avisos)
+    # Without unproductive assets both readings coincide and nothing extra is said.
+    r = _calc("madrid", depositos=8_000_000, irpf_base_imponible=50_000, irpf_cuota_integra=12_000)
+    assert r.cuota_tras_limite == D("22470.87") and r.itsgf is not None and r.itsgf.cuota_tras_limite == D("16181.60")
+    assert not any("lectura estricta" in a for a in r.avisos)
+
+
+def test_five_million_in_six_communities() -> None:
+    # 5.000.000 in deposits. ITSGF everywhere: (5.000.000 - 700.000 - 3.000.000) x 1,7 % = 22.100.
+    # State scale on 4.300.000: 25.904,35 + 1.626.000,99 x 0,017 = 25.904,35 + 27.642,01683 = 53.546,37
+    # Cataluña on 4.500.000: 27.199,58 + 1.826.000,99 x 0,01785 = 27.199,58 + 32.594,11767 = 59.793,70
+    # Extremadura on 4.500.000: 38.856,53 + 1.826.000,99 x 0,0255 = 38.856,53 + 46.563,02525 = 85.419,56
+    # Cantabria on 4.300.000: 64.814,82 (see its own test)
+    esperado = {  # cuota íntegra, Patrimonio payable, ITSGF payable
+        "madrid": ("53546.37", "22100.00", "0"),  # allowance 31.446,37: pays the ITSGF quota to the community
+        "cataluna": ("59793.70", "59793.70", "0"),  # no allowance; Patrimonio covers the ITSGF
+        "galicia": ("53546.37", "26773.18", "0"),  # 50 % = 26.773,185 -> 26.773,19; what is left exceeds 22.100
+        "extremadura": ("85419.56", "0", "22100.00"),  # 100 % not tied to the ITSGF: the State collects it
+        "cantabria": ("64814.82", "22100.00", "0"),  # 4.300.000 > 3.000.000: allowance by difference
+        "castilla_la_mancha": ("53546.37", "53546.37", "0"),  # state rules, no allowance
+    }
+    for comunidad, (integra, patrimonio, itsgf) in esperado.items():
+        r = _calc(comunidad, depositos=5_000_000)
+        assert r.itsgf is not None and r.itsgf.cuota_integra == D("22100.00"), comunidad
+        assert (r.cuota_integra, r.cuota_a_ingresar, r.itsgf.cuota_a_ingresar) == (
+            D(integra),
+            D(patrimonio),
+            D(itsgf),
+        ), comunidad
+    extremadura = _calc("extremadura", depositos=5_000_000)
+    assert any("no está ligada al ITSGF" in a for a in extremadura.avisos)
+    assert any("1.336.999,01" in a for a in extremadura.avisos)
 
 
 # --- Regional minimums and scales -------------------------------------------------
@@ -382,7 +459,23 @@ def test_galicia_half_allowance_reduced_by_the_itsgf() -> None:
         D("39100.00"),
     )
     assert r.itsgf is not None and r.itsgf.cuota_a_ingresar == 0
-    assert any("no lo precisa" in a for a in r.avisos) and len(r.no_modelado) == 7
+    assert any("no lo precisa" in a and "el total a pagar entre los dos impuestos es el mismo" in a for a in r.avisos)
+    assert len(r.no_modelado) == 7
+    # 30.000.000: quota 183.670,29 + 18.604.003,94 x 0,035 = 183.670,29 + 651.140,1379 = 834.810,43
+    # ITSGF 152.223,93 + 651.140,1379 = 803.364,07. With the full 50 % (417.405,215) the ITSGF payable would be
+    # 803.364,07 - 417.405,215 = 385.958,855 -> allowance 31.446,36; Patrimonio 803.364,07, ITSGF 0.
+    # (The simultaneous reading would give Patrimonio 610.384,64 + ITSGF 192.979,43: the same 803.364,07.)
+    r = _calc("galicia", depositos=30_000_000)
+    assert (r.cuota_integra, r.bonificacion_autonomica, r.cuota_a_ingresar) == (
+        D("834810.43"),
+        D("31446.36"),
+        D("803364.07"),
+    )
+    assert r.itsgf is not None and r.itsgf.cuota_integra == D("803364.07") and r.total_a_ingresar == D("803364.07")
+    # With the art. 31 limit biting, the base of the 50 % is ambiguous and the calculator says so.
+    r = _calc("galicia", depositos=3_000_000, irpf_base_imponible=120_000, irpf_cuota_integra=60_000)
+    assert r.cuota_tras_limite == D("12000.00") and r.cuota_a_ingresar == D("6000.00")
+    assert any("anterior o" in a and "lectura prudente" in a for a in r.avisos)
 
 
 def test_every_community_computes_and_never_pays_less_than_the_itsgf() -> None:

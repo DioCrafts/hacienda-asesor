@@ -291,7 +291,8 @@
       "fuente": {
         "referencia": "art. 31 Ley 19/1991",
         "en_vigor_desde": "2007-01-01",
-        "verificado": true
+        "verificado": true,
+        "nota": "La letra b) excluye «la parte del Impuesto sobre el Patrimonio que corresponda» a los elementos improductivos sin fijar el método: se prorratea la cuota por valor neto de esos elementos / base imponible, que son los datos que piden los modelos 714 y 718 (Orden HAC/277/2026 y Orden HFP/587/2023). La reducción es la menor entre el exceso y el 80 % de la cuota íntegra (casillas 38 y 39 del modelo 714)."
       },
       "evidencia": [
         {
@@ -441,7 +442,8 @@
       "fuente": {
         "referencia": "art. 3.Doce Ley 38/2022",
         "en_vigor_desde": "2022-12-29",
-        "verificado": true
+        "verificado": true,
+        "nota": "La ley dice «las cuotas del IRPF y del Impuesto sobre el Patrimonio» sin precisar cuál de las de Patrimonio. El modelo 718 (anexo de la Orden HFP/587/2023, sustituido por la Orden HAC/652/2026, BOE-A-2026-14011) suma en su casilla 152 la «Cuota íntegra del Impuesto sobre el Patrimonio (casilla [40] de la declaración del Impuesto sobre el Patrimonio)», es decir, la total cuota íntegra ya reducida por el límite del art. 31 y por entero, más la parte de la cuota del ITSGF susceptible de limitación (casilla 153). Se sigue el modelo."
       },
       "evidencia": [
         {
@@ -459,7 +461,8 @@
       "fuente": {
         "referencia": "art. 3.Quince Ley 38/2022",
         "en_vigor_desde": "2022-12-29",
-        "verificado": true
+        "verificado": true,
+        "nota": "El modelo 718 (casilla 205) toma como cuota efectivamente satisfecha la casilla 55 del modelo 714: la cuota a ingresar de Patrimonio, después de las bonificaciones autonómicas."
       },
       "evidencia": [
         {
@@ -1147,7 +1150,7 @@
         "art. 622-2: Bonificación de las propiedades forestales"
       ],
       "notas": [
-        "Cataluña: la Ley 11/2026, de 9 de julio, añade una disposición transitoria 7.ª al libro sexto que el texto consolidado del BOE aún no integra; según el análisis del BOE no modifica los arts. 621-1, 621-2 ni la disposición transitoria 1.ª."
+        "Cataluña: la Ley 11/2026, de 9 de julio (DOGC núm. 9706, de 13-07-2026), que el texto consolidado del BOE aún no integra, no afecta al Impuesto sobre el Patrimonio: leído su art. 37, la disposición transitoria 7.ª que añade al libro sexto es una bonificación de actos jurídicos documentados y no modifica los arts. 621-1, 621-2, 622-1, 622-2 ni la disposición transitoria 1.ª."
       ],
       "aplicable_2025": true,
       "diferencias_2025": []
@@ -1411,7 +1414,7 @@
           "referencia": "art. 15 bis texto refundido de Extremadura",
           "en_vigor_desde": "2023-01-01",
           "verificado": true,
-          "nota": "El texto refundido no condiciona esta bonificación a la vigencia del ITSGF."
+          "nota": "El texto refundido no condiciona esta bonificación a la vigencia del ITSGF ni menciona ese impuesto en ningún artículo o disposición."
         },
         "evidencia": [
           {
@@ -1425,7 +1428,10 @@
         ]
       },
       "no_modelado": [],
-      "notas": [],
+      "notas": [
+        "Extremadura: su bonificación general del 100 % (art. 15 bis) no está ligada al ITSGF; el texto refundido no menciona ese impuesto. Quien tenga cuota de ITSGF la paga íntegra al Estado, sin Patrimonio que deducir.",
+        "Extremadura: la escala del art. 15 imprime «1.336.999,01» como inicio del quinto tramo, cuando las filas contiguas suman 1.336.999,51 (así desde la publicación original de 2018). Se aplica lo impreso; la diferencia en la cuota íntegra no llega a un céntimo y no cambia lo que se paga."
+      ],
       "aplicable_2025": true,
       "diferencias_2025": []
     },
@@ -1547,7 +1553,7 @@
           "referencia": "disposición transitoria 3.ª.Dos texto refundido de Galicia",
           "en_vigor_desde": "2023-01-01",
           "verificado": true,
-          "nota": "La bonificación del 50 % se reduce en el importe a pagar por el ITSGF del mismo ejercicio."
+          "nota": "La bonificación del 50 % se reduce en el importe a pagar por el ITSGF del mismo ejercicio. La norma no dice con qué cuota de Patrimonio se calcula ese importe (que a su vez depende de la bonificación): se toma el ITSGF que resultaría con la bonificación íntegra. La lectura alternativa (importe simultáneo) da el mismo total entre los dos impuestos y solo cambia su reparto."
         },
         "evidencia": [
           {
@@ -1796,7 +1802,8 @@
         "fuente": {
           "referencia": "disposición transitoria 2.ª texto refundido de la Región de Murcia",
           "en_vigor_desde": "2025-07-25",
-          "verificado": true
+          "verificado": true,
+          "nota": "Murcia no tiene un artículo de bonificación general del 100 %: la bonificación resulta solo de esta disposición transitoria, que al no haber cuota de ITSGF alcanza toda la cuota de Patrimonio."
         },
         "evidencia": [
           {

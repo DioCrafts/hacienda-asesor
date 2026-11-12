@@ -11,8 +11,9 @@ Order of the computation (Ley 19/1991 and art. 3 Ley 38/2022):
 3. scale (the community's, or the State's) = cuota íntegra;
 4. joint limit with the IRPF (art. 31), when the IRPF figures are given;
 5. the community's general allowance = cuota a ingresar;
-6. ITSGF on the same base with its own minimum and scale, its own joint limit,
-   minus the wealth tax actually paid;
+6. ITSGF on the same base with its own minimum and scale, its own joint limit
+   (IRPF quotas + the wealth-tax quota left by step 4 + the ITSGF quota, as the
+   official form 718 adds them), minus the wealth tax actually payable (step 5);
 7. whether a return must be filed (art. 37; art. 3.Diecinueve).
 
 Several communities tie their allowance to the ITSGF ("the difference between
@@ -66,6 +67,11 @@ def _eur(value: Decimal) -> str:
     """1234567.5 -> '1.234.567,50 €' (Spanish format, for messages)."""
     text = f"{_round(value):,.2f}".replace(",", "#").replace(".", ",").replace("#", ".")
     return f"{text.removesuffix(',00')} €"
+
+
+def _fecha(iso: str) -> str:
+    """'2026-11-12' -> '12-11-2026'."""
+    return "-".join(reversed(iso.split("-")))
 
 
 class ComunidadNoDisponibleError(ValueError):
@@ -226,8 +232,14 @@ def _bonificacion(
     base_imponible: Decimal,
     comunidad: ComunidadPatrimonio,
     t: Traza,
+    limitada: bool = False,
 ) -> tuple[Decimal, str]:
-    """Regional general allowance on the wealth-tax quota, and the text of its trace line."""
+    """Regional general allowance on the wealth-tax quota, and the text of its trace line.
+
+    ``cuota`` and ``cuota_itsgf`` are both the quotas left by their joint limits
+    (boxes 40 of form 714 and 200 of form 718); ``limitada`` says the wealth-tax
+    one was actually cut by art. 31.
+    """
     if regla is None or cuota <= 0:
         return ZERO, ""
     porcentaje = regla.porcentaje or ZERO
@@ -243,8 +255,10 @@ def _bonificacion(
                 )
         t.aviso(
             f"{comunidad.nombre}: mientras esté vigente el ITSGF la bonificación autonómica es la diferencia entre la "
-            "cuota del Impuesto sobre el Patrimonio y la cuota del ITSGF, de modo que se ingresa por Patrimonio a la "
-            f"comunidad lo que en otro caso se pagaría al Estado por el ITSGF ({regla.fuente.referencia})."
+            "cuota íntegra de Patrimonio, una vez aplicado su límite conjunto, y la cuota íntegra del ITSGF, una vez "
+            "aplicado el suyo y antes de deducir Patrimonio. Si no hay cuota de ITSGF se bonifica toda la cuota; si la "
+            "hay, se ingresa por Patrimonio a la comunidad lo que en otro caso se pagaría al Estado por el ITSGF "
+            f"({regla.fuente.referencia})."
         )
         return _round(max(ZERO, cuota - cuota_itsgf)), (
             f"Bonificación de {comunidad.nombre}: cuota de Patrimonio menos cuota del ITSGF ({_eur(cuota_itsgf)})"
@@ -254,9 +268,17 @@ def _bonificacion(
     itsgf_a_pagar = max(ZERO, cuota_itsgf - (cuota - plena))
     t.aviso(
         f"{comunidad.nombre}: la bonificación del {porcentaje:.0%} se reduce en el importe que resultaría a pagar por "
-        f"el ITSGF ({regla.fuente.referencia}). Se ha interpretado que ese importe es el ITSGF calculado con la "
-        "bonificación íntegra; la norma no lo precisa."
+        f"el ITSGF ({regla.fuente.referencia}). Ese importe depende a su vez de la bonificación y la norma no lo precisa: "
+        "se ha tomado el ITSGF que resultaría con la bonificación íntegra, de modo que lo que faltaría por ITSGF se "
+        "ingresa por Patrimonio. Con la otra lectura posible el total a pagar entre los dos impuestos es el mismo y "
+        "solo cambia su reparto entre la comunidad y el Estado."
     )
+    if limitada:
+        t.aviso(
+            f"{comunidad.nombre}: la norma aplica la bonificación «sobre la cuota íntegra» sin decir si es la anterior o "
+            "la posterior al límite conjunto con el IRPF; se ha aplicado sobre la cuota ya reducida por el límite "
+            "(lectura prudente)."
+        )
     return _round(max(ZERO, plena - itsgf_a_pagar)), (
         f"Bonificación de {comunidad.nombre}: {porcentaje:.0%} de la cuota ({_eur(plena)}) menos ITSGF a pagar ({_eur(itsgf_a_pagar)})"
     )
@@ -367,6 +389,14 @@ def calcular_patrimonio(inp: PatrimonioInput) -> ResultadoPatrimonio:
             "excluir la parte de base del ahorro y de cuota que corresponda a ganancias de elementos con más de un año "
             "de antigüedad. No se contempla la tributación conjunta."
         )
+        if inp.bienes_no_productivos and cuota_integra:
+            t.aviso(
+                "El art. 31.Uno.b) deja fuera del límite «la parte del Impuesto sobre el Patrimonio que corresponda» a "
+                "los elementos que no pueden producir rendimientos gravados por el IRPF, sin fijar cómo se calcula: se ha "
+                "prorrateado la cuota íntegra por el valor neto de esos elementos sobre la base imponible "
+                f"({_round((1 - proporcion_productiva) * 100):.2f}".replace(".", ",")
+                + " % de la cuota), con los datos que piden los modelos 714 y 718."
+            )
         if not inp.bienes_no_productivos and cuota_integra:
             t.aviso(
                 "Se ha supuesto que todos los elementos patrimoniales pueden producir rendimientos gravados por el IRPF. "
@@ -387,6 +417,8 @@ def calcular_patrimonio(inp: PatrimonioInput) -> ResultadoPatrimonio:
     vigente = g.vigencia.vigente
     itsgf_sujeto = False
     itsgf_minimo = itsgf_base_liquidable = itsgf_cuota = itsgf_reduccion = itsgf_tras_limite = ZERO
+    # Same limit under the other reading of art. 3.Doce (only the part of the wealth-tax quota open to limitation).
+    itsgf_reduccion_alternativa = ZERO
     if vigente:
         itsgf_sujeto = base_imponible > g.hecho_imponible.umbral_patrimonio_neto
         if itsgf_sujeto:
@@ -394,10 +426,17 @@ def calcular_patrimonio(inp: PatrimonioInput) -> ResultadoPatrimonio:
             itsgf_base_liquidable = max(ZERO, base_imponible - itsgf_minimo)
             itsgf_cuota = _round(g.escala.cuota(itsgf_base_liquidable))
             if con_irpf and itsgf_cuota:
-                # Wealth-tax quota that counts: what is left of its computable part after its own cut.
-                patrimonio_computable = max(ZERO, cuota_integra * proporcion_productiva - (reduccion or ZERO))
+                # Wealth-tax quota that counts: the whole quota left by its own limit (box 152 of form 718
+                # = box 40 of form 714), plus the part of the ITSGF quota open to limitation (box 153).
                 itsgf_reduccion = _reduccion_limite(
-                    irpf_cuota + patrimonio_computable,
+                    irpf_cuota + cuota_tras_limite,
+                    itsgf_cuota,
+                    itsgf_cuota * proporcion_productiva,
+                    limite,
+                    g.limite_conjunto,
+                )
+                itsgf_reduccion_alternativa = _reduccion_limite(
+                    irpf_cuota + max(ZERO, cuota_integra * proporcion_productiva - (reduccion or ZERO)),
                     itsgf_cuota,
                     itsgf_cuota * proporcion_productiva,
                     limite,
@@ -407,7 +446,13 @@ def calcular_patrimonio(inp: PatrimonioInput) -> ResultadoPatrimonio:
 
     # 5. Regional general allowance.
     bonificacion, texto_bonificacion = _bonificacion(
-        comunidad.bonificacion, cuota_tras_limite, itsgf_tras_limite if vigente else None, base_imponible, comunidad, t
+        comunidad.bonificacion,
+        cuota_tras_limite,
+        itsgf_tras_limite if vigente else None,
+        base_imponible,
+        comunidad,
+        t,
+        limitada=bool(reduccion),
     )
     if comunidad.bonificacion is not None and texto_bonificacion:
         t.linea(texto_bonificacion, -bonificacion, comunidad.bonificacion.fuente)
@@ -444,14 +489,27 @@ def calcular_patrimonio(inp: PatrimonioInput) -> ResultadoPatrimonio:
             t.aviso(
                 "El Impuesto Temporal de Solidaridad de las Grandes Fortunas sigue aplicándose por la prórroga de la "
                 "disposición adicional 5.ª del Real Decreto-ley 8/2023 («en tanto no se produzca la revisión de la "
-                "tributación patrimonial»). Se calcula con las exenciones estatales y su propio mínimo exento, y de su "
-                "cuota se deduce la del Impuesto sobre el Patrimonio efectivamente satisfecha."
+                "tributación patrimonial»), sin fecha de fin: los textos consolidados consultados el "
+                f"{_fecha(p.fuentes_principales[g.vigencia.evidencia[0].boe_id].consultado_el)} no recogen esa revisión; si se "
+                "aprobara antes del 31 de diciembre, este cálculo cambiaría. Se calcula con las exenciones estatales y "
+                "su propio mínimo exento, y de su cuota se deduce la del Impuesto sobre el Patrimonio efectivamente "
+                "satisfecha (la cuota a ingresar, después de bonificaciones autonómicas)."
             )
             if con_irpf and itsgf_cuota:
                 t.aviso(
-                    "En el límite conjunto del ITSGF (art. 3.Doce) se ha computado la cuota de Patrimonio ya reducida "
-                    "por su propio límite; la norma no precisa este punto."
+                    "En el límite conjunto del ITSGF (art. 3.Doce) la ley suma «las cuotas» del IRPF y de Patrimonio sin "
+                    "precisar cuál de las de Patrimonio. Se ha computado, como hace el modelo 718 (casilla 152), la total "
+                    "cuota íntegra de Patrimonio ya reducida por su propio límite y por entero, antes de bonificaciones "
+                    "autonómicas."
                 )
+                if itsgf_reduccion_alternativa != itsgf_reduccion:
+                    t.aviso(
+                        "Al haber elementos improductivos, ese criterio del modelo 718 importa: si en la suma solo se "
+                        "contara la parte de la cuota de Patrimonio susceptible de limitación (lectura estricta del art. "
+                        "31.Uno.b), la cuota del ITSGF tras el límite sería de "
+                        f"{_eur(itsgf_cuota - itsgf_reduccion_alternativa)} en lugar de {_eur(itsgf_tras_limite)}. "
+                        "Conviene contrastarlo con el programa de la Agencia Tributaria."
+                    )
         itsgf = ResultadoITSGF(
             sujeto=itsgf_sujeto,
             base_imponible=_round(base_imponible),
@@ -479,11 +537,13 @@ def calcular_patrimonio(inp: PatrimonioInput) -> ResultadoPatrimonio:
     else:
         obligado = False
         motivo = f"No hay cuota a ingresar y el valor de los bienes y derechos no supera {_eur(umbral)} (art. 37 de la Ley 19/1991)."
-    if cuota_a_ingresar <= 0 and (inp.bienes_exentos_empresa_familiar or exencion_vivienda or deudas):
+    if cuota_a_ingresar <= 0:
         t.aviso(
             f"Para el umbral de {_eur(umbral)} de la obligación de declarar se ha tomado el valor de todos los bienes y "
-            "derechos, incluidos los exentos y sin restar deudas (criterio prudente; el art. 37 habla del «valor de sus "
-            "bienes o derechos, determinado de acuerdo con las normas reguladoras del impuesto»)."
+            "derechos indicados, incluidos los exentos y sin restar deudas (criterio prudente; el art. 37 habla del «valor "
+            "de sus bienes o derechos, determinado de acuerdo con las normas reguladoras del impuesto», no del patrimonio "
+            "neto, y no dice si cuentan los exentos). Los demás bienes exentos que no se piden aquí (ajuar doméstico, "
+            "planes de pensiones, etc.) no están sumados: con el mismo criterio prudente, súmelos si se acerca al umbral."
         )
 
     # Standing caveats.
