@@ -493,6 +493,248 @@
         "art. 22 bis: para fomentar el ejercicio físico y la práctica deportiva",
         "art. 22 ter: por gastos veterinarios derivados de la adquisición de animales de compañía o de la tenencia de perros de asistencia",
         "art. 22 quater: para familias con enfermedad celíaca diagnosticada"
+      ],
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 10",
+          "titulo": "Alquiler de vivienda habitual",
+          "resumen": "15 % de las cantidades satisfechas por alquiler de la vivienda habitual, máximo 1.200 euros anuales (1.500 euros si el contribuyente tiene discapacidad), para menores de 35 años, mayores de 65 años o personas con discapacidad, con suma de bases imponibles general y del ahorro no superior a 25.000 euros (individual) o 30.000 euros (conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "1200",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "25000",
+          "limite_conjunta": "30000",
+          "alternativas": [
+            {
+              "edad_max": 34
+            },
+            {
+              "edad_min": 66
+            },
+            {
+              "discapacidad_min": 33
+            }
+          ],
+          "variantes": [
+            {
+              "descripcion": "contribuyente con discapacidad: límite de 1.500 euros",
+              "cuando": {
+                "discapacidad_min": 33
+              },
+              "maximo": "1500"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "También tienen derecho, sin requisito de edad, las víctimas de violencia doméstica, víctimas del terrorismo o personas afectadas (NO calculado: la calculadora exige edad o discapacidad).",
+            "El contribuyente debe identificar al arrendador haciendo constar su NIF en la autoliquidación.",
+            "Debe tratarse de la vivienda habitual del contribuyente (concepto del art. 2 de la Ley).",
+            "En tributación conjunta basta con que cumpla el requisito uno de los cónyuges (o el padre o la madre en familias monoparentales); la calculadora solo comprueba la edad y discapacidad del contribuyente.",
+            "Si hay más de un contribuyente con derecho, cada uno aplica la deducción sobre las cantidades que haya satisfecho, con el límite máximo por contribuyente."
+          ],
+          "en_vigor_desde": "2026-01-01"
+        },
+        {
+          "articulo": "art. 11",
+          "titulo": "Nacimiento, adopción de hijos o acogimiento familiar de menores",
+          "resumen": "200 euros por cada hijo nacido o adoptado (o menor acogido) en el período impositivo, sin límite de renta; 400 euros si se reside en un municipio con problemas de despoblación. Si son dos los contribuyentes con derecho, se reparte por partes iguales.",
+          "tipo": "fija",
+          "importe": "200",
+          "unidad": "hijos_nacidos_en_el_ejercicio",
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "residencia en municipio con problemas de despoblación: 400 euros por hijo",
+              "cuando": {
+                "requiere": [
+                  "municipio_rural_o_despoblacion"
+                ]
+              },
+              "importe": "400"
+            }
+          ],
+          "incompatible_con": [
+            "art. 14"
+          ],
+          "requisitos_no_comprobados": [
+            "Incompatible con la deducción para familia numerosa del art. 14 (la calculadora aplica esta y descarta la del art. 14) y con la deducción por adopción internacional del art. 12 (no calculada).",
+            "Municipio con problemas de despoblación (art. 8): aquel cuya cifra de población sea de menos de 3.000 habitantes, según el art. 10.4 b) de la Ley 6/2010.",
+            "En partos, adopciones o acogimientos múltiples la cuantía se incrementa en 200 euros por cada hijo o menor; incremento NO calculado.",
+            "También da derecho el acogimiento familiar de menores (simple, permanente o preadoptivo) con convivencia de al menos 90 días y sin ayudas de la Junta de Andalucía vinculadas al acogimiento; no incluido en el cómputo de hijos nacidos o adoptados."
+          ],
+          "en_vigor_desde": "2026-01-01"
+        },
+        {
+          "articulo": "art. 13.1",
+          "titulo": "Madre o padre de familia monoparental",
+          "resumen": "100 euros para madres o padres de familia monoparental a la fecha de devengo, con suma de bases imponibles general y del ahorro no superior a 80.000 euros (individual) o 100.000 euros (conjunta).",
+          "tipo": "fija",
+          "importe": "100",
+          "requiere": [
+            "familia_monoparental"
+          ],
+          "base_limite": "base_imponible_total",
+          "limite_individual": "80000",
+          "limite_conjunta": "100000",
+          "requisitos_no_comprobados": [
+            "Concepto de familia monoparental del art. 4 de la Ley: en casos de separación legal o sin vínculo matrimonial, la formada por la madre o el padre y los hijos menores de edad que convivan (salvo los independizados con consentimiento) o mayores con discapacidad con curador."
+          ],
+          "en_vigor_desde": "2022-01-01"
+        },
+        {
+          "articulo": "art. 13.2",
+          "titulo": "Familia monoparental: incremento por ascendientes mayores de 75 años",
+          "resumen": "La deducción de familia monoparental se incrementa en 100 euros por cada ascendiente que conviva con la familia monoparental y genere derecho al mínimo por ascendientes mayores de 75 años; mismos límites de renta (80.000 / 100.000 euros).",
+          "tipo": "fija",
+          "importe": "100",
+          "unidad": "num_ascendientes_mayores_75",
+          "requiere": [
+            "familia_monoparental"
+          ],
+          "base_limite": "base_imponible_total",
+          "limite_individual": "80000",
+          "limite_conjunta": "100000",
+          "requisitos_no_comprobados": [
+            "El ascendiente debe convivir con la familia monoparental y generar derecho al mínimo por ascendientes mayores de 75 años de la normativa estatal.",
+            "Si varios contribuyentes tienen derecho por el mismo ascendiente, se aplican las reglas estatales de prorrateo y convivencia (NO calculado).",
+            "Concepto de familia monoparental del art. 4 de la Ley."
+          ],
+          "en_vigor_desde": "2022-01-01"
+        },
+        {
+          "articulo": "art. 14",
+          "titulo": "Familia numerosa",
+          "resumen": "200 euros para ascendientes que formen parte de una familia numerosa de categoría general y 400 euros si es de categoría especial, con suma de bases imponibles general y del ahorro no superior a 25.000 euros (individual) o 30.000 euros (conjunta). Incompatible con la deducción por nacimiento del art. 11.",
+          "tipo": "fija",
+          "importe": "200",
+          "requiere": [
+            "familia_numerosa"
+          ],
+          "base_limite": "base_imponible_total",
+          "limite_individual": "25000",
+          "limite_conjunta": "30000",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "familia numerosa de categoría especial: 400 euros",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa_especial"
+                ]
+              },
+              "importe": "400"
+            }
+          ],
+          "incompatible_con": [
+            "art. 11"
+          ],
+          "requisitos_no_comprobados": [
+            "Incompatible con la deducción por nacimiento, adopción o acogimiento del art. 11 (art. 11.5): si se aplica aquella, la calculadora descarta esta; el contribuyente puede preferir la contraria si le resulta mayor.",
+            "Debe ostentarse el título de familia numerosa a la fecha de devengo (art. 5).",
+            "El contribuyente debe ser ascendiente (o hermano huérfano en los casos del art. 2.2 d) y e) de la Ley 40/2003).",
+            "Cuando sean varios los contribuyentes con derecho, el importe se distribuye por partes iguales (la calculadora solo lo reparte si se indican descendientes compartidos en declaración individual)."
+          ],
+          "en_vigor_desde": "2022-01-01"
+        },
+        {
+          "articulo": "art. 15",
+          "titulo": "Gastos educativos (enseñanza de idiomas e informática)",
+          "resumen": "15 % de las cantidades satisfechas por enseñanza escolar o extraescolar de idiomas, de informática o de ambas, con un máximo de 150 euros anuales por cada descendiente; suma de bases imponibles no superior a 80.000 euros (individual) o 100.000 euros (conjunta).",
+          "tipo": "porcentaje",
+          "unidad": "num_hijos_gastos_educativos",
+          "porcentaje": "0.15",
+          "base": "gastos_ensenanza_idiomas",
+          "maximo_por_unidad": "150",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "80000",
+          "limite_conjunta": "100000",
+          "requisitos_no_comprobados": [
+            "El máximo de 150 euros se aplica por cada descendiente sobre sus propios gastos; la calculadora lo aplica de forma agregada (150 × número de hijos con gastos educativos), lo que puede sobrestimar si los gastos se concentran en un solo descendiente.",
+            "Solo cuentan los descendientes por los que se tenga derecho al mínimo por descendientes.",
+            "También son deducibles los gastos de enseñanza de informática; en la enseñanza escolar solo la parte proporcional de los gastos de escolaridad correspondiente a idiomas, informática o asignaturas impartidas en idioma extranjero.",
+            "La aplica quien satisface efectivamente los gastos, sobre las cantidades que cada declarante haya satisfecho.",
+            "Justificación documental conforme al art. 60 de la Ley."
+          ],
+          "en_vigor_desde": "2023-01-01"
+        },
+        {
+          "articulo": "art. 16",
+          "titulo": "Contribuyentes con discapacidad",
+          "resumen": "150 euros para contribuyentes con grado de discapacidad igual o superior al 33 %, con suma de bases imponibles general y del ahorro no superior a 25.000 euros (individual) o 30.000 euros (conjunta).",
+          "tipo": "fija",
+          "importe": "150",
+          "discapacidad_min": 33,
+          "base_limite": "base_imponible_total",
+          "limite_individual": "25000",
+          "limite_conjunta": "30000",
+          "requisitos_no_comprobados": [
+            "También se considera acreditado el grado del 33 % a pensionistas de incapacidad permanente total, absoluta o gran invalidez y de clases pasivas por incapacidad permanente (art. 3.2)."
+          ],
+          "en_vigor_desde": "2022-01-01"
+        },
+        {
+          "articulo": "art. 18.1",
+          "titulo": "Asistencia a personas con discapacidad",
+          "resumen": "100 euros por cada descendiente o ascendiente con discapacidad que dé derecho al mínimo por discapacidad de descendientes o ascendientes, con suma de bases imponibles general y del ahorro no superior a 80.000 euros (individual) o 100.000 euros (conjunta).",
+          "tipo": "fija",
+          "importe": "100",
+          "unidad": "num_familiares_discapacidad_a_cargo",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "80000",
+          "limite_conjunta": "100000",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Solo cuentan los descendientes o ascendientes por los que el contribuyente tenga derecho al mínimo por discapacidad de descendientes o ascendientes de la normativa estatal.",
+            "Si varios contribuyentes tienen derecho por la misma persona se aplican las reglas estatales de prorrateo y convivencia; la calculadora solo divide por dos cuando se indican descendientes compartidos en declaración individual (puede dar de menos si la persona con discapacidad es un ascendiente no compartido, o de más si un ascendiente es compartido con otros contribuyentes)."
+          ],
+          "en_vigor_desde": "2022-01-01"
+        },
+        {
+          "articulo": "art. 19",
+          "titulo": "Ayuda doméstica (titular del hogar de 75 o más años)",
+          "resumen": "20 % de la cotización a la Seguridad Social a cargo del empleador por un empleado de hogar, máximo 500 euros anuales, cuando el titular del hogar familiar (o su cónyuge o pareja de hecho) tenga 75 o más años. El otro supuesto del artículo (progenitores que trabajan) no se calcula.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "cotizaciones_empleada_hogar",
+          "maximo": "500",
+          "edad_min": 75,
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Solo se calcula el supuesto b) (edad igual o superior a 75 años). El supuesto a) —titular o cónyuge/pareja que sea madre o padre de hijos con derecho al mínimo por descendientes y que perciba rendimientos del trabajo o de actividades económicas (ambos cónyuges o miembros de la pareja, en su caso)— también da derecho y NO se calcula.",
+            "El requisito de edad puede cumplirlo el cónyuge o pareja de hecho inscrita; la calculadora solo comprueba la edad del contribuyente.",
+            "El contribuyente (o su cónyuge/pareja) debe ser titular del hogar familiar, que debe ser su vivienda habitual, y constar en la Tesorería General de la Seguridad Social por la afiliación en Andalucía al Sistema Especial de Empleados del Hogar.",
+            "Solo se computa la cotización correspondiente a un empleado o empleada.",
+            "Incompatible con la deducción del art. 18.3 cuando se trate de la misma persona empleada."
+          ],
+          "en_vigor_desde": "2023-01-01"
+        },
+        {
+          "articulo": "art. 18.3",
+          "titulo": "Asistencia a personas con discapacidad que necesitan ayuda de terceras personas (empleados de hogar)",
+          "resumen": "20 % de la cuota fija a la Seguridad Social por cuenta del empleador (Sistema Especial de Empleados del Hogar), con el límite de 500 euros anuales por contribuyente, cuando los ascendientes o descendientes con discapacidad necesiten ayuda de terceras personas y generen el mínimo por gastos de asistencia.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "cotizaciones_empleada_hogar",
+          "maximo": "500",
+          "unidades_min": {
+            "num_familiares_discapacidad_a_cargo": 1
+          },
+          "base_limite": "base_imponible_total",
+          "limite_individual": "80000",
+          "limite_conjunta": "100000",
+          "incompatible_con": [
+            "art. 19"
+          ],
+          "requisitos_no_comprobados": [
+            "Requisito decisivo NO comprobado: la persona con discapacidad a cargo debe necesitar ayuda de terceras personas y generar derecho al mínimo en concepto de gastos de asistencia de la normativa estatal (no basta cualquier discapacidad).",
+            "Solo tiene derecho el contribuyente titular del hogar familiar que conste como tal en la Tesorería General de la Seguridad Social por la afiliación en Andalucía al Sistema Especial de Empleados del Hogar.",
+            "Se han aplicado los límites de renta del apartado 1 del artículo (80.000 / 100.000 euros); el texto no deja claro que rijan también para este apartado 3, por lo que podría darse de menos a rentas superiores.",
+            "Incompatible con la deducción por ayuda doméstica del art. 19 cuando se trate de la misma persona empleada (la calculadora supone que es la misma y no aplica ambas)."
+          ],
+          "en_vigor_desde": "2022-01-01"
+        }
       ]
     },
     "aragon": {
@@ -588,6 +830,256 @@
       ],
       "notas": [
         "El texto consolidado de la norma aragonesa en el BOE llega al 17-7-2025: no se ha podido descartar un cambio posterior de la escala."
+      ],
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 110-2",
+          "titulo": "Nacimiento o adopción del tercer hijo o sucesivos",
+          "resumen": "500 euros por cada nacimiento o adopción del tercer hijo o sucesivos, en el período en que se produzca; 600 euros cuando la base imponible general y del ahorro, menos el mínimo del contribuyente y el mínimo por descendientes, no supere 35.000 euros (conjunta) o 21.000 euros (individual).",
+          "tipo": "fija",
+          "importes_por_orden": [
+            "0",
+            "0",
+            "500"
+          ],
+          "unidad": "hijos_nacidos_en_el_ejercicio",
+          "base_limite": "base_imponible_total_menos_minimo_descendientes",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "renta reducida en declaración conjunta: 600 euros",
+              "cuando": {
+                "tributacion": "conjunta",
+                "ingreso_max": "35000"
+              },
+              "importes_por_orden": [
+                "0",
+                "0",
+                "600"
+              ]
+            },
+            {
+              "descripcion": "renta reducida en declaración individual: 600 euros",
+              "cuando": {
+                "tributacion": "individual",
+                "ingreso_max": "21000"
+              },
+              "importes_por_orden": [
+                "0",
+                "0",
+                "600"
+              ]
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "El límite legal se refiere a la suma de base imponible general y del ahorro MENOS el mínimo del contribuyente y el mínimo por descendientes; la calculadora solo resta el mínimo por descendientes (criterio más estricto: puede dar de menos, nunca de más).",
+            "La deducción corresponde al contribuyente con quien convivan los hijos que den derecho a ella."
+          ],
+          "en_vigor_desde": "2015-01-01"
+        },
+        {
+          "articulo": "art. 110-16",
+          "titulo": "Nacimiento o adopción del primer y/o segundo hijo en municipios de menos de 10.000 habitantes",
+          "resumen": "100 euros por el nacimiento o adopción del primer hijo y 150 euros por el segundo (200 y 300 euros si la suma de base imponible general y del ahorro no supera 35.000 euros en conjunta o 23.000 euros en individual), para residentes en municipios aragoneses de menos de 10.000 habitantes.",
+          "tipo": "fija",
+          "importes_por_orden": [
+            "100",
+            "150",
+            "0"
+          ],
+          "unidad": "hijos_nacidos_en_el_ejercicio",
+          "requiere": [
+            "municipio_rural_o_despoblacion"
+          ],
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "renta reducida en declaración conjunta: 200 y 300 euros",
+              "cuando": {
+                "tributacion": "conjunta",
+                "ingreso_max": "35000"
+              },
+              "importes_por_orden": [
+                "200",
+                "300",
+                "0"
+              ]
+            },
+            {
+              "descripcion": "renta reducida en declaración individual: 200 y 300 euros",
+              "cuando": {
+                "tributacion": "individual",
+                "ingreso_max": "23000"
+              },
+              "importes_por_orden": [
+                "200",
+                "300",
+                "0"
+              ]
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Definición legal del municipio: el contribuyente debe haber residido en el año del nacimiento y en el anterior en municipios aragoneses cuya población de derecho sea inferior a 10.000 habitantes.",
+            "Incompatible con la deducción del art. 110-3 (hijo con discapacidad, no calculada) cuando se trate del mismo hijo.",
+            "La deducción corresponde al contribuyente con quien convivan los hijos que den derecho a ella."
+          ],
+          "en_vigor_desde": "2015-01-01"
+        },
+        {
+          "articulo": "art. 110-5",
+          "titulo": "Cuidado de personas dependientes (ascendientes mayores de 75 años)",
+          "resumen": "150 euros por el cuidado de personas dependientes que convivan con el contribuyente al menos la mitad del período (ascendiente mayor de 75 años; también ascendientes o descendientes con discapacidad igual o superior al 65 %, no calculado), con renta —base imponible menos mínimo del contribuyente y por descendientes— no superior a 21.000 euros (individual) o 35.000 euros (conjunta).",
+          "tipo": "fija",
+          "importe": "150",
+          "unidades_min": {
+            "num_ascendientes_mayores_75": 1
+          },
+          "base_limite": "base_imponible_total_menos_minimo_descendientes",
+          "limite_individual": "21000",
+          "limite_conjunta": "35000",
+          "requisitos_no_comprobados": [
+            "El límite legal se refiere a la suma de base imponible general y del ahorro MENOS el mínimo del contribuyente y el mínimo por descendientes; la calculadora solo resta el mínimo por descendientes (criterio más estricto: puede dar de menos, nunca de más).",
+            "Se calcula una única deducción de 150 euros aunque haya varias personas dependientes (el texto no precisa que sea por persona; si lo fuera, la calculadora daría de menos).",
+            "También son personas dependientes los ascendientes o descendientes con grado de discapacidad igual o superior al 65 %, cualquiera que sea su edad (NO calculado).",
+            "La persona dependiente debe convivir con el contribuyente al menos la mitad del período impositivo y no tener rentas anuales, excluidas las exentas, superiores a 8.000 euros.",
+            "Si dos o más contribuyentes tienen derecho, el importe se prorratea por partes iguales; con distinto grado de parentesco corresponde a los de grado más cercano (NO calculado)."
+          ],
+          "en_vigor_desde": "2014-01-26"
+        },
+        {
+          "articulo": "art. 110-11",
+          "titulo": "Adquisición de libros de texto y material escolar",
+          "resumen": "Cantidades destinadas a libros de texto y material escolar de Educación Primaria y ESO, hasta un máximo por descendiente que depende de la renta: en conjunta 100 / 50 / 37,50 euros (hasta 12.000 / 20.000 / 25.000 euros) y en individual 50 / 37,50 / 25 euros (hasta 6.500 / 10.000 / 12.500 euros); familias numerosas 150 euros (conjunta, hasta 40.000) o 75 euros (individual, hasta 30.000).",
+          "tipo": "porcentaje",
+          "unidad": "num_hijos_gastos_educativos",
+          "porcentaje": "1.00",
+          "base": "gastos_libros_texto",
+          "maximo_por_unidad": "25",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "12500",
+          "limite_conjunta": "25000",
+          "variantes": [
+            {
+              "descripcion": "familia numerosa, declaración conjunta: 150 euros por descendiente",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ],
+                "tributacion": "conjunta"
+              },
+              "maximo_por_unidad": "150",
+              "limite_conjunta": "40000"
+            },
+            {
+              "descripcion": "familia numerosa, declaración individual: 75 euros por descendiente",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ],
+                "tributacion": "individual"
+              },
+              "maximo_por_unidad": "75",
+              "limite_individual": "30000"
+            },
+            {
+              "descripcion": "conjunta, hasta 12.000 euros: 100 euros por descendiente",
+              "cuando": {
+                "tributacion": "conjunta",
+                "ingreso_max": "12000"
+              },
+              "maximo_por_unidad": "100"
+            },
+            {
+              "descripcion": "conjunta, entre 12.000,01 y 20.000 euros: 50 euros por descendiente",
+              "cuando": {
+                "tributacion": "conjunta",
+                "ingreso_max": "20000"
+              },
+              "maximo_por_unidad": "50"
+            },
+            {
+              "descripcion": "conjunta, entre 20.000,01 y 25.000 euros: 37,50 euros por descendiente",
+              "cuando": {
+                "tributacion": "conjunta"
+              },
+              "maximo_por_unidad": "37.50"
+            },
+            {
+              "descripcion": "individual, hasta 6.500 euros: 50 euros por descendiente",
+              "cuando": {
+                "tributacion": "individual",
+                "ingreso_max": "6500"
+              },
+              "maximo_por_unidad": "50"
+            },
+            {
+              "descripcion": "individual, entre 6.500,01 y 10.000 euros: 37,50 euros por descendiente",
+              "cuando": {
+                "tributacion": "individual",
+                "ingreso_max": "10000"
+              },
+              "maximo_por_unidad": "37.50"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "La cifra general codificada (25 euros por descendiente) es la del tramo de 10.000,01 a 12.500 euros en declaración individual; los demás tramos van como variantes.",
+            "La deducción debe minorarse, por cada descendiente, en las becas y ayudas públicas percibidas que cubran estos gastos (NO calculado).",
+            "Solo libros de texto y material escolar de Educación Primaria y Educación Secundaria Obligatoria, y solo por descendientes que den derecho al mínimo por descendientes.",
+            "El máximo es por descendiente sobre sus propios gastos; la calculadora lo aplica de forma agregada (máximo × número de hijos con gastos educativos).",
+            "Corresponde al ascendiente que haya satisfecho las cantidades; en matrimonios con consorcio conyugal aragonés o análogo se atribuyen a ambos cónyuges por mitad (NO calculado)."
+          ],
+          "en_vigor_desde": "2014-01-26"
+        },
+        {
+          "articulo": "art. 110-14",
+          "titulo": "Mayores de 70 años",
+          "resumen": "75 euros para contribuyentes de 70 o más años que obtengan rendimientos integrables en la base imponible general que no procedan exclusivamente del capital, con suma de base imponible general y del ahorro no superior a 23.000 euros (individual) o 35.000 euros (conjunta).",
+          "tipo": "fija",
+          "importe": "75",
+          "edad_min": 70,
+          "base_limite": "base_imponible_total",
+          "limite_individual": "23000",
+          "limite_conjunta": "35000",
+          "requisitos_no_comprobados": [
+            "El contribuyente debe obtener rendimientos integrables en la base imponible general que no procedan exclusivamente del capital."
+          ],
+          "en_vigor_desde": "2014-01-26"
+        },
+        {
+          "articulo": "art. 110-17",
+          "titulo": "Gastos de guardería de hijos menores de 3 años",
+          "resumen": "15 % de los gastos de custodia de hijos menores de 3 años en guarderías o centros de educación infantil, máximo 250 euros por hijo inscrito (125 euros en el año en que cumple 3 años); suma de base liquidable general y del ahorro inferior a 35.000 euros (individual) o 50.000 euros (conjunta) y base imponible del ahorro no superior a 4.000 euros.",
+          "tipo": "porcentaje",
+          "unidad": "num_descendientes_menores_3",
+          "porcentaje": "0.15",
+          "base": "gastos_guarderia",
+          "maximo_por_unidad": "125",
+          "base_limite": "base_liquidable_total",
+          "limite_individual": "35000",
+          "limite_conjunta": "50000",
+          "limite_es_estricto": true,
+          "base_ahorro_max": "4000",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "con hijos que siguen siendo menores de 3 años al final del ejercicio: máximo de 250 euros por hijo",
+              "cuando": {
+                "unidades_min": {
+                  "num_descendientes_menores_3": 1
+                }
+              },
+              "maximo_por_unidad": "250"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "En el período impositivo en que el niño cumple los 3 años el límite es de 125 euros: la cifra general codificada (125 euros) se aplica cuando no consta ningún descendiente menor de 3 años (se supone un hijo que los ha cumplido en el ejercicio); si hay a la vez hijos menores de 3 años y otro que los cumple, solo se computan los primeros a 250 euros (puede dar de menos).",
+            "El máximo de 250 euros es por cada hijo inscrito en la guardería o centro y sobre sus propios gastos; la calculadora lo aplica de forma agregada (250 × número de descendientes menores de 3 años).",
+            "Solo cuentan los descendientes que den derecho al mínimo por descendientes.",
+            "La guardería o centro de educación infantil debe estar autorizado por el Departamento competente en materia de Educación."
+          ],
+          "en_vigor_desde": "2015-01-01"
+        }
       ]
     },
     "asturias": {
@@ -709,6 +1201,286 @@
       ],
       "notas": [
         "La escala y los mínimos asturianos son los de la Ley 3/2025, en vigor desde el 3-12-2025: se aplican a 2025 por estar vigentes en la fecha de devengo, sin cláusula expresa de efectos."
+      ],
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 7",
+          "titulo": "Arrendamiento de vivienda habitual",
+          "resumen": "10 % de las cantidades satisfechas por arrendamiento de la vivienda habitual, máximo 500 euros; 30 % con el límite de 1.500 euros para jóvenes de hasta 35 años, familias numerosas, familias monoparentales, mujeres víctimas de violencia de género y residentes en concejos en riesgo de despoblamiento o en crisis demográfica. En todo caso la base imponible no debe exceder de 35.000 euros (individual) ni de 45.000 euros (conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.10",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "500",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "35000",
+          "limite_conjunta": "45000",
+          "variantes": [
+            {
+              "descripcion": "jóvenes de hasta 35 años: 30 %, límite 1.500 euros",
+              "cuando": {
+                "edad_max": 35
+              },
+              "porcentaje": "0.30",
+              "maximo": "1500"
+            },
+            {
+              "descripcion": "familia numerosa: 30 %, límite 1.500 euros",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ]
+              },
+              "porcentaje": "0.30",
+              "maximo": "1500"
+            },
+            {
+              "descripcion": "familia monoparental: 30 %, límite 1.500 euros",
+              "cuando": {
+                "requiere": [
+                  "familia_monoparental"
+                ]
+              },
+              "porcentaje": "0.30",
+              "maximo": "1500"
+            },
+            {
+              "descripcion": "concejo en riesgo de despoblamiento o en crisis demográfica: 30 %, límite 1.500 euros",
+              "cuando": {
+                "requiere": [
+                  "municipio_rural_o_despoblacion"
+                ]
+              },
+              "porcentaje": "0.30",
+              "maximo": "1500"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "La ley se refiere a la «base imponible» sin más; se ha interpretado como suma de base imponible general y del ahorro.",
+            "Definición legal del municipio: concejos en riesgo de despoblamiento o en crisis demográfica, así clasificados según el Decreto 83/2025, de 23 de junio (zonificación demográfica e Indicador Sintético de Estado Demográfico del Principado de Asturias).",
+            "Las mujeres víctimas de violencia de género también tienen derecho al 30 % con límite de 1.500 euros (NO calculado: se les aplica la regla general si no cumplen otra variante).",
+            "A estos efectos son familias monoparentales las que cumplan los requisitos del art. 12 (contribuyente con descendientes a cargo que no conviva con otra persona ajena a ellos).",
+            "Cuando dos o más contribuyentes tengan derecho a la deducción respecto de la misma vivienda, el importe máximo se prorratea entre ellos por partes iguales (NO calculado).",
+            "Debe tratarse del arrendamiento de la vivienda habitual del contribuyente."
+          ],
+          "en_vigor_desde": "2025-12-31"
+        },
+        {
+          "articulo": "art. 11",
+          "titulo": "Familias numerosas",
+          "resumen": "1.000 euros para familias numerosas de categoría general y 2.000 euros para las de categoría especial, sin límite de renta. Se equiparan a la categoría general las familias de uno o dos ascendientes con dos hijos, en cuyo caso la base imponible no debe superar 35.000 euros (individual) ni 45.000 euros (conjunta).",
+          "tipo": "fija",
+          "importe": "1000",
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "alternativas": [
+            {
+              "requiere": [
+                "familia_numerosa"
+              ]
+            },
+            {
+              "unidades_min": {
+                "num_descendientes": 2
+              },
+              "unidades_max": {
+                "num_descendientes": 2
+              }
+            }
+          ],
+          "variantes": [
+            {
+              "descripcion": "familia numerosa de categoría especial: 2.000 euros",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa_especial"
+                ]
+              },
+              "importe": "2000"
+            },
+            {
+              "descripcion": "familia numerosa de categoría general: 1.000 euros sin límite de renta",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ]
+              },
+              "importe": "1000"
+            },
+            {
+              "descripcion": "familia con dos hijos equiparada a numerosa general: 1.000 euros con límite de base imponible",
+              "cuando": {
+                "unidades_min": {
+                  "num_descendientes": 2
+                },
+                "unidades_max": {
+                  "num_descendientes": 2
+                }
+              },
+              "limite_individual": "35000",
+              "limite_conjunta": "45000"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Familia numerosa: debe ostentarse el título expedido por la autoridad competente a la fecha de devengo.",
+            "Equiparación: la familia debe estar constituida, a fecha de devengo, por uno o dos ascendientes con dos hijos, sean o no comunes; la calculadora la aprecia cuando el contribuyente declara exactamente dos descendientes.",
+            "Solo se aplica en los supuestos de convivencia del contribuyente con el resto de la unidad familiar.",
+            "Cuando exista más de un contribuyente con derecho y declaren individualmente se prorratea por partes iguales (la calculadora solo lo reparte si se indican descendientes compartidos).",
+            "La ley se refiere a la «base imponible» sin más; se ha interpretado como suma de base imponible general y del ahorro."
+          ],
+          "en_vigor_desde": "2023-12-29"
+        },
+        {
+          "articulo": "art. 12",
+          "titulo": "Familias monoparentales",
+          "resumen": "500 euros para el contribuyente que tenga a su cargo descendientes y no conviva con ninguna otra persona ajena a ellos (salvo ascendientes que generen mínimo por ascendientes), con base imponible no superior a 45.000 euros.",
+          "tipo": "fija",
+          "importe": "500",
+          "requiere": [
+            "familia_monoparental"
+          ],
+          "base_limite": "base_imponible_total",
+          "limite_individual": "45000",
+          "limite_conjunta": "45000",
+          "requisitos_no_comprobados": [
+            "La ley fija un único límite de 45.000 euros de base imponible sin distinguir modalidad de tributación (se ha puesto el mismo importe en individual y conjunta). La ley se refiere a la «base imponible» sin más; se ha interpretado como suma de base imponible general y del ahorro.",
+            "Tampoco hay derecho si la suma de la renta del período y las anualidades por alimentos exentas excede de 45.000 euros.",
+            "Concepto propio de familia monoparental: contribuyente con descendientes a cargo (hijos menores, o mayores con discapacidad, que convivan y no tengan rentas anuales superiores a 8.000 euros, excluidas las exentas) que no conviva con ninguna otra persona ajena a ellos, salvo ascendientes que generen el mínimo por ascendientes.",
+            "No aplicable en los supuestos de custodia compartida.",
+            "Si la situación familiar cambia durante el ejercicio, se exige convivencia durante al menos 183 días al año."
+          ],
+          "en_vigor_desde": "2022-12-30"
+        },
+        {
+          "articulo": "art. 14 duodecies",
+          "titulo": "Cuidado de descendientes o adoptados de hasta 25 años",
+          "resumen": "600 euros por cada descendiente que genere derecho al mínimo por descendientes, siempre que la base imponible no supere 35.000 euros (individual) ni 45.000 euros (conjunta). Se prorratea por partes iguales si hay más de un contribuyente con derecho.",
+          "tipo": "fija",
+          "importe": "600",
+          "unidad": "num_descendientes",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "35000",
+          "limite_conjunta": "45000",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Incompatible con la deducción por gastos de descendientes en centros de cero a tres años del art. 14 bis (que por ello no se calcula).",
+            "Los progenitores, adoptantes o tutores deben convivir con el descendiente.",
+            "También se aplica hasta que el descendiente cumpla 26 años aunque no genere derecho al mínimo por descendientes, si cumple los restantes requisitos del art. 58 de la Ley del IRPF (NO calculado); en el período en que cumple 26 años el importe es proporcional al número de meses.",
+            "La ley se refiere a la «base imponible» sin más; se ha interpretado como suma de base imponible general y del ahorro.",
+            "Redacción dada por la Ley 5/2025, en vigor desde su publicación el 31-12-2025 (disposición final tercera), por lo que ya estaba vigente en el devengo de 2025; hasta entonces el texto preveía 500 euros por el primer descendiente y 600 por el segundo y sucesivos."
+          ],
+          "en_vigor_desde": "2025-12-31"
+        },
+        {
+          "articulo": "art. 14 quáter",
+          "titulo": "Nacimiento o adopción de segundo y sucesivos hijos en concejos en riesgo de despoblamiento o en crisis demográfica",
+          "resumen": "300 euros por cada segundo hijo y sucesivos, nacido o adoptado en el período impositivo, para residentes en concejos en riesgo de despoblamiento o en crisis demográfica, con base imponible no superior a 35.000 euros (individual) ni 45.000 euros (conjunta).",
+          "tipo": "fija",
+          "importes_por_orden": [
+            "0",
+            "300"
+          ],
+          "unidad": "hijos_nacidos_en_el_ejercicio",
+          "requiere": [
+            "municipio_rural_o_despoblacion"
+          ],
+          "base_limite": "base_imponible_total",
+          "limite_individual": "35000",
+          "limite_conjunta": "45000",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Definición legal del municipio: concejos en riesgo de despoblamiento o en crisis demográfica, así clasificados según el Decreto 83/2025, de 23 de junio (zonificación demográfica e Indicador Sintético de Estado Demográfico del Principado de Asturias). El contribuyente debe tener allí su residencia habitual.",
+            "El menor debe convivir con el declarante, y el contribuyente con el resto de la unidad familiar, a la fecha de devengo.",
+            "La ley se refiere a la «base imponible» sin más; se ha interpretado como suma de base imponible general y del ahorro."
+          ],
+          "en_vigor_desde": "2025-12-31"
+        },
+        {
+          "articulo": "art. 14 ter",
+          "titulo": "Adquisición de libros de texto y material escolar",
+          "resumen": "Importes destinados a libros de texto y material escolar de Educación Primaria y ESO, hasta un máximo por descendiente según la renta: en conjunta 100 / 75 / 50 euros (hasta 12.000 / 20.000 / 37.000 euros) y en individual 50 / 37,50 / 25 euros (hasta 6.500 / 10.000 / 26.000 euros); familias numerosas, máximo de 150 euros (conjunta) o 75 euros (individual).",
+          "tipo": "porcentaje",
+          "unidad": "num_hijos_gastos_educativos",
+          "porcentaje": "1.00",
+          "base": "gastos_libros_texto",
+          "maximo_por_unidad": "25",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "26000",
+          "limite_conjunta": "37000",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "familia numerosa, declaración conjunta: máximo 150 euros",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ],
+                "tributacion": "conjunta"
+              },
+              "maximo_por_unidad": "150",
+              "maximo": "150"
+            },
+            {
+              "descripcion": "familia numerosa, declaración individual: máximo 75 euros",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ],
+                "tributacion": "individual"
+              },
+              "maximo_por_unidad": "75",
+              "maximo": "75"
+            },
+            {
+              "descripcion": "conjunta, hasta 12.000 euros: 100 euros por descendiente",
+              "cuando": {
+                "tributacion": "conjunta",
+                "ingreso_max": "12000"
+              },
+              "maximo_por_unidad": "100"
+            },
+            {
+              "descripcion": "conjunta, entre 12.000,01 y 20.000 euros: 75 euros por descendiente",
+              "cuando": {
+                "tributacion": "conjunta",
+                "ingreso_max": "20000"
+              },
+              "maximo_por_unidad": "75"
+            },
+            {
+              "descripcion": "conjunta, entre 20.000,01 y 37.000 euros: 50 euros por descendiente",
+              "cuando": {
+                "tributacion": "conjunta"
+              },
+              "maximo_por_unidad": "50"
+            },
+            {
+              "descripcion": "individual, hasta 6.500 euros: 50 euros por descendiente",
+              "cuando": {
+                "tributacion": "individual",
+                "ingreso_max": "6500"
+              },
+              "maximo_por_unidad": "50"
+            },
+            {
+              "descripcion": "individual, entre 6.500,01 y 10.000 euros: 37,50 euros por descendiente",
+              "cuando": {
+                "tributacion": "individual",
+                "ingreso_max": "10000"
+              },
+              "maximo_por_unidad": "37.50"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "La cifra general codificada (25 euros por descendiente) es la del tramo de 10.000,01 a 26.000 euros en declaración individual; los demás tramos van como variantes.",
+            "Familias numerosas: la ley dice que «el importe máximo de la deducción será de 150 euros» (conjunta) o 75 euros (individual) sin precisar si es por descendiente; se ha codificado como tope TOTAL (criterio prudente: si fuera por descendiente la calculadora daría de menos).",
+            "La deducción debe minorarse, por cada descendiente, en las becas y ayudas públicas percibidas que cubran estos gastos (NO calculado).",
+            "Solo libros de texto y material escolar de Educación Primaria y Educación Secundaria Obligatoria.",
+            "El máximo es por descendiente sobre sus propios gastos; la calculadora lo aplica de forma agregada (máximo × número de hijos con gastos educativos).",
+            "Corresponde al ascendiente que haya satisfecho las cantidades.",
+            "La ley se refiere a la «base imponible» sin más; se ha interpretado como suma de base imponible general y del ahorro."
+          ],
+          "en_vigor_desde": "2023-12-29"
+        }
       ]
     },
     "baleares": {
@@ -835,6 +1607,239 @@
       ],
       "notas": [
         "Los mínimos de las Illes Balears se han calculado como los estatales más un 10 % (art. 2 DLeg. 1/2014), que solo alcanza a los incrementos por edad del contribuyente, a los descendientes segundo y siguientes, a los ascendientes y a la discapacidad; la ley no imprime los importes."
+      ],
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 3 bis",
+          "titulo": "Arrendamiento de la vivienda habitual",
+          "resumen": "15 % de los importes satisfechos por el arrendamiento de la vivienda habitual en las Illes Balears, máximo 530 euros anuales, para menores de 36 años y mayores de 65 años que no ejerzan actividad laboral o profesional; 20 % con máximo de 650 euros para menores de 30 años, personas con discapacidad, familias numerosas o monoparentales. Base imponible total no superior a 33.000 euros (individual) o 52.800 euros (conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "530",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "33000",
+          "limite_conjunta": "52800",
+          "alternativas": [
+            {
+              "edad_max": 35
+            },
+            {
+              "edad_min": 66
+            }
+          ],
+          "variantes": [
+            {
+              "descripcion": "menor de 30 años: 20 %, máximo 650 euros",
+              "cuando": {
+                "edad_max": 29
+              },
+              "porcentaje": "0.20",
+              "maximo": "650"
+            },
+            {
+              "descripcion": "discapacidad igual o superior al 33 %: 20 %, máximo 650 euros",
+              "cuando": {
+                "discapacidad_min": 33
+              },
+              "porcentaje": "0.20",
+              "maximo": "650"
+            },
+            {
+              "descripcion": "familia numerosa: 20 %, máximo 650 euros",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ]
+              },
+              "porcentaje": "0.20",
+              "maximo": "650"
+            },
+            {
+              "descripcion": "familia monoparental: 20 %, máximo 650 euros",
+              "cuando": {
+                "requiere": [
+                  "familia_monoparental"
+                ]
+              },
+              "porcentaje": "0.20",
+              "maximo": "650"
+            },
+            {
+              "descripcion": "ascendientes o descendientes con discapacidad a cargo: 20 %, máximo 650 euros",
+              "cuando": {
+                "unidades_min": {
+                  "num_familiares_discapacidad_a_cargo": 1
+                }
+              },
+              "porcentaje": "0.20",
+              "maximo": "650"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Mayores de 65 años: no deben ejercer ninguna actividad laboral o profesional (NO comprobado).",
+            "La calculadora solo concede la deducción a menores de 36 años o mayores de 65; el texto no deja claro si las personas con discapacidad, familias numerosas o monoparentales y autónomos de otras edades tienen derecho (si lo tuvieran, se daría de menos).",
+            "Los trabajadores autónomos de alta en el régimen especial de la Seguridad Social al menos 183 días del período también tienen derecho a las cifras mejoradas (NO calculado). Familia numerosa en los términos del art. 6 de la Ley 8/2018 y monoparental de las del art. 7.7 de esa Ley, formada por el padre, la madre o los padres que convivan con hijos sometidos a la patria potestad.",
+            "Para familias numerosas o monoparentales los límites de renta se incrementan en un 20 %, y en un 30 % para familias numerosas de categoría especial (incremento NO calculado: la calculadora aplica los límites generales y puede dar de menos).",
+            "Arrendamiento de la vivienda habitual en las Illes Balears, ocupada efectivamente por el contribuyente, con contrato de duración igual o superior a un año.",
+            "Durante al menos la mitad del período impositivo, ni el contribuyente ni ningún miembro de su unidad familiar pueden ser titulares (pleno dominio o derecho real de uso o disfrute) de otra vivienda a menos de 70 kilómetros de la arrendada, salvo que esté fuera de las Illes Balears o en otra isla o genere rendimientos del capital inmobiliario.",
+            "El contribuyente no debe tener derecho en el mismo período a ninguna deducción por inversión en vivienda habitual.",
+            "En tributación conjunta solo se benefician los contribuyentes de la unidad familiar que cumplan las condiciones y por los importes efectivamente satisfechos por ellos."
+          ],
+          "en_vigor_desde": "2026-06-14"
+        },
+        {
+          "articulo": "art. 4",
+          "titulo": "Gastos de adquisición de libros de texto",
+          "resumen": "100 % de los importes destinados a libros de texto (segundo ciclo de educación infantil, primaria, ESO, bachillerato y ciclos formativos de FP específica), hasta 220 euros por hijo que curse esos estudios (350 euros para menores de 30 años, personas con discapacidad, familias numerosas o monoparentales); base imponible total no superior a 33.000 euros (individual) o 52.800 euros (conjunta).",
+          "tipo": "porcentaje",
+          "unidad": "num_hijos_gastos_educativos",
+          "porcentaje": "1.00",
+          "base": "gastos_libros_texto",
+          "maximo_por_unidad": "220",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "33000",
+          "limite_conjunta": "52800",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "menor de 30 años: límite de 350 euros por hijo",
+              "cuando": {
+                "edad_max": 29
+              },
+              "maximo_por_unidad": "350"
+            },
+            {
+              "descripcion": "discapacidad igual o superior al 33 %: límite de 350 euros por hijo",
+              "cuando": {
+                "discapacidad_min": 33
+              },
+              "maximo_por_unidad": "350"
+            },
+            {
+              "descripcion": "familia numerosa: límite de 350 euros por hijo",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ]
+              },
+              "maximo_por_unidad": "350"
+            },
+            {
+              "descripcion": "familia monoparental: límite de 350 euros por hijo",
+              "cuando": {
+                "requiere": [
+                  "familia_monoparental"
+                ]
+              },
+              "maximo_por_unidad": "350"
+            },
+            {
+              "descripcion": "ascendientes o descendientes con discapacidad a cargo: límite de 350 euros por hijo",
+              "cuando": {
+                "unidades_min": {
+                  "num_familiares_discapacidad_a_cargo": 1
+                }
+              },
+              "maximo_por_unidad": "350"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "El límite es por cada hijo que curse los estudios indicados y sobre sus propios gastos; la calculadora lo aplica de forma agregada (límite × número de hijos con gastos educativos).",
+            "Solo son deducibles los libros de texto (no el resto de material escolar) editados para los currículos de segundo ciclo de infantil, primaria, ESO, bachillerato y ciclos formativos de FP específica.",
+            "Solo cuentan los hijos que den derecho al mínimo por descendientes.",
+            "Los trabajadores autónomos de alta en el régimen especial de la Seguridad Social al menos 183 días del período también tienen derecho a las cifras mejoradas (NO calculado). Familia numerosa en los términos del art. 6 de la Ley 8/2018 y monoparental de las del art. 7.7 de esa Ley, formada por el padre, la madre o los padres que convivan con hijos sometidos a la patria potestad.",
+            "Para familias numerosas o monoparentales los límites de renta se incrementan en un 20 %, y en un 30 % para familias numerosas de categoría especial (incremento NO calculado: la calculadora aplica los límites generales y puede dar de menos).",
+            "Justificación documental mediante facturas o documentos equivalentes."
+          ],
+          "en_vigor_desde": "2025-07-25"
+        },
+        {
+          "articulo": "art. 4 bis",
+          "titulo": "Gastos de aprendizaje extraescolar de idiomas extranjeros",
+          "resumen": "15 % de los importes destinados al aprendizaje extraescolar de idiomas extranjeros por los hijos que cursen los estudios del art. 4, con el límite de 110 euros por hijo; base imponible total no superior a 33.000 euros (individual) o 52.800 euros (conjunta).",
+          "tipo": "porcentaje",
+          "unidad": "num_hijos_gastos_educativos",
+          "porcentaje": "0.15",
+          "base": "gastos_ensenanza_idiomas",
+          "maximo_por_unidad": "110",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "33000",
+          "limite_conjunta": "52800",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "El límite de 110 euros es por cada hijo que curse los estudios del art. 4 (segundo ciclo de infantil, primaria, ESO, bachillerato, ciclos formativos de FP específica) y sobre sus propios gastos; la calculadora lo aplica de forma agregada (110 × número de hijos con gastos educativos).",
+            "Solo aprendizaje EXTRAESCOLAR de idiomas extranjeros.",
+            "Solo cuentan los hijos que den derecho al mínimo por descendientes.",
+            "Justificación documental mediante facturas o documentos equivalentes."
+          ],
+          "en_vigor_desde": "2022-12-31"
+        },
+        {
+          "articulo": "art. 6",
+          "titulo": "Declarantes con discapacidad",
+          "resumen": "88 euros por contribuyente con discapacidad física o sensorial de grado igual o superior al 33 % e inferior al 65 %, y 165 euros si el grado es igual o superior al 65 % (también 165 euros si es psíquica de grado igual o superior al 33 %, no calculado); base imponible total no superior a 33.000 euros (individual) o 52.800 euros (conjunta).",
+          "tipo": "fija",
+          "importe": "88",
+          "discapacidad_min": 33,
+          "base_limite": "base_imponible_total",
+          "limite_individual": "33000",
+          "limite_conjunta": "52800",
+          "variantes": [
+            {
+              "descripcion": "grado igual o superior al 65 %: 165 euros",
+              "cuando": {
+                "discapacidad_min": 65
+              },
+              "importe": "165"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Si la discapacidad es psíquica de grado igual o superior al 33 % e inferior al 65 %, la deducción es de 165 euros y no de 88 (NO calculado: la calculadora no conoce la naturaleza de la discapacidad y da de menos).",
+            "También se aplica por cada miembro de la unidad familiar residente en las Illes Balears con discapacidad (p. ej. descendientes), con los mismos importes; NO calculado.",
+            "Si los cónyuges tributan individualmente y tienen derecho al mínimo por descendientes, cada uno aplica íntegramente la deducción."
+          ],
+          "en_vigor_desde": "2022-12-31"
+        },
+        {
+          "articulo": "art. 6 quinquies",
+          "titulo": "Determinados gastos relativos a personas mayores de 65 años o a personas con discapacidad",
+          "resumen": "40 %, con un límite de 660 euros, de los gastos por estancias en residencias o centros de día, servicios de custodia, comedor y actividades en centros de día, o contratación laboral de un cuidador, prestados al contribuyente o a sus ascendientes mayores de 65 años, o a contribuyentes o personas a cargo con discapacidad igual o superior al 33 %; base imponible total no superior a 33.000 euros (individual) o 52.800 euros (conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.40",
+          "base": "gastos_cuidado_familiares",
+          "maximo": "660",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "33000",
+          "limite_conjunta": "52800",
+          "alternativas": [
+            {
+              "edad_min": 66
+            },
+            {
+              "unidades_min": {
+                "num_ascendientes_mayores_65": 1
+              }
+            },
+            {
+              "discapacidad_min": 33
+            },
+            {
+              "unidades_min": {
+                "num_familiares_discapacidad_a_cargo": 1
+              }
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Solo cuentan los gastos por servicios prestados a la persona mayor de 65 años o con discapacidad (estancias en residencias o centros de día; custodia, comedor y actividades en centros de día; contratación laboral de un cuidador). Los gastos de cuidado de hijos sin discapacidad NO dan derecho a esta deducción aunque se hayan indicado en el mismo dato.",
+            "Incompatible con la deducción por gastos de descendientes menores de seis años por motivos de conciliación del art. 6 bis (no calculada).",
+            "Se ha codificado un único límite de 660 euros por contribuyente (el texto podría entenderse por persona atendida; en tal caso la calculadora daría de menos).",
+            "Los ascendientes deben dar derecho al mínimo por ascendientes, y en los supuestos de discapacidad el contribuyente debe tener derecho a algún componente del mínimo por discapacidad.",
+            "El pago debe hacerse mediante tarjeta, transferencia bancaria, cheque nominativo o ingreso en cuenta; el cuidador contratado debe estar dado de alta en la Seguridad Social.",
+            "Respecto de descendientes comunes a cargo, si los dos contribuyentes declaran individualmente se prorratea por partes iguales (NO calculado); respecto de ascendientes comunes cada contribuyente la aplica íntegramente."
+          ],
+          "en_vigor_desde": "2024-12-13"
+        }
       ]
     },
     "canarias": {
@@ -952,6 +1957,202 @@
       ],
       "notas": [
         "La escala canaria es la de la Ley 9/2025, publicada el 29-12-2025 con efectos desde el 1-1-2025."
+      ],
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 10",
+          "titulo": "Nacimiento o adopción de hijos",
+          "resumen": "Por cada hijo nacido o adoptado en el periodo impositivo que conviva con el contribuyente: 265 euros el primero o segundo, 530 el tercero, 796 el cuarto y 928 el quinto o sucesivos; rentas no superiores a 46.455 euros (61.770 en conjunta).",
+          "tipo": "fija",
+          "importes_por_orden": [
+            "265",
+            "265",
+            "530",
+            "796",
+            "928"
+          ],
+          "unidad": "hijos_nacidos_en_el_ejercicio",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "46455",
+          "limite_conjunta": "61770",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "El hijo debe convivir con el contribuyente; el número de orden se determina por los hijos (naturales o adoptivos) que convivan con él a la fecha de devengo.",
+            "IMPORTE ADICIONAL NO CALCULADO: si el hijo nacido o adoptado tiene discapacidad igual o superior al 65 %, 600 euros más (primer o segundo hijo con esa discapacidad) o 1.100 euros más (tercero o posterior).",
+            "Si ambos progenitores tienen derecho y no tributan conjuntamente, el importe se prorratea por partes iguales."
+          ],
+          "en_vigor_desde": "2026-01-01"
+        },
+        {
+          "articulo": "art. 11.1.a)",
+          "titulo": "Contribuyentes con discapacidad",
+          "resumen": "400 euros por contribuyente con discapacidad igual o superior al 33 %, si sus rentas (base imponible general y del ahorro) no superan 46.455 euros (61.770 en tributación conjunta).",
+          "tipo": "fija",
+          "importe": "400",
+          "discapacidad_min": 33,
+          "base_limite": "base_imponible_total",
+          "limite_individual": "46455",
+          "limite_conjunta": "61770",
+          "requisitos_no_comprobados": [
+            "En tributación conjunta la deducción es por cada contribuyente con discapacidad (la calculadora solo mira al declarante)."
+          ],
+          "en_vigor_desde": "2026-01-01"
+        },
+        {
+          "articulo": "art. 11.1.b)",
+          "titulo": "Contribuyentes mayores de 65 años",
+          "resumen": "160 euros por contribuyente mayor de 65 años, si sus rentas (base imponible general y del ahorro) no superan 46.455 euros (61.770 en tributación conjunta).",
+          "tipo": "fija",
+          "importe": "160",
+          "edad_min": 65,
+          "base_limite": "base_imponible_total",
+          "limite_individual": "46455",
+          "limite_conjunta": "61770",
+          "requisitos_no_comprobados": [
+            "La ley dice \"mayor de 65 años\"; se ha codificado como 65 años cumplidos a la fecha de devengo.",
+            "En tributación conjunta la deducción es por cada contribuyente mayor de 65 años (la calculadora solo mira al declarante)."
+          ],
+          "en_vigor_desde": "2026-01-01"
+        },
+        {
+          "articulo": "art. 11 ter",
+          "titulo": "Familias monoparentales",
+          "resumen": "133 euros (cantidad única) para contribuyentes con descendientes a su cargo que no convivan con ninguna otra persona, con rentas no superiores a 46.455 euros (61.770 en conjunta).",
+          "tipo": "fija",
+          "importe": "133",
+          "requiere": [
+            "familia_monoparental"
+          ],
+          "base_limite": "base_imponible_total",
+          "limite_individual": "46455",
+          "limite_conjunta": "61770",
+          "requisitos_no_comprobados": [
+            "No convivir con ninguna persona distinta de los descendientes, salvo ascendientes que generen derecho al mínimo por ascendientes.",
+            "Los descendientes computables son hijos menores de edad o mayores con discapacidad que convivan y no tengan rentas anuales, excluidas las exentas, superiores a 8.000 euros (o internados en centros especializados).",
+            "Si la situación familiar cambia durante el año, la convivencia debe darse al menos 183 días."
+          ],
+          "en_vigor_desde": "2026-01-01"
+        },
+        {
+          "articulo": "art. 12",
+          "titulo": "Gastos de custodia en guarderías",
+          "resumen": "18 % de los gastos de guardería de descendientes menores de 3 años, con un máximo de 530 euros anuales por descendiente; rentas no superiores a 46.455 euros (61.770 en conjunta).",
+          "tipo": "porcentaje",
+          "unidad": "num_descendientes_menores_3",
+          "porcentaje": "0.18",
+          "base": "gastos_guarderia",
+          "maximo_por_unidad": "530",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "46455",
+          "limite_conjunta": "61770",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Guardería autorizada para su apertura y funcionamiento; gastos justificados con factura y declaración del NIF de la guardería.",
+            "El descendiente debe convivir con el contribuyente; el máximo de 530 euros se aplica a los gastos de cada descendiente por separado.",
+            "En el año en que el niño cumple 3 años la deducción y su límite se calculan en proporción a los meses en que se cumplen los requisitos (la calculadora no cuenta a ese niño como menor de 3 años).",
+            "Si dos o más contribuyentes tienen derecho y no tributan conjuntamente, se prorratea por partes iguales.",
+            "Las bases de las deducciones se minoran en las ayudas públicas exentas que cubran los gastos (art. 18.3)."
+          ],
+          "en_vigor_desde": "2026-01-01"
+        },
+        {
+          "articulo": "art. 13",
+          "titulo": "Familia numerosa",
+          "resumen": "597 euros por familia numerosa de categoría general y 796 euros si es de categoría especial (1.326 y 1.459 euros si hay cónyuge o descendiente con discapacidad igual o superior al 65 %). Sin límite de renta.",
+          "tipo": "fija",
+          "importe": "597",
+          "requiere": [
+            "familia_numerosa"
+          ],
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "familia numerosa de categoría especial",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa_especial"
+                ]
+              },
+              "importe": "796"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "IMPORTE SUPERIOR NO CALCULADO: 1.326 euros (general) o 1.459 euros (especial) si algún cónyuge o descendiente con derecho al mínimo personal y familiar tiene discapacidad igual o superior al 65 %.",
+            "Poseer el título de familia numerosa a la fecha de devengo.",
+            "La practica el contribuyente con quien conviva el resto de la familia; si conviven con más de un contribuyente, se prorratea por partes iguales."
+          ],
+          "en_vigor_desde": "2026-01-01"
+        },
+        {
+          "articulo": "art. 15",
+          "titulo": "Alquiler de vivienda habitual",
+          "resumen": "24 % del alquiler de la vivienda habitual con un máximo de 740 euros anuales (760 si el contribuyente tiene menos de 40 años o 75 o más); rentas no superiores a 46.455 euros (incrementados en 15.315 en conjunta) y alquiler superior al 10 % de las rentas.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.24",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "740",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "46455",
+          "limite_conjunta": "61770",
+          "gasto_minimo_sobre_base": "0.10",
+          "variantes": [
+            {
+              "descripcion": "contribuyente con edad inferior a 40 años",
+              "cuando": {
+                "edad_max": 39
+              },
+              "maximo": "760"
+            },
+            {
+              "descripcion": "contribuyente con edad igual o superior a 75 años",
+              "cuando": {
+                "edad_min": 75
+              },
+              "maximo": "760"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Vivienda habitual: aquella en la que el contribuyente resida por un plazo superior a un año.",
+            "Declarar el NIF del arrendador, la identificación catastral de la vivienda y el canon arrendaticio anual.",
+            "Para comprobar que el alquiler excede del 10 % de las rentas se descuenta el importe de las subvenciones al alquiler percibidas.",
+            "El límite en tributación conjunta (61.770 euros) no figura literalmente en el art. 15: resulta de sumar 46.455 + 15.315 euros.",
+            "Las bases de las deducciones se minoran en las ayudas públicas exentas que cubran los gastos (art. 18.3)."
+          ],
+          "en_vigor_desde": "2026-01-01"
+        },
+        {
+          "articulo": "art. 16 quinquies",
+          "titulo": "Cuotas a la Seguridad Social por empleados o empleadas de hogar",
+          "resumen": "20 % de las cuotas a la Seguridad Social por un empleado de hogar, con un máximo de 500 euros anuales, para contribuyentes con derecho al mínimo por descendientes que trabajen, de 75 o más años, o mayores de 65 con determinada discapacidad.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "cotizaciones_empleada_hogar",
+          "maximo": "500",
+          "base_limite": "base_imponible_total",
+          "alternativas": [
+            {
+              "unidades_min": {
+                "num_descendientes": 1
+              }
+            },
+            {
+              "edad_min": 75
+            },
+            {
+              "edad_min": 65,
+              "discapacidad_min": 65
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "En el supuesto de contribuyentes con derecho al mínimo por descendientes, es necesario además percibir rendimientos del trabajo o de actividades económicas (la calculadora no lo comprueba).",
+            "SUPUESTO NO CALCULADO: mayores de 65 años con discapacidad cognitiva, psicosocial, intelectual o del desarrollo igual o superior al 33 % e inferior al 65 % (la calculadora solo admite a los mayores de 65 con un grado igual o superior al 65 %, sin distinguir el tipo de discapacidad).",
+            "Solo la cotización anual de un empleado del hogar familiar que sea la vivienda habitual del empleador; máximo de 500 euros con independencia del número de personas contratadas.",
+            "Las cuotas se atribuyen a quien figure como empleador (por mitades en matrimonios en gananciales). Debe declararse el NIF/NIE del empleado.",
+            "No acumular sobre las mismas cuotas con la deducción del art. 16 quater.4 (art. 18.2)."
+          ],
+          "en_vigor_desde": "2025-01-01"
+        }
       ]
     },
     "cantabria": {
@@ -1029,6 +2230,85 @@
         "art. 2.18: fomento del ejercicio físico y la práctica deportiva",
         "art. 2.19: adquisición o rehabilitación de vivienda habitual para menores de treinta y seis años",
         "art. 2.20: compromiso medioambiental"
+      ],
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 2.11.1",
+          "titulo": "Arrendamiento de vivienda habitual en municipios en riesgo de despoblamiento",
+          "resumen": "20 % del alquiler de la vivienda habitual situada en un municipio afectado por riesgo de despoblamiento, hasta 600 euros anuales en tributación individual y 1.200 euros en conjunta.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "600",
+          "requiere": [
+            "municipio_rural_o_despoblacion"
+          ],
+          "base_limite": "base_imponible_total",
+          "variantes": [
+            {
+              "descripcion": "tributación conjunta",
+              "cuando": {
+                "tributacion": "conjunta"
+              },
+              "maximo": "1200"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Municipio en riesgo de despoblamiento: los incluidos en la orden de la Consejería competente por la que se aprueba la delimitación de municipios afectados por riesgo de despoblamiento en Cantabria; la residencia habitual se determina según el art. 72 de la Ley del IRPF.",
+            "La vivienda arrendada debe estar situada en uno de esos municipios y ser (o ir a ser) la vivienda habitual del arrendatario.",
+            "Cantidades justificadas con factura o recibo y pagadas por tarjeta, transferencia, cheque nominativo o ingreso en cuenta (nunca en efectivo)."
+          ],
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "articulo": "art. 2.8",
+          "titulo": "Gastos de guardería",
+          "resumen": "15 % de los gastos de guardería de los hijos, con un límite de 300 euros anuales por hijo menor de tres años; 30 % con límite de 600 euros por hijo si la vivienda habitual está en un municipio en riesgo de despoblamiento (art. 2.11.2).",
+          "tipo": "porcentaje",
+          "unidad": "num_descendientes_menores_3",
+          "porcentaje": "0.15",
+          "base": "gastos_guarderia",
+          "maximo_por_unidad": "300",
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "vivienda habitual en municipio afectado por riesgo de despoblamiento (art. 2.11.2)",
+              "cuando": {
+                "requiere": [
+                  "municipio_rural_o_despoblacion"
+                ]
+              },
+              "porcentaje": "0.30",
+              "maximo_por_unidad": "600"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Gastos justificados con factura y pagados por tarjeta, transferencia, cheque nominativo o ingreso en cuenta (nunca en efectivo).",
+            "En tributación individual la deducción se prorratea entre los progenitores según los gastos justificados por cada uno (no por mitades), sin que entre ambos superen el máximo por hijo.",
+            "El límite se aplica a los gastos de cada hijo menor de tres años por separado.",
+            "Municipio en riesgo de despoblamiento: los incluidos en la orden de la Consejería competente por la que se aprueba la delimitación de municipios afectados por riesgo de despoblamiento en Cantabria; la residencia habitual se determina según el art. 72 de la Ley del IRPF."
+          ],
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "articulo": "art. 2.9",
+          "titulo": "Familias monoparentales",
+          "resumen": "200 euros anuales para el titular de familia monoparental, siempre que la base liquidable después de las reducciones por mínimo personal y familiar sea inferior a 31.485 euros.",
+          "tipo": "fija",
+          "importe": "200",
+          "requiere": [
+            "familia_monoparental"
+          ],
+          "base_limite": "base_liquidable_total_menos_minimos",
+          "limite_individual": "31485",
+          "limite_es_estricto": true,
+          "requisitos_no_comprobados": [
+            "Familia monoparental a estos efectos: en casos de separación legal o sin vínculo matrimonial, la madre o el padre y los hijos que convivan con una u otro y sean menores de edad (salvo los que vivan independientes con consentimiento de los padres) o mayores incapacitados judicialmente sujetos a patria potestad prorrogada o rehabilitada.",
+            "La ley no fija un límite distinto para la tributación conjunta: se aplica el mismo de 31.485 euros."
+          ],
+          "en_vigor_desde": "2024-01-01"
+        }
       ]
     },
     "castilla_la_mancha": {
@@ -1110,6 +2390,335 @@
         "art. 12 septies: inversión en entidades de la economía social",
         "art. 12 octies: ahorro-inversión en la adquisición o construcción de la primera vivienda habitual",
         "art. 12 nonies: gastos de controles veterinarios y vacunación por la tenencia de perros de asistencia"
+      ],
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 9",
+          "titulo": "Arrendamiento de vivienda habitual por menores de 36 años",
+          "resumen": "15 % del alquiler de la vivienda habitual, con un máximo de 500 euros, para menores de 36 años (20 % con un máximo de 612 euros en municipios pequeños); base imponible general más ahorro menos el mínimo por descendientes no superior a 12.500 euros (25.000 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "500",
+          "edad_max": 35,
+          "base_limite": "base_imponible_total_menos_minimo_descendientes",
+          "limite_individual": "12500",
+          "limite_conjunta": "25000",
+          "variantes": [
+            {
+              "descripcion": "domicilio habitual en municipio de hasta 2.500 habitantes, o de más de 2.500 y hasta 10.000 habitantes a más de 30 km de un municipio de más de 50.000",
+              "cuando": {
+                "requiere": [
+                  "municipio_rural_o_despoblacion"
+                ]
+              },
+              "porcentaje": "0.20",
+              "maximo": "612"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Consignar en la autoliquidación el NIF del arrendador.",
+            "Vivienda que constituya o vaya a constituir la residencia habitual en Castilla-La Mancha.",
+            "Variante del 20 % / 612 euros: el domicilio habitual debe estar en un municipio de Castilla-La Mancha de hasta 2.500 habitantes, o de más de 2.500 y hasta 10.000 habitantes que diste más de 30 kilómetros de un municipio de más de 50.000 habitantes (padrón a 1 de enero del año de devengo).",
+            "Incompatible con las demás deducciones por arrendamiento (arts. 9 bis, 9 ter, 9 quáter y 9 quinquies).",
+            "No se calcula la deducción incompatible por arrendamiento vinculado a dación en pago (art. 9 bis)."
+          ],
+          "en_vigor_desde": "2026-03-31"
+        },
+        {
+          "articulo": "art. 9 ter",
+          "titulo": "Arrendamiento de vivienda habitual por familias numerosas",
+          "resumen": "Para miembros de familia numerosa: 15 % del alquiler de la vivienda habitual, con un máximo de 500 euros; base imponible general más ahorro menos el mínimo por descendientes no superior a 12.500 euros (25.000 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "500",
+          "requiere": [
+            "familia_numerosa"
+          ],
+          "base_limite": "base_imponible_total_menos_minimo_descendientes",
+          "limite_individual": "12500",
+          "limite_conjunta": "25000",
+          "incompatible_con": [
+            "art. 9"
+          ],
+          "requisitos_no_comprobados": [
+            "Consignar en la autoliquidación el NIF del arrendador.",
+            "Vivienda que constituya o vaya a constituir la residencia habitual en Castilla-La Mancha.",
+            "Tener reconocida la condición de familia numerosa a la fecha de devengo y poseer el título.",
+            "El límite de la deducción se prorratea por los días de vigencia del arrendamiento en el periodo impositivo y, si dos o más declarantes tienen derecho por la misma vivienda, a partes iguales entre ellos (la calculadora aplica el máximo íntegro).",
+            "No se calcula la deducción incompatible por arrendamiento vinculado a dación en pago (art. 9 bis)."
+          ],
+          "en_vigor_desde": "2026-03-31"
+        },
+        {
+          "articulo": "art. 9 quáter",
+          "titulo": "Arrendamiento de vivienda habitual por familias monoparentales",
+          "resumen": "Para el padre o la madre de una familia monoparental: 15 % del alquiler de la vivienda habitual, con un máximo de 500 euros; base imponible general más ahorro menos el mínimo por descendientes no superior a 12.500 euros (25.000 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "500",
+          "requiere": [
+            "familia_monoparental"
+          ],
+          "base_limite": "base_imponible_total_menos_minimo_descendientes",
+          "limite_individual": "12500",
+          "limite_conjunta": "25000",
+          "incompatible_con": [
+            "art. 9",
+            "art. 9 ter"
+          ],
+          "requisitos_no_comprobados": [
+            "Consignar en la autoliquidación el NIF del arrendador.",
+            "Vivienda que constituya o vaya a constituir la residencia habitual en Castilla-La Mancha.",
+            "Familia monoparental en los términos del art. 2 bis (madre o padre separados legalmente o sin vínculo matrimonial, con hijos que dependan económicamente de forma exclusiva).",
+            "El límite de la deducción se prorratea por los días de vigencia del arrendamiento en el periodo impositivo y, si dos o más declarantes tienen derecho por la misma vivienda, a partes iguales entre ellos (la calculadora aplica el máximo íntegro).",
+            "No se calcula la deducción incompatible por arrendamiento vinculado a dación en pago (art. 9 bis)."
+          ],
+          "en_vigor_desde": "2026-03-31"
+        },
+        {
+          "articulo": "art. 9 quinquies",
+          "titulo": "Arrendamiento de vivienda habitual por personas con discapacidad",
+          "resumen": "Para contribuyentes con discapacidad igual o superior al 65 %: 15 % del alquiler de la vivienda habitual, con un máximo de 500 euros; base imponible general más ahorro menos el mínimo por descendientes no superior a 12.500 euros (25.000 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "500",
+          "discapacidad_min": 65,
+          "base_limite": "base_imponible_total_menos_minimo_descendientes",
+          "limite_individual": "12500",
+          "limite_conjunta": "25000",
+          "incompatible_con": [
+            "art. 9",
+            "art. 9 ter",
+            "art. 9 quáter"
+          ],
+          "requisitos_no_comprobados": [
+            "Consignar en la autoliquidación el NIF del arrendador.",
+            "Vivienda que constituya o vaya a constituir la residencia habitual en Castilla-La Mancha.",
+            "Tener derecho al mínimo por discapacidad del contribuyente.",
+            "El límite de la deducción se prorratea por los días de vigencia del arrendamiento en el periodo impositivo y, si dos o más declarantes tienen derecho por la misma vivienda, a partes iguales entre ellos (la calculadora aplica el máximo íntegro).",
+            "No se calcula la deducción incompatible por arrendamiento vinculado a dación en pago (art. 9 bis)."
+          ],
+          "en_vigor_desde": "2026-03-31"
+        },
+        {
+          "articulo": "art. 2",
+          "titulo": "Familia numerosa",
+          "resumen": "200 euros por familia numerosa de categoría general y 400 euros si es de categoría especial (300 y 900 si hay cónyuge o descendiente con discapacidad igual o superior al 65 %); base imponible general más ahorro no superior a 27.000 euros (36.000 en conjunta).",
+          "tipo": "fija",
+          "importe": "200",
+          "requiere": [
+            "familia_numerosa"
+          ],
+          "base_limite": "base_imponible_total",
+          "limite_individual": "27000",
+          "limite_conjunta": "36000",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "familia numerosa de categoría especial",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa_especial"
+                ]
+              },
+              "importe": "400"
+            }
+          ],
+          "incompatible_con": [
+            "art. 9 ter"
+          ],
+          "requisitos_no_comprobados": [
+            "IMPORTE SUPERIOR NO CALCULADO: 300 euros (general) o 900 euros (especial) si algún cónyuge o descendiente tiene discapacidad igual o superior al 65 % y genera el mínimo por discapacidad.",
+            "Tener reconocida la condición de familia numerosa a la fecha de devengo.",
+            "Incompatible con la deducción por arrendamiento por familias numerosas (art. 9 ter): si se ha aplicado esta, la calculadora no aplica la del art. 2 aunque pudiera ser mayor.",
+            "Se aplican las normas del mínimo por descendientes (prorrateo entre contribuyentes con derecho); si alguno supera el límite de renta, el importe de los demás se reduce a su proporción (art. 13.4)."
+          ],
+          "en_vigor_desde": "2022-02-08"
+        },
+        {
+          "articulo": "art. 2 bis",
+          "titulo": "Familia monoparental",
+          "resumen": "200 euros para el padre o la madre que forme parte de una familia monoparental a la fecha de devengo; base imponible general más ahorro no superior a 27.000 euros (36.000 en conjunta).",
+          "tipo": "fija",
+          "importe": "200",
+          "requiere": [
+            "familia_monoparental"
+          ],
+          "base_limite": "base_imponible_total",
+          "limite_individual": "27000",
+          "limite_conjunta": "36000",
+          "incompatible_con": [
+            "art. 9 quáter"
+          ],
+          "requisitos_no_comprobados": [
+            "Familia monoparental: madre o padre separados legalmente o sin vínculo matrimonial con hijos menores (o mayores con medidas de apoyo a su capacidad jurídica) que convivan y dependan económicamente de forma exclusiva: derecho a la totalidad del mínimo por descendientes y no percibir anualidades por alimentos por ellos.",
+            "Incompatible con la deducción por arrendamiento por familias monoparentales (art. 9 quáter): si se ha aplicado esta, la calculadora no aplica la del art. 2 bis aunque pudiera ser mayor."
+          ],
+          "en_vigor_desde": "2022-02-08"
+        },
+        {
+          "articulo": "art. 3",
+          "titulo": "Libros de texto (gastos de educación)",
+          "resumen": "Importe de los libros de texto de las enseñanzas del sistema educativo, hasta un máximo por hijo que depende de la base imponible general más ahorro menos el mínimo por descendientes: en individual 100, 75 o 50 euros (hasta 6.500, 10.000 o 12.500 euros); en conjunta 200, 100 o 75 euros (hasta 12.000, 20.000 o 25.000); familias numerosas 150 euros (individual, hasta 30.000) o 300 euros (conjunta, hasta 40.000).",
+          "tipo": "porcentaje",
+          "unidad": "num_hijos_gastos_educativos",
+          "porcentaje": "1",
+          "base": "gastos_libros_texto",
+          "maximo_por_unidad": "50",
+          "base_limite": "base_imponible_total_menos_minimo_descendientes",
+          "limite_individual": "12500",
+          "limite_conjunta": "25000",
+          "variantes": [
+            {
+              "descripcion": "familia numerosa, declaración conjunta",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ],
+                "tributacion": "conjunta"
+              },
+              "maximo_por_unidad": "300",
+              "limite_conjunta": "40000"
+            },
+            {
+              "descripcion": "familia numerosa, declaración individual",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ],
+                "tributacion": "individual"
+              },
+              "maximo_por_unidad": "150",
+              "limite_individual": "30000"
+            },
+            {
+              "descripcion": "declaración conjunta, hasta 12.000 euros",
+              "cuando": {
+                "tributacion": "conjunta",
+                "ingreso_max": "12000"
+              },
+              "maximo_por_unidad": "200"
+            },
+            {
+              "descripcion": "declaración conjunta, entre 12.000,01 y 20.000 euros",
+              "cuando": {
+                "tributacion": "conjunta",
+                "ingreso_max": "20000"
+              },
+              "maximo_por_unidad": "100"
+            },
+            {
+              "descripcion": "declaración conjunta, entre 20.000,01 y 25.000 euros",
+              "cuando": {
+                "tributacion": "conjunta"
+              },
+              "maximo_por_unidad": "75"
+            },
+            {
+              "descripcion": "declaración individual, hasta 6.500 euros",
+              "cuando": {
+                "tributacion": "individual",
+                "ingreso_max": "6500"
+              },
+              "maximo_por_unidad": "100"
+            },
+            {
+              "descripcion": "declaración individual, entre 6.500,01 y 10.000 euros",
+              "cuando": {
+                "tributacion": "individual",
+                "ingreso_max": "10000"
+              },
+              "maximo_por_unidad": "75"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "PARTE NO CALCULADA: el mismo máximo por hijo cubre también el 15 % de los gastos de enseñanza extraescolar de idiomas, de refuerzo o apoyo fuera del centro, de alta de internet y de estudio y residencia fuera del municipio (art. 3.1.b); la calculadora solo computa los libros de texto.",
+            "Solo hijos o descendientes escolarizados que den derecho al mínimo por descendientes; libros editados para las enseñanzas del art. 3.2 de la Ley Orgánica 2/2006.",
+            "La deducción se minora en las becas y ayudas públicas que cubran estos gastos; hay que conservar los justificantes de pago.",
+            "Se aplican las normas del mínimo por descendientes de la Ley 35/2006 (art. 13.4)."
+          ],
+          "en_vigor_desde": "2023-02-01"
+        },
+        {
+          "articulo": "art. 3 bis",
+          "titulo": "Gastos de guardería",
+          "resumen": "30 % de los gastos de custodia de hijos menores de 3 años en guarderías o centros de educación infantil, con un máximo de 500 euros por hijo inscrito; base imponible general más ahorro no superior a 27.000 euros (36.000 en conjunta).",
+          "tipo": "porcentaje",
+          "unidad": "num_descendientes_menores_3",
+          "porcentaje": "0.30",
+          "base": "gastos_guarderia",
+          "maximo_por_unidad": "500",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "27000",
+          "limite_conjunta": "36000",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "El máximo de 500 euros es por cada hija o hijo inscrito en la guardería (se aplica a los gastos de cada uno por separado) y solo cuentan los que den derecho al mínimo por descendientes.",
+            "En el período impositivo en que el hijo cumple 3 años el límite es de 250 euros (la calculadora no cuenta a ese hijo como menor de 3 años).",
+            "Centro autorizado por la consejería competente en educación; gastos de preinscripción, matrícula, asistencia y alimentación por meses completos, que no sean retribución en especie exenta.",
+            "Se restan las becas o ayudas públicas que cubran los gastos de custodia.",
+            "Si los hijos conviven con más de un contribuyente, la deducción se prorratea conforme al derecho al mínimo por descendientes."
+          ],
+          "en_vigor_desde": "2023-02-01"
+        },
+        {
+          "articulo": "art. 4",
+          "titulo": "Discapacidad del contribuyente",
+          "resumen": "300 euros para contribuyentes con discapacidad acreditada igual o superior al 65 % con derecho al mínimo por discapacidad; base imponible general más ahorro no superior a 27.000 euros (36.000 en conjunta).",
+          "tipo": "fija",
+          "importe": "300",
+          "discapacidad_min": 65,
+          "base_limite": "base_imponible_total",
+          "limite_individual": "27000",
+          "limite_conjunta": "36000",
+          "incompatible_con": [
+            "art. 9 quinquies"
+          ],
+          "requisitos_no_comprobados": [
+            "Tener derecho al mínimo por discapacidad del contribuyente.",
+            "Incompatible con la deducción por arrendamiento por personas con discapacidad (art. 9 quinquies): si se ha aplicado esta, la calculadora no aplica la del art. 4 aunque pudiera ser mayor.",
+            "Incompatible, respecto de la misma persona, con la deducción por discapacidad de ascendientes o descendientes (art. 5)."
+          ],
+          "en_vigor_desde": "2022-02-08"
+        },
+        {
+          "articulo": "art. 6.1",
+          "titulo": "Contribuyentes mayores de 75 años",
+          "resumen": "150 euros para contribuyentes mayores de 75 años (si tienen discapacidad igual o superior al 65 % se aplica en su lugar la del art. 4); base imponible general más ahorro no superior a 27.000 euros (36.000 en conjunta).",
+          "tipo": "fija",
+          "importe": "150",
+          "edad_min": 75,
+          "discapacidad_max": 64,
+          "base_limite": "base_imponible_total",
+          "limite_individual": "27000",
+          "limite_conjunta": "36000",
+          "requisitos_no_comprobados": [
+            "No residir más de treinta días naturales del período impositivo en centros residenciales de mayores de la Junta o en plazas concertadas o subvencionadas (salvo convalecencias acreditadas).",
+            "La ley dice \"mayores de 75 años\"; se ha codificado como 75 años cumplidos a la fecha de devengo."
+          ],
+          "en_vigor_desde": "2022-02-08"
+        },
+        {
+          "articulo": "art. 6.2",
+          "titulo": "Cuidado de ascendientes mayores de 75 años",
+          "resumen": "150 euros por el cuidado de cada ascendiente mayor de 75 años que dé derecho al mínimo por ascendientes mayores de 75 años; base imponible general más ahorro no superior a 27.000 euros (36.000 en conjunta).",
+          "tipo": "fija",
+          "importe": "150",
+          "unidad": "num_ascendientes_mayores_75",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "27000",
+          "limite_conjunta": "36000",
+          "requisitos_no_comprobados": [
+            "El ascendiente debe causar derecho al mínimo por ascendientes mayores de 75 años; si varios contribuyentes tienen derecho se prorratea como el mínimo.",
+            "No se aplica por ascendientes que residan más de treinta días naturales en centros residenciales de mayores de la Junta o en plazas concertadas o subvencionadas.",
+            "Si el ascendiente tiene discapacidad igual o superior al 65 % corresponde la deducción del art. 5 (300 euros, no calculada) en lugar de esta."
+          ],
+          "en_vigor_desde": "2022-02-08"
+        }
       ]
     },
     "castilla_y_leon": {
@@ -1203,6 +2812,174 @@
       ],
       "notas": [
         "El texto consolidado de la norma de Castilla y León en el BOE llega al 14-5-2024: no se ha podido descartar un cambio posterior de la escala."
+      ],
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 3",
+          "titulo": "Familia numerosa",
+          "resumen": "600 euros con carácter general para miembros de una familia numerosa que convivan con el resto de la familia; 1.500 euros con cuatro descendientes y 2.500 con cinco (1.000 más por cada uno desde el sexto; 600 más si hay discapacidad igual o superior al 65 %). Sin límite de renta.",
+          "tipo": "fija",
+          "importe": "600",
+          "requiere": [
+            "familia_numerosa"
+          ],
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "familia numerosa con cinco o más descendientes",
+              "cuando": {
+                "unidades_min": {
+                  "num_descendientes": 5
+                }
+              },
+              "importe": "2500"
+            },
+            {
+              "descripcion": "familia numerosa con cuatro descendientes",
+              "cuando": {
+                "unidades_min": {
+                  "num_descendientes": 4
+                }
+              },
+              "importe": "1500"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "IMPORTE SUPERIOR NO CALCULADO: 1.000 euros adicionales por cada descendiente a partir del sexto (con seis o más descendientes la calculadora aplica solo 2.500 euros).",
+            "IMPORTE SUPERIOR NO CALCULADO: 600 euros más si algún cónyuge o descendiente tiene discapacidad igual o superior al 65 %.",
+            "Los descendientes computados deben dar derecho al mínimo por descendiente.",
+            "Convivir con los restantes miembros de la familia numerosa y poseer el documento acreditativo.",
+            "Si hay más de un contribuyente con derecho, el importe se prorratea en la declaración de cada uno."
+          ],
+          "en_vigor_desde": "2023-03-07"
+        },
+        {
+          "articulo": "art. 4",
+          "titulo": "Nacimiento o adopción",
+          "resumen": "Por cada hijo nacido o adoptado en el periodo impositivo: 1.010 euros el primero, 1.475 el segundo y 2.351 el tercero o sucesivos; en municipios o entidades locales menores de hasta 5.000 habitantes, 1.420, 2.070 y 3.300 euros. Sin límite de renta.",
+          "tipo": "fija",
+          "importes_por_orden": [
+            "1010",
+            "1475",
+            "2351"
+          ],
+          "unidad": "hijos_nacidos_en_el_ejercicio",
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "residentes en municipios o entidades locales menores de hasta 5.000 habitantes",
+              "cuando": {
+                "requiere": [
+                  "municipio_rural_o_despoblacion"
+                ]
+              },
+              "importes_por_orden": [
+                "1420",
+                "2070",
+                "3300"
+              ]
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Variante rural: el contribuyente debe residir en un municipio o entidad local menor cuya población no exceda de 5.000 habitantes.",
+            "El hijo debe generar el derecho al mínimo por descendiente; el número de orden cuenta al nacido y a los restantes hijos de cualquiera de los progenitores que convivan con el contribuyente a la fecha de devengo.",
+            "IMPORTES ADICIONALES NO CALCULADOS: las cantidades se duplican si el nacido o adoptado tiene discapacidad igual o superior al 33 %; partos o adopciones múltiples (50 % o 100 % más y 901 euros durante los dos años siguientes); gastos de adopción (784 euros, o 3.625 en adopción internacional).",
+            "Incompatible con haber obtenido ayudas o prestaciones públicas de la Junta de Castilla y León de análoga naturaleza (nacimiento o adopción, cuidado de hijos menores o conciliación).",
+            "Si hay más de un contribuyente con derecho, el importe se prorratea en la declaración de cada uno."
+          ],
+          "en_vigor_desde": "2024-05-15"
+        },
+        {
+          "articulo": "art. 5.2",
+          "titulo": "Cuotas a la Seguridad Social de empleados de hogar (hijo menor de 4 años)",
+          "resumen": "15 % de las cuotas a la Seguridad Social de un empleado de hogar, con el límite máximo de 300 euros, para contribuyentes con un hijo menor de 4 años; base imponible total menos mínimo personal y familiar no superior a 18.900 euros (31.500 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "cotizaciones_empleada_hogar",
+          "maximo": "300",
+          "unidades_min": {
+            "num_descendientes_menores_3": 1
+          },
+          "base_limite": "base_imponible_total_menos_minimos",
+          "limite_individual": "18900",
+          "limite_conjunta": "31500",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "SUPUESTO NO CALCULADO: la ley exige un hijo menor de 4 años a la fecha de devengo; la calculadora solo la concede si consta algún descendiente menor de 3 años, por lo que no la aplica a quien solo tiene un hijo de 3 años cumplidos.",
+            "Al hijo debe serle de aplicación el mínimo por descendiente.",
+            "Incompatible con haber obtenido ayudas o prestaciones públicas de la Junta de Castilla y León de análoga naturaleza (nacimiento o adopción, cuidado de hijos menores o conciliación).",
+            "Si hay más de un contribuyente con derecho, el importe se prorratea en la declaración de cada uno."
+          ],
+          "en_vigor_desde": "2024-05-15"
+        },
+        {
+          "articulo": "art. 6",
+          "titulo": "Discapacidad del contribuyente",
+          "resumen": "300 euros para contribuyentes de menos de 65 años con discapacidad igual o superior al 65 % o de 65 o más años con discapacidad igual o superior al 33 %; 656 euros si tienen 65 o más años y discapacidad igual o superior al 65 %; base imponible total menos mínimo personal y familiar no superior a 18.900 euros (31.500 en conjunta).",
+          "tipo": "fija",
+          "importe": "300",
+          "base_limite": "base_imponible_total_menos_minimos",
+          "limite_individual": "18900",
+          "limite_conjunta": "31500",
+          "alternativas": [
+            {
+              "edad_max": 64,
+              "discapacidad_min": 65
+            },
+            {
+              "edad_min": 65,
+              "discapacidad_min": 33
+            }
+          ],
+          "variantes": [
+            {
+              "descripcion": "65 o más años y discapacidad igual o superior al 65 %",
+              "cuando": {
+                "edad_min": 65,
+                "discapacidad_min": 65
+              },
+              "importe": "656"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "No ser usuario de residencias públicas o concertadas de la Comunidad.",
+            "Grado de discapacidad acreditado por certificación del órgano competente."
+          ],
+          "en_vigor_desde": "2024-05-15"
+        },
+        {
+          "articulo": "art. 7.4",
+          "titulo": "Arrendamiento de la vivienda habitual por jóvenes",
+          "resumen": "20 % del alquiler de la vivienda habitual situada en Castilla y León con un límite de 459 euros para menores de 36 años (25 % con límite de 612 euros en el medio rural, art. 7.5); base imponible total menos mínimo personal y familiar no superior a 18.900 euros (31.500 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "459",
+          "edad_max": 35,
+          "base_limite": "base_imponible_total_menos_minimos",
+          "limite_individual": "18900",
+          "limite_conjunta": "31500",
+          "variantes": [
+            {
+              "descripcion": "vivienda habitual en el medio rural (art. 7.5)",
+              "cuando": {
+                "requiere": [
+                  "municipio_rural_o_despoblacion"
+                ]
+              },
+              "porcentaje": "0.25",
+              "maximo": "612"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Variante rural (art. 7.5): la vivienda habitual debe estar situada en un municipio o entidad local menor de Castilla y León que no exceda de 10.000 habitantes, con carácter general, o de 3.000 habitantes si dista menos de 30 kilómetros de la capital de la provincia.",
+            "El importe deducible no puede superar la diferencia entre el alquiler pagado y las ayudas públicas percibidas por ese concepto.",
+            "Vivienda habitual situada en Castilla y León."
+          ],
+          "en_vigor_desde": "2024-05-15"
+        }
       ]
     },
     "cataluna": {
@@ -1309,6 +3086,108 @@
       ],
       "notas": [
         "El BOE marca como desactualizado el texto consolidado catalán: la Ley 11/2026 añade deducciones (arts. 612-13 a 612-15) que no figuran en la lista; según el análisis del BOE no modifica la escala."
+      ],
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 612-1",
+          "titulo": "Deducción por nacimiento o adopción de un hijo o de una hija o por acogimiento",
+          "resumen": "Por nacimiento o adopción de un hijo: 150 euros para cada progenitor en declaración individual; 300 euros en la declaración conjunta de los progenitores o en la del progenitor de una familia monoparental.",
+          "tipo": "fija",
+          "importe": "150",
+          "unidad": "hijos_nacidos_en_el_ejercicio",
+          "base_limite": "base_imponible_total",
+          "variantes": [
+            {
+              "descripcion": "declaración conjunta: 300 euros",
+              "cuando": {
+                "tributacion": "conjunta"
+              },
+              "importe": "300"
+            },
+            {
+              "descripcion": "progenitor de familia monoparental: 300 euros",
+              "cuando": {
+                "requiere": [
+                  "familia_monoparental"
+                ]
+              },
+              "importe": "300"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "La ley fija el importe «por nacimiento o adopción de un hijo o de una hija»; aquí se multiplica por el número de hijos nacidos o adoptados en el ejercicio.",
+            "El importe de 300 euros en conjunta es el de «la declaración conjunta de los progenitores»; en una declaración conjunta de un solo progenitor con sus hijos solo corresponde si se trata de una familia monoparental.",
+            "La misma deducción se aplica al acogimiento familiar de menores acordado conforme a la Ley 14/2010 (no calculado aquí); la deducción por adopción es incompatible con la de acogimiento.",
+            "Justificación documental de los presupuestos de hecho."
+          ],
+          "en_vigor_desde": "2025-03-27"
+        },
+        {
+          "articulo": "art. 612-3",
+          "titulo": "Deducción por alquiler de la vivienda habitual",
+          "resumen": "10 % del alquiler de la vivienda habitual, hasta 500 euros (1.000 euros para familias numerosas o monoparentales y en tributación conjunta), para quien tenga 35 años o menos, discapacidad del 65 % o más, haya estado en paro 183 días o sea viudo de 65 años o más, o pertenezca a familia numerosa o monoparental, si la base imponible menos el mínimo personal y familiar no supera 30.000 euros (45.000 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.10",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "500",
+          "base_limite": "base_imponible_total_menos_minimos",
+          "limite_individual": "30000",
+          "limite_conjunta": "45000",
+          "alternativas": [
+            {
+              "edad_max": 35
+            },
+            {
+              "discapacidad_min": 65
+            },
+            {
+              "requiere": [
+                "familia_numerosa"
+              ]
+            },
+            {
+              "requiere": [
+                "familia_monoparental"
+              ]
+            }
+          ],
+          "variantes": [
+            {
+              "descripcion": "tributación conjunta: máximo de 1.000 euros",
+              "cuando": {
+                "tributacion": "conjunta"
+              },
+              "maximo": "1000"
+            },
+            {
+              "descripcion": "familia numerosa: máximo de 1.000 euros",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ]
+              },
+              "maximo": "1000"
+            },
+            {
+              "descripcion": "familia monoparental: máximo de 1.000 euros",
+              "cuando": {
+                "requiere": [
+                  "familia_monoparental"
+                ]
+              },
+              "maximo": "1000"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "También dan derecho a la deducción (no comprobado aquí, puede corresponderte aunque el cálculo la deniegue): haber estado en paro 183 días o más durante el ejercicio, o ser viudo o viuda y tener 65 años o más.",
+            "En tributación conjunta basta con que alguno de los declarantes se encuentre en alguna de las circunstancias; aquí solo se comprueban las del contribuyente principal.",
+            "La pertenencia a familia numerosa (Ley 40/2003) o monoparental se refiere a la fecha de devengo.",
+            "Una misma vivienda no puede dar lugar a más de 1.000 euros de deducción: si varios contribuyentes tienen derecho por la misma vivienda, cada uno aplica el resultado de dividir el 10 % del gasto total, o el límite de 1.000 euros, entre el número de declarantes con derecho.",
+            "Debe identificarse al arrendador con su número de identificación fiscal en la declaración.",
+            "La deducción solo puede aplicarse una vez aunque concurran varias circunstancias, y exige justificación documental adecuada y suficiente."
+          ],
+          "en_vigor_desde": "2025-08-20"
+        }
       ]
     },
     "comunidad_valenciana": {
@@ -1452,6 +3331,234 @@
       ],
       "notas": [
         "Para 2025 se aplica la escala valenciana de la Ley 9/2022, anterior a la Ley 5/2026."
+      ],
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 4.Uno.d) (categoría especial)",
+          "titulo": "Familia numerosa de categoría especial",
+          "resumen": "660 euros por ostentar en la fecha de devengo la condición de familia numerosa (o monoparental) de categoría especial. Suma de base liquidable general y del ahorro no superior a 35.000 euros (individual) o 58.000 euros (conjunta), con reducción progresiva desde 31.000/54.000 euros.",
+          "tipo": "fija",
+          "importe": "660",
+          "requiere": [
+            "familia_numerosa_especial"
+          ],
+          "base_limite": "base_liquidable_total",
+          "limite_individual": "35000",
+          "limite_conjunta": "58000",
+          "reduccion_progresiva": {
+            "desde_individual": "31000",
+            "hasta_individual": "35000",
+            "desde_conjunta": "54000",
+            "hasta_conjunta": "58000",
+            "aplica_a": "importe"
+          },
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Entre 31.000 y 35.000 euros (individual) o 54.000 y 58.000 euros (conjunta) la ley reduce linealmente el importe (art. 4.Cinco.2).",
+            "Las familias monoparentales de categoría especial tienen el mismo importe y límites, pero la calculadora no conoce esa categoría y les aplica los 330 euros de la categoría general (da de menos).",
+            "La condición de familia numerosa y su categoría se determinan conforme a la Ley 40/2003; la de familia monoparental conforme al Decreto 19/2018, de 9 de marzo, del Consell (reconocimiento oficial), a la fecha de devengo.",
+            "La deducción la practica el contribuyente con quien convivan los restantes miembros de la familia; si más de un contribuyente declarante tiene derecho, el importe se prorratea entre ellos por partes iguales."
+          ],
+          "en_vigor_desde": "2022-10-28"
+        },
+        {
+          "articulo": "art. 4.Uno.d)",
+          "titulo": "Familia numerosa o monoparental (categoría general)",
+          "resumen": "330 euros por ostentar en la fecha de devengo la condición de familia numerosa o monoparental de categoría general. Suma de base liquidable general y del ahorro no superior a 30.000 euros (individual) o 47.000 euros (conjunta), con reducción progresiva desde 27.000/44.000 euros.",
+          "tipo": "fija",
+          "importe": "330",
+          "base_limite": "base_liquidable_total",
+          "limite_individual": "30000",
+          "limite_conjunta": "47000",
+          "reduccion_progresiva": {
+            "desde_individual": "27000",
+            "hasta_individual": "30000",
+            "desde_conjunta": "44000",
+            "hasta_conjunta": "47000",
+            "aplica_a": "importe"
+          },
+          "reparto_descendientes": true,
+          "alternativas": [
+            {
+              "requiere": [
+                "familia_numerosa"
+              ]
+            },
+            {
+              "requiere": [
+                "familia_monoparental"
+              ]
+            }
+          ],
+          "incompatible_con": [
+            "art. 4.Uno.d) (categoría especial)"
+          ],
+          "requisitos_no_comprobados": [
+            "Entre 27.000 y 30.000 euros (individual) o 44.000 y 47.000 euros (conjunta) la ley reduce linealmente el importe (art. 4.Cinco.1).",
+            "Las familias monoparentales de categoría especial tienen derecho a 660 euros con límites de 35.000/58.000 euros; la calculadora no conoce esa categoría y aplica las cifras de la categoría general (da de menos).",
+            "La condición de familia numerosa y su categoría se determinan conforme a la Ley 40/2003; la de familia monoparental conforme al Decreto 19/2018, de 9 de marzo, del Consell (reconocimiento oficial), a la fecha de devengo.",
+            "La deducción la practica el contribuyente con quien convivan los restantes miembros de la familia; si más de un contribuyente declarante tiene derecho, el importe se prorratea entre ellos por partes iguales."
+          ],
+          "en_vigor_desde": "2022-10-28"
+        },
+        {
+          "articulo": "art. 4.Uno.e)",
+          "titulo": "Guardería y centros de primer ciclo de educación infantil (menores de 3 años)",
+          "resumen": "15 % de las cantidades satisfechas por la custodia no ocasional en guarderías y centros de primer ciclo de educación infantil de menores de 3 años, máximo 297 euros por cada uno. Suma de base liquidable general y del ahorro no superior a 30.000 euros (individual) o 47.000 euros (conjunta), con reducción progresiva del límite desde 27.000/44.000 euros.",
+          "tipo": "porcentaje",
+          "unidad": "num_descendientes_menores_3",
+          "porcentaje": "0.15",
+          "base": "gastos_guarderia",
+          "maximo_por_unidad": "297",
+          "base_limite": "base_liquidable_total",
+          "limite_individual": "30000",
+          "limite_conjunta": "47000",
+          "reduccion_progresiva": {
+            "desde_individual": "27000",
+            "hasta_individual": "30000",
+            "desde_conjunta": "44000",
+            "hasta_conjunta": "47000",
+            "aplica_a": "maximo"
+          },
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Entre 27.000 y 30.000 euros (individual) o 44.000 y 47.000 euros (conjunta) la ley reduce linealmente \"el importe o límite de deducción\" (art. 4.Cinco.1). En esta deducción lo que se reduce es el LÍMITE máximo, no el resultado de aplicar el porcentaje.",
+            "Los progenitores, adoptantes, acogedores o guardadores deben desarrollar actividades por cuenta propia o ajena por las que perciban rendimientos del trabajo o de actividades económicas.",
+            "El límite de 297 euros se prorratea por el número de días del periodo impositivo en que el niño o niña sea menor de 3 años, y es por cada menor efectivamente en guardería o centro de primer ciclo.",
+            "Cuando dos contribuyentes declarantes tengan derecho por el mismo menor, el límite se prorratea entre ellos por partes iguales.",
+            "El pago debe hacerse mediante tarjeta de crédito o débito, transferencia bancaria, cheque nominativo o ingreso en cuenta (disposición adicional decimosexta).",
+            "Incompatible con la deducción de la letra i), no calculada por la calculadora (contratación de personas empleadas de hogar para el cuidado de personas)."
+          ],
+          "en_vigor_desde": "2025-06-01"
+        },
+        {
+          "articulo": "art. 4.Uno.g)",
+          "titulo": "Contribuyentes con discapacidad de edad igual o superior a 65 años",
+          "resumen": "197 euros por cada contribuyente con grado de discapacidad igual o superior al 33 % y edad igual o superior a 65 años. Suma de base liquidable general y del ahorro no superior a 30.000 euros (individual) o 47.000 euros (conjunta), con reducción progresiva desde 27.000/44.000 euros.",
+          "tipo": "fija",
+          "importe": "197",
+          "edad_min": 65,
+          "discapacidad_min": 33,
+          "base_limite": "base_liquidable_total",
+          "limite_individual": "30000",
+          "limite_conjunta": "47000",
+          "reduccion_progresiva": {
+            "desde_individual": "27000",
+            "hasta_individual": "30000",
+            "desde_conjunta": "44000",
+            "hasta_conjunta": "47000",
+            "aplica_a": "importe"
+          },
+          "requisitos_no_comprobados": [
+            "Entre 27.000 y 30.000 euros (individual) o 44.000 y 47.000 euros (conjunta) la ley reduce linealmente \"el importe o límite de deducción\" (art. 4.Cinco.1).",
+            "No procede si, por la situación de discapacidad, el contribuyente percibe alguna prestación exenta del IRPF.",
+            "Las circunstancias personales se determinan a la fecha del devengo.",
+            "El importe es por cada contribuyente que cumpla los requisitos (en tributación conjunta pueden ser varios).",
+            "Se asimilan a discapacidad igual o superior al 33 % los pensionistas por incapacidad permanente total, absoluta o gran invalidez (disposición adicional sexta)."
+          ],
+          "en_vigor_desde": "2022-10-28"
+        },
+        {
+          "articulo": "art. 4.Uno.h)",
+          "titulo": "Ascendientes mayores de 75 años (o mayores de 65 con discapacidad)",
+          "resumen": "197 euros por cada ascendiente en línea directa mayor de 75 años que conviva con el contribuyente y no tenga rentas anuales superiores a 8.000 euros. Suma de base liquidable general y del ahorro no superior a 30.000 euros (individual) o 47.000 euros (conjunta), con reducción progresiva desde 27.000/44.000 euros.",
+          "tipo": "fija",
+          "importe": "197",
+          "unidad": "num_ascendientes_mayores_75",
+          "base_limite": "base_liquidable_total",
+          "limite_individual": "30000",
+          "limite_conjunta": "47000",
+          "reduccion_progresiva": {
+            "desde_individual": "27000",
+            "hasta_individual": "30000",
+            "desde_conjunta": "44000",
+            "hasta_conjunta": "47000",
+            "aplica_a": "importe"
+          },
+          "requisitos_no_comprobados": [
+            "Entre 27.000 y 30.000 euros (individual) o 44.000 y 47.000 euros (conjunta) la ley reduce linealmente \"el importe o límite de deducción\" (art. 4.Cinco.1).",
+            "Variante no codificada: también dan derecho los ascendientes mayores de 65 años con grado de discapacidad igual o superior al 65 %, o con discapacidad intelectual o mental reconocida de manera permanente igual o superior al 33 %.",
+            "El ascendiente (por consanguinidad, afinidad o adopción) debe convivir con el contribuyente al menos la mitad del período impositivo y no tener rentas anuales, excluidas las exentas, superiores a 8.000 euros.",
+            "No procede si el ascendiente presenta declaración del IRPF con rentas superiores a 1.800 euros.",
+            "Si más de un contribuyente declarante tiene derecho por el mismo ascendiente, el importe se prorratea por partes iguales; con distinto grado de parentesco corresponde al de grado más cercano.",
+            "Incompatible con la deducción de la letra i), no calculada por la calculadora (contratación de personas empleadas de hogar para el cuidado de personas)."
+          ],
+          "en_vigor_desde": "2025-12-30"
+        },
+        {
+          "articulo": "art. 4.Uno.n)",
+          "titulo": "Arrendamiento o pago por la cesión en uso de la vivienda habitual",
+          "resumen": "20 % de las cantidades satisfechas por el alquiler de la vivienda habitual, con el límite de 800 euros; 25 % con límite de 950 euros si el arrendatario tiene 35 años o menos, discapacidad igual o superior al 65 % o es víctima de violencia de género, y 30 % con límite de 1.100 euros si reúne dos o más de esas condiciones. Suma de base liquidable general y del ahorro no superior a 30.000 euros (individual) o 47.000 euros (conjunta), con reducción progresiva del límite desde 27.000/44.000 euros.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "800",
+          "base_limite": "base_liquidable_total",
+          "limite_individual": "30000",
+          "limite_conjunta": "47000",
+          "reduccion_progresiva": {
+            "desde_individual": "27000",
+            "hasta_individual": "30000",
+            "desde_conjunta": "44000",
+            "hasta_conjunta": "47000",
+            "aplica_a": "maximo"
+          },
+          "variantes": [
+            {
+              "descripcion": "Edad igual o inferior a 35 años y discapacidad igual o superior al 65 % (dos condiciones): 30 % con límite de 1.100 euros",
+              "cuando": {
+                "edad_max": 35,
+                "discapacidad_min": 65
+              },
+              "porcentaje": "0.30",
+              "maximo": "1100"
+            },
+            {
+              "descripcion": "Edad igual o inferior a 35 años: 25 % con límite de 950 euros",
+              "cuando": {
+                "edad_max": 35
+              },
+              "porcentaje": "0.25",
+              "maximo": "950"
+            },
+            {
+              "descripcion": "Discapacidad igual o superior al 65 %: 25 % con límite de 950 euros",
+              "cuando": {
+                "discapacidad_min": 65
+              },
+              "porcentaje": "0.25",
+              "maximo": "950"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Entre 27.000 y 30.000 euros (individual) o 44.000 y 47.000 euros (conjunta) la ley reduce linealmente \"el importe o límite de deducción\" (art. 4.Cinco.1). En esta deducción lo que se reduce es el LÍMITE máximo, no el resultado de aplicar el porcentaje.",
+            "Para el 25 % / 950 euros (una condición) o el 30 % / 1.100 euros (dos o más) también cuentan como condición la discapacidad intelectual o mental reconocida de manera permanente igual o superior al 33 % y ser víctima de violencia de género, que la calculadora no conoce (puede dar de menos en esos casos).",
+            "Contrato de arrendamiento de la vivienda habitual, ocupada efectivamente, de fecha posterior al 23 de abril de 1998 y duración igual o superior a un año.",
+            "Durante al menos la mitad del periodo impositivo, ni el contribuyente ni ningún miembro de su unidad familiar pueden ser titulares de la totalidad del pleno dominio o de un derecho real de uso o disfrute sobre otra vivienda distante a menos de 50 kilómetros de la arrendada.",
+            "No tener derecho en el mismo período a ninguna deducción por inversión en vivienda habitual.",
+            "El límite se prorratea por el número de días de vigencia del arrendamiento dentro del periodo impositivo; si dos o más contribuyentes declarantes tienen derecho por la misma vivienda (en particular cónyuges en gananciales), el límite se prorratea entre ellos por partes iguales.",
+            "El pago debe hacerse mediante tarjeta de crédito o débito, transferencia bancaria, cheque nominativo o ingreso en cuenta (disposición adicional decimosexta).",
+            "En pagos por cesión en uso, la parte correspondiente a este concepto debe figurar separada en el recibo."
+          ],
+          "en_vigor_desde": "2025-12-30"
+        },
+        {
+          "articulo": "art. 4.Uno.aa)",
+          "titulo": "Residencia habitual en un municipio en riesgo de despoblamiento",
+          "resumen": "330 euros por residir habitualmente en un municipio en riesgo de despoblamiento (beneficiario del Fondo de Cooperación Municipal para la lucha contra el despoblamiento). Sin límite de renta.",
+          "tipo": "fija",
+          "importe": "330",
+          "requiere": [
+            "municipio_rural_o_despoblacion"
+          ],
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Municipio en riesgo de despoblamiento es solo el beneficiario del Fondo de Cooperación Municipal para la lucha contra el despoblamiento de los municipios de la Comunitat Valenciana en el ejercicio presupuestario del devengo, o en el anterior, por cumplir los requisitos de la Ley 5/2023, de 13 de abril (art. 4.Seis).",
+            "El importe se incrementa en 132, 198 o 264 euros si el contribuyente tiene derecho al mínimo por descendientes por una, dos o tres o más personas (incremento no calculado: la calculadora da de menos; es incompatible, para el mismo descendiente, con las deducciones de las letras a), b) y c), y se prorratea si dos o más contribuyentes tienen derecho al mínimo por la misma persona).",
+            "Se atiende al concepto de residencia habitual de la normativa estatal del impuesto."
+          ],
+          "en_vigor_desde": "2024-01-01"
+        }
       ]
     },
     "extremadura": {
@@ -1545,7 +3652,8 @@
       ],
       "notas": [
         "Para 2025 se aplica la escala extremeña anterior a la Ley 2/2026 (redacción del Decreto-ley 4/2023)."
-      ]
+      ],
+      "deducciones_calculables": []
     },
     "galicia": {
       "nombre": "Galicia",
@@ -1643,6 +3751,43 @@
         "art. 5.Veinticuatro: Deducción por las ayudas y subvenciones recibidas por personas con diagnóstico de esclerosis lateral amiotrófica o con sus fenotipos",
         "art. 5.Veinticinco: Deducción por la adquisición de libros de texto y material escolar",
         "art. 5.Veintiséis: Deducción por las ayudas recibidas por las personas afectadas por la talidomida en España durante el periodo 1950-1985"
+      ],
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 5.Siete",
+          "titulo": "Deducción por alquiler de vivienda habitual",
+          "resumen": "10 % del alquiler de la vivienda habitual, con un límite de 300 euros por contrato (20 % y 600 euros con dos o más hijos menores de edad), para contribuyentes de 35 años o menos cuya base imponible no supere 22.000 euros; las cuantías se duplican con discapacidad del 33 % o más.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.10",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "300",
+          "edad_max": 35,
+          "base_limite": "base_imponible_total",
+          "limite_individual": "22000",
+          "variantes": [
+            {
+              "descripcion": "dos o más hijos menores de edad: 20 % con un límite de 600 euros",
+              "cuando": {
+                "unidades_min": {
+                  "num_descendientes": 2
+                }
+              },
+              "porcentaje": "0.20",
+              "maximo": "600"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "El 20 % con límite de 600 euros exige tener dos o más hijos menores de edad; aquí se aplica cuando constan dos o más descendientes, sin comprobar que sean hijos menores de edad.",
+            "Si el arrendatario tiene reconocido un grado de discapacidad igual o superior al 33 %, las cuantías se duplican (no calculado aquí).",
+            "La fecha del contrato de arrendamiento debe ser posterior al 1 de enero de 2003.",
+            "Debe haberse constituido el depósito de la fianza del artículo 36.1 de la Ley 29/1994 en el Instituto Gallego de la Vivienda y Suelo, o poseer copia compulsada de la denuncia presentada ante dicho organismo por no entregar el justificante la persona arrendadora.",
+            "El límite es por contrato de arrendamiento: si dos contribuyentes tienen derecho a la deducción, el importe total, sin exceder ese límite, se prorratea por partes iguales entre ellos.",
+            "En tributación conjunta basta con que cumpla el requisito de edad uno de los cónyuges o, en su caso, el padre o la madre; aquí solo se comprueba la edad del contribuyente principal.",
+            "La ley no fija un límite de renta distinto para la tributación conjunta: se aplica el de 22.000 euros de base imponible del período (general más ahorro, antes de mínimos).",
+            "Justificación documental adecuada y suficiente (art. 5.Uno)."
+          ],
+          "en_vigor_desde": "2015-01-01"
+        }
       ]
     },
     "la_rioja": {
@@ -1738,6 +3883,91 @@
       ],
       "notas": [
         "La Rioja eleva un 10 % el mínimo por discapacidad de descendientes (3.300 € y 9.900 €, art. 31 bis): la calculadora no lo aplica."
+      ],
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 32.1",
+          "titulo": "Nacimiento y adopción de hijos",
+          "resumen": "Por cada hijo nacido o adoptado en el periodo impositivo que conviva con el contribuyente: 600 euros el primero, 750 el segundo y 900 el tercero y sucesivos. Sin límite de renta.",
+          "tipo": "fija",
+          "importes_por_orden": [
+            "600",
+            "750",
+            "900"
+          ],
+          "unidad": "hijos_nacidos_en_el_ejercicio",
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "El hijo debe convivir con el contribuyente en la fecha de devengo del impuesto.",
+            "En nacimientos o adopciones múltiples la deducción de cada hijo se incrementa en 60 euros (incremento no calculado: la calculadora da de menos en ese caso).",
+            "Si el número de hijos preexistente de cada progenitor es distinto, cada uno aplica el importe que le corresponda según sus propios hijos; la calculadora usa el número de descendientes del declarante.",
+            "Si los hijos conviven con ambos progenitores o adoptantes, el importe se practica por mitad en la declaración de cada uno, salvo declaración conjunta."
+          ],
+          "en_vigor_desde": "2020-02-01"
+        },
+        {
+          "articulo": "art. 32.6",
+          "titulo": "Gastos en escuelas infantiles o centros de educación infantil (hijos de 0 a 3 años)",
+          "resumen": "20 % de los gastos de escolarización no subvencionados de cada hijo de 0 a 3 años matriculado en una escuela o centro de educación infantil de La Rioja, máximo 600 euros por hijo. Base liquidable general no superior a 18.030 euros (individual) o 30.050 euros (conjunta) y base liquidable del ahorro no superior a 1.800 euros.",
+          "tipo": "porcentaje",
+          "unidad": "num_descendientes_menores_3",
+          "porcentaje": "0.20",
+          "base": "gastos_guarderia",
+          "maximo_por_unidad": "600",
+          "base_limite": "base_liquidable_general",
+          "limite_individual": "18030",
+          "limite_conjunta": "30050",
+          "base_ahorro_max": "1800",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "El límite de 1.800 euros se refiere a la base liquidable del ahorro sometida a tributación; la calculadora lo comprueba sobre la base imponible del ahorro.",
+            "El límite de 600 euros es por cada hijo de 0 a 3 años matriculado en una escuela o centro de educación infantil de cualquier municipio de La Rioja (solo cuentan los hijos efectivamente matriculados).",
+            "A la fecha de devengo se debe convivir con el menor y tener derecho al mínimo por descendientes.",
+            "Solo son gastos deducibles la preinscripción y matrícula, la asistencia (horario general y ampliado) y la alimentación, no subvencionados y que no sean rendimientos del trabajo en especie exentos.",
+            "Contribuyente con residencia habitual en La Rioja.",
+            "En declaraciones individuales de progenitores con derecho por el mismo descendiente el importe se prorratea por partes iguales.",
+            "Existe una deducción alternativa del 30 % (art. 32.3) para quienes fijen su residencia en pequeños municipios del anexo I; no codificada."
+          ],
+          "en_vigor_desde": "2020-02-01"
+        },
+        {
+          "articulo": "art. 32.12",
+          "titulo": "Arrendamiento de vivienda habitual para menores de 36 años",
+          "resumen": "10 % de las cantidades no subvencionadas satisfechas por el alquiler de la vivienda habitual situada en La Rioja, máximo 300 euros anuales por contrato (20 % y máximo 400 euros si la vivienda está en un pequeño municipio del anexo I), para contribuyentes menores de 36 años. Base liquidable general no superior a 18.030 euros (individual) o 30.050 euros (conjunta) y base liquidable del ahorro no superior a 1.800 euros.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.10",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "300",
+          "edad_max": 35,
+          "base_limite": "base_liquidable_general",
+          "limite_individual": "18030",
+          "limite_conjunta": "30050",
+          "base_ahorro_max": "1800",
+          "variantes": [
+            {
+              "descripcion": "Vivienda en un pequeño municipio del anexo I: 20 % con límite de 400 euros por contrato",
+              "cuando": {
+                "requiere": [
+                  "municipio_rural_o_despoblacion"
+                ]
+              },
+              "porcentaje": "0.20",
+              "maximo": "400"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "El límite de 1.800 euros se refiere a la base liquidable del ahorro sometida a tributación; la calculadora lo comprueba sobre la base imponible del ahorro.",
+            "«Pequeño municipio» es exclusivamente uno de los municipios de La Rioja enumerados en el anexo I de la Ley 10/2017. Para el 20 % / 400 euros es la vivienda arrendada la que debe estar situada en uno de ellos.",
+            "Vivienda habitual ocupada efectivamente por el contribuyente y situada en La Rioja.",
+            "Ser titular de un contrato de arrendamiento por el que se haya presentado el modelo del impuesto sobre transmisiones patrimoniales y actos jurídicos documentados.",
+            "No tener derecho en el mismo periodo a deducción alguna por inversión en vivienda habitual.",
+            "Solo cuentan las cantidades no subvencionadas; la deducción queda condicionada a su justificación documental.",
+            "El límite de 300 euros es por contrato de arrendamiento (tanto en individual como en conjunta); si dos contribuyentes tienen derecho, el importe total se prorratea por partes iguales (en gananciales corresponde a los cónyuges por mitad).",
+            "En tributación conjunta basta con que uno de los cónyuges no haya cumplido 36 años."
+          ],
+          "en_vigor_desde": "2020-02-01"
+        }
       ]
     },
     "murcia": {
@@ -1819,6 +4049,224 @@
       ],
       "notas": [
         "La página del texto consolidado murciano indica como última actualización el 24-7-2025: no se ha podido descartar un cambio posterior de la escala."
+      ],
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 1.Tres",
+          "titulo": "Gastos de guardería (primer ciclo de educación infantil)",
+          "resumen": "20 % de los gastos de custodia, alimentación y vestuario escolar del primer ciclo de educación infantil de hijos o descendientes, máximo 1.000 euros por cada uno. Suma de base imponible general y del ahorro no superior a 30.000 euros (individual) o 50.000 euros (conjunta).",
+          "tipo": "porcentaje",
+          "unidad": "num_descendientes_menores_3",
+          "porcentaje": "0.20",
+          "base": "gastos_guarderia",
+          "maximo_por_unidad": "1000",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "30000",
+          "limite_conjunta": "50000",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "El límite de 1.000 euros es por cada hijo o descendiente que curse el primer ciclo de educación infantil y dé derecho al mínimo por descendientes (solo cuentan los efectivamente escolarizados).",
+            "Centro autorizado e inscrito por la Consejería competente en materia de educación.",
+            "Solo son base de deducción los gastos de custodia (incluida preinscripción y matrícula), alimentación y vestuario de uso exclusivo escolar, minorados en las becas y ayudas públicas recibidas.",
+            "El contribuyente debe convivir con el menor; si convive con más de un progenitor, tutor o adoptante, la deducción se prorratea por partes iguales en tributación individual.",
+            "Deben conservarse las facturas acreditativas."
+          ],
+          "en_vigor_desde": "2019-01-01"
+        },
+        {
+          "articulo": "art. 1.Ocho",
+          "titulo": "Material escolar y libros de texto",
+          "resumen": "120 euros por cada descendiente escolarizado en segundo ciclo de educación infantil, primaria o ESO. Suma de base imponible general y del ahorro no superior a 20.000 euros (individual) o 40.000 euros (conjunta); 33.000 y 53.000 euros si se pertenece a una familia numerosa.",
+          "tipo": "fija",
+          "importe": "120",
+          "unidad": "num_hijos_gastos_educativos",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "20000",
+          "limite_conjunta": "40000",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "Familia numerosa: límites de renta de 33.000 euros (individual) y 53.000 euros (conjunta)",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ]
+              },
+              "limite_individual": "33000",
+              "limite_conjunta": "53000"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Solo cuentan los descendientes escolarizados en segundo ciclo de educación infantil, educación primaria o educación secundaria obligatoria (no bachillerato, FP ni universidad) que den derecho al mínimo por descendientes.",
+            "El importe debe minorarse, por cada descendiente, en las becas y ayudas públicas recibidas en el período para material escolar o libros de texto (minoración no calculada).",
+            "La deducción corresponde al ascendiente que haya satisfecho los gastos; si hay más de un declarante con derecho, se prorratea por partes iguales."
+          ],
+          "en_vigor_desde": "2019-01-01"
+        },
+        {
+          "articulo": "art. 1.Nueve",
+          "titulo": "Nacimiento o adopción",
+          "resumen": "Por cada hijo nacido o adoptado en el período impositivo: 100 euros el primero, 200 el segundo y 300 el tercero o sucesivos. Suma de base imponible general y del ahorro no superior a 30.000 euros (individual) o 50.000 euros (conjunta).",
+          "tipo": "fija",
+          "importes_por_orden": [
+            "100",
+            "200",
+            "300"
+          ],
+          "unidad": "hijos_nacidos_en_el_ejercicio",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "30000",
+          "limite_conjunta": "50000",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Si el número de hijos preexistente de cada progenitor es distinto, cada uno aplica el importe que le corresponda según sus propios hijos; la calculadora usa el número de descendientes del declarante.",
+            "Si los hijos conviven con ambos progenitores o adoptantes y ambos tienen derecho, el importe se practica por mitad en la declaración de cada uno, salvo declaración conjunta."
+          ],
+          "en_vigor_desde": "2019-01-01"
+        },
+        {
+          "articulo": "art. 1.Diez",
+          "titulo": "Contribuyentes con discapacidad",
+          "resumen": "150 euros para contribuyentes con grado de discapacidad igual o superior al 33 %, si la suma de las bases imponibles general y del ahorro no es superior a 40.000 euros (individual o conjunta).",
+          "tipo": "fija",
+          "importe": "150",
+          "discapacidad_min": 33,
+          "base_limite": "base_imponible_total",
+          "limite_individual": "40000",
+          "limite_conjunta": "40000",
+          "requisitos_no_comprobados": [
+            "El grado de discapacidad debe estar acreditado."
+          ],
+          "en_vigor_desde": "2025-07-25"
+        },
+        {
+          "articulo": "art. 1.Once.1",
+          "titulo": "Conciliación: empleada de hogar para el cuidado de descendientes menores",
+          "resumen": "20 % de las cuotas ingresadas por cotizaciones al Sistema Especial de Empleados de Hogar por la persona contratada para cuidar a descendientes menores, máximo 400 euros anuales. La suma de base imponible general y del ahorro de la unidad familiar no debe superar 34.000 euros.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "cotizaciones_empleada_hogar",
+          "maximo": "400",
+          "unidades_min": {
+            "num_descendientes": 1
+          },
+          "base_limite": "base_imponible_total",
+          "limite_unidad_familiar": "34000",
+          "requisitos_no_comprobados": [
+            "Solo cuentan las cotizaciones de los meses en que el contribuyente tenga al menos un hijo menor de 12 años por el que aplique el mínimo por descendientes.",
+            "La persona debe estar contratada para atender o cuidar a descendientes menores por razones de conciliación.",
+            "El contribuyente debe estar de alta en la Seguridad Social como empleador titular de un hogar familiar y cotizar por el Sistema Especial de Empleados de Hogar.",
+            "El titular del hogar familiar y, en su caso, su cónyuge o pareja de hecho deben ser madres o padres de hijos que formen parte de la unidad familiar y percibir rendimientos del trabajo o de actividades económicas.",
+            "La calculadora solo comprueba que haya algún descendiente, no que sea menor de 12 años.",
+            "Si además se contrata a otra persona distinta para cuidar a ascendientes mayores de 65 años (art. 1.Once.3), el límite conjunto es de 800 euros; la calculadora aplica una sola de las dos modalidades (puede dar de menos en ese caso)."
+          ],
+          "en_vigor_desde": "2025-07-25"
+        },
+        {
+          "articulo": "art. 1.Once.3",
+          "titulo": "Conciliación: empleada de hogar para el cuidado de ascendientes mayores de 65 años",
+          "resumen": "20 % de las cuotas ingresadas por cotizaciones al Sistema Especial de Empleados de Hogar por la persona contratada para cuidar a mayores de sesenta y cinco años por los que se aplique el mínimo por ascendientes, máximo 400 euros anuales. Suma de base imponible general y del ahorro del contribuyente no superior a 34.000 euros.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "cotizaciones_empleada_hogar",
+          "maximo": "400",
+          "unidades_min": {
+            "num_ascendientes_mayores_65": 1
+          },
+          "base_limite": "base_imponible_total",
+          "limite_individual": "34000",
+          "incompatible_con": [
+            "art. 1.Once.1"
+          ],
+          "requisitos_no_comprobados": [
+            "La persona debe estar contratada para atender o cuidar a mayores de sesenta y cinco años que estén al cuidado del contribuyente y por los que aplique el mínimo por ascendientes.",
+            "El contribuyente debe estar de alta en la Seguridad Social como empleador y cotizar por el Sistema Especial de Empleados de Hogar durante el periodo en que aplique la deducción.",
+            "El contribuyente debe percibir rendimientos del trabajo o de actividades económicas.",
+            "La aplicación simultánea con la modalidad de cuidado de descendientes (art. 1.Once.1) exige personas contratadas distintas, con límite total de 800 euros; la calculadora, con un único dato de cotizaciones, aplica solo una de las dos (puede dar de menos en ese caso)."
+          ],
+          "en_vigor_desde": "2025-07-25"
+        },
+        {
+          "articulo": "art. 1.Trece",
+          "titulo": "Arrendamiento de vivienda habitual",
+          "resumen": "10 % de las cantidades no subvencionadas satisfechas por el alquiler de la vivienda habitual situada en la Región de Murcia, máximo 300 euros anuales por contrato, para contribuyentes de cuarenta años o menos, de familia numerosa o con discapacidad igual o superior al 65 %. Base imponible general menos el mínimo personal y familiar inferior a 40.000 euros y base imponible del ahorro no superior a 1.800 euros.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.10",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "300",
+          "base_limite": "base_imponible_total_menos_minimos",
+          "limite_individual": "40000",
+          "limite_es_estricto": true,
+          "base_ahorro_max": "1800",
+          "alternativas": [
+            {
+              "edad_max": 40
+            },
+            {
+              "requiere": [
+                "familia_numerosa"
+              ]
+            },
+            {
+              "discapacidad_min": 65
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "La ley refiere el límite de 40.000 euros a la base imponible GENERAL menos el mínimo personal y familiar; la calculadora usa la base imponible total (general más ahorro) menos ese mínimo, algo más estricta: puede denegarla indebidamente si la diferencia (como máximo 1.800 euros de base del ahorro) es la que hace alcanzar el límite.",
+            "Vivienda habitual ocupada efectivamente por el contribuyente y situada en la Región de Murcia.",
+            "Ser titular de un contrato de arrendamiento por el que se haya presentado el modelo del impuesto sobre transmisiones patrimoniales y actos jurídicos documentados.",
+            "Solo cuentan las cantidades no subvencionadas, justificadas con factura o recibo y pagadas mediante tarjeta, transferencia bancaria, cheque nominativo o ingreso en cuenta al arrendador; nunca en efectivo.",
+            "Ni el contribuyente ni ningún miembro de su unidad familiar pueden ser titulares de más del 50 % del pleno dominio o de un derecho real de uso o disfrute de otra vivienda.",
+            "No tener derecho en el mismo período a deducción alguna por inversión en vivienda habitual.",
+            "El límite de 300 euros es por contrato de arrendamiento; si dos contribuyentes tienen derecho, el importe total se prorratea por partes iguales (en gananciales corresponde a los cónyuges por mitad).",
+            "En tributación conjunta basta con que uno de los cónyuges cumpla el requisito de la edad."
+          ],
+          "en_vigor_desde": "2025-07-25"
+        },
+        {
+          "articulo": "art. 1.Dieciséis",
+          "titulo": "Familia monoparental",
+          "resumen": "303 euros para el contribuyente que tenga a su cargo descendientes y no conviva con ninguna otra persona ajena a ellos (salvo ascendientes que generen el mínimo por ascendientes). La suma de la base imponible y de las anualidades por alimentos exentas no puede exceder de 35.240 euros.",
+          "tipo": "fija",
+          "importe": "303",
+          "requiere": [
+            "familia_monoparental"
+          ],
+          "unidades_min": {
+            "num_descendientes": 1
+          },
+          "base_limite": "base_imponible_total",
+          "limite_individual": "35240",
+          "requisitos_no_comprobados": [
+            "El límite de 35.240 euros se refiere a la suma de la base imponible y de las anualidades por alimentos exentas percibidas por los hijos que convivan y den derecho a la deducción; la calculadora solo computa la base imponible (general más ahorro), por lo que puede concederla indebidamente a quien supere el límite únicamente al sumar esas anualidades.",
+            "Concepto propio de la ley murciana (no exige título de familia monoparental): tener a cargo descendientes y no convivir con ninguna otra persona ajena a ellos, salvo ascendientes que generen derecho al mínimo por ascendientes.",
+            "Son descendientes a estos efectos los hijos menores de edad, o mayores de edad con discapacidad, que convivan con el contribuyente (o estén internados en centros especializados dependiendo de él) y no tengan rentas anuales, excluidas las exentas, superiores a 8.000 euros; se asimilan los tutelados y acogidos.",
+            "Si la situación familiar cambia durante el ejercicio, la convivencia debe haberse dado al menos 183 días al año."
+          ],
+          "en_vigor_desde": "2023-12-30"
+        },
+        {
+          "articulo": "art. 1.Diecisiete",
+          "titulo": "Gastos de enseñanza de idiomas",
+          "resumen": "15 % de los gastos de aprendizaje extraescolar de idiomas extranjeros de los hijos escolarizados (segundo ciclo de infantil a bachillerato y FP), máximo 300 euros por hijo. Suma de base imponible general y del ahorro inferior a 25.000 euros (individual) o 40.000 euros (conjunta).",
+          "tipo": "porcentaje",
+          "unidad": "num_hijos_gastos_educativos",
+          "porcentaje": "0.15",
+          "base": "gastos_ensenanza_idiomas",
+          "maximo_por_unidad": "300",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "25000",
+          "limite_conjunta": "40000",
+          "limite_es_estricto": true,
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "El límite de 300 euros es por cada hijo que curse segundo ciclo de educación infantil, primaria, ESO, bachillerato o ciclos formativos de formación profesional específica, tenga gastos de idiomas y dé derecho al mínimo por descendientes.",
+            "Debe tratarse de aprendizaje extraescolar de idiomas extranjeros.",
+            "Si los hijos conviven con ambos padres y estos tributan individualmente, la deducción se prorratea por partes iguales.",
+            "Deben conservarse los justificantes de pago."
+          ],
+          "en_vigor_desde": "2025-07-25"
+        }
       ]
     }
   },

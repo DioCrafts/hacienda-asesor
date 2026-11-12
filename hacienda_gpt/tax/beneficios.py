@@ -434,7 +434,7 @@ def evaluar_beneficios(inp: IRPFInput, *, conocidos: set[str], params: IRPFParam
             + calculable.resumen
             + (
                 ""
-                if aplicado or not campo
+                if aplicado or not activador
                 else f" La simulación la aplica si indicas «{activador}» y cumples los requisitos."
             ),
             calculable.requisitos_no_comprobados or ["Requiere justificación documental."],
@@ -446,8 +446,12 @@ def evaluar_beneficios(inp: IRPFInput, *, conocidos: set[str], params: IRPFParam
             "autonomicas_otras",
             f"{comunidad.nombre}: otras deducciones",
             "por_confirmar",
-            ("La comunidad tiene además estas deducciones" if es_madrid else "La comunidad tiene estas deducciones")
-            + ", de las que aquí solo consta el título y que la simulación no calcula: "
+            (
+                "La comunidad tiene además estas deducciones"
+                if es_madrid
+                else "Estas son todas las deducciones de la comunidad"
+            )
+            + ", por título (la simulación solo calcula las que aparecen arriba con su detalle): "
             + "; ".join(comunidad.otras_deducciones)
             + ". Consulta sus requisitos e importes con buscar_fuentes antes de mencionarlas.",
             [

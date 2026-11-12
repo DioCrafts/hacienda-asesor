@@ -130,6 +130,9 @@ def evaluar(d: DeduccionCalculable, inp: Any, bases: Bases, *, conjunta: bool) -
     limite_conjunta, limite_individual = cifra("limite_conjunta"), cifra("limite_individual")
     limite = limite_conjunta if conjunta and limite_conjunta is not None else limite_individual
     if limite is not None and (ingreso >= limite if d.limite_es_estricto else ingreso > limite):
+        if not activada_por_dato and not d.requiere:
+            # Reached only through a count or an age: not worth a refusal notice.
+            return None
         return Resultado(ZERO, f"tu {etiqueta} ({ingreso:.2f} €) supera el límite de {limite:.2f} €")
     if d.limite_unidad_familiar is not None:
         familia = bases.base_imponible_total + bases.resto_unidad_familiar

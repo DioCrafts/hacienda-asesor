@@ -473,9 +473,20 @@ actuales**, que la calculadora declara en los `avisos` de cada resultado:
   como avisos del cálculo. **Navarra y País Vasco** tienen impuesto foral
   propio y no están cubiertos: se aproximan con la escala estatal y se avisa.
   **Ceuta y Melilla**: no se aplica su deducción del art. 68.4 LIRPF.
-- **Deducciones autonómicas: solo seis de Madrid se calculan.** Las de las
-  otras 14 comunidades figuran por artículo y título para que el asesor las
-  busque en el corpus, sin importe. En Madrid, la calculadora resta de la
+- **Deducciones autonómicas con importe: 83 en las otras 14 comunidades y
+  seis en Madrid.** Las de las 14 se describen con datos (`deducciones_calculables`
+  en el JSON): importe fijo o porcentaje de un gasto, topes, límites de renta,
+  edad, discapacidad, condiciones alternativas («menor de 36, o familia
+  numerosa»), variantes de importe (categoría especial, municipio rural,
+  tramos de renta), importe según el orden del hijo, incompatibilidades y
+  reducción progresiva. Cubren nacimiento, familia numerosa y monoparental,
+  alquiler, guardería, gastos escolares, cuidado de familiares, edad y
+  discapacidad; cada una se codificó desde su artículo en el BOE con cita
+  literal comprobada. Lo que la calculadora no puede comprobar (fianza
+  depositada, que ambos progenitores trabajen, definición de municipio
+  rural…) viaja con la deducción y se repite como aviso cada vez que se
+  aplica. El resto de deducciones de cada comunidad figura solo por título.
+  En Madrid, la calculadora resta de la
   cuota autonómica las de nacimiento o adopción (art. 4), alquiler de menores
   de 40 años (art. 8), donativos a fundaciones madrileñas (art. 9), gastos
   educativos (art. 11), cuidado de menores o dependientes (art. 11 bis) y
