@@ -23,6 +23,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+import contextvars
 from dataclasses import dataclass, field
 import logging
 import re
@@ -274,8 +275,11 @@ def investigar(
         return run
 
     if parallel:
+        # Each worker thread gets a copy of the caller's context, so usage metering
+        # still knows whose question this is.
+        contexts = [contextvars.copy_context() for _ in jobs]
         with ThreadPoolExecutor(max_workers=len(jobs), thread_name_prefix="researcher") as pool:
-            return list(pool.map(one, jobs))
+            return list(pool.map(lambda pair: pair[0].run(one, pair[1]), zip(contexts, jobs, strict=True)))
     return [one(job) for job in jobs]
 
 

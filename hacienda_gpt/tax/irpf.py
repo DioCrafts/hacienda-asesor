@@ -296,6 +296,12 @@ def _deducciones_madrid(
     miembros = inp.miembros_unidad_familiar
     if miembros is None:
         miembros = 1 + inp.num_descendientes + (1 if inp.tributacion == "conjunta_biparental" else 0)
+    if not conjunta and not inp.base_imponible_resto_unidad_familiar and any(getattr(inp, n) for n in _MADRID_INPUTS):
+        t.aviso(
+            "Varias deducciones madrileñas tienen un límite de renta de toda la unidad familiar. No consta la renta de "
+            "tu cónyuge: si estás casado, indícala en «base_imponible_resto_unidad_familiar» o las deducciones pueden "
+            "salir concedidas sin corresponderte."
+        )
     # Shared between both parents when they file separately.
     reparto = Decimal("0.5") if inp.descendientes_compartidos and not conjunta else Decimal(1)
     total = ZERO
@@ -344,6 +350,10 @@ def _deducciones_madrid(
         else:
             importe = min(inp.alquiler_vivienda_habitual * a.porcentaje, a.maximo)
             t.linea("Deducción autonómica por alquiler de vivienda habitual", -importe, a.fuente)
+            t.aviso(
+                "La deducción madrileña por alquiler exige conservar el justificante del depósito de la fianza (o la "
+                "denuncia por no haberlo recibido), art. 18.4.c) del DLeg. 1/2010; no se ha comprobado."
+            )
             total += importe
 
     limite_familiar_gastos = d.gastos_educativos.limite_base_por_miembro * miembros
@@ -376,8 +386,11 @@ def _deducciones_madrid(
             importe = min(bruto, tope) * reparto
             t.linea("Deducción autonómica por gastos educativos", -importe, e.fuente)
             t.aviso(
-                "En gastos educativos el máximo se ha aplicado al conjunto de los hijos (la ley lo fija por hijo) y los "
-                "gastos deben ir ya minorados en becas; la escolaridad pública o concertada no genera deducción."
+                "En gastos educativos la ley fija el máximo por cada hijo y aquí se ha aplicado al conjunto de "
+                f"{hijos} hijo(s): si los gastos son de menos hijos, indica cuántos en «num_hijos_gastos_educativos» o "
+                "la deducción saldrá más alta de lo debido. Los gastos deben ir ya minorados en becas; la escolaridad "
+                "pública o concertada no genera deducción, y escolaridad y vestuario solo cuentan en Infantil, Básica "
+                "Obligatoria y FP Básica (no en Bachillerato). En primer ciclo de Infantil solo cuenta la escolaridad."
             )
             total += importe
 
@@ -825,8 +838,8 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
                 estatales_sobre_autonomica=parte_autonomica,
             )
         )
-    elif comunidad is not None and comunidad.deducciones_calculables:
-        deducciones_autonomicas = _round(
+    if comunidad is not None and comunidad.deducciones_calculables:
+        deducciones_autonomicas += _round(
             autonomicas.aplicar(
                 list(comunidad.deducciones_calculables),
                 inp,

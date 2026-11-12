@@ -600,12 +600,15 @@ def build_agent() -> TaxAgent:
     """Wire the production agent from settings (provider, FAISS searcher, verifier)."""
     from hacienda_gpt.agent.providers import create_provider
     from hacienda_gpt.agent.search import FaissCorpusSearcher
+    from hacienda_gpt.ops.consumo import medir
 
-    provider = create_provider()
-    verifier_provider = provider
+    # Every call is recorded and checked against the configured budgets.
+    provider = medir(create_provider(), "agente")
+    verifier_provider = provider.con_proposito("verificador")
     if settings.VERIFIER_PROVIDER or settings.VERIFIER_MODEL:
-        verifier_provider = create_provider(
-            settings.VERIFIER_PROVIDER or settings.LLM_PROVIDER, model=settings.VERIFIER_MODEL or None
+        verifier_provider = medir(
+            create_provider(settings.VERIFIER_PROVIDER or settings.LLM_PROVIDER, model=settings.VERIFIER_MODEL or None),
+            "verificador",
         )
     graph = None
     if Path(settings.DOCTRINE_GRAPH_PATH).exists():
