@@ -338,7 +338,7 @@ const SOURCE_TYPE_LABEL: Record<string, string> = {
 
 /** One persistent row of the "what the advisor did" timeline. */
 export interface ActivityRow {
-  kind: "search" | "case" | "verify" | "revise";
+  kind: "search" | "case" | "calc" | "verify" | "revise";
   text: string;
   detail?: string;
   outcome?: string;
@@ -374,6 +374,16 @@ export function activityRows(events: ProgressEvent[]): ActivityRow[] {
         rows.push({ kind: "case", text: "Expediente: repaso de lo que ya sé de tu situación" });
       } else if (event.tool === "evaluar_obligaciones") {
         rows.push({ kind: "case", text: "Obligaciones: comprobación de las que te aplican" });
+      } else if (event.tool === "calcular_irpf") {
+        const escenarios = Array.isArray(event.arguments.escenarios) ? event.arguments.escenarios.length : 1;
+        rows.push({ kind: "calc", text: escenarios > 1 ? `Cálculo del IRPF: ${escenarios} escenarios comparados` : "Cálculo del IRPF" });
+      } else if (event.tool === "listar_beneficios_fiscales") {
+        rows.push({ kind: "calc", text: "Revisión de reducciones y deducciones a tu alcance" });
+      } else if (event.tool === "calendario_fiscal") {
+        rows.push({ kind: "calc", text: "Consulta de tus próximos plazos" });
+      } else if (event.tool === "consultar_vigencia") {
+        const ref = typeof event.arguments.referencia === "string" ? event.arguments.referencia : "";
+        rows.push({ kind: "search", text: `¿Sigue vigente? ${ref}`.trim() });
       }
     } else if (event.type === "tool_result") {
       const last = rows[rows.length - 1];

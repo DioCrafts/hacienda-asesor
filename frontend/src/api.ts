@@ -31,6 +31,9 @@ export interface Citation {
   binding?: boolean | null;
   date?: string | null;
   reference?: string | null;
+  // Validity per the doctrine graph: vigente | matizada | superada | discutida.
+  vigencia?: string | null;
+  vigencia_resumen?: string | null;
 }
 
 export interface AnswerEnvelope {
@@ -42,6 +45,10 @@ export interface AnswerEnvelope {
   min_citations_required?: number;
   // /agent only: claims the verifier could not back with the cited fragment.
   warnings?: string[];
+  // Cited sources whose validity is in question, and whether the answer itself
+  // tells the user that the question has no settled criterion.
+  conflicts?: string[];
+  sinCriterioFirme?: boolean;
 }
 
 export type ClaimVerdict = "respaldada" | "parcial" | "no_respaldada";
@@ -68,6 +75,8 @@ export interface AgentResponse {
   citations: Citation[];
   claims: ClaimCheck[];
   warnings: string[];
+  conflicts?: string[];
+  sin_criterio_firme?: boolean;
   raw_answer?: string | null;
   tool_trace: ToolTraceEntry[];
   obligations: ObligationCandidate[];

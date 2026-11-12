@@ -507,6 +507,60 @@ cuota acumulada que imprime la ley; se usa tal cual para cuadrar al céntimo.
   confirma. El documento no se almacena, pero su texto se envía al proveedor
   de LLM configurado. No hay OCR: los PDF escaneados se rechazan.
 
+### Jurisprudencia del Supremo, grafo de vigencia y conflictos
+
+**Qué sentencias se ingieren.** Solo la Sala Tercera, Sección Segunda (la
+tributaria), con prioridad para la casación posterior al 22-07-2016 que fija
+doctrina. `supremo_seed` no rastrea ni busca en CENDOJ —sus condiciones
+prohíben la descarga masiva—: trabaja sobre HTML que ya tengas o sobre una
+lista de URLs individuales, con tope por ejecución.
+
+```bash
+# Clasificar y filtrar sentencias ya descargadas (sin red)
+uv run python -m hacienda_gpt.cli.supremo_seed --from-dir ./data/cendoj --output-dir ./data/html/<snapshot>/ts
+# o URLs concretas, una a una (máx. 25 por ejecución, 5 s entre peticiones)
+uv run python -m hacienda_gpt.cli.supremo_seed --urls-file urls.txt --output-dir ./data/html/<snapshot>/ts
+```
+
+Cada sentencia conservada lleva en su sidecar la sección, el tipo y número de
+recurso, si fija doctrina, el pasaje de doctrina y la cuestión casacional. Su
+detección está probada con sentencias sintéticas, no con documentos reales de
+CENDOJ: revisa el manifiesto de la primera ejecución.
+
+**Grafo de vigencia** (`hacienda_gpt/doctrine/`). Extrae las citas entre
+consultas de la DGT, resoluciones del TEAC y sentencias del TS y del TC, y
+registra qué hace cada documento con el que cita: lo confirma, lo matiza, lo
+supera o lo contradice. De ahí sale el estado de cada documento: `vigente`,
+`matizada`, `superada` (lo revoca uno posterior de igual o mayor rango) o
+`discutida` (lo contradice otro sin rango para zanjarlo).
+
+```bash
+uv run python -m hacienda_gpt.cli.doctrine_graph build              # gratis, por redacción expresa
+uv run python -m hacienda_gpt.cli.doctrine_graph build --llm        # relee con el LLM las citas relevantes
+uv run python -m hacienda_gpt.cli.doctrine_graph wanted --limit 50  # sentencias citadas que faltan en el corpus
+uv run python -m hacienda_gpt.cli.doctrine_graph status "V1234-19"
+```
+
+`wanted` es la lista de adquisición: las sentencias en las que la DGT y el TEAC
+se apoyan de verdad, ordenadas por número de citas, para conseguirlas una a
+una. La lectura con LLM solo se acepta si cita literalmente las palabras del
+pasaje que la justifican.
+
+**En el agente.** Con el grafo construido (`DOCTRINE_GRAPH_PATH`):
+
+- cada resultado de búsqueda lleva su vigencia y, si procede, una alerta
+  («Superada por STS rec. …»); hay además una herramienta `consultar_vigencia`;
+- una respuesta que se apoya en doctrina superada sin citar la resolución
+  posterior, o que presenta como seguro un criterio discutido, se devuelve al
+  agente para corregir y, si persiste, no se etiqueta como verificada;
+- cuando las fuentes discrepan sin que una de mayor rango lo resuelva, el
+  agente debe decir que **no hay criterio firme** y exponer las posturas; la
+  respuesta lo marca en `sin_criterio_firme` y `conflicts`, y la interfaz lo
+  muestra.
+
+El grafo es un indicio deducido del texto, no una fuente: nunca se cita, y sin
+`--llm` solo detecta relaciones dichas con redacción expresa.
+
 ### Evaluación del agente con consultas de la DGT
 
 Cada consulta vinculante de la DGT es un caso de prueba ya resuelto por un

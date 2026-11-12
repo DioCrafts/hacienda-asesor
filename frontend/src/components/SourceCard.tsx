@@ -17,6 +17,13 @@ const SOURCE_ICON = {
   other: Library,
 } as const;
 
+// Only statuses that should make the reader cautious get a badge.
+const VIGENCIA_BADGE: Record<string, { label: string; cls: string }> = {
+  superada: { label: "Superada", cls: "bg-risk-high-bg text-risk-high-fg" },
+  discutida: { label: "Criterio discutido", cls: "bg-grounding-uncited-bg text-grounding-uncited-fg" },
+  matizada: { label: "Matizada", cls: "bg-grounding-uncited-bg text-grounding-uncited-fg" },
+};
+
 interface SourceCardProps {
   citation: Citation;
   scope: string;
@@ -58,12 +65,23 @@ function SourceCard({ citation, scope, highlighted }: SourceCardProps) {
               Vinculante
             </span>
           )}
+          {citation.vigencia && VIGENCIA_BADGE[citation.vigencia] && (
+            <span
+              title={citation.vigencia_resumen ?? undefined}
+              className={clsx("rounded-pill px-2 py-px text-[11px] font-semibold", VIGENCIA_BADGE[citation.vigencia].cls)}
+            >
+              {VIGENCIA_BADGE[citation.vigencia].label}
+            </span>
+          )}
           {citation.binding === false && (
             <span className="rounded-pill bg-grounding-abstain-bg px-2 py-px text-[11px] font-semibold text-grounding-abstain-fg">
               No vinculante
             </span>
           )}
         </p>
+        {citation.vigencia && VIGENCIA_BADGE[citation.vigencia] && citation.vigencia_resumen && (
+          <p className="mt-1 text-[12.5px] text-ink-soft">{citation.vigencia_resumen}</p>
+        )}
         {citation.snippet && (
           <blockquote className="mt-2 border-l-2 border-line pl-3 text-[13px] italic leading-relaxed text-ink-soft">
             {citation.snippet}

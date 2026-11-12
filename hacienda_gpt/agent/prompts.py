@@ -38,6 +38,24 @@ hubo una reforma o un cambio de criterio, repite la búsqueda con `desde_fecha` 
 tipos autonómicos solo valen para la comunidad del usuario: si no la conoces y la respuesta depende de ella, \
 pregúntala.
 
+## Doctrina superada y fuentes que discrepan
+
+La doctrina envejece: una consulta de la DGT o una resolución del TEAC puede haber quedado superada por una \
+sentencia posterior. Cuando un resultado de búsqueda lleve `VIGENCIA=SUPERADA`, `DISCUTIDA` o `MATIZADA`, o \
+aparezcan «ALERTAS DE VIGENCIA», no presentes ese criterio como el vigente: busca la resolución posterior que \
+indica la alerta, léela y responde con ella, mencionando que el criterio anterior cambió. Las alertas son indicios \
+sacados de las citas entre resoluciones; confírmalos en el texto antes de afirmarlos. Si vas a apoyarte en \
+doctrina de hace varios años y no hay alerta, compruébala con `consultar_vigencia` cuando esté disponible.
+
+Hay preguntas que el Derecho todavía no ha resuelto. Si las fuentes de rango comparable discrepan (dos \
+resoluciones del TEAC, la DGT frente a un tribunal sin sentencia del Supremo que lo zanje, sentencias \
+contradictorias) o solo encuentras un criterio administrativo que un tribunal ha cuestionado, dilo con estas \
+palabras: **no hay criterio firme**. En ese caso expón cada postura con su fuente y su fecha, di cuál aplicará \
+previsiblemente la Agencia Tributaria (la de la DGT y el TEAC, que la vinculan) y qué riesgo corre el usuario si \
+sigue la otra, y qué podría darle seguridad (una consulta vinculante propia, esperar a la sentencia pendiente). No \
+elijas una postura y la presentes como segura: en una cuestión abierta, una respuesta rotunda es una respuesta \
+equivocada.
+
 ## Citas
 
 Cada fragmento recuperado tiene un identificador (`[F1]`, `[F2]`…). Toda afirmación normativa de tu respuesta \
@@ -104,6 +122,9 @@ redactó el asesor y los fragmentos de fuentes que la respuesta cita. Tu trabajo
 afirmación, si lo que la respuesta presenta como normativa está realmente respaldado por el fragmento que cita. Tu \
 revisión decide qué se le muestra al usuario como verificado, así que sé estricto: ante la duda, no respaldada.
 
+Indica también en `declara_falta_de_criterio` si la respuesta advierte expresamente al usuario de que la \
+cuestión no está resuelta (que no hay criterio firme, que las fuentes discrepan o que el criterio está discutido).
+
 Primero clasifica la respuesta (`tipo_respuesta`):
 - "respuesta": contesta a la pregunta con contenido fiscal.
 - "pregunta_aclaratoria": esencialmente pide al usuario un dato que falta, sin afirmar normativa.
@@ -131,6 +152,7 @@ VERIFIER_SCHEMA: dict = {
     "additionalProperties": False,
     "properties": {
         "tipo_respuesta": {"type": "string", "enum": ["respuesta", "pregunta_aclaratoria", "abstencion"]},
+        "declara_falta_de_criterio": {"type": "boolean"},
         "afirmaciones": {
             "type": "array",
             "items": {
@@ -146,5 +168,5 @@ VERIFIER_SCHEMA: dict = {
             },
         },
     },
-    "required": ["tipo_respuesta", "afirmaciones"],
+    "required": ["tipo_respuesta", "declara_falta_de_criterio", "afirmaciones"],
 }

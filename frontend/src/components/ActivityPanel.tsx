@@ -2,7 +2,7 @@
 // silent "Consultando…" with the actual searches as they happen; afterwards it
 // collapses into a "how I got here" disclosure under the answer.
 
-import { ChevronDown, ClipboardList, FileSearch, Loader2, PencilLine, ShieldCheck } from "lucide-react";
+import { Calculator, ChevronDown, ClipboardList, FileSearch, Loader2, PencilLine, ShieldCheck } from "lucide-react";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 
@@ -10,7 +10,7 @@ import type { ProgressEvent } from "../api";
 import { type ActivityRow, activityRows, formatElapsed, statusLine } from "../lib/presentation";
 import { RichText } from "./RichText";
 
-const ROW_ICON = { search: FileSearch, case: ClipboardList, verify: ShieldCheck, revise: PencilLine } as const;
+const ROW_ICON = { search: FileSearch, case: ClipboardList, calc: Calculator, verify: ShieldCheck, revise: PencilLine } as const;
 
 function Rows({ rows }: { rows: ActivityRow[] }) {
   return (
@@ -22,7 +22,7 @@ function Rows({ rows }: { rows: ActivityRow[] }) {
             <Icon size={15} aria-hidden className="mt-0.5 flex-shrink-0 text-primary-dark" />
             <div className="min-w-0">
               <p className="text-ink-soft">
-                {row.kind === "search" ? <span>Búsqueda: «{row.text}»</span> : row.text}
+                {row.kind === "search" && !row.text.startsWith("¿") ? <span>Búsqueda: «{row.text}»</span> : row.text}
                 {row.outcome && (
                   <span className={clsx("ml-2 whitespace-nowrap text-[12px]", row.failed ? "text-risk-high-fg" : "text-muted")}>
                     — {row.outcome}

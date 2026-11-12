@@ -85,6 +85,12 @@ class Fragment:
     date: str | None = None
     jurisdiction_scope: str | None = None
     reference: str | None = None  # ROJ / ECLI / nº consulta / nº resolución
+    # Validity according to the doctrine graph (None when the graph has no opinion).
+    vigencia: str | None = None  # vigente | matizada | superada | discutida
+    vigencia_resumen: str | None = None
+    doc_key: str | None = None
+    # A Supreme Court cassation ruling whose doctrine passage was detected.
+    fija_doctrina: bool = False
 
     def header(self) -> str:
         parts = [f"[{self.fragment_id}]", self.title]
@@ -97,6 +103,8 @@ class Fragment:
             f"fecha={self.date}" if self.date else None,
             ("vinculante=sí" if self.binding else "vinculante=no") if self.binding is not None else None,
             f"ámbito={self.jurisdiction_scope}" if self.jurisdiction_scope else None,
+            "fija_doctrina=sí" if self.fija_doctrina else None,
+            f"VIGENCIA={self.vigencia.upper()}" if self.vigencia in ("superada", "discutida", "matizada") else None,
         ]
         rendered = " | ".join(d for d in details if d)
         head = " — ".join(parts)
@@ -142,6 +150,10 @@ class EvidenceLedger:
             date=_first_str(metadata, ("fecha_resolucion", "fecha_actualizacion", "last_updated", "fecha")),
             jurisdiction_scope=_first_str(metadata, ("jurisdiction_scope",)),
             reference=_first_str(metadata, ("roj", "ecli", "num_consulta", "numero_resolucion", "criterio_id")),
+            vigencia=_first_str(metadata, ("_vigencia_estado",)),
+            vigencia_resumen=_first_str(metadata, ("_vigencia_resumen",)),
+            doc_key=_first_str(metadata, ("_doc_key",)),
+            fija_doctrina=metadata.get("fija_doctrina") is True,
         )
         self._fragments[fragment.fragment_id] = fragment
         self._by_key[key] = fragment.fragment_id

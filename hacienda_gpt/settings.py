@@ -208,3 +208,9 @@ AGENT_MAX_REVISIONS = int(os.environ.get("AGENT_MAX_REVISIONS", "1"))
 AGENT_SEARCH_DEFAULT_K = int(os.environ.get("AGENT_SEARCH_DEFAULT_K", "6"))
 # Thinking depth for the fact extractor when it runs on Claude.
 DECISION_EXTRACTOR_EFFORT = os.environ.get("DECISION_EXTRACTOR_EFFORT", "low")
+
+# --- Doctrine graph ----------------------------------------------------------
+# SQLite file built by `python -m hacienda_gpt.cli.doctrine_graph build`. When it
+# exists the agent annotates every retrieved ruling/consulta with its validity
+# (current, qualified, superseded, disputed); when it does not, nothing changes.
+DOCTRINE_GRAPH_PATH = os.environ.get("DOCTRINE_GRAPH_PATH", "./data/doctrine_graph.sqlite3")

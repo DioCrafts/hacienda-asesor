@@ -49,6 +49,8 @@ class VerificationReport(BaseModel):
 
     response_type: ResponseType = ResponseType.ANSWER
     claims: list[ClaimCheck] = Field(default_factory=list)
+    # The answer tells the user the question is unsettled / sources disagree.
+    declares_no_settled_criterion: bool = False
     # Set when verification itself could not run; the answer is then reported
     # as unverified — a failed check must never read as a passed one.
     error: str | None = None
@@ -98,7 +100,11 @@ def _parse_report(data: dict[str, Any], known_ids: set[str]) -> VerificationRepo
             verdict = Verdict.UNSUPPORTED
             reason = reason or "La afirmación no cita ningún fragmento válido."
         claims.append(ClaimCheck(text=text.strip(), fragment_ids=ids, verdict=verdict, reason=reason.strip()))
-    return VerificationReport(response_type=response_type, claims=claims)
+    return VerificationReport(
+        response_type=response_type,
+        claims=claims,
+        declares_no_settled_criterion=data.get("declara_falta_de_criterio") is True,
+    )
 
 
 class Verifier:

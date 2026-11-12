@@ -31,7 +31,8 @@ def test_verifier_sends_question_answer_and_fragments_and_parses_report() -> Non
     request = provider.json_requests[0]
     assert "<pregunta>\n¿Plazo?" in request["user"] and "Dos años [F2]." in request["user"]
     assert "[F1]" in request["user"] and "vinculante=sí" in request["user"]
-    assert request["schema"]["required"] == ["tipo_respuesta", "afirmaciones"]
+    assert request["schema"]["required"] == ["tipo_respuesta", "declara_falta_de_criterio", "afirmaciones"]
+    assert report.declares_no_settled_criterion is False  # absent in the reply → conservative default
 
     assert report.error is None and report.response_type is ResponseType.ANSWER
     assert [(c.text, c.fragment_ids, c.verdict) for c in report.claims] == [

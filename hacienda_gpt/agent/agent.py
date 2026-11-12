@@ -12,6 +12,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from enum import Enum
 import logging
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -24,6 +25,7 @@ from hacienda_gpt.agent.search import CorpusSearcher
 from hacienda_gpt.agent.tools import Toolbox
 from hacienda_gpt.agent.verifier import ClaimCheck, ResponseType, Verdict, VerificationReport, Verifier
 from hacienda_gpt.decision.schemas import CaseState
+from hacienda_gpt.doctrine.grafo import DoctrineGraph
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +59,9 @@ class AgentCitation(BaseModel):
     date: str | None = None
     reference: str | None = None
     snippet: str | None = None
+    # Validity according to the doctrine graph: vigente | matizada | superada | discutida.
+    vigencia: str | None = None
+    vigencia_resumen: str | None = None
 
 
 class ToolTraceEntry(BaseModel):
@@ -77,6 +82,10 @@ class AgentResult(BaseModel):
     citations: list[AgentCitation] = Field(default_factory=list)
     claims: list[ClaimCheck] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    # Cited sources whose validity is in question (superseded, disputed, qualified).
+    conflicts: list[str] = Field(default_factory=list)
+    # True when the answer itself tells the user the question has no settled criterion.
+    sin_criterio_firme: bool = False
     # The model's original text when `answer` was replaced by the abstain message.
     raw_answer: str | None = None
     tool_trace: list[ToolTraceEntry] = Field(default_factory=list)
@@ -98,13 +107,47 @@ def _context_block(case: CaseState | None) -> str:
     return "<contexto>\n" + "\n".join(lines) + "\n</contexto>"
 
 
-def _revision_message(problems: list[ClaimCheck], invalid_ids: list[str]) -> str:
+def _doctrine_issues(fragments: list[Any], report: VerificationReport) -> tuple[list[str], list[str]]:
+    """(flagged sources, warnings) for the doctrine the answer relies on.
+
+    Citing overruled doctrine is fine next to the ruling that overruled it, and
+    a disputed criterion is fine when presented as disputed. What is not fine is
+    relying on either as if it were settled law.
+    """
+    conflicts = [
+        f"[{f.fragment_id}] {f.title}: {f.vigencia_resumen}"
+        for f in fragments
+        if f.vigencia in ("superada", "discutida", "matizada")
+    ]
+    superseded = [f.fragment_id for f in fragments if f.vigencia == "superada"]
+    disputed = [f.fragment_id for f in fragments if f.vigencia == "discutida"]
+    other_doctrine_cited = any(f.doc_key and f.vigencia not in ("superada", "discutida") for f in fragments)
+    warnings: list[str] = []
+    if superseded and not (other_doctrine_cited or report.declares_no_settled_criterion):
+        warnings.append(
+            f"La respuesta se apoya en doctrina que consta como superada ({', '.join(superseded)}) sin citar la "
+            "resolución posterior. Contrástala antes de actuar."
+        )
+    if disputed and not report.declares_no_settled_criterion:
+        warnings.append(
+            f"Las fuentes citadas recogen un criterio discutido ({', '.join(disputed)}) y la respuesta no advierte "
+            "de que no hay criterio firme."
+        )
+    return conflicts, warnings
+
+
+def _revision_message(problems: list[ClaimCheck], invalid_ids: list[str], doctrine: list[str] | None = None) -> str:
     lines = [
         "Un verificador independiente ha comparado tu respuesta con los fragmentos citados y ha encontrado "
         "problemas. No se la he mostrado al usuario todavía."
     ]
     if invalid_ids:
         lines.append(f"Identificadores citados que no existen: {', '.join(invalid_ids)}.")
+    for issue in doctrine or []:
+        lines.append(
+            f"- Vigencia: {issue} Busca la resolución posterior y responde con ella, o di expresamente que no hay "
+            "criterio firme y expón las posturas."
+        )
     for claim in problems:
         cited = ", ".join(claim.fragment_ids) or "sin cita"
         lines.append(f"- «{claim.text}» ({cited}) → {claim.verdict.value}: {claim.reason or 'sin respaldo'}")
@@ -126,7 +169,9 @@ class TaxAgent:
         max_steps: int | None = None,
         max_revisions: int | None = None,
         default_k: int | None = None,
+        graph: DoctrineGraph | None = None,
     ) -> None:
+        self._graph = graph
         self._provider = provider
         self._searcher = searcher
         self._verifier = verifier or Verifier(provider)
@@ -159,7 +204,9 @@ class TaxAgent:
                 logger.exception("agent progress callback failed")
 
         ledger = EvidenceLedger()
-        toolbox = Toolbox(searcher=self._searcher, ledger=ledger, case=case, default_k=self._default_k)
+        toolbox = Toolbox(
+            searcher=self._searcher, ledger=ledger, case=case, default_k=self._default_k, graph=self._graph
+        )
         system = AGENT_SYSTEM_PROMPT + (CASE_TOOLS_ADDENDUM if case is not None else "")
         conversation = self._provider.start(
             system=system,
@@ -258,17 +305,20 @@ class TaxAgent:
             emit("verifying", citations=len(fragments))
             report = self._verifier.verify(question=query, answer=answer, fragments=fragments)
 
+            doctrine_conflicts, doctrine_warnings = _doctrine_issues(fragments, report)
             needs_revision = (
                 report.error is None
                 and report.response_type is ResponseType.ANSWER
-                and bool(report.problems or invalid_ids)
+                and bool(report.problems or invalid_ids or doctrine_warnings)
                 and revisions < self._max_revisions
             )
             if needs_revision:
                 revisions += 1
-                emit("revising", problems=len(report.problems) + len(invalid_ids))
+                emit("revising", problems=len(report.problems) + len(invalid_ids) + len(doctrine_warnings))
                 budget = steps + _STEPS_PER_REVISION
-                conversation.add_user_message(_revision_message(report.problems, invalid_ids))
+                conversation.add_user_message(
+                    _revision_message(report.problems, invalid_ids, doctrine_conflicts if doctrine_warnings else None)
+                )
                 continue
 
             return finish(**self._verdict(answer, report, fragments, invalid_ids))
@@ -292,13 +342,24 @@ class TaxAgent:
                 date=f.date,
                 reference=f.reference,
                 snippet=f.text[:300] + ("…" if len(f.text) > 300 else ""),
+                vigencia=f.vigencia,
+                vigencia_resumen=f.vigencia_resumen,
             )
             for f in fragments
         ]
         warnings: list[str] = []
         if invalid_ids:
             warnings.append(f"La respuesta cita fuentes inexistentes: {', '.join(invalid_ids)}.")
-        base: dict[str, Any] = {"answer": answer, "citations": citations, "claims": report.claims}
+        conflicts, doctrine_warnings = _doctrine_issues(fragments, report)
+        warnings.extend(doctrine_warnings)
+        unflagged = bool(doctrine_warnings)
+        base: dict[str, Any] = {
+            "answer": answer,
+            "citations": citations,
+            "claims": report.claims,
+            "conflicts": conflicts,
+            "sin_criterio_firme": report.declares_no_settled_criterion,
+        }
 
         if report.error is not None:
             warnings.append(f"No se pudo verificar la respuesta contra sus fuentes: {report.error}")
@@ -329,7 +390,7 @@ class TaxAgent:
                 "mode": AgentMode.ABSTAINED,
                 "warnings": warnings,
             }
-        if report.problems or invalid_ids:
+        if report.problems or invalid_ids or unflagged:
             return {**base, "mode": AgentMode.PARTIALLY_VERIFIED, "warnings": warnings}
         return {**base, "mode": AgentMode.VERIFIED, "warnings": warnings}
 
@@ -345,10 +406,16 @@ def build_agent() -> TaxAgent:
         verifier_provider = create_provider(
             settings.VERIFIER_PROVIDER or settings.LLM_PROVIDER, model=settings.VERIFIER_MODEL or None
         )
+    graph = None
+    if Path(settings.DOCTRINE_GRAPH_PATH).exists():
+        graph = DoctrineGraph(settings.DOCTRINE_GRAPH_PATH)
+    else:
+        logger.info("No doctrine graph at %s: validity alerts are disabled.", settings.DOCTRINE_GRAPH_PATH)
     return TaxAgent(
         provider=provider,
         searcher=FaissCorpusSearcher.from_settings(),
         verifier=Verifier(verifier_provider),
+        graph=graph,
     )
 
 

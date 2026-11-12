@@ -8,6 +8,7 @@ import type { ProgressEvent } from "./api";
 import { ApiError, createCase, deleteCaseFact, streamAgent, updateCaseFact } from "./api";
 import { ActivitySummary, LiveActivity } from "./components/ActivityPanel";
 import { CasePanel } from "./components/CasePanel";
+import { DoctrineNotice } from "./components/DoctrineNotice";
 import { AssistantBubble, UserBubble } from "./components/ChatBubbles";
 import { Composer } from "./components/Composer";
 import { EmptyState } from "./components/EmptyState";
@@ -213,6 +214,8 @@ export default function App() {
             mode: resp.mode,
             citations: resp.citations,
             warnings: resp.warnings,
+            conflicts: resp.conflicts ?? [],
+            sinCriterioFirme: resp.sin_criterio_firme ?? false,
           },
           claims: resp.claims,
           obligations: resp.obligations,
@@ -373,6 +376,7 @@ export default function App() {
                           onCite={(fragmentId) => handleCite(t.id, fragmentId)}
                         />
                         <TrustStrip mode={t.envelope.mode} detail={claimsSummary} />
+                        <DoctrineNotice conflicts={t.envelope.conflicts ?? []} unsettled={t.envelope.sinCriterioFirme ?? false} />
                         <VerificationPanel
                           claims={t.claims}
                           otherWarnings={otherWarnings}

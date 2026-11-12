@@ -14,13 +14,15 @@ import json
 import logging
 from typing import Any
 
-from hacienda_gpt.agent.evidence import SOURCE_TYPES, EvidenceLedger
+from hacienda_gpt.agent.evidence import SOURCE_TYPES, EvidenceLedger, Fragment
 from hacienda_gpt.agent.providers.base import ToolCall, ToolSpec
 from hacienda_gpt.agent.search import CorpusSearcher, SearchFilters, normalize_date
 from hacienda_gpt.decision.fact_extractor import EXPECTED_FACT_TYPE, KNOWN_FACT_NAMES, _coerce_value
 from hacienda_gpt.decision.interpreter import _merge_facts
 from hacienda_gpt.decision.rules_engine import evaluate_rules
 from hacienda_gpt.decision.schemas import CaseState, Fact, parse_fiscal_year
+from hacienda_gpt.doctrine.citas import extract_citations, identify_document
+from hacienda_gpt.doctrine.grafo import DoctrineGraph
 from hacienda_gpt.tax.beneficios import evaluar_beneficios
 from hacienda_gpt.tax.calendario import aviso_festivos, proximos_vencimientos
 from hacienda_gpt.tax.irpf import IRPFInput, IRPFResult
@@ -227,6 +229,40 @@ CALENDAR_TOOL = ToolSpec(
 )
 
 
+VALIDITY_TOOL = ToolSpec(
+    name="consultar_vigencia",
+    description=(
+        "Consulta el grafo de doctrina para saber si una consulta de la DGT, una resolución del TEAC o una "
+        "sentencia sigue vigente: qué resoluciones posteriores la confirman, matizan, superan o contradicen. "
+        "Úsala antes de apoyarte en doctrina de hace años o cuando dos fuentes parezcan discrepar. El resultado es "
+        "un indicio construido a partir de las citas entre resoluciones, no una fuente: para afirmar que algo está "
+        "superado, busca y cita la resolución posterior con buscar_fuentes."
+    ),
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "referencia": {
+                "type": "string",
+                "description": (
+                    "La resolución tal como se cita: 'V1234-19', 'resolución TEAC 00/1234/2017', "
+                    "'STS de 3 de junio de 2020 (rec. 1234/2019)', 'STC 182/2021'."
+                ),
+            }
+        },
+        "required": ["referencia"],
+    },
+)
+
+_RELACION_VERBO = {
+    "cita": "la cita",
+    "confirma": "la confirma",
+    "matiza": "la matiza",
+    "supera": "la supera",
+    "contradice": "la contradice",
+}
+
+
 @dataclass(frozen=True)
 class ToolOutcome:
     content: str
@@ -270,7 +306,9 @@ class Toolbox:
         ledger: EvidenceLedger,
         case: CaseState | None = None,
         default_k: int = 6,
+        graph: DoctrineGraph | None = None,
     ) -> None:
+        self._graph = graph
         self._searcher = searcher
         self.ledger = ledger
         self.case = case
@@ -279,6 +317,8 @@ class Toolbox:
 
     def specs(self) -> list[ToolSpec]:
         specs = [SEARCH_TOOL, CALCULATE_TOOL, BENEFITS_TOOL, CALENDAR_TOOL]
+        if self._graph is not None:
+            specs.append(VALIDITY_TOOL)
         if self.case is not None:
             specs.extend([READ_CASE_TOOL, RECORD_FACTS_TOOL, EVALUATE_RULES_TOOL])
         return specs
@@ -291,12 +331,16 @@ class Toolbox:
             CALCULATE_TOOL.name: self._calculate,
             BENEFITS_TOOL.name: self._benefits,
             CALENDAR_TOOL.name: self._calendar,
+            VALIDITY_TOOL.name: self._validity,
             READ_CASE_TOOL.name: self._read_case,
             RECORD_FACTS_TOOL.name: self._record_facts,
             EVALUATE_RULES_TOOL.name: self._evaluate_rules,
         }
         handler = handlers.get(call.name)
-        if handler is None or (call.name in _CASE_ONLY_TOOLS and self.case is None):
+        unavailable = (call.name in _CASE_ONLY_TOOLS and self.case is None) or (
+            call.name == VALIDITY_TOOL.name and self._graph is None
+        )
+        if handler is None or unavailable:
             return _error(f"Herramienta no disponible: {call.name}.")
         try:
             return handler(call.arguments)
@@ -339,11 +383,15 @@ class Toolbox:
                 summary="0 fragmentos",
             )
         fragments = [
-            self.ledger.register(text=doc.page_content or "", metadata=dict(doc.metadata or {})) for doc in docs
+            self.ledger.register(text=doc.page_content or "", metadata=self._with_validity(dict(doc.metadata or {})))
+            for doc in docs
         ]
         # A repeated search can return chunks already registered; show each once.
         unique = list({fragment.fragment_id: fragment for fragment in fragments}.values())
         body = "\n\n".join(fragment.render() for fragment in unique)
+        alerts = self._validity_alerts(unique)
+        if alerts:
+            body += "\n\n" + alerts
         return ToolOutcome(
             content=body,
             summary=f"{len(unique)} fragmentos: {', '.join(f.fragment_id for f in unique)}",
@@ -486,6 +534,93 @@ class Toolbox:
             content=json.dumps(payload, ensure_ascii=False),
             summary=f"{len(beneficios)} beneficios revisados, {disponibles} disponibles",
         )
+
+    # ------------------------------------------------------------------ #
+    # Doctrine validity
+    # ------------------------------------------------------------------ #
+
+    def _with_validity(self, metadata: dict[str, Any]) -> dict[str, Any]:
+        """Stamp a retrieved chunk with its document's validity status."""
+        if self._graph is None:
+            return metadata
+        doc = identify_document(metadata)
+        if doc is None:
+            return metadata
+        status = self._graph.vigencia(doc.clave)
+        if status.estado != "desconocido":
+            metadata["_doc_key"] = status.clave
+            metadata["_vigencia_estado"] = status.estado
+            metadata["_vigencia_resumen"] = status.resumen
+        return metadata
+
+    def _validity_alerts(self, fragments: list[Fragment]) -> str:
+        """Warn the model about superseded/disputed doctrine among the results,
+        and about results that disagree with each other."""
+        if self._graph is None:
+            return ""
+        lines: list[str] = []
+        for fragment in fragments:
+            if fragment.vigencia in ("superada", "discutida", "matizada"):
+                lines.append(f"- [{fragment.fragment_id}] {fragment.title}: {fragment.vigencia_resumen}")
+        by_key = {fragment.doc_key: fragment for fragment in fragments if fragment.doc_key}
+        for key, fragment in by_key.items():
+            for arista in self._graph.salientes(key):
+                other = by_key.get(arista.destino)
+                if other is not None and arista.relacion in ("supera", "contradice", "matiza"):
+                    lines.append(
+                        f"- [{fragment.fragment_id}] {_RELACION_VERBO[arista.relacion].replace('la ', '')} a "
+                        f"[{other.fragment_id}] (según el grafo de citas)."
+                    )
+        if not lines:
+            return ""
+        return (
+            "ALERTAS DE VIGENCIA (indicios del grafo de citas entre resoluciones; compruébalos leyendo la resolución "
+            "posterior antes de afirmarlos):\n" + "\n".join(dict.fromkeys(lines))
+        )
+
+    def _validity(self, arguments: dict[str, Any]) -> ToolOutcome:
+        assert self._graph is not None
+        reference = arguments.get("referencia")
+        if not isinstance(reference, str) or not reference.strip():
+            return _error("Falta 'referencia' (la resolución tal como se cita).")
+        citas = extract_citations(reference)
+        if not citas:
+            return _error(
+                "No reconozco esa referencia. Usa el número de consulta (V1234-19), el RG del TEAC (00/1234/2017), "
+                "o 'STS … (rec. 1234/2019)' / 'STC 182/2021'."
+            )
+        blocks: list[str] = []
+        for cita in citas[:3]:
+            nodo = self._graph.get(cita.clave)
+            if nodo is None:
+                blocks.append(
+                    f"{cita.texto}: no consta en el grafo (ni está en el corpus ni la cita ningún documento)."
+                )
+                continue
+            status = self._graph.vigencia(nodo.clave)
+            lines = [
+                f"{self._graph.etiqueta(nodo)} — estado: {status.estado.upper()}. {status.resumen}"
+                + (
+                    ""
+                    if nodo.en_corpus
+                    else " (No está en el corpus: solo se conoce por las citas de otros documentos.)"
+                )
+            ]
+            for arista in self._graph.entrantes(nodo.clave):
+                otro = self._graph.get(arista.origen)
+                if otro is not None:
+                    evidencia = f" — «{arista.evidencia}»" if arista.evidencia and arista.relacion != "cita" else ""
+                    lines.append(f"  · {self._graph.etiqueta(otro)} {_RELACION_VERBO[arista.relacion]}{evidencia}")
+            for arista in self._graph.salientes(nodo.clave):
+                otro = self._graph.get(arista.destino)
+                if otro is not None and arista.relacion != "cita":
+                    lines.append(f"  · {arista.relacion} a {self._graph.etiqueta(otro)}")
+            blocks.append("\n".join(lines))
+        blocks.append(
+            "Esto es un indicio, no una fuente citable: para afirmar ante el usuario que un criterio está superado o "
+            "discutido, localiza la resolución posterior con buscar_fuentes y cítala."
+        )
+        return ToolOutcome(content="\n\n".join(blocks), summary=f"vigencia de {len(citas[:3])} referencia(s)")
 
     def _case_snapshot(self) -> dict[str, Any]:
         case = self.case
