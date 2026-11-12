@@ -284,6 +284,40 @@ def evaluar_beneficios(inp: IRPFInput, *, conocidos: set[str], params: IRPFParam
             ahorro=mat.importe_por_hijo * inp.num_descendientes_menores_3,
         )
 
+    av = p.alquiler_vivienda_habitual
+    if av is not None:
+        nombre_av = "Deducción estatal por alquiler de vivienda habitual"
+        requisitos_av = [
+            f"Base imponible inferior a {av.umbral_superior:.2f} € (la base máxima se reduce a partir de {av.umbral_inferior:.2f} €).",
+            "Durante al menos medio año, ni tú ni tu unidad familiar podéis ser titulares de otra vivienda a menos de "
+            "50 km de la alquilada.",
+            "La introdujo el Real Decreto-ley 29/2026, pendiente de convalidación por el Congreso.",
+        ]
+        aplicada = _importe_linea(base, nombre_av)
+        if aplicada:
+            add(
+                "alquiler_estatal",
+                nombre_av,
+                "aplicado",
+                f"Deducción aplicada: {aplicada:.2f} €.",
+                requisitos_av,
+                av.fuente,
+            )
+        elif (
+            "alquiler_vivienda_habitual" not in conocidos
+            and base.base_imponible_general + base.base_imponible_ahorro < av.umbral_superior
+        ):
+            add(
+                "alquiler_estatal",
+                nombre_av,
+                "por_confirmar",
+                f"Si vives de alquiler, puedes deducir el {av.porcentaje * 100:.0f} % de lo pagado en el año, sobre una "
+                f"base máxima de {av.base_maxima:.0f} €.",
+                requisitos_av,
+                av.fuente,
+                faltan=["alquiler_vivienda_habitual"],
+            )
+
     if inp.num_descendientes >= 2:
         add(
             "familia_numerosa",

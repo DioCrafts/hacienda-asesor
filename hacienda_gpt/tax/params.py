@@ -144,6 +144,19 @@ class ViviendaTransitoria(_Model):
     fuente: Fuente
 
 
+class AlquilerViviendaHabitual(_Model):
+    """State deduction for renting the main home (art. 68.6 LIRPF)."""
+
+    porcentaje: Decimal
+    base_maxima: Decimal
+    # Up to this taxable base the full maximum base applies...
+    umbral_inferior: Decimal
+    # ...from this one there is no deduction; in between the maximum base shrinks.
+    umbral_superior: Decimal
+    pendiente: Decimal
+    fuente: Fuente
+
+
 class ObligacionDeclarar(_Model):
     limite_trabajo_un_pagador: Decimal
     limite_trabajo_varios_pagadores: Decimal
@@ -262,6 +275,8 @@ class IRPFParams(_Model):
     ejercicio: int
     fuente_principal: FuentePrincipal
     nota_ejercicio: str | None = None
+    # Amending norms these parameters have been checked against, and what came of it.
+    revisiones: list[dict[str, str]] = Field(default_factory=list)
     trabajo: Trabajo
     tributacion_conjunta: TributacionConjunta
     prevision_social: PrevisionSocial
@@ -277,6 +292,8 @@ class IRPFParams(_Model):
     donativos: Donativos
     maternidad: Maternidad
     vivienda_habitual_transitoria: ViviendaTransitoria
+    # None = the deduction does not exist in that year.
+    alquiler_vivienda_habitual: AlquilerViviendaHabitual | None = None
     obligacion_declarar: ObligacionDeclarar
 
     def comunidad(self, nombre: str | None) -> Comunidad | None:

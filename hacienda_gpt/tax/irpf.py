@@ -593,6 +593,32 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
         )
         deducciones += importe
 
+    # Rent of the main home (art. 68.6): borne by the state tax alone (art. 67.1.a).
+    solo_estatal = ZERO
+    av = p.alquiler_vivienda_habitual
+    if av is not None and inp.alquiler_vivienda_habitual:
+        base_imponible = base_imponible_general + base_imponible_ahorro
+        if base_imponible < av.umbral_superior:
+            base_maxima = av.base_maxima
+            if base_imponible > av.umbral_inferior:
+                base_maxima -= av.pendiente * (base_imponible - av.umbral_inferior)
+            solo_estatal = _round(min(inp.alquiler_vivienda_habitual, max(ZERO, base_maxima)) * av.porcentaje)
+        if solo_estatal:
+            t.linea("Deducción estatal por alquiler de vivienda habitual", -solo_estatal, av.fuente)
+            t.aviso(
+                "La deducción estatal por alquiler (art. 68.6 LIRPF) la introdujo el Real Decreto-ley 29/2026, en vigor "
+                "desde el 8 de octubre de 2026 y pendiente de convalidación por el Congreso: si se deroga, desaparece. "
+                "Exige que, durante al menos medio año, ni tú ni tu unidad familiar seáis titulares de otra vivienda a "
+                "menos de 50 km de la alquilada (no se ha comprobado). Se ha calculado sobre todo el alquiler del año "
+                "que has indicado, y se suma a la deducción autonómica por alquiler si la hay: el art. 68.6 no las declara "
+                "incompatibles, pero no se ha contrastado con la norma autonómica ni hay criterio administrativo."
+            )
+        else:
+            t.aviso(
+                f"No se aplica la deducción estatal por alquiler: tu base imponible ({base_imponible:.2f} €) no es "
+                f"inferior a {av.umbral_superior:.2f} € (art. 68.6 LIRPF)."
+            )
+
     # The general deductions are borne half by each tax; the community's own
     # deductions reduce only the regional tax. Neither tax can go below zero.
     parte_autonomica = _round(deducciones * p.reparto_deducciones_estatales.parte_autonomica)
@@ -615,7 +641,7 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
             "Has indicado datos de deducciones autonómicas de Madrid (alquiler, gastos educativos, nacimiento…), "
             "pero la simulación no es de un residente en Madrid: no se han aplicado."
         )
-    liquida_estatal = max(ZERO, estatal - parte_estatal)
+    liquida_estatal = max(ZERO, estatal - parte_estatal - solo_estatal)
     liquida_autonomica = max(ZERO, autonomica - parte_autonomica - deducciones_autonomicas)
     if autonomica - parte_autonomica - deducciones_autonomicas < 0:
         t.aviso(

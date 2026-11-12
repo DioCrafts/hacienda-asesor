@@ -202,6 +202,19 @@
       "nota": "El régimen transitorio está verificado; el porcentaje (15 %) y la base máxima (9.040 €) proceden de la redacción de 2012, que no se ha contrastado en esta revisión."
     }
   },
+  "alquiler_vivienda_habitual": {
+    "porcentaje": "0.10",
+    "base_maxima": "11630",
+    "umbral_inferior": "23007.20",
+    "umbral_superior": "33007.20",
+    "pendiente": "1.163",
+    "fuente": {
+      "referencia": "art. 68.6 LIRPF (añadido por el art. 6.2.4 del Real Decreto-ley 29/2026, BOE-A-2026-20823); a cargo solo de la cuota estatal: art. 67.1.a) LIRPF",
+      "en_vigor_desde": "2026-10-08",
+      "verificado": true,
+      "nota": "Leído en el BOE el 12-11-2026. El Real Decreto-ley 29/2026 no constaba convalidado ni derogado en esa fecha (su antecesor, el 26/2026, fue derogado por el Congreso). No se ha contrastado si las rentas pagadas antes del 8-10-2026 dan derecho a deducción: el texto dice «cantidades satisfechas en el período impositivo»."
+    }
+  },
   "obligacion_declarar": {
     "limite_trabajo_un_pagador": "22000",
     "limite_trabajo_varios_pagadores": "15876",
@@ -422,5 +435,13 @@
       "en_vigor_desde": "2015-01-01",
       "verificado": true
     }
-  }
+  },
+  "revisiones": [
+    {
+      "norma": "Real Decreto-ley 29/2026, de 6 de octubre",
+      "boe_id": "BOE-A-2026-20823",
+      "revisado_el": "2026-11-12",
+      "resultado": "Añadida la deducción estatal por alquiler de vivienda habitual (art. 68.6). El resto de parámetros de este fichero no cambia. No modelado por la calculadora: nueva reducción por arrendamiento de vivienda (art. 23.2, contratos desde el 1-12-2026; DT 38.ª), prórroga a 2026 de la imputación de rentas inmobiliarias al 1,1 % (DA 55.ª), Planes de Ahorro a Largo Plazo y Cuenta de Ahorro e Inversión Financia Europa (art. 7.ñ, DA 26.ª, art. 95 ter, DA 66.ª), exención por transmisión de vivienda a entes públicos (DA 65.ª), y cambios con efectos desde 2027 (arts. 24 y 85.1)."
+    }
+  ]
 }

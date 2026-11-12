@@ -270,7 +270,9 @@ def test_madrid_rent_deduction_for_under_40s() -> None:
     r = _madrid(edad=30, **base)
     assert _aplicada(r, "Deducción autonómica por alquiler") == D("1237.20")
     assert r.cuota_integra_autonomica == D("1421.55") and r.cuota_integra_estatal == D("1626.90")
-    assert r.cuota_liquida == D("1811.25")
+    # Since RDL 29/2026 the state rent deduction (art. 68.6) also applies: 10 % × 9.600 = 960.
+    assert _aplicada(r, "Deducción estatal por alquiler") == D("960.00")
+    assert r.cuota_liquida == D("851.25")
 
     assert "menores de 40" in _no_aplicada(_madrid(edad=40, **base), "alquiler")
     assert "falta tu edad" in _no_aplicada(_madrid(**base), "alquiler")
@@ -373,12 +375,12 @@ def test_regional_deductions_cannot_push_the_regional_tax_below_zero() -> None:
         hijos_nacidos_ultimos_3_ejercicios=1,
     )
     # Rent (1.237,20) + birth (721,70) exceed the regional tax: it drops to zero
-    # and the state tax is untouched.
+    # and the state tax only loses the state rent deduction (art. 68.6: 960).
     assert _aplicada(r, "Deducción autonómica por alquiler") == D("1237.20")
     assert _aplicada(r, "Deducción autonómica por nacimiento") == D("721.70")
     assert r.cuota_integra_autonomica < D("1958.90")
     assert any("art. 77.2" in aviso for aviso in r.avisos)
-    assert r.cuota_liquida == r.cuota_integra_estatal
+    assert r.cuota_liquida == r.cuota_integra_estatal - D("960.00")
 
 
 def test_general_deductions_are_split_between_state_and_regional_tax() -> None:
