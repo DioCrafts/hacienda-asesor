@@ -28,12 +28,12 @@ from hacienda_gpt.tax.params import (
     CAMPOS_GASTO,
     GASTOS_DESGLOSADOS,
     DeduccionesMadrid,
-    _MadridEducacion,
     Escala,
     EtapaEducativa,
     Fuente,
     IRPFParams,
     Minimos,
+    _MadridEducacion,
     load_params,
     normalizar_comunidad,
 )

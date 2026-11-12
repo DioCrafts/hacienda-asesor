@@ -1,8 +1,8 @@
 """Data-driven regional deductions: the generic routine, on synthetic deductions."""
 
+from decimal import Decimal
 import json
 import os
-from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -248,8 +248,9 @@ def test_savings_base_ceiling_and_phase_out_on_the_cap() -> None:
 # --------------------------------------------------------------------------- #
 
 
-def _aplicar(deducciones: list[DeduccionCalculable], inp: IRPFInput, bases: Bases | None = None, *,
-             conjunta: bool = False) -> tuple[D, dict[str, D], list[str]]:  # fmt: skip
+def _aplicar(deducciones: list[DeduccionCalculable], inp: IRPFInput, bases: (
+    Bases | None
+) = None, *,conjunta: bool = False) -> tuple[D, dict[str, D], list[str]]:  # fmt: skip
     lineas: dict[str, D] = {}
     avisos: list[str] = []
     total = aplicar(deducciones, inp, bases or _bases(), conjunta=conjunta, norma="Ley X",
@@ -527,7 +528,9 @@ def test_mutually_exclusive_deductions_keep_the_most_favourable() -> None:
     numerosa = _fija(articulo="art. 14", titulo="Familia numerosa", importe="400", unidad=None,
                      requiere=["familia_numerosa"], excluyente_con=["art. 11"])  # fmt: skip
     # File order no longer decides: the second one deducts more.
-    total, lineas, avisos = _aplicar([nacimiento, numerosa], _inp(hijos_nacidos_en_el_ejercicio=1, familia_numerosa=True))
+    total, lineas, avisos = _aplicar(
+        [nacimiento, numerosa], _inp(hijos_nacidos_en_el_ejercicio=1, familia_numerosa=True)
+    )
     assert total == D(400) and lineas == {"art. 14": D("400.00")}
     assert any("«Nacimiento» (art. 11, 200.00 €) no aplicada: es incompatible con «Familia numerosa» (art. 14, "
                "400.00 €), que te resulta más favorable" in a for a in avisos)  # fmt: skip
@@ -581,7 +584,6 @@ def test_either_spouse_may_meet_the_age_or_disability_condition() -> None:
     joven = _inp(edad_conyuge=33, **renta)
     assert evaluar(solo_declarante, joven, _bases(), conjunta=True).motivo is not None
     assert evaluar(en_conjunta, joven, _bases(), conjunta=True).importe == D(450)
-    assert "(tú o tu cónyuge)" in evaluar(en_conjunta, joven, _bases(), conjunta=False).motivo or True
     assert evaluar(en_conjunta, joven, _bases(), conjunta=False).motivo is not None  # individual return
     assert evaluar(siempre, joven, _bases(), conjunta=False).importe == D(450)
     # Nothing known about the spouse: only the taxpayer counts.
@@ -711,7 +713,9 @@ def test_narrow_expenses_are_parts_of_the_broad_ones() -> None:
     assert evaluar(salud, inp, _bases(), conjunta=False).importe == D(55)
     for nuevo in ("gastos_veterinarios", "adquisicion_vehiculo_electrico", "inversion_economia_social",
                   "gastos_enfermedades_raras", "gastos_ela"):  # fmt: skip
-        assert evaluar(_pct(base=nuevo, maximo="100"), _inp(**{nuevo: D(1000)}), _bases(), conjunta=False).importe == 100
+        assert (
+            evaluar(_pct(base=nuevo, maximo="100"), _inp(**{nuevo: D(1000)}), _bases(), conjunta=False).importe == 100
+        )
 
 
 def test_through_the_calculator_with_the_regional_tax() -> None:

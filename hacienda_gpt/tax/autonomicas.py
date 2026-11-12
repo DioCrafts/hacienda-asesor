@@ -15,7 +15,6 @@ from decimal import Decimal
 from typing import Any
 
 from hacienda_gpt.tax.params import (
-    BASE_CUOTA,
     CAMPOS_UNIDAD_HIJOS,
     PERIODOS_POR_HIJO,
     AjustePorHijo,
@@ -524,12 +523,12 @@ def evaluar(d: DeduccionCalculable, inp: Any, bases: Bases, *, conjunta: bool) -
         if por_orden and d.unidad == "hijos_nacidos_en_el_ejercicio":
             importe = _por_orden(por_orden, unidades, int(inp.num_descendientes))
         elif por_orden and d.unidad_descendientes is not None:
-            todos = _hijos(inp)
-            if todos is None or de_la_unidad is None:
+            hermanos = _hijos(inp)
+            if hermanos is None or de_la_unidad is None:
                 return hecho(ZERO, FALTA_DETALLE)
             # The order of each child is its rank by age among all the children (the eldest is the first).
-            por_edad = sorted(range(len(todos)), key=lambda i: (-todos[i].edad, i))
-            orden_de = {id(todos[i]): puesto + 1 for puesto, i in enumerate(por_edad)}
+            por_edad = sorted(hermanos, key=lambda h: -h.edad)
+            orden_de = {id(h): puesto + 1 for puesto, h in enumerate(por_edad)}
             importe = sum((_del_orden(por_orden, orden_de[id(h)]) * factor_hijo(h) for h in de_la_unidad), ZERO)
         elif por_orden:
             importe = sum((_del_orden(por_orden, orden) for orden in range(1, unidades + 1)), ZERO)
@@ -560,7 +559,7 @@ def evaluar(d: DeduccionCalculable, inp: Any, bases: Bases, *, conjunta: bool) -
             porcentaje, tramos = None, v.tramos_porcentaje
         elif v is not None and v.porcentaje is not None:
             porcentaje, tramos = v.porcentaje, None
-        propio = {a.base: a.porcentaje for a in d.bases_adicionales if a.porcentaje is not None}
+        de_cada_base = {a.base: a.porcentaje for a in d.bases_adicionales if a.porcentaje is not None}
 
         def bruto(partes: dict[str, Decimal], base_maxima: Decimal | None) -> Decimal:
             """Percentage (or tiers) of the expenses, the expense capped at ``base_maxima``."""
@@ -570,7 +569,7 @@ def evaluar(d: DeduccionCalculable, inp: Any, bases: Bases, *, conjunta: bool) -
             assert porcentaje is not None
             if base_maxima is not None and total > base_maxima:
                 return base_maxima * porcentaje  # a single percentage (the model forbids otherwise)
-            return sum((g * propio.get(b, porcentaje) for b, g in partes.items()), ZERO)
+            return sum((g * de_cada_base.get(b, porcentaje) for b, g in partes.items()), ZERO)
 
         maximo_por_unidad, maximo = cifra("maximo_por_unidad"), cifra("maximo")
         base_maxima_por_unidad, base_maxima = cifra("base_maxima_por_unidad"), cifra("base_maxima")
@@ -685,9 +684,7 @@ def evaluar(d: DeduccionCalculable, inp: Any, bases: Bases, *, conjunta: bool) -
 # --------------------------------------------------------------------------- #
 
 
-def _mejor_combinacion(
-    deducciones: list[DeduccionCalculable], importes: dict[int, Decimal]
-) -> dict[int, list[int]]:
+def _mejor_combinacion(deducciones: list[DeduccionCalculable], importes: dict[int, Decimal]) -> dict[int, list[int]]:
     """Of each group of mutually exclusive deductions keep the combination that deducts most.
 
     ``importes`` holds the amount of every deduction that would be applied, by position.
@@ -792,9 +789,11 @@ def aplicar(
                 continue
             tope = _minimo(
                 conjunto.maximo,
-                conjunto.maximo_fraccion_cuota * cuota
-                if conjunto.maximo_fraccion_cuota is not None and cuota is not None
-                else None,
+                (
+                    conjunto.maximo_fraccion_cuota * cuota
+                    if conjunto.maximo_fraccion_cuota is not None and cuota is not None
+                    else None
+                ),
             )
             assert tope is not None
             disponible = max(ZERO, tope - usado_del_grupo.get(conjunto.grupo, ZERO)).quantize(CENT)

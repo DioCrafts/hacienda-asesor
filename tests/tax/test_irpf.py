@@ -367,7 +367,9 @@ def test_madrid_education_expenses_child_by_child() -> None:
     assert con(
         {"edad": 2, "etapa_educativa": "infantil_primer_ciclo", "gastos": {"gastos_escolaridad": 9000}},
         {"edad": 8, "gastos": {"gastos_escolaridad": 9000}},
-    ) == D("1958.90")  # 1.031 + 927,90
+    ) == D(
+        "1958.90"
+    )  # 1.031 + 927,90
     exacto = _madrid(descendientes=[{"edad": 10, "gastos": {"gastos_escolaridad": 8000}}, {"edad": 7}], **base)
     assert any("hijo a hijo con el desglose" in aviso for aviso in exacto.avisos)
     assert exacto.base_imponible_general == _madrid(num_descendientes=2, **base).base_imponible_general
