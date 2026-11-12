@@ -744,7 +744,7 @@ verifica que la cita sigue en la ley. El asesor las usa como herramientas.
 |---|---|---|---|
 | Sociedades | `calcular_impuesto_sociedades`, `calcular_pago_fraccionado_sociedades`, `comparar_autonomo_vs_sociedad` | Sociedades pequeñas, ejercicios iniciados en 2025-2028: tipo general, escala de microempresas, reducida dimensión, nueva creación, reserva de capitalización, bases negativas | Reserva de nivelación, pago fraccionado por base con escala de microempresas, regímenes especiales |
 | Patrimonio | `calcular_patrimonio` | Estado y las 15 comunidades de régimen común (mínimo exento, escala, bonificación general), límite conjunto con el IRPF e Impuesto de Solidaridad de las Grandes Fortunas | Reglas de valoración, bonificaciones de bienes concretos, no residentes |
-| Sucesiones y Donaciones | `calcular_sucesiones_donaciones` | Ley estatal y la normativa de las comunidades cargadas en `isd_2026.json`, por beneficiario | Acumulación de donaciones, usufructos, no residentes; las comunidades no cargadas se calculan solo con la ley estatal, con aviso |
+| Sucesiones y Donaciones | `calcular_sucesiones_donaciones` | Ley estatal y la normativa de las 15 comunidades de régimen común (reducciones, tarifa, coeficientes y bonificaciones), por beneficiario | Acumulación de donaciones, usufructos, no residentes, y las reducciones autonómicas que dependen de datos que no se piden (figuran por nombre) |
 
 La comparación autónomo/sociedad solo suma impuestos sobre la renta: no
 incluye Seguridad Social ni costes de gestión, y no declara un ganador.

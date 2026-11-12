@@ -486,8 +486,9 @@ def escrituras(valor: Decimal | int, clase: Literal["importe", "porcentaje", "co
     entero = int(numero)
     fraccion = "".join(str(d) for d in digitos)[-decimales:].rjust(decimales, "0") if decimales else ""
     formas: list[str] = []
-    for cabeza in dict.fromkeys([_miles(entero), str(entero)]):
-        if not decimales and clase != "coeficiente":
+    for cabeza in dict.fromkeys([_miles(entero), str(entero), _miles(entero).replace(".", " ")]):
+        if not decimales:
+            # Coefficient tables print whole values bare too ("1", "2").
             formas.append(cabeza)
         for ancho in range(max(decimales, 1), 5):
             formas.append(f"{cabeza},{fraccion.ljust(ancho, '0')}")

@@ -458,8 +458,16 @@ def calcular_isd(inp: BeneficiarioISD, params: ISDParams | None = None) -> Resul
     # --- Who the beneficiary is --------------------------------------------------
     parentesco = inp.parentesco
     if comunidad is not None and parentesco is not None:
-        equiparacion = next((e for e in comunidad.equiparaciones if e.parentesco == parentesco), None)
-        if equiparacion is not None and not _incumple(equiparacion.cuando, _caso_minimo(inp)):
+        # The first assimilation whose conditions hold: a community may have one per mode.
+        equiparacion = next(
+            (
+                e
+                for e in comunidad.equiparaciones
+                if e.parentesco == parentesco and not _incumple(e.cuando, _caso_minimo(inp))
+            ),
+            None,
+        )
+        if equiparacion is not None:
             t.aviso(
                 f"{comunidad.nombre} equipara «{parentesco.replace('_', ' ')}» a "
                 f"«{equiparacion.equivale_a.replace('_', ' ')}» ({equiparacion.articulo}): {equiparacion.resumen}"

@@ -59,9 +59,9 @@ def test_params_load_with_the_figures_read_from_the_law() -> None:
         "III": D("1.6676"),
         "IV": D("2.1"),
     }
-    assert set(p.comunidades) == {"madrid", "andalucia", "cataluna"}
+    assert {"madrid", "andalucia", "cataluna"} <= set(p.comunidades) and len(p.comunidades) == 15
     assert p.comunidad("Comunidad de Madrid") is not None and p.comunidad("Catalunya") is not None
-    assert p.comunidad("Galicia") is None
+    assert p.comunidad("Navarra") is None
     with pytest.raises(EjercicioNoDisponibleError):
         load_isd_params(1999)
 
@@ -101,9 +101,9 @@ def test_how_figures_may_be_spelled_in_a_quote() -> None:
     assert {"99", "99,00"} <= set(escrituras(D("0.99"), "porcentaje"))
     assert "tres" in escrituras(D("0.03"), "porcentaje")
     assert "7,65" in escrituras(D("0.0765"), "porcentaje")
-    assert {"2,1", "2,1000"} <= set(escrituras(D("2.1"), "coeficiente")) and "2" not in escrituras(
-        D("2"), "coeficiente"
-    )
+    assert {"2,1", "2,1000"} <= set(escrituras(D("2.1"), "coeficiente"))
+    # Whole coefficients are printed bare too ("1", "2"), and thousands sometimes with a space.
+    assert "2" in escrituras(D("2"), "coeficiente") and "150 000" in escrituras(D("150000"), "importe")
     assert {"21", "veintiuno", "veintiún"} <= set(escrituras(21, "entero"))
     assert "sesenta y cinco" in escrituras(65, "entero")
     # Inline markup does not split words; table cells are separated.
@@ -245,9 +245,9 @@ def test_state_gift_has_no_kinship_reduction_and_business_is_a_declared_amount()
 
 
 def test_unknown_community_falls_back_to_state_rules_and_says_so() -> None:
-    r = _isd(modo="sucesion", parentesco="hijo", edad=30, valor_recibido=200000, comunidad="Galicia")
+    r = _isd(modo="sucesion", parentesco="hijo", edad=30, valor_recibido=200000, comunidad="Navarra")
     assert r.comunidad is None and r.cuota_a_ingresar == D("28250.01")
-    assert _avisa(r, "No hay normativa de «Galicia» cargada") and _avisa(r, "SOLO la ley estatal")
+    assert _avisa(r, "No hay normativa de «Navarra» cargada") and _avisa(r, "SOLO la ley estatal")
 
 
 def test_input_is_validated() -> None:
@@ -525,3 +525,33 @@ def test_one_result_per_beneficiary() -> None:
     assert [r.grupo for r in resultados] == ["II", "I"]
     # Hijo de 12: 16.000 + 4.000 × 9 = 52.000, limitado a 48.000.
     assert _linea(resultados[1], "Reducción por parentesco (Madrid)") == D("-48000.00")
+
+
+def test_all_fifteen_communities_compute_and_differ() -> None:
+    """A child of 30 inheriting 400.000 €, and a 100.000 € gift with a public deed, in every community."""
+    herencias, donaciones = {}, {}
+    for clave in load_isd_params(2026).comunidades:
+        herencia = calcular_isd(
+            BeneficiarioISD(modo="sucesion", comunidad=clave, parentesco="hijo", edad=30, valor_recibido=D(400000))
+        )
+        donacion = calcular_isd(
+            BeneficiarioISD(
+                modo="donacion",
+                comunidad=clave,
+                parentesco="hijo",
+                edad=30,
+                valor_recibido=D(100000),
+                escritura_publica=True,
+            )
+        )
+        herencias[clave], donaciones[clave] = herencia.cuota_a_ingresar, donacion.cuota_a_ingresar
+    # Figures hand-checked from each law's article by the encoder of that community.
+    assert herencias["cantabria"] == herencias["galicia"] == herencias["extremadura"] == 0
+    assert herencias["canarias"] == D("75.07") and herencias["castilla_la_mancha"] == D("15379.56")
+    assert herencias["asturias"] == D("23120.00") and herencias["comunidad_valenciana"] == D("558.78")
+    assert donaciones["asturias"] == D("2000.00")  # the reduced gift scale: 2 % up to 150.000 €
+    assert donaciones["galicia"] == D("5000.00") and donaciones["castilla_la_mancha"] == D("620.77")
+    assert donaciones["baleares"] == donaciones["cantabria"] == donaciones["aragon"] == 0
+    # Without a community only state law applies, and it is the most expensive of all.
+    estatal = calcular_isd(BeneficiarioISD(modo="sucesion", parentesco="hijo", edad=30, valor_recibido=D(400000)))
+    assert estatal.cuota_a_ingresar > max(herencias.values())

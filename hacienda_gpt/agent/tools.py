@@ -472,7 +472,7 @@ PATRIMONIO_TOOL = ToolSpec(
 
 ISD_TOOL = ToolSpec(
     name="calcular_sucesiones_donaciones",
-    description="Calcula el Impuesto sobre Sucesiones y Donaciones de UN heredero, legatario, beneficiario de seguro o donatario (llámala una vez por persona). Aplica la ley estatal y, si está cargada, la normativa de la comunidad autónoma (reducciones, tarifa, coeficientes y bonificaciones); para las comunidades no cargadas aplica solo la ley estatal y lo avisa. No decide qué comunidad corresponde: en herencias es la de residencia habitual del fallecido; en donaciones de inmuebles, donde esté el inmueble; en el resto de donaciones, la de residencia del donatario. Devuelve el desglose con referencias legales y avisos que SIEMPRE hay que trasladar.",
+    description="Calcula el Impuesto sobre Sucesiones y Donaciones de UN heredero, legatario, beneficiario de seguro o donatario (llámala una vez por persona). Aplica la ley estatal y, si está cargada, la normativa de la comunidad autónoma (reducciones, tarifa, coeficientes y bonificaciones); están cargadas las 15 comunidades de régimen común; sin comunidad, o en Navarra y País Vasco, aplica solo la ley estatal y lo avisa. No decide qué comunidad corresponde: en herencias es la de residencia habitual del fallecido; en donaciones de inmuebles, donde esté el inmueble; en el resto de donaciones, la de residencia del donatario. Devuelve el desglose con referencias legales y avisos que SIEMPRE hay que trasladar.",
     input_schema={
         "type": "object",
         "additionalProperties": False,
