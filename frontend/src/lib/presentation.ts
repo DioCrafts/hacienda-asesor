@@ -220,6 +220,9 @@ const FACT_LABEL: Record<string, string> = {
   familia_monoparental: "Familia monoparental",
   hijos_nacidos_en_el_ejercicio: "Hijos nacidos o adoptados este año",
   gastos_libros_texto: "Libros de texto y material escolar",
+  gastos_cuidado_familiares: "Gastos de cuidado de familiares",
+  num_familiares_discapacidad_a_cargo: "Familiares con discapacidad a cargo",
+  municipio_rural_o_despoblacion: "Municipio rural o en riesgo de despoblación",
 };
 
 // Enum values the backend stores as ASCII slugs.

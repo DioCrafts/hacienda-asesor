@@ -65,6 +65,9 @@ PROFILE_FACT_TYPES: dict[str, str] = {
     "familia_monoparental": "boolean",
     "hijos_nacidos_en_el_ejercicio": "number",
     "gastos_libros_texto": "number",
+    "gastos_cuidado_familiares": "number",
+    "num_familiares_discapacidad_a_cargo": "number",
+    "municipio_rural_o_despoblacion": "boolean",
     # Drives the fiscal calendar (modelo 720), not the IRPF computation.
     "bienes_en_el_extranjero": "boolean",
 }

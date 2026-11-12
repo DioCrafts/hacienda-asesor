@@ -108,6 +108,12 @@ class IRPFInput(BaseModel):
     familia_monoparental: bool = False
     hijos_nacidos_en_el_ejercicio: int = Field(default=0, ge=0, le=20)  # born or adopted in the tax year
     gastos_libros_texto: Decimal = Field(default=ZERO, ge=0)  # textbooks and school material
+    # Paid to carers, nurseries or centres for looking after children, elders or disabled relatives.
+    gastos_cuidado_familiares: Decimal = Field(default=ZERO, ge=0)
+    # Ascendants or descendants with a disability who depend on the taxpayer.
+    num_familiares_discapacidad_a_cargo: int = Field(default=0, ge=0, le=20)
+    # Lives in a municipality the regional law treats as small, rural or at risk of depopulation.
+    municipio_rural_o_despoblacion: bool = False
 
     # Regional (Comunidad de Madrid) deductions
     hijos_nacidos_ultimos_3_ejercicios: int = Field(default=0, ge=0, le=20)  # born/adopted this year or the two before
@@ -189,6 +195,16 @@ def _reduccion_trabajo(neto_previo: Decimal, otras_rentas: Decimal, p: IRPFParam
     return r.importe_tramo_2 - r.pendiente_tramo_2 * (neto_previo - r.umbral_medio)
 
 
+def _minimo_descendientes(inp: IRPFInput, m: Minimos) -> Decimal:
+    descendientes = ZERO
+    for index in range(inp.num_descendientes):
+        descendientes += m.descendientes[min(index, len(m.descendientes) - 1)]
+    descendientes += m.incremento_descendiente_menor_3 * min(inp.num_descendientes_menores_3, inp.num_descendientes)
+    if descendientes and inp.descendientes_compartidos:
+        descendientes /= 2
+    return descendientes
+
+
 def _minimo(inp: IRPFInput, m: Minimos, t: _Trace | None = None) -> Decimal:
     """Personal and family minimum under ``m`` (state amounts, or a community's).
 
@@ -200,12 +216,7 @@ def _minimo(inp: IRPFInput, m: Minimos, t: _Trace | None = None) -> Decimal:
     if inp.edad is not None and inp.edad > 75:
         total += m.incremento_mayor_75
 
-    descendientes = ZERO
-    for index in range(inp.num_descendientes):
-        descendientes += m.descendientes[min(index, len(m.descendientes) - 1)]
-    descendientes += m.incremento_descendiente_menor_3 * min(inp.num_descendientes_menores_3, inp.num_descendientes)
-    if descendientes and inp.descendientes_compartidos:
-        descendientes /= 2
+    descendientes = _minimo_descendientes(inp, m)
 
     mayores_75 = min(inp.num_ascendientes_mayores_75, inp.num_ascendientes_mayores_65)
     ascendientes = m.ascendiente * inp.num_ascendientes_mayores_65 + m.incremento_ascendiente_mayor_75 * mayores_75
@@ -745,6 +756,11 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
                     base_liquidable_total=base_liquidable,
                     base_liquidable_general=general,
                     base_imponible_total_menos_minimos=base_imponible_general + base_imponible_ahorro - minimo,
+                    base_liquidable_total_menos_minimos=base_liquidable - minimo,
+                    base_imponible_ahorro=base_imponible_ahorro,
+                    base_imponible_total_menos_minimo_descendientes=base_imponible_general
+                    + base_imponible_ahorro
+                    - _minimo_descendientes(inp, p.minimos),
                     resto_unidad_familiar=inp.base_imponible_resto_unidad_familiar,
                 ),
                 conjunta=inp.tributacion != "individual",

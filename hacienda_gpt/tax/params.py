@@ -291,6 +291,8 @@ BaseLimite = Literal[
     "base_liquidable_total",
     "base_liquidable_general",
     "base_imponible_total_menos_minimos",
+    "base_liquidable_total_menos_minimos",
+    "base_imponible_total_menos_minimo_descendientes",
 ]
 # Inputs a data-driven regional deduction may refer to.
 CAMPOS_UNIDAD = frozenset(
@@ -301,6 +303,8 @@ CAMPOS_UNIDAD = frozenset(
         "hijos_nacidos_ultimos_3_ejercicios",
         "num_ascendientes_mayores_65",
         "num_ascendientes_mayores_75",
+        "num_hijos_gastos_educativos",
+        "num_familiares_discapacidad_a_cargo",
     }
 )
 CAMPOS_GASTO = frozenset(
@@ -312,9 +316,12 @@ CAMPOS_GASTO = frozenset(
         "gastos_ensenanza_idiomas",
         "gastos_uniformes_escolares",
         "cotizaciones_empleada_hogar",
+        "gastos_cuidado_familiares",
     }
 )
-CAMPOS_REQUISITO = frozenset({"familia_numerosa", "familia_numerosa_especial", "familia_monoparental"})
+CAMPOS_REQUISITO = frozenset(
+    {"familia_numerosa", "familia_numerosa_especial", "familia_monoparental", "municipio_rural_o_despoblacion"}
+)
 
 
 class ReduccionProgresiva(_Model):
@@ -324,15 +331,67 @@ class ReduccionProgresiva(_Model):
     hasta_individual: Decimal
     desde_conjunta: Decimal | None = None
     hasta_conjunta: Decimal | None = None
+    # What shrinks: the deduction itself, or (percentage deductions) its cap.
+    aplica_a: Literal["importe", "maximo"] = "importe"
 
 
-class DeduccionCalculable(_Model):
+class Condiciones(_Model):
+    """A set of checkable conditions; ALL of the ones present must hold."""
+
+    edad_min: int | None = None  # inclusive, taxpayer's age at accrual
+    edad_max: int | None = None
+    discapacidad_min: int | None = None  # taxpayer's degree of disability, inclusive
+    discapacidad_max: int | None = None
+    requiere: list[str] = Field(default_factory=list)  # flags that must be true
+    # Counts that must reach / not exceed a number, e.g. {"num_descendientes": 2}.
+    unidades_min: dict[str, int] = Field(default_factory=dict)
+    unidades_max: dict[str, int] = Field(default_factory=dict)
+    tributacion: Literal["individual", "conjunta"] | None = None
+    # Ceiling on the income named by the deduction's ``base_limite`` (inclusive).
+    ingreso_max: Decimal | None = None
+
+    @model_validator(mode="after")
+    def _campos_conocidos(self) -> Condiciones:
+        if set(self.requiere) - CAMPOS_REQUISITO:
+            raise ValueError(f"requisitos desconocidos: {self.requiere}")
+        if (set(self.unidades_min) | set(self.unidades_max)) - CAMPOS_UNIDAD:
+            raise ValueError(f"unidades desconocidas: {sorted(set(self.unidades_min) | set(self.unidades_max))}")
+        return self
+
+    @property
+    def vacia(self) -> bool:
+        return self == Condiciones()
+
+
+class Variante(_Model):
+    """Different figures for taxpayers who meet ``cuando``; unset figures keep the general ones."""
+
+    descripcion: str
+    cuando: Condiciones
+    importe: Decimal | None = None
+    importes_por_orden: list[Decimal] | None = None
+    porcentaje: Decimal | None = None
+    maximo: Decimal | None = None
+    maximo_por_unidad: Decimal | None = None
+    limite_individual: Decimal | None = None
+    limite_conjunta: Decimal | None = None
+
+    @model_validator(mode="after")
+    def _con_condicion(self) -> Variante:
+        if self.cuando.vacia:
+            raise ValueError("una variante necesita al menos una condición")
+        return self
+
+
+class DeduccionCalculable(Condiciones):
     """A regional deduction simple enough to be computed from data alone.
 
     Either a fixed amount per unit ("fija") or a percentage of an expense
-    ("porcentaje"), with the eligibility conditions the calculator can check.
-    Whatever it cannot check is listed in ``requisitos_no_comprobados`` and
-    repeated to the user every time the deduction is applied.
+    ("porcentaje"). Eligibility: the conditions on the deduction itself must
+    all hold and, when ``alternativas`` is not empty, at least one of them too.
+    ``variantes`` change the figures for some taxpayers: the first one whose
+    conditions hold is used. Whatever the calculator cannot check is listed in
+    ``requisitos_no_comprobados`` and repeated every time the deduction is applied.
     """
 
     articulo: str
@@ -340,48 +399,69 @@ class DeduccionCalculable(_Model):
     resumen: str
     tipo: Literal["fija", "porcentaje"]
     importe: Decimal | None = None
+    # Fixed amount by the child's order (first, second… the last one repeats);
+    # only with unidad "hijos_nacidos_en_el_ejercicio".
+    importes_por_orden: list[Decimal] | None = None
     unidad: str | None = None
     porcentaje: Decimal | None = None
     base: str | None = None
     maximo: Decimal | None = None
     maximo_por_unidad: Decimal | None = None
-    edad_min: int | None = None
-    edad_max: int | None = None
-    discapacidad_min: int | None = None
-    requiere: list[str] = Field(default_factory=list)
     base_limite: BaseLimite = "base_imponible_total"
     limite_individual: Decimal | None = None
     limite_conjunta: Decimal | None = None
     limite_es_estricto: bool = False
     limite_unidad_familiar: Decimal | None = None
+    # Ceiling on the savings taxable base alone, when the law sets one.
+    base_ahorro_max: Decimal | None = None
     reduccion_progresiva: ReduccionProgresiva | None = None
     gasto_minimo_sobre_base: Decimal | None = None
     reparto_descendientes: bool = False
+    alternativas: list[Condiciones] = Field(default_factory=list)
+    variantes: list[Variante] = Field(default_factory=list)
+    # Articles of this community's deductions that exclude this one when they have been applied.
+    incompatible_con: list[str] = Field(default_factory=list)
     requisitos_no_comprobados: list[str] = Field(default_factory=list)
     en_vigor_desde: str
+
+    @property
+    def condiciones(self) -> Condiciones:
+        return Condiciones(**{name: getattr(self, name) for name in Condiciones.model_fields})
 
     @model_validator(mode="after")
     def _coherente(self) -> DeduccionCalculable:
         if self.unidad is not None and self.unidad not in CAMPOS_UNIDAD:
             raise ValueError(f"unidad desconocida: {self.unidad}")
-        if set(self.requiere) - CAMPOS_REQUISITO:
-            raise ValueError(f"requisitos desconocidos: {self.requiere}")
+        if any(a.vacia for a in self.alternativas):
+            raise ValueError("una alternativa vacía la cumple cualquiera")
+        por_orden = [self.importes_por_orden, *(v.importes_por_orden for v in self.variantes)]
+        if any(lista is not None for lista in por_orden) and self.unidad != "hijos_nacidos_en_el_ejercicio":
+            raise ValueError("importes_por_orden exige la unidad hijos_nacidos_en_el_ejercicio")
         if self.tipo == "fija":
-            if self.importe is None or self.importe <= 0 or self.porcentaje is not None or self.base is not None:
-                raise ValueError("una deducción fija lleva importe y no porcentaje ni base")
-            if self.unidad is None and not (
-                self.requiere
-                or self.edad_min is not None
-                or self.edad_max is not None
-                or self.discapacidad_min is not None
+            if self.porcentaje is not None or self.base is not None:
+                raise ValueError("una deducción fija no lleva porcentaje ni base")
+            if (self.importe is None) == (self.importes_por_orden is None):
+                raise ValueError("una deducción fija lleva importe o importes_por_orden, uno de los dos")
+            if (self.importe is not None and self.importe <= 0) or (
+                self.importes_por_orden is not None and not self.importes_por_orden
             ):
+                raise ValueError("importe no válido")
+            if any(v.porcentaje is not None for v in self.variantes):
+                raise ValueError("una variante de deducción fija no lleva porcentaje")
+            if self.unidad is None and self.condiciones.vacia and not self.alternativas:
                 raise ValueError("una deducción fija sin unidad necesita una condición comprobable")
         else:
             if self.porcentaje is None or not 0 < self.porcentaje <= 1 or self.base not in CAMPOS_GASTO:
                 raise ValueError("una deducción porcentual lleva porcentaje (0-1) y una base de gasto conocida")
-            if self.importe is not None:
+            if self.importe is not None or self.importes_por_orden is not None:
                 raise ValueError("una deducción porcentual no lleva importe")
-            if self.maximo_por_unidad is not None and self.unidad is None:
+            if any(v.importe is not None or v.importes_por_orden is not None for v in self.variantes):
+                raise ValueError("una variante de deducción porcentual no lleva importe")
+            if any(v.porcentaje is not None and not 0 < v.porcentaje <= 1 for v in self.variantes):
+                raise ValueError("porcentaje de variante fuera de rango")
+            if (
+                self.maximo_por_unidad is not None or any(v.maximo_por_unidad for v in self.variantes)
+            ) and not self.unidad:
                 raise ValueError("maximo_por_unidad exige unidad")
         return self
 
