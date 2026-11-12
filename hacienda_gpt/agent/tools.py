@@ -382,6 +382,14 @@ SOCIEDADES_TOOL = ToolSpec(
             "bases_negativas_pendientes": {"type": "number", "minimum": 0},
             "nueva_creacion_sin_limite_bases_negativas": {"type": "boolean"},
             "dias_periodo": {"type": "integer", "minimum": 1, "maximum": 366},
+            "reserva_nivelacion": {
+                "type": ["number", "null"],
+                "minimum": 0,
+                "description": "Importe de reserva de nivelación (art. 105 LIS) que el usuario quiere dotar; solo entidades con la escala de microempresas.",
+            },
+            "reserva_nivelacion_maxima": {"type": "boolean", "description": "Dotar el máximo que permita la ley."},
+            "reserva_nivelacion_pendiente": {"type": "number", "minimum": 0},
+            "reserva_nivelacion_vence": {"type": "number", "minimum": 0},
             "bonificaciones_deducciones": {"type": "number", "minimum": 0},
             "retenciones_ingresos_cuenta": {"type": "number", "minimum": 0},
             "pagos_fraccionados": {"type": "number", "minimum": 0},
@@ -391,7 +399,7 @@ SOCIEDADES_TOOL = ToolSpec(
 
 SOCIEDADES_PAGO_TOOL = ToolSpec(
     name="calcular_pago_fraccionado_sociedades",
-    description="Calcula un pago fraccionado del Impuesto sobre Sociedades (modelo 202, art. 40 LIS): modalidad 'cuota' (18 % de la cuota del último período menos deducciones y retenciones) o modalidad 'base'. Si el texto legal no permite una cifra exacta (escala de microempresas en modalidad base, cifra de negocios de 10 millones o más, último período inferior al año) devuelve importe nulo y lo explica en avisos.",
+    description="Calcula un pago fraccionado del Impuesto sobre Sociedades (modelo 202, art. 40 LIS): modalidad 'cuota' (18 % de la cuota del último período menos deducciones y retenciones) o modalidad 'base'. Con la escala de microempresas en modalidad base aplica cinco séptimos de cada tipo a su tramo, como el modelo 202. Si el texto legal no permite una cifra exacta (cifra de negocios de 10 millones o más, último período inferior al año) devuelve importe nulo y lo explica en avisos.",
     input_schema={
         "type": "object",
         "additionalProperties": False,
@@ -408,6 +416,7 @@ SOCIEDADES_PAGO_TOOL = ToolSpec(
             "retenciones_ultimo_periodo": {"type": "number", "minimum": 0},
             "ultimo_periodo_inferior_al_ano": {"type": "boolean"},
             "base_imponible_acumulada": {"type": "number"},
+            "dias_periodo": {"type": "integer", "minimum": 1, "maximum": 366},
             "bonificaciones": {"type": "number", "minimum": 0},
             "retenciones_acumuladas": {"type": "number", "minimum": 0},
             "pagos_fraccionados_anteriores": {"type": "number", "minimum": 0},
@@ -417,7 +426,7 @@ SOCIEDADES_PAGO_TOOL = ToolSpec(
 
 AUTONOMO_SOCIEDAD_TOOL = ToolSpec(
     name="comparar_autonomo_vs_sociedad",
-    description="Compara, solo en impuestos sobre la renta, ganar el mismo beneficio como autónomo (IRPF) o a través de una sociedad que paga un salario al socio y reparte el resto como dividendo (Impuesto sobre Sociedades + IRPF del socio). NO incluye Seguridad Social, reglas del art. 27 LIRPF sobre socios profesionales, IVA ni costes de gestión, y el beneficio no repartido no tributa en el socio hasta que se distribuya. No declara qué opción es mejor: presenta siempre las cifras junto con los avisos y no concluyas más allá de la aritmética. Ejercicios 2025 y 2026.",
+    description="Compara, solo en impuestos sobre la renta, ganar el mismo beneficio como autónomo (IRPF) o a través de una sociedad que paga un salario al socio y reparte el resto como dividendo (Impuesto sobre Sociedades + IRPF del socio). Las cotizaciones a la Seguridad Social solo entran en la cuenta si el usuario las aporta (cuota_autonomos, cotizaciones_socio, cotizaciones_empresa); nunca se estiman. NO incluye las reglas del art. 27 LIRPF sobre socios profesionales, IVA ni costes de gestión, y el beneficio no repartido no tributa en el socio hasta que se distribuya. No declara qué opción es mejor: presenta siempre las cifras junto con los avisos y no concluyas más allá de la aritmética. Ejercicios 2025 y 2026.",
     input_schema={
         "type": "object",
         "additionalProperties": False,
@@ -438,6 +447,21 @@ AUTONOMO_SOCIEDAD_TOOL = ToolSpec(
                 "type": ["number", "null"],
                 "minimum": 0,
                 "description": "Dividendo repartido; null = todo el beneficio después de impuestos",
+            },
+            "cuota_autonomos": {
+                "type": ["number", "null"],
+                "minimum": 0,
+                "description": "Cuota anual de autónomos que paga el usuario (gasto de la actividad).",
+            },
+            "cotizaciones_socio": {
+                "type": ["number", "null"],
+                "minimum": 0,
+                "description": "Cotizaciones anuales a cargo del socio en la opción sociedad.",
+            },
+            "cotizaciones_empresa": {
+                "type": ["number", "null"],
+                "minimum": 0,
+                "description": "Cotizaciones anuales a cargo de la sociedad (gasto de la sociedad).",
             },
             "comunidad_autonoma": {"type": ["string", "null"]},
             "cifra_negocios_anterior": {"type": ["number", "null"], "minimum": 0},

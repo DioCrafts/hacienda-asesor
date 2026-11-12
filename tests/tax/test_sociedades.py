@@ -78,7 +78,9 @@ def test_parameters_are_the_ones_read_from_the_law() -> None:
 def test_every_figure_is_in_its_quote_and_every_quote_is_in_the_law() -> None:
     textos = textos_de_directorio(EXTRACTOS)
     p = load_sociedades_params(2026)
-    assert set(textos) == set(p.fuentes_principales)
+    assert set(textos) == set(p.fuentes_principales) | set(p.fuentes_complementarias)
+    # Only consolidated laws are "principal" sources: tax/fuentes.py watches them for changes.
+    assert set(p.fuentes_principales) == {"BOE-A-2014-12328", "BOE-A-2006-20764"}
     assert comprobar_evidencias(p, textos) == []
 
 

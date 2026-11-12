@@ -153,7 +153,11 @@ class SociedadesParams(_Model):
     ejercicio: int  # edition of the file: the year the data set was read for
     # Years (start of the tax period) for which ``tipos_gravamen.por_ano`` has rates.
     ejercicios_cubiertos: list[int] = Field(min_length=1)
+    # Consolidated laws the figures are read from (watched for changes by ``tax/fuentes.py``).
     fuentes_principales: dict[str, FuentePrincipal]
+    # Texts published once in the BOE and quoted as evidence (the forms approved by ministerial
+    # order): there is no consolidated version of them to watch.
+    fuentes_complementarias: dict[str, FuentePrincipal] = Field(default_factory=dict)
     no_modelado: list[str] = Field(default_factory=list)
     tipos_gravamen: TiposGravamen
     reserva_capitalizacion: ReservaCapitalizacion
@@ -181,7 +185,8 @@ class SociedadesParams(_Model):
 
     def fuente_texto(self, *boe_ids: str) -> str:
         """The Ley 27/2014 plus the other sources named (those a result actually relied on)."""
-        fuentes = [self.ley, *(self.fuentes_principales[boe_id] for boe_id in boe_ids)]
+        todas = {**self.fuentes_complementarias, **self.fuentes_principales}
+        fuentes = [self.ley, *(todas[boe_id] for boe_id in boe_ids)]
         return "; ".join(
             f"{fp.norma}, {fp.boe_id}, {'consolidado a' if 'consolidado' in fp.norma else 'publicada el'} "
             f"{fp.consolidado_a}"
@@ -280,8 +285,8 @@ def comprobar_evidencias(params: SociedadesParams, textos: dict[str, str] | None
         hojas = _hojas(grupo)
         sin_evidencia = set(hojas)
         for ev in grupo.evidencia:
-            if ev.boe_id not in params.fuentes_principales:
-                problemas.append(f"{nombre}: {ev.boe_id} no figura en fuentes_principales")
+            if ev.boe_id not in params.fuentes_principales and ev.boe_id not in params.fuentes_complementarias:
+                problemas.append(f"{nombre}: {ev.boe_id} no figura entre las fuentes")
             if textos is not None:
                 texto = textos.get(ev.boe_id)
                 if texto is None:

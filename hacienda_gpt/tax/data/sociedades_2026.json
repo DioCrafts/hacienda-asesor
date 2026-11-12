@@ -22,7 +22,9 @@
       "consolidado_a": "2026-11-11",
       "consultado_el": "2026-11-12",
       "sha256_html": "ed7d16a5fe93fd70e70e30f39f5c1a6b3987c5a158342f255267379a67cb9e63"
-    },
+    }
+  },
+  "fuentes_complementarias": {
     "BOE-A-2025-5407": {
       "norma": "Orden HAC/262/2025, de 12 de marzo, que sustituye los anexos del modelo 202 de la Orden HFP/227/2017 (texto publicado en el BOE de 19-3-2025; el anexo se lee del PDF oficial)",
       "boe_id": "BOE-A-2025-5407",
