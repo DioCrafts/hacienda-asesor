@@ -19,14 +19,18 @@ from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from hacienda_gpt.tax import autonomicas
 from hacienda_gpt.tax.arrendamiento import DatosArrendamiento, reduccion_arrendamiento
 from hacienda_gpt.tax.compensacion import compensar_ahorro
 from hacienda_gpt.tax.params import (
+    CAMPOS_GASTO,
+    GASTOS_DESGLOSADOS,
     DeduccionesMadrid,
+    _MadridEducacion,
     Escala,
+    EtapaEducativa,
     Fuente,
     IRPFParams,
     Minimos,
@@ -43,6 +47,29 @@ Tributacion = Literal["individual", "conjunta_biparental", "conjunta_monoparenta
 
 def _round(value: Decimal) -> Decimal:
     return value.quantize(CENT, rounding=ROUND_HALF_UP)
+
+
+class Descendiente(BaseModel):
+    """One child who gives the right to the minimum for descendants, with the facts
+    regional deductions depend on. Give the age or the date of birth (or both)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    edad: int | None = Field(default=None, ge=0, le=130)  # reached at 31 December of the tax year
+    fecha_nacimiento: date | None = None
+    grado_discapacidad: int = Field(default=0, ge=0, le=100)
+    etapa_educativa: EtapaEducativa | None = None
+    ejercicio_adopcion: int | None = Field(default=None, ge=1900, le=2200)  # tax year of the adoption, if adopted
+    adopcion_internacional: bool = False
+    parto_multiple: bool = False  # born in a multiple birth, or adopted with others on the same date
+    meses_guarderia: int | None = Field(default=None, ge=0, le=12)  # months at nursery in the tax year
+    # This child's share of expense inputs (``params.CAMPOS_GASTO``), e.g. {"gastos_guarderia": 1800}.
+    gastos: dict[str, Decimal] = Field(default_factory=dict)
+
+    def llegada(self, ejercicio: int) -> int:
+        """Tax years since the birth or, for adopted children, the adoption (0 = this year)."""
+        assert self.edad is not None
+        return ejercicio - (self.ejercicio_adopcion or ejercicio - self.edad)
 
 
 class IRPFInput(BaseModel):
@@ -142,7 +169,118 @@ class IRPFInput(BaseModel):
     cotizaciones_empleada_hogar: Decimal = Field(default=ZERO, ge=0)
     donativos_fundaciones_madrid: Decimal = Field(default=ZERO, ge=0)
 
+    # ---- Finer facts for regional deductions (see params.CAMPOS_* and DeduccionCalculable) ----
+    # One entry per child giving the right to the minimum for descendants. When given,
+    # the counts above that are left at zero are filled in from it.
+    descendientes: list[Descendiente] | None = None
+    edad_conyuge: int | None = Field(default=None, ge=0, le=130)
+    grado_discapacidad_conyuge: int = Field(default=0, ge=0, le=100)
+    # Ascendants or descendants with a disability of 65 % or more who depend on the taxpayer.
+    num_familiares_discapacidad_65_a_cargo: int = Field(default=0, ge=0, le=20)
+    # Over-65s or disabled people, not close relatives, taken in without payment.
+    num_personas_acogidas_mayores_o_discapacidad: int = Field(default=0, ge=0, le=20)
+    # Inhabitants of the municipality of residence (each regional law has its own threshold).
+    habitantes_municipio: int | None = Field(default=None, ge=0)
+    # Parts of the year
+    dias_alquiler_vivienda_habitual: int | None = Field(default=None, ge=0, le=366)  # lease in force
+    dias_acogimiento: int | None = Field(default=None, ge=0, le=366)  # living with the fostered minors
+    dias_desempleo: int | None = Field(default=None, ge=0, le=366)
+    # Tax returns (yours included) the deduction for the same lease / the same home is shared between.
+    num_declaraciones_mismo_alquiler: int | None = Field(default=None, ge=1, le=20)
+    num_declaraciones_misma_vivienda: int | None = Field(default=None, ge=1, le=20)
+    # Decisive eligibility facts
+    progenitores_trabajan: bool = False  # you and, if any, the other parent earn work or business income
+    victima_violencia_genero: bool = False
+    victima_terrorismo: bool = False
+    vivienda_protegida: bool = False
+    vivienda_nueva_construccion: bool = False
+    primera_vivienda: bool = False
+    ejercicio_viudedad: int | None = Field(default=None, ge=1900, le=2200)
+    ejercicio_adquisicion_vivienda: int | None = Field(default=None, ge=1900, le=2200)
+    ejercicio_traslado_residencia: int | None = Field(default=None, ge=1900, le=2200)
+    # Narrower expenses: parts of the broad inputs above (see params.GASTOS_DESGLOSADOS).
+    gastos_instalaciones_renovables: Decimal = Field(default=ZERO, ge=0)  # part of gastos_eficiencia_energetica
+    gastos_deporte: Decimal = Field(default=ZERO, ge=0)  # parts of gastos_deporte_cultura
+    gastos_cultura: Decimal = Field(default=ZERO, ge=0)
+    gastos_honorarios_sanitarios: Decimal = Field(default=ZERO, ge=0)  # parts of gastos_salud
+    gastos_salud_bucodental: Decimal = Field(default=ZERO, ge=0)
+    gastos_salud_mental: Decimal = Field(default=ZERO, ge=0)
+    gastos_optica: Decimal = Field(default=ZERO, ge=0)
+    gastos_enfermedades_raras: Decimal = Field(default=ZERO, ge=0)
+    gastos_ela: Decimal = Field(default=ZERO, ge=0)
+    pagos_adquisicion_vivienda: Decimal = Field(default=ZERO, ge=0)  # parts of inversion_vivienda_habitual
+    pagos_rehabilitacion_vivienda: Decimal = Field(default=ZERO, ge=0)
+    intereses_prestamo_vivienda: Decimal = Field(default=ZERO, ge=0)
+    donativos_medio_ambiente: Decimal = Field(default=ZERO, ge=0)  # parts of donativos_autonomicos
+    donativos_cultura_patrimonio: Decimal = Field(default=ZERO, ge=0)
+    donativos_investigacion: Decimal = Field(default=ZERO, ge=0)
+    donativos_cooperacion_fines_sociales: Decimal = Field(default=ZERO, ge=0)
+    donativos_lengua_propia: Decimal = Field(default=ZERO, ge=0)
+    donativos_fundaciones_autonomicas: Decimal = Field(default=ZERO, ge=0)
+    # Expenses with no broader input
+    gastos_veterinarios: Decimal = Field(default=ZERO, ge=0)
+    adquisicion_vehiculo_electrico: Decimal = Field(default=ZERO, ge=0)
+    inversion_economia_social: Decimal = Field(default=ZERO, ge=0)
+
     retenciones: Decimal = Field(default=ZERO, ge=0)
+
+    @model_validator(mode="after")
+    def _coherencia_de_los_desgloses(self) -> IRPFInput:
+        """Keep totals and their breakdowns consistent: a total left at zero is the
+        sum of its parts, and a breakdown may never exceed (or, per child, differ from) it."""
+        if self.descendientes:
+            for hijo in self.descendientes:
+                if hijo.fecha_nacimiento is not None:
+                    edad = self.ejercicio - hijo.fecha_nacimiento.year
+                    if edad < 0 or (hijo.edad is not None and hijo.edad != edad):
+                        raise ValueError("descendientes: la edad no cuadra con la fecha de nacimiento y el ejercicio")
+                    hijo.edad = edad
+                if hijo.edad is None:
+                    raise ValueError("descendientes: cada uno necesita la edad o la fecha de nacimiento")
+                if set(hijo.gastos) - CAMPOS_GASTO or any(v < 0 for v in hijo.gastos.values()):
+                    raise ValueError(f"descendientes: gastos desconocidos o negativos: {sorted(hijo.gastos)}")
+                if hijo.ejercicio_adopcion is not None and not (
+                    self.ejercicio - hijo.edad <= hijo.ejercicio_adopcion <= self.ejercicio
+                ):
+                    raise ValueError("descendientes: el ejercicio de adopción no cuadra con la edad")
+            hijos = self.descendientes
+            recuentos = {
+                "num_descendientes": len(hijos),
+                "num_descendientes_menores_3": sum(1 for h in hijos if (h.edad or 0) < 3),
+                "hijos_nacidos_en_el_ejercicio": sum(1 for h in hijos if h.llegada(self.ejercicio) == 0),
+                "hijos_nacidos_ultimos_3_ejercicios": sum(1 for h in hijos if h.llegada(self.ejercicio) <= 2),
+                "hijos_adoptados_en_el_ejercicio": sum(1 for h in hijos if h.ejercicio_adopcion == self.ejercicio),
+                "num_hijos_primer_ciclo_infantil": sum(
+                    1 for h in hijos if h.etapa_educativa == "infantil_primer_ciclo"
+                ),
+            }
+            for campo, segun_detalle in recuentos.items():
+                if not getattr(self, campo):
+                    setattr(self, campo, segun_detalle)
+                elif getattr(self, campo) != segun_detalle:
+                    raise ValueError(
+                        f"«{campo}» ({getattr(self, campo)}) no cuadra con el detalle de descendientes "
+                        f"({segun_detalle})"
+                    )
+            for campo in sorted({g for h in hijos for g in h.gastos}):
+                suma = sum((h.gastos.get(campo, ZERO) for h in hijos), ZERO)
+                if not getattr(self, campo):
+                    setattr(self, campo, suma)
+                elif abs(getattr(self, campo) - suma) > CENT:
+                    raise ValueError(
+                        f"el desglose por hijo de «{campo}» ({suma:.2f} €) no coincide con el total "
+                        f"({getattr(self, campo):.2f} €)"
+                    )
+        for total, partes in GASTOS_DESGLOSADOS.items():
+            suma = sum((getattr(self, parte) for parte in partes), ZERO)
+            if not getattr(self, total):
+                setattr(self, total, suma)
+            elif suma > getattr(self, total) + CENT:
+                raise ValueError(
+                    f"«{total}» ({getattr(self, total):.2f} €) es el total de {', '.join(partes)}, que suman más "
+                    f"({suma:.2f} €)"
+                )
+        return self
 
 
 class Linea(BaseModel):
@@ -279,6 +417,52 @@ _MADRID_INPUTS = (
 )
 
 
+_GASTOS_EDUCATIVOS_MADRID = ("gastos_escolaridad", "gastos_ensenanza_idiomas", "gastos_uniformes_escolares")
+
+
+def _gastos_educativos_madrid(inp: IRPFInput, e: _MadridEducacion, hijos: int) -> tuple[Decimal, bool]:
+    """Art. 11 DLeg. 1/2010 before sharing between parents: (amount, computed child by child?).
+
+    The cap is per child and on that child's own expenses: the higher one only for a
+    child with schooling fees, and for a child in the first cycle of infant education
+    only the schooling counts. Child by child when ``descendientes`` breaks the three
+    expenses down; otherwise, with several children, a single cap is granted (the
+    lowest any distribution of the expenses could give).
+    """
+
+    def de_un_hijo(escolaridad: Decimal, idiomas: Decimal, vestuario: Decimal, *, primer_ciclo: bool) -> Decimal:
+        if primer_ciclo:
+            return min(escolaridad * e.porcentaje_escolaridad_idiomas, e.maximo_por_hijo_primer_ciclo_infantil)
+        bruto = (escolaridad + idiomas) * e.porcentaje_escolaridad_idiomas + vestuario * e.porcentaje_vestuario
+        return min(bruto, e.maximo_por_hijo_con_escolaridad if escolaridad else e.maximo_por_hijo)
+
+    totales = [getattr(inp, campo) for campo in _GASTOS_EDUCATIVOS_MADRID]
+    detalle = inp.descendientes or []
+    desglosado = [sum((h.gastos.get(campo, ZERO) for h in detalle), ZERO) for campo in _GASTOS_EDUCATIVOS_MADRID]
+    if detalle and all(abs(suma - total) <= CENT for suma, total in zip(desglosado, totales, strict=True)):
+        return (
+            sum(
+                (
+                    de_un_hijo(
+                        *(h.gastos.get(campo, ZERO) for campo in _GASTOS_EDUCATIVOS_MADRID),
+                        primer_ciclo=h.etapa_educativa == "infantil_primer_ciclo",
+                    )
+                    for h in detalle
+                ),
+                ZERO,
+            ),
+            True,
+        )
+    infantil = min(inp.num_hijos_primer_ciclo_infantil, hijos)
+    if hijos == 1:
+        return de_un_hijo(*totales, primer_ciclo=infantil == 1), True
+    # Several children and no breakdown: the worst case is every expense belonging to one child.
+    posibles = [de_un_hijo(*totales, primer_ciclo=False)] if infantil < hijos else []
+    if infantil:
+        posibles.append(de_un_hijo(*totales, primer_ciclo=True))
+    return min(posibles), False
+
+
 def _deducciones_madrid(
     inp: IRPFInput,
     d: DeduccionesMadrid,
@@ -288,6 +472,7 @@ def _deducciones_madrid(
     base_liquidable: Decimal,
     cuota_autonomica: Decimal,
     estatales_sobre_autonomica: Decimal,
+    otras_autonomicas: Decimal = ZERO,
 ) -> Decimal:
     """Madrid deductions (DLeg. 1/2010). Each one that is claimed but fails a
     requirement is explained in an aviso instead of being silently dropped."""
@@ -377,18 +562,25 @@ def _deducciones_madrid(
         elif excede_familiar:
             fuera("gastos educativos", motivo_familiar)
         else:
-            infantil = min(inp.num_hijos_primer_ciclo_infantil, hijos)
-            por_hijo = e.maximo_por_hijo_con_escolaridad if inp.gastos_escolaridad else e.maximo_por_hijo
-            tope = e.maximo_por_hijo_primer_ciclo_infantil * infantil + por_hijo * (hijos - infantil)
-            bruto = (
-                inp.gastos_escolaridad + inp.gastos_ensenanza_idiomas
-            ) * e.porcentaje_escolaridad_idiomas + inp.gastos_uniformes_escolares * e.porcentaje_vestuario
-            importe = min(bruto, tope) * reparto
+            importe, exacto = _gastos_educativos_madrid(inp, e, hijos)
+            importe *= reparto
             t.linea("Deducción autonómica por gastos educativos", -importe, e.fuente)
             t.aviso(
-                "En gastos educativos la ley fija el máximo por cada hijo y aquí se ha aplicado al conjunto de "
-                f"{hijos} hijo(s): si los gastos son de menos hijos, indica cuántos en «num_hijos_gastos_educativos» o "
-                "la deducción saldrá más alta de lo debido. Los gastos deben ir ya minorados en becas; la escolaridad "
+                (
+                    "En gastos educativos el máximo se ha aplicado hijo a hijo con el desglose que has dado "
+                    f"({e.maximo_por_hijo_con_escolaridad:.2f} € solo para los hijos con gastos de escolaridad, "
+                    f"{e.maximo_por_hijo:.2f} € para los demás). "
+                    if exacto
+                    else (
+                        "En gastos educativos la ley fija el máximo por cada hijo y sobre sus propios gastos. Como no "
+                        f"consta el reparto de los gastos entre tus {hijos} hijos, se ha aplicado un único máximo, como "
+                        "si todos los gastos fueran de un solo hijo (puede salir de menos): indica en «descendientes» "
+                        "los gastos de cada hijo y su etapa educativa para calcularlo con exactitud. "
+                        if hijos > 1
+                        else ""
+                    )
+                )
+                + "Los gastos deben ir ya minorados en becas; la escolaridad "
                 "pública o concertada no genera deducción, y escolaridad y vestuario solo cuentan en Infantil, Básica "
                 "Obligatoria y FP Básica (no en Bachillerato). En primer ciclo de Infantil solo cuenta la escolaridad."
             )
@@ -441,7 +633,7 @@ def _deducciones_madrid(
     # Art. 14 — two or more descendants and low income: 10 % of what remains
     f = d.familias_ingresos_reducidos
     if inp.num_descendientes >= f.minimo_descendientes and base_familia <= f.limite_suma_bases:
-        resto = max(ZERO, cuota_autonomica - total - estatales_sobre_autonomica)
+        resto = max(ZERO, cuota_autonomica - total - otras_autonomicas - estatales_sobre_autonomica)
         importe = resto * f.porcentaje
         if importe:
             t.linea(
@@ -826,20 +1018,9 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
     parte_autonomica = _round(deducciones * p.reparto_deducciones_estatales.parte_autonomica)
     parte_estatal = _round(deducciones) - parte_autonomica
     deducciones_autonomicas = ZERO
-    if comunidad is not None and comunidad.deducciones_madrid is not None:
-        deducciones_autonomicas = _round(
-            _deducciones_madrid(
-                inp,
-                comunidad.deducciones_madrid,
-                t,
-                base_imponible=base_imponible_general + base_imponible_ahorro,
-                base_liquidable=base_liquidable,
-                cuota_autonomica=autonomica,
-                estatales_sobre_autonomica=parte_autonomica,
-            )
-        )
     if comunidad is not None and comunidad.deducciones_calculables:
-        deducciones_autonomicas += _round(
+        # Before the hand-coded ones: Madrid's art. 14 is a share of the tax left after every other deduction.
+        deducciones_autonomicas = _round(
             autonomicas.aplicar(
                 list(comunidad.deducciones_calculables),
                 inp,
@@ -855,6 +1036,7 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
                     + base_imponible_ahorro
                     - _minimo_descendientes(inp, p.minimos),
                     resto_unidad_familiar=inp.base_imponible_resto_unidad_familiar,
+                    cuota_integra_autonomica=autonomica,
                 ),
                 conjunta=inp.tributacion != "individual",
                 norma=f"{comunidad.fuente_principal.norma.split(',')[0]} ({comunidad.fuente_principal.boe_id})",
@@ -870,6 +1052,19 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
         t.aviso(
             "Has indicado datos de deducciones autonómicas (alquiler, gastos educativos, nacimiento…), pero la "
             "simulación no tiene deducciones calculables para tu comunidad: no se han aplicado."
+        )
+    if comunidad is not None and comunidad.deducciones_madrid is not None:
+        deducciones_autonomicas += _round(
+            _deducciones_madrid(
+                inp,
+                comunidad.deducciones_madrid,
+                t,
+                base_imponible=base_imponible_general + base_imponible_ahorro,
+                base_liquidable=base_liquidable,
+                cuota_autonomica=autonomica,
+                estatales_sobre_autonomica=parte_autonomica,
+                otras_autonomicas=deducciones_autonomicas,
+            )
         )
     liquida_estatal = max(ZERO, estatal - parte_estatal - solo_estatal)
     liquida_autonomica = max(ZERO, autonomica - parte_autonomica - deducciones_autonomicas)

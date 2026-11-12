@@ -320,8 +320,51 @@ CAMPOS_UNIDAD = frozenset(
         "num_familiares_discapacidad_a_cargo",
         "menores_acogidos",
         "hijos_adoptados_en_el_ejercicio",
+        # Ascendants or descendants with a disability of 65 % or more who depend on the taxpayer.
+        "num_familiares_discapacidad_65_a_cargo",
+        # Elderly or disabled people, not close relatives, taken in without payment.
+        "num_personas_acogidas_mayores_o_discapacidad",
     }
 )
+# Units that count the taxpayer's children: their caps can be applied child by child.
+CAMPOS_UNIDAD_HIJOS = frozenset(
+    {
+        "num_descendientes",
+        "num_descendientes_menores_3",
+        "hijos_nacidos_en_el_ejercicio",
+        "hijos_nacidos_ultimos_3_ejercicios",
+        "num_hijos_gastos_educativos",
+        "num_hijos_primer_ciclo_infantil",
+        "hijos_adoptados_en_el_ejercicio",
+    }
+)
+# Broad expense inputs and the narrower, mutually exclusive inputs they are the total of
+# (``IRPFInput`` keeps each total at least equal to the sum of its parts).
+GASTOS_DESGLOSADOS: dict[str, tuple[str, ...]] = {
+    "gastos_eficiencia_energetica": ("gastos_instalaciones_renovables",),
+    "gastos_deporte_cultura": ("gastos_deporte", "gastos_cultura"),
+    "gastos_salud": (
+        "gastos_honorarios_sanitarios",
+        "gastos_salud_bucodental",
+        "gastos_salud_mental",
+        "gastos_optica",
+        "gastos_enfermedades_raras",
+        "gastos_ela",
+    ),
+    "inversion_vivienda_habitual": (
+        "pagos_adquisicion_vivienda",
+        "pagos_rehabilitacion_vivienda",
+        "intereses_prestamo_vivienda",
+    ),
+    "donativos_autonomicos": (
+        "donativos_medio_ambiente",
+        "donativos_cultura_patrimonio",
+        "donativos_investigacion",
+        "donativos_cooperacion_fines_sociales",
+        "donativos_lengua_propia",
+        "donativos_fundaciones_autonomicas",
+    ),
+}
 CAMPOS_GASTO = frozenset(
     {
         "alquiler_vivienda_habitual",
@@ -338,6 +381,10 @@ CAMPOS_GASTO = frozenset(
         "gastos_eficiencia_energetica",
         "gastos_salud",
         "gastos_deporte_cultura",
+        "gastos_veterinarios",
+        "adquisicion_vehiculo_electrico",
+        "inversion_economia_social",
+        *(parte for partes in GASTOS_DESGLOSADOS.values() for parte in partes),
     }
 )
 CAMPOS_REQUISITO = frozenset(
@@ -348,8 +395,38 @@ CAMPOS_REQUISITO = frozenset(
         "municipio_rural_o_despoblacion",
         "viudedad",
         "vivienda_en_municipio_rural",
+        "progenitores_trabajan",
+        "victima_violencia_genero",
+        "victima_terrorismo",
+        "vivienda_protegida",
+        "vivienda_nueva_construccion",
+        "primera_vivienda",
     }
 )
+# Days of the tax year (declared by the taxpayer) an amount or a cap may be prorated by.
+CAMPOS_PERIODO = frozenset({"dias_alquiler_vivienda_habitual", "dias_acogimiento", "dias_desempleo"})
+# Per-child periods: days of the year the child is within the ages of ``unidad_descendientes``
+# (computed from the date of birth), and months at nursery (declared for each child).
+PERIODOS_POR_HIJO = frozenset({"dias_hijo_en_edad", "meses_guarderia_hijo"})
+# Number of tax returns a cap is shared between.
+CAMPOS_REPARTO = frozenset({"num_declaraciones_mismo_alquiler", "num_declaraciones_misma_vivienda"})
+# Tax years in which something happened.
+CAMPOS_EJERCICIO = frozenset({"ejercicio_viudedad", "ejercicio_adquisicion_vivienda", "ejercicio_traslado_residencia"})
+# Not an expense: a percentage deduction may also be a share of the regional gross tax.
+BASE_CUOTA = "cuota_integra_autonomica"
+
+EtapaEducativa = Literal[
+    "infantil_primer_ciclo",
+    "infantil_segundo_ciclo",
+    "primaria",
+    "eso",
+    "educacion_especial",
+    "bachillerato",
+    "fp_basica",
+    "fp_grado_medio",
+    "fp_grado_superior",
+    "universidad",
+]
 
 
 class ReduccionProgresiva(_Model):
@@ -363,6 +440,36 @@ class ReduccionProgresiva(_Model):
     aplica_a: Literal["importe", "maximo"] = "importe"
 
 
+class FiltroDescendientes(_Model):
+    """Which of the taxpayer's children count; every bound present must hold.
+
+    Evaluated on ``IRPFInput.descendientes`` (one entry per child). Ages are those
+    reached at the accrual date (31 December), inclusive.
+    """
+
+    edad_min: int | None = None
+    edad_max: int | None = None
+    discapacidad_min: int | None = None
+    discapacidad_max: int | None = None
+    etapas: list[EtapaEducativa] = Field(default_factory=list)  # any of them
+    # Tax years since the birth or, for adopted children, the adoption (0 = this year).
+    anios_desde_llegada_max: int | None = None
+    adoptado: bool | None = None
+    adopcion_internacional: bool | None = None
+    parto_multiple: bool | None = None  # multiple birth, or several adoptions on the same date
+
+    @property
+    def vacio(self) -> bool:
+        return self == FiltroDescendientes()
+
+
+class RequisitoDescendientes(FiltroDescendientes):
+    """The number of children matching the filter must be within [minimo, maximo]."""
+
+    minimo: int = 1
+    maximo: int | None = None
+
+
 class Condiciones(_Model):
     """A set of checkable conditions; ALL of the ones present must hold."""
 
@@ -370,10 +477,24 @@ class Condiciones(_Model):
     edad_max: int | None = None
     discapacidad_min: int | None = None  # taxpayer's degree of disability, inclusive
     discapacidad_max: int | None = None
+    # Whether the spouse may be the one who meets the age/disability bounds above
+    # (one person must meet them all): never, in a joint return, or in any return.
+    conyuge: Literal["no", "en_conjunta", "siempre"] = "no"
+    # Degree of disability the SPOUSE must have, inclusive.
+    conyuge_discapacidad_min: int | None = None
     requiere: list[str] = Field(default_factory=list)  # flags that must be true
-    # Counts that must reach / not exceed a number, e.g. {"num_descendientes": 2}.
+    # Counts that must reach / not exceed a number, e.g. {"num_descendientes": 2};
+    # also days of the year, e.g. {"dias_desempleo": 183}.
     unidades_min: dict[str, int] = Field(default_factory=dict)
     unidades_max: dict[str, int] = Field(default_factory=dict)
+    # Conditions on the children, one by one (ages, disability, school stage…).
+    descendientes: list[RequisitoDescendientes] = Field(default_factory=list)
+    # Inhabitants of the municipality of residence, inclusive ("menos de 3.000" → 2999).
+    habitantes_max: int | None = None
+    # Something happened at most N tax years ago (0 = this year), e.g. {"ejercicio_viudedad": 2};
+    # or not before a given year, e.g. {"ejercicio_adquisicion_vivienda": 2021}.
+    anios_desde_max: dict[str, int] = Field(default_factory=dict)
+    ejercicio_min: dict[str, int] = Field(default_factory=dict)
     tributacion: Literal["individual", "conjunta"] | None = None
     # Ceiling on the income named by the deduction's ``base_limite`` (inclusive).
     ingreso_max: Decimal | None = None
@@ -382,13 +503,25 @@ class Condiciones(_Model):
     def _campos_conocidos(self) -> Condiciones:
         if set(self.requiere) - CAMPOS_REQUISITO:
             raise ValueError(f"requisitos desconocidos: {self.requiere}")
-        if (set(self.unidades_min) | set(self.unidades_max)) - CAMPOS_UNIDAD:
+        if (set(self.unidades_min) | set(self.unidades_max)) - CAMPOS_UNIDAD - CAMPOS_PERIODO:
             raise ValueError(f"unidades desconocidas: {sorted(set(self.unidades_min) | set(self.unidades_max))}")
+        if (set(self.anios_desde_max) | set(self.ejercicio_min)) - CAMPOS_EJERCICIO:
+            raise ValueError(f"ejercicios desconocidos: {sorted(set(self.anios_desde_max) | set(self.ejercicio_min))}")
+        con_persona = (self.edad_min, self.edad_max, self.discapacidad_min, self.discapacidad_max)
+        if self.conyuge != "no" and all(x is None for x in con_persona):
+            raise ValueError("«conyuge» solo tiene sentido con una condición de edad o discapacidad")
         return self
 
     @property
     def vacia(self) -> bool:
         return self == Condiciones()
+
+
+class TramoPorcentaje(_Model):
+    """One tier of a tiered rate: ``porcentaje`` on the expense up to ``hasta`` (None = the rest)."""
+
+    hasta: Decimal | None = None
+    porcentaje: Decimal
 
 
 class Variante(_Model):
@@ -399,8 +532,11 @@ class Variante(_Model):
     importe: Decimal | None = None
     importes_por_orden: list[Decimal] | None = None
     porcentaje: Decimal | None = None
+    tramos_porcentaje: list[TramoPorcentaje] | None = None
     maximo: Decimal | None = None
     maximo_por_unidad: Decimal | None = None
+    base_maxima: Decimal | None = None
+    base_maxima_por_unidad: Decimal | None = None
     limite_individual: Decimal | None = None
     limite_conjunta: Decimal | None = None
 
@@ -408,6 +544,104 @@ class Variante(_Model):
     def _con_condicion(self) -> Variante:
         if self.cuando.vacia:
             raise ValueError("una variante necesita al menos una condición")
+        return self
+
+
+class BaseAdicional(_Model):
+    """Another expense that feeds the same deduction, under the same caps."""
+
+    base: str
+    porcentaje: Decimal | None = None  # None = the deduction's own percentage
+
+
+class TramoProrrateo(_Model):
+    """From ``desde`` days (or months) on, this share of the amount or cap is granted."""
+
+    desde: int
+    factor: Decimal
+
+
+class Prorrateo(_Model):
+    """The amount, or its caps, in proportion to part of the year.
+
+    ``dato`` is a number of days declared by the taxpayer (``CAMPOS_PERIODO``) or a
+    per-child period (``PERIODOS_POR_HIJO``). Without ``tramos`` the factor is
+    dato / total (at most 1), ``total`` defaulting to the days of the year (12 for
+    months). With ``tramos`` it is the factor of the last tier reached (0 below the
+    first). With ``por_cada_periodo`` the amount is granted once per day/month.
+    A per-child period prorates each child's amount (fixed deductions) or cap.
+    """
+
+    dato: str
+    # "maximo" scales every cap of a percentage deduction (amount and expense caps).
+    aplica_a: Literal["importe", "maximo"] = "importe"
+    # Only with "dias_hijo_en_edad": the ages (inclusive) whose days are counted,
+    # e.g. edad_max 2 = the days of the year on which the child is under three.
+    edad_min: int | None = None
+    edad_max: int | None = None
+    total: int | None = None
+    tramos: list[TramoProrrateo] = Field(default_factory=list)
+    por_cada_periodo: bool = False
+    # When the datum is not known: refuse, or assume the whole year (with a warning).
+    si_falta: Literal["denegar", "completo"] = "denegar"
+
+    @model_validator(mode="after")
+    def _coherente(self) -> Prorrateo:
+        if self.dato not in CAMPOS_PERIODO | PERIODOS_POR_HIJO:
+            raise ValueError(f"periodo desconocido: {self.dato}")
+        if self.por_cada_periodo and (self.tramos or self.total is not None or self.aplica_a != "importe"):
+            raise ValueError("por_cada_periodo no admite tramos, total ni aplicarse al máximo")
+        if self.total is not None and self.total <= 0:
+            raise ValueError("total de prorrateo no válido")
+        if (self.dato == "dias_hijo_en_edad") != (self.edad_min is not None or self.edad_max is not None):
+            raise ValueError("dias_hijo_en_edad, y solo él, lleva edad_min o edad_max")
+        if [t.desde for t in self.tramos] != sorted({t.desde for t in self.tramos}):
+            raise ValueError("los tramos de prorrateo van en orden creciente y sin repetir")
+        return self
+
+
+class AjustePorHijo(_Model):
+    """Figures that differ for the children matching ``filtro`` (the first match of each child wins)."""
+
+    filtro: FiltroDescendientes
+    importe: Decimal | None = None
+    maximo_por_unidad: Decimal | None = None
+    base_maxima_por_unidad: Decimal | None = None
+
+    @model_validator(mode="after")
+    def _con_filtro(self) -> AjustePorHijo:
+        if self.filtro.vacio:
+            raise ValueError("un ajuste por hijo necesita un filtro")
+        return self
+
+
+class AjusteLimite(_Model):
+    """Income ceilings raised (``factor``) or lifted (``sin_limite``) for those who meet ``cuando``."""
+
+    cuando: Condiciones
+    factor: Decimal | None = None
+    sin_limite: bool = False
+
+    @model_validator(mode="after")
+    def _coherente(self) -> AjusteLimite:
+        if self.cuando.vacia:
+            raise ValueError("un ajuste de límite necesita al menos una condición")
+        if (self.factor is None) == (not self.sin_limite) or (self.factor is not None and self.factor <= 0):
+            raise ValueError("un ajuste de límite lleva factor o sin_limite, uno de los dos")
+        return self
+
+
+class LimiteConjunto(_Model):
+    """A cap shared by every deduction of the community that names the same ``grupo``."""
+
+    grupo: str
+    maximo: Decimal | None = None
+    maximo_fraccion_cuota: Decimal | None = None  # of the regional gross tax
+
+    @model_validator(mode="after")
+    def _con_tope(self) -> LimiteConjunto:
+        if self.maximo is None and self.maximo_fraccion_cuota is None:
+            raise ValueError("un límite conjunto necesita un máximo")
         return self
 
 
@@ -427,28 +661,64 @@ class DeduccionCalculable(Condiciones):
     resumen: str
     tipo: Literal["fija", "porcentaje"]
     importe: Decimal | None = None
-    # Fixed amount by the child's order (first, second… the last one repeats);
-    # only with unidad "hijos_nacidos_en_el_ejercicio".
+    # Fixed amount by order (first, second… the last one repeats). With unidad
+    # "hijos_nacidos_en_el_ejercicio" the order is that of the child among the
+    # taxpayer's children; with ``unidad_descendientes`` it is the child's rank by
+    # age among all the children; with any other unit, the first, second… unit.
     importes_por_orden: list[Decimal] | None = None
     unidad: str | None = None
+    # The unit is the number of children matching this filter (instead of ``unidad``).
+    unidad_descendientes: FiltroDescendientes | None = None
+    # An expense is given but the unit count is zero: assume one unit (with a warning) or refuse.
+    si_faltan_unidades: Literal["suponer_una", "denegar"] = "suponer_una"
     porcentaje: Decimal | None = None
+    # Tiered rate on the expense instead of ``porcentaje`` (e.g. 20 % up to 250 €, 25 % on the rest).
+    tramos_porcentaje: list[TramoPorcentaje] | None = None
+    # An expense input or ``BASE_CUOTA``.
     base: str | None = None
+    bases_adicionales: list[BaseAdicional] = Field(default_factory=list)
+    # Cap on the deduction: in euros (also the total of a fixed deduction), per unit,
+    # or as a fraction of the regional gross tax.
     maximo: Decimal | None = None
     maximo_por_unidad: Decimal | None = None
+    maximo_fraccion_cuota: Decimal | None = None
+    # Cap on the expense the percentage applies to: in euros, per unit, or as a
+    # fraction of the income named by ``base_maxima_fraccion_de``.
+    base_maxima: Decimal | None = None
+    base_maxima_por_unidad: Decimal | None = None
+    base_maxima_fraccion: Decimal | None = None
+    base_maxima_fraccion_de: BaseLimite = "base_liquidable_total"
     base_limite: BaseLimite = "base_imponible_total"
     limite_individual: Decimal | None = None
     limite_conjunta: Decimal | None = None
     limite_es_estricto: bool = False
+    # Taxpayers for whom the ceilings above are higher or do not apply (the first match wins).
+    ajustes_limite: list[AjusteLimite] = Field(default_factory=list)
+    # Above the ceiling the deduction is not lost but multiplied by this (e.g. 0.5).
+    factor_sobre_limite: Decimal | None = None
     limite_unidad_familiar: Decimal | None = None
     # Ceiling on the savings taxable base alone, when the law sets one.
     base_ahorro_max: Decimal | None = None
     reduccion_progresiva: ReduccionProgresiva | None = None
     gasto_minimo_sobre_base: Decimal | None = None
+    prorrateo: Prorrateo | None = None
+    ajustes_por_hijo: list[AjustePorHijo] = Field(default_factory=list)
     reparto_descendientes: bool = False
+    # The cap (or the amount, or the expense cap) is shared equally between this many tax returns.
+    dividir_entre: str | None = None
+    dividir: Literal["maximo", "importe", "base_maxima"] = "maximo"
+    # Joint return: a fixed deduction without unit is granted once per spouse who meets
+    # the age/disability conditions (needs ``conyuge`` "en_conjunta").
+    por_contribuyente: bool = False
     alternativas: list[Condiciones] = Field(default_factory=list)
     variantes: list[Variante] = Field(default_factory=list)
-    # Articles of this community's deductions that exclude this one when they have been applied.
+    # Articles of this community's deductions that exclude this one when they have been
+    # applied (the first in file order wins). Deprecated: prefer ``excluyente_con``.
     incompatible_con: list[str] = Field(default_factory=list)
+    # Articles this one cannot be combined with: of each group of mutually exclusive
+    # deductions the calculator keeps the combination that deducts most.
+    excluyente_con: list[str] = Field(default_factory=list)
+    limite_conjunto: LimiteConjunto | None = None
     requisitos_no_comprobados: list[str] = Field(default_factory=list)
     en_vigor_desde: str
 
@@ -456,18 +726,63 @@ class DeduccionCalculable(Condiciones):
     def condiciones(self) -> Condiciones:
         return Condiciones(**{name: getattr(self, name) for name in Condiciones.model_fields})
 
+    @property
+    def sobre_cuota(self) -> bool:
+        return self.base == BASE_CUOTA
+
+    @property
+    def bases(self) -> list[str]:
+        """Every expense input that feeds the deduction."""
+        return [b for b in (self.base, *(a.base for a in self.bases_adicionales)) if b and b != BASE_CUOTA]
+
     @model_validator(mode="after")
     def _coherente(self) -> DeduccionCalculable:
         if self.unidad is not None and self.unidad not in CAMPOS_UNIDAD:
             raise ValueError(f"unidad desconocida: {self.unidad}")
+        if self.unidad is not None and self.unidad_descendientes is not None:
+            raise ValueError("unidad y unidad_descendientes son excluyentes")
+        con_unidad = self.unidad is not None or self.unidad_descendientes is not None
+        por_hijos = self.unidad_descendientes is not None or self.unidad in CAMPOS_UNIDAD_HIJOS
         if any(a.vacia for a in self.alternativas):
             raise ValueError("una alternativa vacía la cumple cualquiera")
         por_orden = [self.importes_por_orden, *(v.importes_por_orden for v in self.variantes)]
-        if any(lista is not None for lista in por_orden) and self.unidad != "hijos_nacidos_en_el_ejercicio":
-            raise ValueError("importes_por_orden exige la unidad hijos_nacidos_en_el_ejercicio")
+        if any(lista is not None for lista in por_orden) and not con_unidad:
+            raise ValueError("importes_por_orden exige una unidad")
+        if self.dividir_entre is not None and self.dividir_entre not in CAMPOS_REPARTO:
+            raise ValueError(f"reparto desconocido: {self.dividir_entre}")
+        if self.ajustes_por_hijo and not por_hijos:
+            raise ValueError("ajustes_por_hijo exige una unidad de hijos")
+        if self.prorrateo is not None:
+            if self.prorrateo.dato in PERIODOS_POR_HIJO and not por_hijos:
+                raise ValueError("un prorrateo por hijo exige una unidad de hijos")
+            if (
+                self.prorrateo.dato in PERIODOS_POR_HIJO
+                and self.tipo == "porcentaje"
+                and self.prorrateo.aplica_a != "maximo"
+            ):
+                raise ValueError("en una deducción porcentual el prorrateo por hijo se aplica al máximo")
+        if self.factor_sobre_limite is not None and not 0 < self.factor_sobre_limite < 1:
+            raise ValueError("factor_sobre_limite fuera de rango")
+        if self.por_contribuyente and (self.tipo != "fija" or con_unidad or self.conyuge != "en_conjunta"):
+            raise ValueError("por_contribuyente exige una deducción fija sin unidad y conyuge «en_conjunta»")
+        fracciones = (self.maximo_fraccion_cuota, self.base_maxima_fraccion)
+        if any(f is not None and not 0 < f <= 1 for f in fracciones):
+            raise ValueError("fracción fuera de rango")
         if self.tipo == "fija":
             if self.porcentaje is not None or self.base is not None:
                 raise ValueError("una deducción fija no lleva porcentaje ni base")
+            solo_porcentual = (
+                self.tramos_porcentaje,
+                self.bases_adicionales,
+                self.base_maxima,
+                self.base_maxima_por_unidad,
+                self.base_maxima_fraccion,
+                self.maximo_por_unidad,
+            )
+            if any(solo_porcentual) or any(
+                v.tramos_porcentaje or v.base_maxima or v.base_maxima_por_unidad for v in self.variantes
+            ):
+                raise ValueError("una deducción fija no lleva tramos, bases ni máximo por unidad")
             if (self.importe is None) == (self.importes_por_orden is None):
                 raise ValueError("una deducción fija lleva importe o importes_por_orden, uno de los dos")
             if (self.importe is not None and self.importe <= 0) or (
@@ -476,20 +791,68 @@ class DeduccionCalculable(Condiciones):
                 raise ValueError("importe no válido")
             if any(v.porcentaje is not None for v in self.variantes):
                 raise ValueError("una variante de deducción fija no lleva porcentaje")
-            if self.unidad is None and self.condiciones.vacia and not self.alternativas:
+            if not con_unidad and self.condiciones.vacia and not self.alternativas:
                 raise ValueError("una deducción fija sin unidad necesita una condición comprobable")
+            if self.prorrateo is not None and self.prorrateo.aplica_a == "maximo":
+                raise ValueError("en una deducción fija el prorrateo se aplica al importe")
+            if any(a.maximo_por_unidad or a.base_maxima_por_unidad for a in self.ajustes_por_hijo):
+                raise ValueError("un ajuste por hijo de una deducción fija solo lleva importe")
         else:
-            if self.porcentaje is None or not 0 < self.porcentaje <= 1 or self.base not in CAMPOS_GASTO:
+            tramos = [self.tramos_porcentaje, *(v.tramos_porcentaje for v in self.variantes)]
+            if (self.porcentaje is None) == (self.tramos_porcentaje is None):
+                raise ValueError("una deducción porcentual lleva porcentaje (0-1) o tramos_porcentaje, uno de los dos")
+            if self.porcentaje is not None and not 0 < self.porcentaje <= 1:
                 raise ValueError("una deducción porcentual lleva porcentaje (0-1) y una base de gasto conocida")
+            if self.base not in CAMPOS_GASTO and not self.sobre_cuota:
+                raise ValueError("una deducción porcentual lleva porcentaje (0-1) y una base de gasto conocida")
+            for escala in tramos:
+                if escala is None:
+                    continue
+                topes = [t.hasta for t in escala]
+                if (
+                    not escala
+                    or topes[-1] is not None
+                    or any(t is None for t in topes[:-1])
+                    or topes[:-1] != sorted(topes[:-1])  # type: ignore[type-var]
+                    or any(not 0 < t.porcentaje <= 1 for t in escala)
+                ):
+                    raise ValueError("tramos_porcentaje: topes crecientes, el último sin tope, porcentajes en (0, 1]")
+            if any(a.base not in CAMPOS_GASTO for a in self.bases_adicionales) or len(set(self.bases)) != len(
+                self.bases
+            ):
+                raise ValueError("bases_adicionales: gastos conocidos y sin repetir")
+            if any(a.porcentaje is not None and not 0 < a.porcentaje <= 1 for a in self.bases_adicionales):
+                raise ValueError("porcentaje de base adicional fuera de rango")
+            con_tope_de_base = (
+                self.base_maxima is not None
+                or self.base_maxima_por_unidad is not None
+                or self.base_maxima_fraccion is not None
+                or any(v.base_maxima is not None or v.base_maxima_por_unidad is not None for v in self.variantes)
+                or any(a.base_maxima_por_unidad is not None for a in self.ajustes_por_hijo)
+            )
+            if any(a.porcentaje is not None for a in self.bases_adicionales) and (
+                con_tope_de_base or any(t is not None for t in tramos)
+            ):
+                raise ValueError("bases con porcentajes distintos no admiten base máxima ni tramos")
+            if self.sobre_cuota:
+                if self.bases_adicionales or con_tope_de_base or any(t is not None for t in tramos):
+                    raise ValueError("una deducción sobre la cuota no lleva otras bases, base máxima ni tramos")
+                if not con_unidad and self.condiciones.vacia and not self.alternativas:
+                    raise ValueError("una deducción sobre la cuota necesita una condición comprobable")
             if self.importe is not None or self.importes_por_orden is not None:
                 raise ValueError("una deducción porcentual no lleva importe")
             if any(v.importe is not None or v.importes_por_orden is not None for v in self.variantes):
                 raise ValueError("una variante de deducción porcentual no lleva importe")
+            if any(a.importe is not None for a in self.ajustes_por_hijo):
+                raise ValueError("un ajuste por hijo de una deducción porcentual no lleva importe")
             if any(v.porcentaje is not None and not 0 < v.porcentaje <= 1 for v in self.variantes):
                 raise ValueError("porcentaje de variante fuera de rango")
-            if (
-                self.maximo_por_unidad is not None or any(v.maximo_por_unidad for v in self.variantes)
-            ) and not self.unidad:
+            por_unidad = (
+                self.maximo_por_unidad is not None
+                or self.base_maxima_por_unidad is not None
+                or any(v.maximo_por_unidad or v.base_maxima_por_unidad for v in self.variantes)
+            )
+            if por_unidad and not con_unidad:
                 raise ValueError("maximo_por_unidad exige unidad")
         return self
 

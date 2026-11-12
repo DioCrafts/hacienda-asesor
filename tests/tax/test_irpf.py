@@ -303,12 +303,21 @@ def test_madrid_birth_deduction_and_sharing_between_parents() -> None:
 
 def test_madrid_education_expenses_rates_and_caps() -> None:
     kids = dict(rendimiento_trabajo_bruto=D(60000), cotizaciones_seguridad_social=D(3810), num_descendientes=2)
-    # 15 % × (6.000 + 1.000) + 5 % × 400 = 1.070; cap 2 × 927,90 not reached.
+    # 15 % × (6.000 + 1.000) + 5 % × 400 = 1.070. The cap is per child on that child's own expenses, and
+    # how they are split between the two children is not known: a single cap of 927,90 is granted.
     full = _madrid(
         gastos_escolaridad=D(6000), gastos_ensenanza_idiomas=D(1000), gastos_uniformes_escolares=D(400), **kids
     )
-    assert _aplicada(full, "Deducción autonómica por gastos educativos") == D("1070.00")
+    assert _aplicada(full, "Deducción autonómica por gastos educativos") == D("927.90")
+    assert any("como si todos los gastos fueran de un solo hijo" in aviso for aviso in full.avisos)
     assert any("deducidos de tus datos" in aviso for aviso in full.avisos)  # family size was inferred
+    # A single child with those expenses: the cap is not reached.
+    solo = _madrid(
+        gastos_escolaridad=D(6000), gastos_ensenanza_idiomas=D(1000), gastos_uniformes_escolares=D(400),
+        **{**kids, "num_descendientes": 1},
+    )  # fmt: skip
+    assert _aplicada(solo, "Deducción autonómica por gastos educativos") == D("927.90")
+    assert not any("un solo hijo" in aviso for aviso in solo.avisos)
 
     # Without schooling fees the cap is 412,40 per child: 15 % × 4.000 = 600 → 412,40.
     one = {**kids, "num_descendientes": 1}
@@ -327,6 +336,54 @@ def test_madrid_education_expenses_rates_and_caps() -> None:
     assert "30.930 € × 1 miembros" in _no_aplicada(over, "gastos educativos")
     childless = _madrid(rendimiento_trabajo_bruto=D(30000), gastos_escolaridad=D(6000))
     assert "no constan hijos" in _no_aplicada(childless, "gastos educativos")
+
+
+def test_madrid_education_expenses_child_by_child() -> None:
+    """Art. 11.4: 412,40 € per child, 927,90 € for a child with schooling fees, 1.031 € in the first
+    cycle of infant education (where only the schooling counts) — each on that child's own expenses."""
+    base = dict(rendimiento_trabajo_bruto=D(60000), cotizaciones_seguridad_social=D(3810))
+
+    def con(*hijos: dict[str, object]) -> D:
+        return _aplicada(_madrid(descendientes=list(hijos), **base), "Deducción autonómica por gastos educativos")
+
+    # The audit's case: 8.000 € of schooling of ONE of two children → 927,90 (the old code gave 1.200).
+    assert con({"edad": 10, "gastos": {"gastos_escolaridad": 8000}}, {"edad": 7}) == D("927.90")
+    # One child with fees (capped at 927,90) and one with languages only (15 % × 4.000 = 600 → 412,40):
+    # the higher cap is not extended to the child without schooling fees.
+    assert con(
+        {"edad": 10, "gastos": {"gastos_escolaridad": 8000}},
+        {"edad": 7, "gastos": {"gastos_ensenanza_idiomas": 4000}},
+    ) == D("1340.30")
+    # Below the caps nothing is lost: 15 % × 3.000 + (15 % × 1.000 + 5 % × 400) = 450 + 170.
+    assert con(
+        {"edad": 10, "gastos": {"gastos_escolaridad": 3000}},
+        {"edad": 7, "gastos": {"gastos_ensenanza_idiomas": 1000, "gastos_uniformes_escolares": 400}},
+    ) == D("620.00")
+    # First cycle of infant education: schooling only (languages and uniforms are left out), cap 1.031.
+    assert con(
+        {"edad": 2, "etapa_educativa": "infantil_primer_ciclo",
+         "gastos": {"gastos_escolaridad": 2000, "gastos_ensenanza_idiomas": 1000, "gastos_uniformes_escolares": 300}},
+    ) == D("300.00")  # fmt: skip
+    assert con(
+        {"edad": 2, "etapa_educativa": "infantil_primer_ciclo", "gastos": {"gastos_escolaridad": 9000}},
+        {"edad": 8, "gastos": {"gastos_escolaridad": 9000}},
+    ) == D("1958.90")  # 1.031 + 927,90
+    exacto = _madrid(descendientes=[{"edad": 10, "gastos": {"gastos_escolaridad": 8000}}, {"edad": 7}], **base)
+    assert any("hijo a hijo con el desglose" in aviso for aviso in exacto.avisos)
+    assert exacto.base_imponible_general == _madrid(num_descendientes=2, **base).base_imponible_general
+    # The breakdown must add up to the total when both are given.
+    with pytest.raises(ValueError, match="no coincide con el total"):
+        _madrid(gastos_escolaridad=D(5000), descendientes=[{"edad": 10, "gastos": {"gastos_escolaridad": 8000}}])
+
+
+def test_madrid_low_income_deduction_is_computed_after_the_data_driven_ones() -> None:
+    # Art. 14: 10 % of the regional tax left after the other regional deductions, the fostering one included.
+    base = dict(rendimiento_trabajo_bruto=D(22000), cotizaciones_seguridad_social=D(1397), num_descendientes=2)
+    sin, con = _madrid(**base), _madrid(menores_acogidos=1, **base)
+    familias = "Deducción autonómica para familias con dos o más descendientes"
+    acogimiento = _aplicada(con, "Deducción autonómica: Acogimiento familiar de menores")
+    assert acogimiento > 0
+    assert _aplicada(sin, familias) - _aplicada(con, familias) == (acogimiento * D("0.1")).quantize(D("0.01"))
 
 
 def test_madrid_care_and_local_donations_deductions() -> None:
