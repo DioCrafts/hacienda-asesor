@@ -52,7 +52,7 @@ def _avisa(result, fragment: str) -> bool:
 
 
 def test_params_load_with_the_figures_read_from_the_law() -> None:
-    assert ejercicios_autonomos_disponibles() == [2026]
+    assert ejercicios_autonomos_disponibles() == [2025, 2026]
     p = load_autonomos_params(2026)
     assert (p.gastos_dificil_justificacion.porcentaje, p.gastos_dificil_justificacion.limite_anual) == (D("0.05"), 2000)
     assert p.pago_fraccionado.porcentaje == D("0.20")

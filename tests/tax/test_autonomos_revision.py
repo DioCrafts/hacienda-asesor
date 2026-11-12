@@ -12,8 +12,13 @@ from pathlib import Path
 
 import pytest
 
-from hacienda_gpt.tax.actividad import ActividadInput, calcular_rendimiento_actividad
-from hacienda_gpt.tax.autonomos_params import textos_de_directorio
+from hacienda_gpt.tax.actividad import (
+    ActividadInput,
+    calcular_rendimiento_actividad,
+    cumple_supuesto_d_retencion,
+    tipo_retencion_profesional,
+)
+from hacienda_gpt.tax.autonomos_params import comprobar_evidencias, load_autonomos_params, textos_de_directorio
 from hacienda_gpt.tax.iva import Modelo303Input, calcular_modelo_303
 from hacienda_gpt.tax.pagos_fraccionados import Modelo130Input, calcular_modelo_130
 
@@ -333,3 +338,170 @@ def test_modelo_303_compensation_and_refund_only_in_the_last_quarter() -> None:
     # The carried balance exactly offsets the quarter: zero, nothing left
     r = _m303(trimestre=4, base_tipo_general=D("1000"), cuotas_a_compensar_periodos_anteriores=D("210"))
     assert r.tipo_resultado == "cero" and r.saldo_a_compensar == 0 and not r.puede_solicitar_devolucion
+
+
+# --- Follow-up: 2025, art. 32.1 and 32.3, Ceuta and Melilla, withholding ----------------------
+
+
+def test_2025_parameters_are_the_wording_in_force_in_2025() -> None:
+    # Extracts built from the boe.es open-data XML: for each article, the last version whose date
+    # of entry into force is not after 31-12-2025.
+    p25, p26 = load_autonomos_params(2025), load_autonomos_params(2026)
+    textos = textos_de_directorio(EXTRACTOS / "2025")
+    assert set(textos) == set(p25.fuentes_principales)
+    assert comprobar_evidencias(p25, textos) == []
+    assert all(grupo.fuente.verificado for grupo in p25.grupos().values())
+    assert all(fp.consolidado_a == "2025-12-31" for fp in p25.fuentes_principales.values())
+    # The provision for Ceuta is of 2026 only; every other figure is the same in both years.
+    assert p25.gastos_dificil_justificacion_ceuta is None and p26.gastos_dificil_justificacion_ceuta is not None
+    assert "sexagésima cuarta" not in textos[LIRPF]
+    excluir = {"fuente", "evidencia", "avisos"}
+    for nombre, grupo in p25.grupos().items():
+        assert grupo.model_dump(exclude=excluir) == getattr(p26, nombre).model_dump(exclude=excluir), nombre
+    # 40,000 - 10,000 = 30,000; 5 % = 1,500 -> 28,500, in 2025 as in 2026
+    r = calcular_rendimiento_actividad(
+        ActividadInput(ejercicio=2025, ingresos_integros=D("40000"), otros_gastos=D("10000"))
+    )
+    assert r.rendimiento_actividad_neto == D("28500.00")
+    assert "vigente a 31-12-2025" in r.fuente
+    q = calcular_modelo_130(
+        Modelo130Input(ejercicio=2025, trimestre=1, ingresos_acumulados=D("12000"), gastos_acumulados=D("3000"))
+    )
+    assert q.resultado == D("1710.00")  # 20 % x 8,550
+    assert (
+        calcular_modelo_303(Modelo303Input(ejercicio=2025, trimestre=1, base_tipo_general=D("1000"))).resultado == 210
+    )
+
+
+def test_irregular_income_reduction_of_art_32_1() -> None:
+    # "se reducirán en un 30 por ciento"; "no podrá superar el importe de 300.000 euros anuales"
+    # 60,000 - 10,000 = 50,000; flat 5 % = 2,500 -> 2,000; net 48,000; 30 % x 20,000 = 6,000 -> 42,000
+    r = _act(ingresos_integros=D("60000"), otros_gastos=D("10000"), rendimientos_irregulares=D("20000"))
+    assert r.rendimiento_neto == D("48000.00")
+    assert (r.reduccion_art_32_1, r.reduccion_art_32_2, r.reduccion_art_32_3) == (D("6000.00"), 0, 0)
+    assert r.rendimiento_actividad_neto == D("42000.00")
+    assert _avisa(r, "art. 25 RIRPF") and _avisa(r, "de forma regular o habitual")
+    # Base capped at 300,000: 500,000 - 2,000 = 498,000; 30 % x 300,000 = 90,000 -> 408,000
+    r = _act(ingresos_integros=D("500000"), rendimientos_irregulares=D("400000"))
+    assert r.reduccion_art_32_1 == D("90000.00") and r.rendimiento_actividad_neto == D("408000.00")
+    # Not asked for, not applied, and said so
+    r = _act(ingresos_integros=D("60000"))
+    assert r.reduccion_art_32_1 == 0 and _avisa(r, "No se ha aplicado la del 30 % por rendimientos irregulares")
+    with pytest.raises(ValueError, match="no pueden superar los ingresos"):
+        ActividadInput(ejercicio=2026, ingresos_integros=D("100"), rendimientos_irregulares=D("101"))
+
+
+def test_new_activity_reduction_of_art_32_3_comes_after_the_other_two() -> None:
+    # "podrán reducir en un 20 por ciento el rendimiento neto positivo declarado [...], minorado en su caso por
+    # las reducciones previstas en los apartados 1 y 2 anteriores"
+    # Net 48,000 -> 20 % = 9,600 -> 38,400
+    r = _act(ingresos_integros=D("60000"), otros_gastos=D("10000"), reduccion_inicio_actividad=True)
+    assert r.reduccion_art_32_3 == D("9600.00") and r.rendimiento_actividad_neto == D("38400.00")
+    # After art. 32.1: 48,000 - 6,000 = 42,000; 20 % = 8,400 -> 33,600
+    r = _act(
+        ingresos_integros=D("60000"),
+        otros_gastos=D("10000"),
+        rendimientos_irregulares=D("20000"),
+        reduccion_inicio_actividad=True,
+    )
+    assert (r.reduccion_art_32_1, r.reduccion_art_32_3) == (D("6000.00"), D("8400.00"))
+    assert r.rendimiento_actividad_neto == D("33600.00")
+    # After art. 32.2.3.º: net 8,550, other income 1,000 -> 992.25 -> 7,557.75; 20 % = 1,511.55 -> 6,046.20
+    r = _act(
+        ingresos_integros=D("10000"),
+        otros_gastos=D("1000"),
+        otras_rentas_no_exentas=D("1000"),
+        reduccion_inicio_actividad=True,
+    )
+    assert (r.reduccion_art_32_2, r.reduccion_art_32_3) == (D("992.25"), D("1511.55"))
+    assert r.rendimiento_actividad_neto == D("6046.20")
+    # Base capped at 100,000: net 498,000 -> 20,000 -> 478,000
+    r = _act(ingresos_integros=D("500000"), reduccion_inicio_actividad=True)
+    assert r.reduccion_art_32_3 == D("20000.00") and r.rendimiento_actividad_neto == D("478000.00")
+    # "rendimiento neto positivo": a loss is not reduced
+    r = _act(ingresos_integros=D("1000"), otros_gastos=D("3000"), reduccion_inicio_actividad=True)
+    assert r.reduccion_art_32_3 == 0 and r.rendimiento_actividad_neto == D("-2000.00")
+    assert _avisa(r, "primer ejercicio con rendimiento neto positivo o el siguiente")
+
+
+def test_ceuta_flat_allowance_of_2026_and_what_stays_general() -> None:
+    # DA 64.ª.1 LIRPF: "será, durante el período impositivo 2026, del 10 por ciento"; the 2,000 cap is untouched.
+    kwargs = dict(ingresos_integros=D("30000"), otros_gastos=D("10000"))
+    # 20,000 x 10 % = 2,000 -> 18,000 (general: 5 % = 1,000 -> 19,000)
+    r = _act(**kwargs, ceuta_melilla="ceuta")
+    assert r.gastos_dificil_justificacion == D("2000.00") and r.rendimiento_actividad_neto == D("18000.00")
+    assert _avisa(r, "ni este cálculo ni el simulador de IRPF la aplican")
+    assert _act(**kwargs).rendimiento_actividad_neto == D("19000.00")
+    assert _avisa(_act(**kwargs), "Si la actividad se desarrolla en Ceuta")
+    # 12,000 x 10 % = 1,200
+    assert _act(ingresos_integros=D("12000"), ceuta_melilla="ceuta").gastos_dificil_justificacion == D("1200.00")
+    # The cap still holds: 40,000 x 10 % = 4,000 -> 2,000
+    assert _act(ingresos_integros=D("40000"), ceuta_melilla="ceuta").gastos_dificil_justificacion == D("2000.00")
+    # Melilla is not in the provision; 2025 has no such provision
+    r = _act(**kwargs, ceuta_melilla="melilla")
+    assert r.rendimiento_actividad_neto == D("19000.00") and _avisa(r, "solo para Ceuta")
+    r = calcular_rendimiento_actividad(ActividadInput(ejercicio=2025, ceuta_melilla="ceuta", **kwargs))
+    assert r.rendimiento_actividad_neto == D("19000.00")
+
+
+def test_modelo_130_in_ceuta_and_melilla() -> None:
+    # Art. 110.2 RIRPF: "se reducirán en un 60 por ciento" -> 20 % x 0.4 = 8 %.
+    # DA 64.ª.3 LIRPF: the 10 % only in payments whose filing period starts a month after 3-9-2026: the third
+    # quarter's starts on 1 October (art. 111.1 RIRPF), so only the fourth quarter.
+    kwargs = dict(ingresos_acumulados=D("30000"), gastos_acumulados=D("10000"))
+    # Q3: flat 5 % x 20,000 = 1,000; net 19,000; 8 % = 1,520
+    q3 = _m130(trimestre=3, ceuta_melilla="ceuta", **kwargs)
+    assert q3.rendimiento_neto_acumulado == D("19000.00") and q3.resultado == D("1520.00")
+    assert _avisa(q3, "solo cuenta en los pagos fraccionados desde el trimestre 4")
+    # Q4: flat 10 % = 2,000; net 18,000; 8 % = 1,440
+    q4 = _m130(trimestre=4, ceuta_melilla="ceuta", **kwargs)
+    assert q4.rendimiento_neto_acumulado == D("18000.00") and q4.resultado == D("1440.00")
+    # Melilla: the 8 %, never the 10 %
+    assert _m130(trimestre=4, ceuta_melilla="melilla", **kwargs).resultado == D("1520.00")
+    # Elsewhere: 20 % x 19,000 = 3,800
+    r = _m130(trimestre=4, **kwargs)
+    assert r.resultado == D("3800.00") and _avisa(r, "el porcentaje se reduce en un 60 %")
+    # 2025: 8 %, general flat allowance in every quarter
+    r = calcular_modelo_130(Modelo130Input(ejercicio=2025, trimestre=4, ceuta_melilla="ceuta", **kwargs))
+    assert r.resultado == D("1520.00")
+
+
+def test_modelo_130_annual_cap_is_not_prorated_and_last_year_at_or_below_zero() -> None:
+    # Art. 30.2.ª RIRPF: "sin que la cuantía resultante pueda superar 2.000 euros anuales"; art. 110.1.a): the
+    # payment is on the net income "desde el primer día del año". No rule splits the cap by quarter.
+    # Q1: 50,000 x 5 % = 2,500 -> 2,000 (not 500); net 48,000; 20 % = 9,600
+    q1 = _m130(trimestre=1, ingresos_acumulados=D("50000"))
+    assert q1.rendimiento_neto_acumulado == D("48000.00") and q1.resultado == D("9600.00")
+    assert _avisa(q1, "sin prorratear")
+    # Below the cap nothing is said: 10,000 x 5 % = 500
+    assert not _avisa(_m130(trimestre=1, ingresos_acumulados=D("10000")), "sin prorratear")
+    # In the fourth quarter the cumulative figure is the annual one
+    assert not _avisa(_m130(trimestre=4, ingresos_acumulados=D("50000")), "sin prorratear")
+
+    # "Igual o inferior a 9.000 -> 100": zero and a loss are in that bracket by its literal wording
+    for anterior in ("0", "-3000"):
+        r = _m130(trimestre=1, ingresos_acumulados=D("10000"), rendimiento_neto_ejercicio_anterior=D(anterior))
+        # 9,500 x 20 % = 1,900; - 100 = 1,800
+        assert r.minoracion_aplicada == 100 and r.resultado == D("1800.00")
+        assert _avisa(r, "nulo o negativo") and _avisa(r, "no regula expresamente")
+    r = _m130(trimestre=1, ingresos_acumulados=D("10000"), rendimiento_neto_ejercicio_anterior=D("0.01"))
+    assert r.minoracion_aplicada == 100 and not _avisa(r, "nulo o negativo")
+
+
+def test_withholding_rates_of_art_95_1() -> None:
+    p = load_autonomos_params(2026)
+    assert tipo_retencion_profesional(p) == D("0.15")
+    for supuesto in ("recaudador_municipal", "mediador_seguros", "delegado_loterias", "actividad_ingresos_reducidos"):
+        assert tipo_retencion_profesional(p, supuesto=supuesto) == D("0.07")
+    # "Estos porcentajes se reducirán en un 60 por ciento": 15 % -> 6 %, 7 % -> 2.8 %
+    assert tipo_retencion_profesional(p, ceuta_melilla=True) == D("0.06")
+    assert tipo_retencion_profesional(p, inicio_actividad=True, ceuta_melilla=True) == D("0.028")
+    # Letter d): "inferior a 15.000 euros y represente más del 75 por ciento"
+    assert cumple_supuesto_d_retencion(p, D("14999.99"), D("19000"))  # 78.9 %
+    assert not cumple_supuesto_d_retencion(p, D("15000"), D("15000"))  # not below 15,000
+    assert not cumple_supuesto_d_retencion(p, D("12000"), D("16000"))  # exactly 75 % is not "más del"
+    assert cumple_supuesto_d_retencion(p, D("12000.01"), D("16000"))
+
+
+def test_modelo_303_says_where_vat_does_not_apply() -> None:
+    assert _avisa(_m303(trimestre=1), "no se aplica en Canarias, Ceuta ni Melilla")

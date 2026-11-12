@@ -20,7 +20,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
 
 
 def test_available_years(client: TestClient) -> None:
-    assert client.get("/autonomos/ejercicios").json() == {"ejercicios": [2026]}
+    assert client.get("/autonomos/ejercicios").json() == {"ejercicios": [2025, 2026]}
 
 
 def test_actividad_returns_the_net_income_with_lines_and_warnings(client: TestClient) -> None:
@@ -110,3 +110,46 @@ def test_api_key_is_enforced_when_configured(client: TestClient, monkeypatch: py
 def test_unknown_error_types_still_give_a_sentence() -> None:
     text = errores_en_espanol([{"type": "weird", "loc": ("body", "x"), "msg": "nope"}])
     assert text == "Datos no válidos: x: valor no válido (nope)."
+
+
+def test_new_inputs_travel_through_the_api(client: TestClient) -> None:
+    # Ceuta 2026: 30,000 - 10,000 = 20,000; 10 % = 2,000; net 18,000; then 20 % for a new activity -> 14,400
+    response = client.post(
+        "/autonomos/actividad",
+        json={
+            "ejercicio": 2026,
+            "ingresos_integros": 30000,
+            "otros_gastos": 10000,
+            "ceuta_melilla": "ceuta",
+            "reduccion_inicio_actividad": True,
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert D(body["rendimiento_neto"]) == D("18000.00")
+    assert D(body["reduccion_art_32_3"]) == D("3600.00")
+    assert D(body["rendimiento_actividad_neto"]) == D("14400.00")
+    # Same figures in 2025: no special percentage -> 19,000
+    response = client.post(
+        "/autonomos/actividad",
+        json={"ejercicio": 2025, "ingresos_integros": 30000, "otros_gastos": 10000, "ceuta_melilla": "ceuta"},
+    )
+    assert D(response.json()["rendimiento_actividad_neto"]) == D("19000.00")
+    # 8 % instead of 20 % in the payment on account: 19,000 x 8 % = 1,520
+    response = client.post(
+        "/autonomos/modelo-130",
+        json={
+            "ejercicio": 2026,
+            "trimestre": 3,
+            "ingresos_acumulados": 30000,
+            "gastos_acumulados": 10000,
+            "ceuta_melilla": "melilla",
+        },
+    )
+    assert D(response.json()["resultado"]) == D("1520.00")
+    response = client.post(
+        "/autonomos/actividad", json={"ejercicio": 2026, "ingresos_integros": 100, "rendimientos_irregulares": 200}
+    )
+    assert response.status_code == 422 and "no pueden superar los ingresos íntegros" in response.json()["detail"]
+    response = client.post("/autonomos/actividad", json={"ejercicio": 2026, "ceuta_melilla": "canarias"})
+    assert response.status_code == 422

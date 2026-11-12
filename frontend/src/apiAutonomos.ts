@@ -1,14 +1,12 @@
-// Client for the self-employed calculators (POST /autonomos/*). Deterministic
-// endpoints: no model call, so they answer as the user types.
+// Client for the self-employed calculators (POST /autonomos/*) and for the
+// activity as the case sees it (POST /simulate). Deterministic endpoints: no
+// model call, so they answer as the user types.
 //
-// Kept apart from api.ts on purpose; it only borrows ApiError and CalcLine
-// from there so errors and calculation lines look the same everywhere.
+// Everything goes through api.ts's `request`, so these calls carry the session
+// token, the timeout and the error messages of the rest of the app.
 
 import type { CalcLine } from "./api";
-import { ApiError } from "./api";
-
-const API_BASE = (import.meta.env.VITE_API_BASE as string) || "/api";
-const TIMEOUT_MS = 30_000;
+import { request } from "./api";
 
 /** Fields every calculator result carries. Amounts are decimals as strings. */
 interface ResultadoBase {
@@ -18,6 +16,8 @@ interface ResultadoBase {
   parametros_no_verificados: string[];
   fuente: string;
 }
+
+export type CeutaMelilla = "ceuta" | "melilla";
 
 export interface ActividadInput {
   ejercicio: number;
@@ -34,6 +34,9 @@ export interface ActividadInput {
   discapacidad?: boolean;
   discapacidad_ampliada?: boolean;
   reduccion_rendimientos_trabajo?: number;
+  rendimientos_irregulares?: number;
+  reduccion_inicio_actividad?: boolean;
+  ceuta_melilla?: CeutaMelilla;
 }
 
 export interface ResultadoActividad extends ResultadoBase {
@@ -42,7 +45,9 @@ export interface ResultadoActividad extends ResultadoBase {
   rendimiento_neto_previo: string;
   gastos_dificil_justificacion: string;
   rendimiento_neto: string;
+  reduccion_art_32_1: string;
   reduccion_art_32_2: string;
+  reduccion_art_32_3: string;
   reduccion_aplicada: string | null;
   rendimiento_neto_reducido: string;
   /** The figure the IRPF simulator expects as net income of the activity. */
@@ -66,6 +71,7 @@ export interface Modelo130Input {
   ingresos_con_retencion_ano_anterior?: number;
   inicio_actividad?: boolean;
   ingresos_con_retencion_acumulados?: number;
+  ceuta_melilla?: CeutaMelilla;
 }
 
 export interface ResultadoModelo130 extends ResultadoBase {
@@ -106,6 +112,18 @@ export interface ResultadoModelo303 extends ResultadoBase {
   puede_solicitar_devolucion: boolean;
 }
 
+/** What the profile bridge did with the activity figures of a case (see hacienda_gpt/tax/profile.py). */
+export interface ActividadPerfil {
+  /** True when the net income was computed from the breakdown. */
+  calculado: boolean;
+  resultado: ResultadoActividad | null;
+  /** Sentence explaining how the figure was obtained. */
+  aviso: string;
+  /** Other non-exempt income of the case and the work-income reduction used for art. 32.2 (null: not derived). */
+  otras_rentas_no_exentas: string | null;
+  reduccion_rendimientos_trabajo: string | null;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -121,62 +139,66 @@ function isResultado(value: unknown, ...amounts: string[]): boolean {
   );
 }
 
-async function call<T>(path: string, body: unknown, validate: (value: unknown) => boolean, signal?: AbortSignal): Promise<T> {
-  const timeout = AbortSignal.timeout(TIMEOUT_MS);
-  const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
-  let resp: Response;
-  try {
-    resp = await fetch(`${API_BASE}${path}`, {
-      method: body === undefined ? "GET" : "POST",
-      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body),
-      signal: combined,
-    });
-  } catch (err) {
-    if (timeout.aborted) throw new ApiError("El servicio tardó demasiado en responder.", null, { cause: err });
-    throw err;
-  }
-  if (!resp.ok) {
-    // FastAPI errors are {"detail": "..."}; these endpoints already answer in Spanish.
-    const text = await resp.text().catch(() => "");
-    let detail = text || resp.statusText;
-    try {
-      const parsed: unknown = JSON.parse(text);
-      if (isRecord(parsed) && typeof parsed.detail === "string") detail = parsed.detail;
-    } catch {
-      // not JSON: keep the raw text
-    }
-    if (resp.status === 401) detail = "El servicio requiere una clave de acceso que esta aplicación no tiene configurada.";
-    if (resp.status === 429) detail = "Demasiadas consultas seguidas. Espera un momento y vuelve a intentarlo.";
-    throw new ApiError(detail || `${path}: error ${resp.status}`, resp.status);
-  }
-  const data: unknown = await resp.json();
-  if (!validate(data)) throw new ApiError("El servidor devolvió una respuesta con un formato inesperado.", resp.status);
-  return data as T;
+function isActividad(value: unknown): value is ResultadoActividad {
+  return isResultado(value, "rendimiento_actividad_neto", "rendimiento_neto");
+}
+function isModelo130(value: unknown): value is ResultadoModelo130 {
+  return isResultado(value, "resultado", "a_ingresar", "pago_previo_a_minoracion");
+}
+function isModelo303(value: unknown): value is ResultadoModelo303 {
+  return isResultado(value, "resultado", "saldo_a_compensar", "tipo_resultado");
+}
+function isEjercicios(value: unknown): value is { ejercicios: number[] } {
+  return isRecord(value) && Array.isArray(value.ejercicios) && value.ejercicios.every((year) => typeof year === "number");
+}
+function isActividadPerfil(value: unknown): value is ActividadPerfil {
+  return isRecord(value) && typeof value.calculado === "boolean" && typeof value.aviso === "string" && (value.resultado === null || isActividad(value.resultado));
+}
+interface SimulacionConActividad {
+  escenarios: Array<{ actividad?: ActividadPerfil | null }>;
+}
+function isSimulacionConActividad(value: unknown): value is SimulacionConActividad {
+  return (
+    isRecord(value) &&
+    Array.isArray(value.escenarios) &&
+    value.escenarios.length > 0 &&
+    value.escenarios.every((item) => isRecord(item) && (item.actividad === undefined || item.actividad === null || isActividadPerfil(item.actividad)))
+  );
 }
 
 /** Years the calculators have parameters for, ascending. */
 export async function getEjerciciosAutonomos(signal?: AbortSignal): Promise<number[]> {
-  const data = await call<{ ejercicios: number[] }>(
-    "/autonomos/ejercicios",
-    undefined,
-    (value) => isRecord(value) && Array.isArray(value.ejercicios) && value.ejercicios.every((year) => typeof year === "number"),
-    signal,
-  );
+  const data = await request("/autonomos/ejercicios", undefined, isEjercicios, { signal, method: "GET" });
   return data.ejercicios;
 }
 
-/** Annual net income of the activity (estimación directa simplificada). */
+/** Annual net income of the activity (estimación directa simplificada), from the figures alone. */
 export function calcularActividad(input: ActividadInput, signal?: AbortSignal): Promise<ResultadoActividad> {
-  return call("/autonomos/actividad", input, (value) => isResultado(value, "rendimiento_actividad_neto", "rendimiento_neto"), signal);
+  return request("/autonomos/actividad", input, isActividad, { signal });
+}
+
+/**
+ * The same computation as the case sees it: `cambios` (actividad_* facts) layered over the saved
+ * facts, with the case's other income deciding the art. 32.2 reductions. Null when the case and
+ * the changes hold no activity figures.
+ */
+export async function calcularActividadDelExpediente(opts: {
+  caseId: string;
+  ejercicio: number;
+  cambios: Record<string, unknown>;
+  signal?: AbortSignal;
+}): Promise<ActividadPerfil | null> {
+  const body = { case_id: opts.caseId, ejercicio: opts.ejercicio, datos: {}, escenarios: [{ nombre: "Actividad", cambios: opts.cambios }] };
+  const data = await request("/simulate", body, isSimulacionConActividad, { signal: opts.signal });
+  return data.escenarios[0].actividad ?? null;
 }
 
 /** Quarterly IRPF payment on account (modelo 130), from cumulative figures. */
 export function calcularModelo130(input: Modelo130Input, signal?: AbortSignal): Promise<ResultadoModelo130> {
-  return call("/autonomos/modelo-130", input, (value) => isResultado(value, "resultado", "a_ingresar", "pago_previo_a_minoracion"), signal);
+  return request("/autonomos/modelo-130", input, isModelo130, { signal });
 }
 
 /** Quarterly VAT return (modelo 303), general regime. */
 export function calcularModelo303(input: Modelo303Input, signal?: AbortSignal): Promise<ResultadoModelo303> {
-  return call("/autonomos/modelo-303", input, (value) => isResultado(value, "resultado", "saldo_a_compensar", "tipo_resultado"), signal);
+  return request("/autonomos/modelo-303", input, isModelo303, { signal });
 }

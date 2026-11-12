@@ -255,7 +255,7 @@ function isCaseState(value: unknown): value is CaseState {
   return isRecord(value) && typeof value.case_id === "string";
 }
 
-interface RequestOptions {
+export interface RequestOptions {
   signal?: AbortSignal;
   timeoutMs?: number;
   method?: "POST" | "PUT" | "DELETE" | "GET";
@@ -285,7 +285,8 @@ async function errorFromResponse(path: string, resp: Response): Promise<ApiError
   return new ApiError(detail || `${path}: error ${resp.status}`, resp.status);
 }
 
-async function request<T>(
+/** Shared by the other API modules (apiAutonomos.ts): same base URL, session token, timeout and errors. */
+export async function request<T>(
   path: string,
   body: unknown,
   validate: (value: unknown) => value is T,
