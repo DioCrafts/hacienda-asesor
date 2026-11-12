@@ -724,6 +724,74 @@ Límites: una comprobación que pasa no demuestra que el parámetro sea correcto
 sino que el texto del que se leyó sigue ahí; las cifras redondas se comprueban
 débilmente; y las prórrogas anuales («durante 2026…») hay que revisarlas a mano.
 
+### Recodificación automática: un modelo propone, el control decide
+
+Cuando `params-verify` dice que un grupo de parámetros ya no coincide con su
+ley, hasta ahora alguien tenía que pedir que se releyera. `params-recode` lo
+hace solo, **sin que la calculadora deje de ser determinista**: la calculadora
+sigue leyendo datos; el modelo solo *propone* datos, y lo que propone no llega
+a ningún fichero sin pasar controles que no dependen de él
+(`hacienda_gpt/tax/recodificacion/`).
+
+El bucle, para cada grupo que falla:
+
+1. **Lectura.** Un modelo recibe el texto del artículo (no la ley entera), la
+   codificación anterior con sus citas, el esquema —el código de los modelos
+   pydantic, tal cual— y las reglas de codificación, y devuelve una propuesta
+   con sus citas literales, o un «no calculable» razonado. Si necesita otro
+   artículo de la misma ley (límites de renta comunes, definiciones) lo pide.
+2. **Control determinista** (sin modelo): validación del esquema; cada cita,
+   literal y de una pieza en el texto legal; **cada cifra codificada, dentro
+   de alguna cita** (también las de variantes, tramos y ajustes, y las que
+   menciona el resumen que lee el usuario); ninguna nota de «cifra derivada»;
+   y la **fecha de efectos** de la redacción, impresa en una cita.
+3. **Revisión independiente.** Una segunda llamada, que solo ve el texto legal
+   y la propuesta, enumera discrepancias (condición omitida, unidad o base
+   equivocada, umbral inclusivo o exclusivo, aproximaciones), lee por su cuenta
+   la fecha de efectos y propone contribuyentes de prueba en los límites con el
+   importe que da **la ley**. El programa pasa esos casos por la calculadora
+   con los datos propuestos y compara.
+4. Las objeciones y los casos fallidos vuelven a la lectura. Tras
+   `RECODE_MAX_ITER` pasadas (3) sin acuerdo, el resultado es `sin_converger`,
+   con las objeciones abiertas, y decide una persona.
+
+El resultado es una **propuesta** en `RECODE_PROPOSALS_PATH` (antes, después,
+citas, control, veredicto, casos, iteraciones, modelo, versión y huella del
+texto legal) y un aviso al operador por los canales `NOTIFY_*`. Se aplica con
+`params-apply <id>`, que relee la ley y repite el control: si el texto ha
+cambiado desde la propuesta, o el fichero ya no contiene lo que iba a
+sustituir, no escribe nada. Lo aplicado queda marcado y la calculadora lo dice
+en cada resultado —«deducción recodificada automáticamente el … a partir del
+BOE; pendiente de revisión humana»— hasta `params-confirm`. Con
+`RECODE_AUTO_APPLY=true` se aplica sin esperar solo lo que supera el control
+sin nada pendiente de revisar y con la conformidad del revisor; por defecto,
+nada.
+
+**Ejercicios.** Una propuesta nombra todos los ejercicios cuyo fichero toca, y
+los deduce de la fecha de efectos, no de la fecha de publicación ni de la de
+entrada en vigor: una ley publicada hoy «con efectos desde el 1 de enero» del
+año anterior cambia también el fichero de ese año. El bucle lee el texto
+consolidado vigente y **nunca elige por su cuenta una redacción histórica**:
+si la redacción vigente no alcanza a un ejercicio, lo deja como está, lo dice,
+y ese ejercicio sigue fallando en `params-verify` hasta que alguien indique la
+versión aplicable (`--version AAAAMMDD`).
+
+**Qué mantiene.** El núcleo es genérico: un «grupo de parámetros» es una ruta
+en un fichero de parámetros, su modelo, sus citas y la norma de la que sale.
+Hoy hay dos adaptadores: las deducciones autonómicas calculables y las escalas
+(autonómicas y estatales). Los grupos que fallan y aún no tienen adaptador
+(mínimos, reducciones, deducciones de Madrid…) se listan en `sin_adaptador`.
+
+**Garantías, con cualquier modelo:** nada se escribe sin pasar el control;
+toda cifra escrita está impresa en una cita literal del texto leído; el texto
+con el que se aplica es el mismo con el que se propuso; la marca de
+procedencia no se quita sola. **Lo que no garantiza:** que la cita sea la
+pertinente (una cifra puede estar en la ley y significar otra cosa), que no se
+haya omitido una condición que ni el lector ni el revisor vieron, ni que la
+cláusula de efectos citada sea la que rige. Por eso existe la revisión humana
+y por eso la calculadora avisa mientras no se ha hecho. Detalle y pasos en
+[`docs/operacion.md`](docs/operacion.md#5-recodificación-automática-de-parámetros).
+
 ### Autónomos, pérdidas y declaración conjunta
 
 - **Autónomos en estimación directa simplificada** — `calcular_rendimiento_actividad`

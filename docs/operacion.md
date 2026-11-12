@@ -226,6 +226,127 @@ rojo significa que el BOE ha actualizado alguna de las normas de las que salen l
 de la calculadora (hay que releerla; no implica que las cifras hayan cambiado), o que no se
 pudo consultar el BOE. Solo necesita acceso a `www.boe.es`.
 
+## 5. Recodificación automática de parámetros
+
+Cuando un grupo de parámetros deja de coincidir con su ley (`params-verify`),
+`params-recode` hace que un modelo relea el artículo y **proponga** datos
+nuevos. Nada llega a `hacienda_gpt/tax/data/` sin pasar un control determinista
+y, salvo que actives la auto-aplicación, sin que tú lo apliques. Explicación y
+garantías en el README («Recodificación automática»).
+
+### Ajustes
+
+| Variable | Por defecto | Qué hace |
+|---|---|---|
+| `RECODE_PROPOSALS_PATH` | `./data/recodificacion` | Carpeta de las propuestas (un JSON por propuesta). Haz copia: es el registro de quién propuso qué. |
+| `RECODE_AUTO_APPLY` | `false` | `true`: aplica sin esperar lo que supera el control sin nada por revisar y con la conformidad del revisor. Nunca retiradas ni versiones históricas. |
+| `RECODE_MAX_ITER` | `3` | Pasadas del lector por grupo antes de `sin_converger`. |
+| `RECODE_MAX_PER_RUN` | `10` | Grupos por ejecución; el resto espera a la siguiente. |
+| `RECODE_MODEL` / `RECODE_REVIEWER_MODEL` | (modelo del proveedor) | Modelo del lector y del revisor. Un revisor distinto hace la revisión más independiente. |
+
+Usa el proveedor de `LLM_PROVIDER` y cuenta contra `LLM_DAILY_BUDGET_USD`
+(propósitos `recodificacion` y `recodificacion-revisor` en `ops consumo`). Si
+el presupuesto se agota a mitad, la ejecución se detiene, lo dice en
+`presupuesto_agotado` y termina con código 1; lo que no se procesó figura en
+`sin_procesar` y se retoma en la siguiente.
+
+### Paso a paso
+
+```bash
+# 1. Qué se releería y cuánto texto se enviaría. No llama a ningún modelo.
+python -m hacienda_gpt.cli.proactive params-recode --dry-run
+
+# 2. Lanzar el bucle (todos los ejercicios; --comunidad / --tipo para acotar).
+python -m hacienda_gpt.cli.proactive params-recode --comunidad galicia
+
+# 3. Ver las propuestas y leer una entera.
+python -m hacienda_gpt.cli.proactive params-proposals --estado propuesta
+python -m hacienda_gpt.cli.proactive params-proposals --show <id>
+
+# 4. Decidir.
+python -m hacienda_gpt.cli.proactive params-apply <id>
+python -m hacienda_gpt.cli.proactive params-reject <id> --motivo "…"
+
+# 5. Tras revisar a mano lo aplicado, quitar la marca «pendiente de revisión humana».
+python -m hacienda_gpt.cli.proactive params-proposals --pendientes
+python -m hacienda_gpt.cli.proactive params-confirm <id>
+```
+
+Qué mirar en una propuesta antes de aplicarla:
+
+- `ejercicios` y `ejercicios_excluidos`: qué ficheros toca y por qué deja los
+  demás. Salen de `efectos_desde` y `cita_efectos`; comprueba que la cita es la
+  cláusula que rige («con efectos desde…», «períodos impositivos iniciados a
+  partir de…») y no solo la entrada en vigor.
+- `antes` y `despues`, con `citas`: cada cifra de `despues` está en alguna cita
+  (lo garantiza el control); lo que debes juzgar es si la cita dice eso.
+- `control.revisar`: lo que el control no pudo decidir con sus reglas. Con algo
+  aquí la propuesta nunca se auto-aplica.
+- `veredicto.discrepancias` (las `observacion` no bloquean) y `casos`: los
+  contribuyentes de prueba del revisor, con lo que da la ley y lo que da la
+  calculadora.
+- `resultado: "retirada"`: el lector cree que la deducción ya no encaja en el
+  esquema (`motivo_lector`). Aplicarla la quita de las calculables y la deja,
+  por título, en `otras_deducciones`. Nunca se auto-aplica.
+- `estado: "sin_converger"`: `objeciones_abiertas` dice dónde se atascó. No se
+  puede aplicar; corrígelo a mano o recházala. No se reintenta sola mientras ni
+  la ley ni los datos cambien (`--force` lo fuerza).
+
+`params-apply` relee la ley. Se niega, sin escribir nada, si el texto del
+artículo ha cambiado desde la propuesta, si el fichero ya no contiene lo que
+iba a sustituir, o si la propuesta no supera hoy el control. Al aplicar añade
+una línea a `revisiones` del fichero y actualiza las citas:
+`evidencia_deducciones.json` para las deducciones, `evidencia_parametros.json`
+para las escalas. Las escalas recodificadas quedan con `fuente.verificado:
+false` (la calculadora ya las lista en `parametros_no_verificados`) hasta
+`params-confirm`.
+
+### Casos que no son el habitual
+
+```bash
+# Releer un artículo aunque su comprobación pase, o codificar uno nuevo.
+params-recode --comunidad galicia --articulo "art. 5"
+
+# Un grupo concreto por su ruta (escalas).
+params-recode --ruta comunidades/galicia/escala_general
+params-recode --ruta escala_general_estatal
+
+# Dar a leer el análisis del BOE de la norma modificadora («MODIFICA…, con efectos de…»).
+params-recode --comunidad galicia --norma BOE-A-2026-12345
+
+# Un ejercicio al que la redacción vigente no alcanza: indica TÚ la redacción aplicable.
+params-recode --ejercicio 2025 --comunidad galicia --articulo "art. 5" --version 20251231
+
+# Al abrir un ejercicio: intentar recodificar lo que el rollover retira.
+params-rollover 2027 --recode
+```
+
+Con `--version` la propuesta siempre lleva una nota en `control.revisar` y no
+se auto-aplica: que una redacción estuviera vigente el 31 de diciembre no
+prueba que sea la aplicable a ese ejercicio (una ley posterior puede haberla
+cambiado con efectos retroactivos). Compruébalo antes de aplicar.
+
+### En GitHub Actions
+
+`vigilancia.yml` ejecuta `params-recode` después de `params-verify` solo si el
+repositorio tiene el secreto `ANTHROPIC_API_KEY`; sin él, el paso se omite. No
+escribe en el repositorio: sube las propuestas como artefacto
+(`recode-proposals`) y, si existe el secreto `NOTIFY_WEBHOOK_URL`, avisa por
+ese canal. Para aplicarlas, descarga el artefacto en la carpeta de
+`RECODE_PROPOSALS_PATH` de tu copia de trabajo y usa `params-apply`. El gasto
+de cada ejecución está acotado por la variable de repositorio
+`RECODE_BUDGET_USD` (10 por defecto) y por `RECODE_MAX_PER_RUN`.
+
+### Límites
+
+- Dos adaptadores: deducciones autonómicas calculables y escalas. El resto de
+  grupos que fallen aparecen en `sin_adaptador` y siguen siendo trabajo manual.
+- El modelo solo lee los artículos que se le muestran (el del grupo, aquellos
+  donde estaban las citas anteriores y los que pida). Una regla en otra norma
+  no la ve.
+- El control comprueba que las cifras están en las citas, no que signifiquen lo
+  que la codificación dice. Para eso están el revisor, sus casos y tú.
+
 ## Consumo de modelos de IA: medirlo y limitarlo
 
 Una sola pregunta puede costar muchas llamadas al modelo: el agente da varias vueltas, en modo

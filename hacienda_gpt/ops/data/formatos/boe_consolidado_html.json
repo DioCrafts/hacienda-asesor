@@ -1,0 +1,17 @@
+{
+  "fuente": "boe_consolidado_html",
+  "version": 1,
+  "descripcion": "Página de texto consolidado del BOE (act.php), leída como líneas de texto. Comportamiento histórico del lector.",
+  "origen": "incorporada",
+  "reglas": {
+    "encabezado": "(?i)^(?:Art[ií]culo\\s+(?:\\d+(?:\\s+(?:bis|ter|qu[aá]ter|quinquies|sexies|septies|octies|nonies|decies))?|[úu]nico|primero|segundo|tercero|cuarto|quinto)\\s*\\.|Disposici[oó]n\\s+(?:adicional|transitoria|derogatoria|final)\\b)",
+    "frontera": "^(?:\\[Bloque\\b|T[IÍ]TULO\\b|CAP[IÍ]TULO\\b|Secci[oó]n\\s|Subsecci[oó]n\\s|LIBRO\\b|ANEXO\\b|PRE[AÁ]MBULO\\b|EXPOSICI[OÓ]N DE MOTIVOS\\b)",
+    "version": "(?i)publicad[oa]\\s+el\\s+(\\d{1,2})/(\\d{1,2})/(\\d{4})(?:\\s*,?\\s*en\\s+vigor\\s+a\\s+partir\\s+del?\\s+(\\d{1,2})/(\\d{1,2})/(\\d{4}))?",
+    "nota": "(?i)^Se\\s+(?:modifica|modifican|a[ñn]ade|a[ñn]aden|deroga|derogan|suprime|suprimen|renumera|sustituye|declara|deja|dejan|corrige|corrigen|actualiza|actualizan|prorroga|introduce)\\b",
+    "interfaz": "(?i)^(?:Seleccionar redacci[oó]n|Redacci[oó]n\\b|Subir\\b|\\[Bloque\\b)",
+    "marcadores": [
+      "id=\"textoxslt\"",
+      "class=\"bloque\""
+    ]
+  }
+}

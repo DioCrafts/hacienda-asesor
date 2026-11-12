@@ -1,0 +1,52 @@
+{
+  "fuente": "teac_criterio",
+  "version": 1,
+  "descripcion": "Ficha de un criterio del TEAC en DYCTEA (HTML). Comportamiento histórico del lector.",
+  "origen": "incorporada",
+  "reglas": {
+    "marcador_no_existe": "El criterio no existe",
+    "alias": {
+      "numero_resolucion": [
+        "número de resolución",
+        "numero de resolucion",
+        "nº resolución",
+        "n.º resolución"
+      ],
+      "sala": [
+        "sala",
+        "unidad resolutoria"
+      ],
+      "fecha_resolucion": [
+        "fecha de la resolución",
+        "fecha resolución",
+        "fecha de resolucion"
+      ],
+      "sentido": [
+        "sentido",
+        "fallo"
+      ],
+      "vinculante": [
+        "vinculante",
+        "criterio vinculante"
+      ],
+      "concepto": [
+        "concepto",
+        "concepto tributario"
+      ],
+      "materia": [
+        "materia"
+      ],
+      "norma": [
+        "norma"
+      ],
+      "precepto": [
+        "precepto"
+      ],
+      "criterio": [
+        "criterio"
+      ]
+    },
+    "patron_numero": "\\b\\d{2}/\\d{4,6}/\\d{4}(?:/\\d{2}/\\d{2})?\\b",
+    "patron_fecha": "\\b(\\d{2})/(\\d{2})/(\\d{4})\\b"
+  }
+}

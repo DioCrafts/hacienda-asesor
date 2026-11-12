@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
 from datetime import date, datetime
+from functools import lru_cache
 from html.parser import HTMLParser
 import logging
 import re
@@ -24,6 +25,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from hacienda_gpt.agent.providers.base import ProviderError
 from hacienda_gpt.decision.schemas import CaseState
+from hacienda_gpt.ops import formatos
+from hacienda_gpt.ops.formatos_boe import ReglasConsolidado
 from hacienda_gpt.proactive.store import Notification, NotificationStore
 from hacienda_gpt.tax.fuentes import comunidad_de, norma_de_parametros
 
@@ -113,31 +116,20 @@ def _lineas(html: str) -> list[str]:
     return [line for line in lines if line]
 
 
-# A block we report: an article or an additional/transitory/derogatory/final provision.
-_HEADING_RE = re.compile(
-    r"^(?:Art[ií]culo\s+(?:\d+(?:\s+(?:bis|ter|qu[aá]ter|quinquies|sexies|septies|octies|nonies|decies))?"
-    r"|[úu]nico|primero|segundo|tercero|cuarto|quinto)\s*\."
-    r"|Disposici[oó]n\s+(?:adicional|transitoria|derogatoria|final)\b)",
-    re.IGNORECASE,
-)
-# Structural headings that end the previous block without starting a reported one.
-_BOUNDARY_RE = re.compile(
-    r"^(?:\[Bloque\b|T[IÍ]TULO\b|CAP[IÍ]TULO\b|Secci[oó]n\s|Subsecci[oó]n\s|LIBRO\b|ANEXO\b|PRE[AÁ]MBULO\b"
-    r"|EXPOSICI[OÓ]N DE MOTIVOS\b)"
-)
+# What marks a block, its versions and the BOE's notes is data: the ``boe_consolidado_html``
+# format spec (regular expressions over the page's text lines). Version 1 of that spec holds
+# the expressions that used to be written here.
+
+
+# Dates as boe_watch records them (DD/MM/YYYY), for ``parse_fecha_actualizacion``.
 _FECHA = r"(\d{1,2})/(\d{1,2})/(\d{4})"
-# "Última actualización, publicada el 31/12/2020, en vigor a partir del 01/01/2021."
-# "Texto añadido, publicado el …", "Modificación publicada el …", "Texto original, publicado el …"
-_VERSION_RE = re.compile(
-    rf"publicad[oa]\s+el\s+{_FECHA}(?:\s*,?\s*en\s+vigor\s+a\s+partir\s+del?\s+{_FECHA})?", re.IGNORECASE
-)
-_NOTA_RE = re.compile(
-    r"^Se\s+(?:modifica|modifican|a[ñn]ade|a[ñn]aden|deroga|derogan|suprime|suprimen|renumera|sustituye|declara|"
-    r"deja|dejan|corrige|corrigen|actualiza|actualizan|prorroga|introduce)\b",
-    re.IGNORECASE,
-)
-# Labels of the version selector, not part of the wording.
-_UI_RE = re.compile(r"^(?:Seleccionar redacci[oó]n|Redacci[oó]n\b|Subir\b|\[Bloque\b)", re.IGNORECASE)
+
+
+@lru_cache(maxsize=8)
+def _patrones(reglas: ReglasConsolidado) -> tuple[re.Pattern[str], ...]:
+    return tuple(
+        re.compile(p) for p in (reglas.encabezado, reglas.frontera, reglas.version, reglas.nota, reglas.interfaz)
+    )
 
 
 def _date(day: str, month: str, year: str) -> date | None:
@@ -147,51 +139,58 @@ def _date(day: str, month: str, year: str) -> date | None:
         return None
 
 
-def articulos_modificados(html: str, *, desde: date) -> list[ArticuloModificado]:
-    """Articles and provisions of a BOE consolidated law whose latest wording was published after ``desde``.
+def bloques_consolidado(reglas: ReglasConsolidado, html: str) -> list[dict[str, Any]]:
+    """Every article and provision of a consolidated law page, with its latest wording.
 
-    Works from the text, not the markup: a block starts at a line beginning with
-    "Artículo N." or "Disposición adicional/transitoria/derogatoria/final …" and
-    its latest wording is the most recent "publicada el DD/MM/YYYY" line inside it.
+    Works from the text, not the markup: a block starts at a line matching
+    ``encabezado`` and its latest wording is the most recent ``version`` line
+    inside it. Each block: titulo, publicado, en_vigor (dates or None), nota, texto.
     """
+    heading_re, boundary_re, version_re, nota_re, ui_re = _patrones(reglas)
     blocks: list[tuple[str, list[str]]] = []
     current: list[str] | None = None
     for line in _lineas(html):
-        if _HEADING_RE.match(line) and not _VERSION_RE.search(line):
+        if heading_re.match(line) and not version_re.search(line):
             current = []
             blocks.append((line, current))
-        elif _BOUNDARY_RE.match(line):
+        elif boundary_re.match(line):
             current = None
         elif current is not None:
             current.append(line)
 
-    out: list[ArticuloModificado] = []
+    out: list[dict[str, Any]] = []
     for titulo, lines in blocks:
         latest: tuple[date, date | None] | None = None
         notas: list[str] = []
         texto: list[str] = []
         for line in lines:
-            version = _VERSION_RE.search(line)
+            version = version_re.search(line)
             if version:
                 publicado = _date(*version.group(1, 2, 3))
                 if publicado and (latest is None or publicado > latest[0]):
                     latest = (publicado, _date(*version.group(4, 5, 6)) if version.group(4) else None)
-            elif _NOTA_RE.match(line):
+            elif nota_re.match(line):
                 notas.append(line)
-            elif not _UI_RE.match(line):
+            elif not ui_re.match(line):
                 texto.append(line)
-        if latest is None or latest[0] <= desde:
-            continue
         out.append(
-            ArticuloModificado(
-                titulo=titulo,
-                publicado=latest[0],
-                en_vigor=latest[1],
-                nota=" ".join(notas)[:MAX_NOTA],
-                texto="\n".join(texto)[:MAX_TEXTO],
-            )
+            {
+                "titulo": titulo,
+                "publicado": latest[0] if latest else None,
+                "en_vigor": latest[1] if latest else None,
+                "nota": " ".join(notas)[:MAX_NOTA],
+                "texto": "\n".join(texto)[:MAX_TEXTO],
+            }
         )
     return out
+
+
+def articulos_modificados(html: str, *, desde: date) -> list[ArticuloModificado]:
+    """Articles and provisions of a BOE consolidated law whose latest wording was published after ``desde``."""
+    bloques = bloques_consolidado(formatos.reglas_de("boe_consolidado_html", ReglasConsolidado), html)
+    # Format watch: a page where no block or no version date is found reads as "nothing changed".
+    formatos.observar("boe_consolidado_html", html, extraccion=bloques)
+    return [ArticuloModificado(**bloque) for bloque in bloques if bloque["publicado"] and bloque["publicado"] > desde]
 
 
 # --------------------------------------------------------------------------- #

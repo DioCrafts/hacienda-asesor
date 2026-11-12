@@ -1,0 +1,29 @@
+{
+  "fuente": "boe_sumario",
+  "version": 1,
+  "descripcion": "Sumario diario del BOE (API de datos abiertos, JSON). Comportamiento histórico del lector.",
+  "origen": "incorporada",
+  "reglas": {
+    "raiz": [
+      "data",
+      "sumario"
+    ],
+    "diario": "diario",
+    "seccion": "seccion",
+    "codigo": "codigo",
+    "departamento": "departamento",
+    "nombre": "nombre",
+    "epigrafe": "epigrafe",
+    "texto": "texto",
+    "item": "item",
+    "identificador": "identificador",
+    "titulo": "titulo",
+    "url_html": "url_html",
+    "alias_seccion": {},
+    "estado": [
+      "status",
+      "code"
+    ],
+    "estado_ok": "200"
+  }
+}

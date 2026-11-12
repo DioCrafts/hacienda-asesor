@@ -40,6 +40,26 @@ from hacienda_gpt.proactive.novedades import ItemSumario, notificar_novedad, rev
 from hacienda_gpt.proactive.store import NotificationStore
 from hacienda_gpt.tax.fuentes import desactualizadas, normas_de_parametros
 from hacienda_gpt.tax.params import DATA_DIR, ejercicios_disponibles, load_params
+from hacienda_gpt.tax.recodificacion import (
+    AlmacenPropuestas,
+    Hallazgo,
+    Objetivo,
+    Pendiente,
+    Propuesta,
+    RecodificacionError,
+    adaptador_de,
+    aplicar_propuesta,
+    avisar_operador,
+    confirmar,
+    ejecutar,
+    objetivo_de_ruta,
+    objetivos_de_articulo,
+    objetivos_de_rollover,
+    objetivos_de_verificacion,
+    pendientes_de_confirmar,
+    rechazar_propuesta,
+)
+from hacienda_gpt.tax.recodificacion.nucleo import ejercicios_en, leer_texto, resumen_de
 from hacienda_gpt.tax.rollover import preparar_ejercicio
 from hacienda_gpt.tax.verificacion import cargar_y_verificar, leer_snapshot, url_de
 from hacienda_gpt.tax.vigencia_normas import estado_desde_xml, guardar_estados, leer_estados
@@ -344,7 +364,12 @@ def params_verify(ejercicios: tuple[int, ...], snapshot_dir: Path | None, fail_o
 )
 @click.option("--force", is_flag=True, help="Sobrescribir el fichero del ejercicio si ya existe.")
 @click.option("--dry-run", is_flag=True, help="Mostrar el informe sin escribir nada.")
-def params_rollover(destino: int, origen: int | None, force: bool, dry_run: bool) -> None:
+@click.option(
+    "--recode",
+    is_flag=True,
+    help="Intentar recodificar con el LLM las deducciones retiradas (deja propuestas; ver params-recode).",
+)
+def params_rollover(destino: int, origen: int | None, force: bool, dry_run: bool, recode: bool) -> None:
     """Crea el fichero de parámetros de un ejercicio nuevo a partir del anterior.
 
     Copia el último ejercicio, reverifica cada grupo contra el texto vigente
@@ -354,12 +379,18 @@ def params_rollover(destino: int, origen: int | None, force: bool, dry_run: bool
     path = DATA_DIR / f"irpf_{destino}.json"
     if path.exists() and not force and not dry_run:
         raise click.ClickException(f"{path.name} ya existe; usa --force para sobrescribirlo.")
-    data, informe = preparar_ejercicio(origen, destino, _texto_del_boe(), hoy=hoy_en_espana())
+    texto_de = _texto_del_boe()
+    data, informe = preparar_ejercicio(origen, destino, texto_de, hoy=hoy_en_espana())
     if not dry_run:
         path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    click.echo(
-        json.dumps({"fichero": None if dry_run else str(path), **informe.model_dump()}, ensure_ascii=False, indent=2)
-    )
+        load_params.cache_clear()
+    salida: dict[str, Any] = {"fichero": None if dry_run else str(path), **informe.model_dump()}
+    if recode and not dry_run and informe.deducciones_retiradas:
+        # What the rollover left out is re-read from the current text: proposals, not data.
+        salida["recodificacion"] = _recodificar(
+            objetivos_de_rollover(origen, destino), texto_de=texto_de, data_dir=DATA_DIR
+        )
+    click.echo(json.dumps(salida, ensure_ascii=False, indent=2))
 
 
 @cli.command("normas-check")
@@ -520,6 +551,378 @@ def boe_novedades(desde: date | None, hasta: date | None, output_dir: Path, noti
                     if n.relevancia == "alta"
                 ],
             },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Automatic re-encoding of parameters (hacienda_gpt/tax/recodificacion)
+# --------------------------------------------------------------------------- #
+
+_PROPOSALS_OPTION = click.option(
+    "--proposals-dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    default=None,
+    help="Carpeta de las propuestas (por defecto, RECODE_PROPOSALS_PATH).",
+)
+_SNAPSHOT_OPTION = click.option(
+    "--snapshot-dir",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    default=None,
+    help="Leer las leyes de esta carpeta (<id>.html) en vez de descargarlas.",
+)
+_DATA_OPTION = click.option(
+    "--data-dir",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    default=None,
+    hidden=True,
+    help="Carpeta de los ficheros de parámetros (para pruebas; por defecto, la del paquete).",
+)
+
+
+def _almacen(proposals_dir: Path | None) -> AlmacenPropuestas:
+    return AlmacenPropuestas(proposals_dir or settings.RECODE_PROPOSALS_PATH)
+
+
+def hay_credenciales_llm() -> bool:
+    """Whether the configured provider can be called at all (so a scheduled run can skip cleanly)."""
+    import os
+
+    proveedor = settings.LLM_PROVIDER.strip().lower()
+    if proveedor in ("anthropic", "claude"):
+        return bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"))
+    if proveedor == "openai":
+        return bool(os.environ.get("OPENAI_API_KEY"))
+    return bool(settings.LOCAL_LLM_MODEL)
+
+
+def _proveedores_de_recodificacion() -> tuple[Any, Any]:
+    """Reader and reviewer, both metered: every call counts against the daily budget."""
+    from hacienda_gpt.agent.providers import create_provider
+    from hacienda_gpt.ops.consumo import medir
+
+    lector = medir(create_provider(model=settings.RECODE_MODEL or None), "recodificacion")
+    if settings.RECODE_REVIEWER_MODEL and settings.RECODE_REVIEWER_MODEL != settings.RECODE_MODEL:
+        revisor = medir(create_provider(model=settings.RECODE_REVIEWER_MODEL), "recodificacion-revisor")
+    else:
+        revisor = lector.con_proposito("recodificacion-revisor")
+    return lector, revisor
+
+
+def _canales_del_operador() -> list[Any]:
+    from hacienda_gpt.proactive.entrega import ConfiguracionCanalError, canales_configurados
+
+    try:
+        return list(canales_configurados())
+    except ConfiguracionCanalError as exc:
+        logger.warning("Channels are misconfigured: %s", exc)
+        return []
+
+
+def _anotaciones_de(norma: str, boe_id: str) -> str:
+    """What the BOE's analysis of the amending ``norma`` says it does to the law ``boe_id``."""
+    from hacienda_gpt.proactive.novedades import leer_analisis
+
+    raw = _xml(norma)
+    if not raw:
+        raise click.ClickException(f"No se pudo leer el análisis de {norma} en el BOE.")
+    lineas = [
+        f"{norma}: {m.accion} {m.texto}".strip()
+        for m in leer_analisis(raw).modifica
+        if m.boe_id == boe_id and (m.accion or m.texto)
+    ]
+    if not lineas:
+        raise click.ClickException(f"El análisis de {norma} no dice que modifique {boe_id}.")
+    return "\n".join(lineas)
+
+
+def _estimacion(objetivo: Objetivo, texto_de: Any) -> dict[str, Any]:
+    """Size of what one reader call and one reviewer call would send for ``objetivo`` (no LLM involved)."""
+    from hacienda_gpt.tax.recodificacion import prompts
+
+    fila: dict[str, Any] = {
+        "tipo": objetivo.tipo,
+        "grupo": objetivo.etiqueta,
+        "ruta": "/".join(objetivo.ruta),
+        "norma": objetivo.boe_id,
+        "articulos": objetivo.articulos_ley,
+        "ejercicios_pedidos": objetivo.ejercicios,
+        "motivo": objetivo.motivo[:4],
+    }
+    try:
+        _, texto = leer_texto(objetivo, texto_de)
+    except RecodificacionError as exc:
+        return {**fila, "error": str(exc)}
+    adaptador = adaptador_de(objetivo.tipo)
+    fijo = len(prompts.REGLAS_COMUNES) + len(adaptador.guia()) + len(adaptador.esquema()) + len(prompts.SISTEMA_LECTOR)
+    por_pasada = 2 * (fijo + len(texto.texto)) + len(json.dumps(objetivo.antes, ensure_ascii=False, default=str))
+    return {
+        **fila,
+        "caracteres_texto_legal": len(texto.texto),
+        "caracteres_por_pasada": por_pasada,
+        # Spanish legal prose and JSON run at roughly 3–4 characters per token.
+        "tokens_entrada_por_pasada_aprox": round(por_pasada / 3.5),
+    }
+
+
+def _recodificar(
+    hallazgo: Hallazgo,
+    *,
+    texto_de: Any,
+    data_dir: Path,
+    proposals_dir: Path | None = None,
+    max_iter: int | None = None,
+    max_grupos: int | None = None,
+    auto_aplicar: bool | None = None,
+    forzar: bool = False,
+    notify: bool = True,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    salida: dict[str, Any] = {
+        "grupos_a_revisar": len(hallazgo.objetivos),
+        "sin_adaptador": hallazgo.sin_adaptador,
+        "errores": list(hallazgo.errores),
+    }
+    if dry_run:
+        salida["simulacion"] = [_estimacion(objetivo, texto_de) for objetivo in hallazgo.objetivos]
+        return salida
+    if not hallazgo.objetivos:
+        return salida
+    if not hay_credenciales_llm():
+        salida["omitido"] = "No hay credenciales del proveedor de LLM configurado: no se ha recodificado nada."
+        return salida
+    lector, revisor = _proveedores_de_recodificacion()
+    almacen = _almacen(proposals_dir)
+    informe, nuevas = ejecutar(
+        hallazgo.objetivos,
+        lector=lector,
+        revisor=revisor,
+        texto_de=texto_de,
+        almacen=almacen,
+        data_dir=data_dir,
+        max_iter=max_iter or settings.RECODE_MAX_ITER,
+        max_objetivos=max_grupos or settings.RECODE_MAX_PER_RUN,
+        auto_aplicar=settings.RECODE_AUTO_APPLY if auto_aplicar is None else auto_aplicar,
+        forzar=forzar,
+        hoy=hoy_en_espana(),
+    )
+    salida["errores"] += informe.errores
+    salida.update(informe.model_dump(exclude={"errores", "objetivos"}))
+    salida["avisado_por"] = avisar_operador(nuevas, _canales_del_operador(), almacen=almacen) if notify else []
+    return salida
+
+
+@cli.command("params-recode")
+@click.option("--ejercicio", "ejercicios", type=int, multiple=True, help="Ejercicio a revisar (por defecto, todos).")
+@click.option("--comunidad", default=None, help="Solo esta comunidad (su clave: galicia, madrid…) o «estado».")
+@click.option(
+    "--articulo",
+    default=None,
+    help="Solo las deducciones de este artículo («art. 5» o «art. 5.Dos.1»). Con --comunidad las revisa aunque su "
+    "comprobación no falle y, si no hay ninguna codificada, la propone como nueva.",
+)
+@click.option(
+    "--ruta", default=None, help="Revisar este grupo aunque no falle (p. ej. comunidades/galicia/escala_general)."
+)
+@click.option("--tipo", "tipos", multiple=True, help="Solo grupos de este tipo (deduccion_autonomica, escala).")
+@click.option(
+    "--version",
+    default=None,
+    help="Leer esta redacción histórica (AAAAMMDD) en vez del texto vigente. Solo con --articulo o --ruta: el bucle "
+    "nunca elige por su cuenta una versión histórica.",
+)
+@click.option(
+    "--norma",
+    default=None,
+    help="Identificador BOE de la norma modificadora: su análisis («MODIFICA…, con efectos de…») se da a leer.",
+)
+@_SNAPSHOT_OPTION
+@click.option("--max-iter", type=int, default=None, help="Pasadas del lector por grupo (por defecto, RECODE_MAX_ITER).")
+@click.option("--max-grupos", type=int, default=None, help="Grupos por ejecución (por defecto, RECODE_MAX_PER_RUN).")
+@click.option("--auto-apply/--no-auto-apply", default=None, help="Aplicar sin esperar lo que no deje nada por revisar.")
+@click.option("--force", is_flag=True, help="Volver a intentar grupos que ya tienen propuesta para este mismo texto.")
+@click.option("--notify/--no-notify", default=True, show_default=True, help="Avisar al operador por sus canales.")
+@click.option("--dry-run", is_flag=True, help="Decir qué se revisaría y cuánto texto se enviaría, sin llamar al LLM.")
+@_PROPOSALS_OPTION
+@_DATA_OPTION
+def params_recode(
+    ejercicios: tuple[int, ...],
+    comunidad: str | None,
+    articulo: str | None,
+    ruta: str | None,
+    tipos: tuple[str, ...],
+    version: str | None,
+    norma: str | None,
+    snapshot_dir: Path | None,
+    max_iter: int | None,
+    max_grupos: int | None,
+    auto_apply: bool | None,
+    force: bool,
+    notify: bool,
+    dry_run: bool,
+    proposals_dir: Path | None,
+    data_dir: Path | None,
+) -> None:
+    """Relee con un LLM los parámetros que ya no coinciden con su ley y deja PROPUESTAS de nuevos datos.
+
+    No escribe en los ficheros de parámetros (salvo con auto-aplicación): cada
+    propuesta pasa un control determinista (citas literales, cada cifra dentro
+    de una cita, fecha de efectos) y la revisión de un segundo modelo con casos
+    límite. Los ejercicios que toca una propuesta salen de la fecha de efectos
+    de la redacción, que puede ser retroactiva.
+    """
+    data_dir = data_dir or DATA_DIR
+    texto_de = leer_snapshot(snapshot_dir) if snapshot_dir else _texto_del_boe()
+    pedidos = list(ejercicios) or ejercicios_en(data_dir, "irpf_{ejercicio}.json")
+    explicito = ruta is not None or (articulo is not None and comunidad not in (None, "estado"))
+    if version is not None and not explicito:
+        raise click.ClickException("--version solo se admite con --ruta, o con --comunidad y --articulo.")
+    try:
+        if ruta is not None:
+            partes = ruta.strip("/").split("/")
+            hallazgo = Hallazgo(objetivos=[objetivo_de_ruta(pedidos, partes, data_dir=data_dir, version=version)])
+        elif articulo is not None and comunidad not in (None, "estado"):
+            assert comunidad is not None
+            hallazgo = objetivos_de_articulo(
+                pedidos, comunidad=comunidad, articulo=articulo, data_dir=data_dir, version=version
+            )
+        else:
+            hallazgo = objetivos_de_verificacion(
+                pedidos, texto_de, data_dir=data_dir, ambito=comunidad, articulo=articulo, tipos=tipos or None
+            )
+    except RecodificacionError as exc:
+        raise click.ClickException(str(exc)) from exc
+    if norma is not None:
+        for objetivo in hallazgo.objetivos:
+            objetivo.anotaciones = _anotaciones_de(norma, objetivo.boe_id)
+    salida = _recodificar(
+        hallazgo,
+        texto_de=texto_de,
+        data_dir=data_dir,
+        proposals_dir=proposals_dir,
+        max_iter=max_iter,
+        max_grupos=max_grupos,
+        auto_aplicar=auto_apply,
+        forzar=force,
+        notify=notify,
+        dry_run=dry_run,
+    )
+    click.echo(json.dumps(salida, ensure_ascii=False, indent=2, default=str))
+    if salida.get("presupuesto_agotado") or salida["errores"]:
+        raise SystemExit(1)
+
+
+def _leer_propuesta(almacen: AlmacenPropuestas, identificador: str) -> Propuesta:
+    try:
+        return almacen.leer(identificador)
+    except RecodificacionError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+
+@cli.command("params-proposals")
+@click.option("--estado", type=click.Choice(["propuesta", "aplicada", "rechazada", "sin_converger"]), default=None)
+@click.option("--show", "identificador", default=None, help="Mostrar entera la propuesta con este identificador.")
+@click.option("--pendientes", is_flag=True, help="Listar lo recodificado y aplicado que nadie ha confirmado todavía.")
+@_PROPOSALS_OPTION
+@_DATA_OPTION
+def params_proposals(
+    estado: str | None, identificador: str | None, pendientes: bool, proposals_dir: Path | None, data_dir: Path | None
+) -> None:
+    """Lista las propuestas de recodificación, o muestra una (antes, después, citas, control, revisor, casos)."""
+    almacen = _almacen(proposals_dir)
+    if identificador is not None:
+        click.echo(_leer_propuesta(almacen, identificador).model_dump_json(indent=2))
+        return
+    if pendientes:
+        filas = [p.model_dump() for p in pendientes_de_confirmar(data_dir or DATA_DIR)]
+        click.echo(json.dumps({"pendientes_de_confirmar": filas}, ensure_ascii=False, indent=2))
+        return
+    click.echo(json.dumps([resumen_de(p) for p in almacen.listar(estado)], ensure_ascii=False, indent=2, default=str))
+
+
+@cli.command("params-apply")
+@click.argument("identificador")
+@_SNAPSHOT_OPTION
+@_PROPOSALS_OPTION
+@_DATA_OPTION
+def params_apply(
+    identificador: str, snapshot_dir: Path | None, proposals_dir: Path | None, data_dir: Path | None
+) -> None:
+    """Escribe una propuesta en los ficheros de parámetros de cada ejercicio que toca.
+
+    Antes relee la ley y repite el control determinista: si el texto ha cambiado
+    desde la propuesta, o el fichero ya no contiene lo que iba a sustituir, no
+    escribe nada. Lo aplicado queda marcado como «pendiente de revisión humana»
+    hasta params-confirm.
+    """
+    almacen = _almacen(proposals_dir)
+    propuesta = _leer_propuesta(almacen, identificador)
+    texto_de = leer_snapshot(snapshot_dir) if snapshot_dir else _texto_del_boe()
+    try:
+        aplicada = aplicar_propuesta(
+            propuesta, texto_de, almacen=almacen, data_dir=data_dir or DATA_DIR, hoy=hoy_en_espana()
+        )
+    except RecodificacionError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(json.dumps(resumen_de(aplicada), ensure_ascii=False, indent=2, default=str))
+
+
+@cli.command("params-reject")
+@click.argument("identificador")
+@click.option("--motivo", default="", help="Por qué se descarta (queda en la propuesta).")
+@_PROPOSALS_OPTION
+def params_reject(identificador: str, motivo: str, proposals_dir: Path | None) -> None:
+    """Descarta una propuesta: no se aplicará y no se volverá a intentar mientras la ley no cambie."""
+    almacen = _almacen(proposals_dir)
+    try:
+        rechazada = rechazar_propuesta(_leer_propuesta(almacen, identificador), motivo=motivo, almacen=almacen)
+    except RecodificacionError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(json.dumps(resumen_de(rechazada), ensure_ascii=False, indent=2, default=str))
+
+
+@cli.command("params-confirm")
+@click.argument("identificador", required=False)
+@click.option("--ejercicio", type=int, default=None, help="Solo lo pendiente de este ejercicio.")
+@click.option("--comunidad", default=None, help="Solo lo pendiente de esta comunidad (o «estado»).")
+@click.option("--todas", is_flag=True, help="Confirmar todo lo pendiente que cumpla los filtros.")
+@_PROPOSALS_OPTION
+@_DATA_OPTION
+def params_confirm(
+    identificador: str | None,
+    ejercicio: int | None,
+    comunidad: str | None,
+    todas: bool,
+    proposals_dir: Path | None,
+    data_dir: Path | None,
+) -> None:
+    """Una persona ha revisado lo recodificado: quita la marca «pendiente de revisión humana».
+
+    Con el identificador de una propuesta aplicada confirma lo que esa propuesta
+    escribió; sin él, lo pendiente que cumpla --ejercicio / --comunidad (hace falta --todas).
+    """
+    data_dir = data_dir or DATA_DIR
+    almacen = _almacen(proposals_dir)
+    pendientes: list[Pendiente] = pendientes_de_confirmar(data_dir)
+    if identificador is not None:
+        propuesta = _leer_propuesta(almacen, identificador)
+        pendientes = [
+            p
+            for p in pendientes
+            if p.tipo == propuesta.tipo and p.ruta == propuesta.ruta and p.ejercicio in propuesta.ejercicios
+        ]
+    elif not todas:
+        raise click.ClickException("Indica el identificador de una propuesta aplicada, o --todas (con filtros).")
+    if ejercicio is not None:
+        pendientes = [p for p in pendientes if p.ejercicio == ejercicio]
+    if comunidad is not None:
+        pendientes = [p for p in pendientes if (p.ruta[1] if p.ruta[0] == "comunidades" else "estado") == comunidad]
+    hechas = confirmar(pendientes, data_dir=data_dir, almacen=almacen)
+    click.echo(
+        json.dumps(
+            {"confirmadas": hechas, "grupos": [f"{p.ejercicio} {p.etiqueta}" for p in pendientes]},
             ensure_ascii=False,
             indent=2,
         )

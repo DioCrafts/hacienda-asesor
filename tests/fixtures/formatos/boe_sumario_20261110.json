@@ -1,0 +1,231 @@
+{
+ "status": {
+  "code": "200",
+  "text": "ok"
+ },
+ "data": {
+  "sumario": {
+   "metadatos": {
+    "publicacion": "BOE",
+    "fecha_publicacion": "20261110"
+   },
+   "diario": [
+    {
+     "numero": "280",
+     "sumario_diario": {
+      "identificador": "BOE-S-2026-280",
+      "url_pdf": {
+       "szBytes": "438096",
+       "szKBytes": "428",
+       "texto": "https://www.boe.es/boe/dias/2026/11/10/pdfs/BOE-S-2026-280.pdf"
+      }
+     },
+     "seccion": [
+      {
+       "codigo": "1",
+       "nombre": "I. Disposiciones generales",
+       "departamento": [
+        {
+         "codigo": "9562",
+         "nombre": "MINISTERIO DE ASUNTOS EXTERIORES, UNIÓN EUROPEA Y COOPERACIÓN",
+         "epigrafe": [
+          {
+           "nombre": "Acuerdos internacionales administrativos",
+           "item": {
+            "identificador": "BOE-A-2026-23528",
+            "control": "2026/17373",
+            "titulo": "Acuerdo Multilateral M 371, en virtud del apartado 1.5.1 del Anexo A del ADR, relativo al número de remolques en una unidad de transporte de mercancías peligrosas.",
+            "url_pdf": {
+             "szBytes": "193080",
+             "szKBytes": "189",
+             "pagina_inicial": "151505",
+             "pagina_final": "151505",
+             "texto": "https://www.boe.es/boe/dias/2026/11/10/pdfs/BOE-A-2026-23528.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23528",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23528"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "8140",
+         "nombre": "COMUNIDAD AUTÓNOMA DEL PAÍS VASCO",
+         "epigrafe": [
+          {
+           "nombre": "Menores",
+           "item": {
+            "identificador": "BOE-A-2026-23529",
+            "control": "2026/17244",
+            "titulo": "Corrección de errores de la Ley 2/2024, de 15 de febrero, de Infancia y Adolescencia.",
+            "url_pdf": {
+             "szBytes": "192025",
+             "szKBytes": "188",
+             "pagina_inicial": "151506",
+             "pagina_final": "151506",
+             "texto": "https://www.boe.es/boe/dias/2026/11/10/pdfs/BOE-A-2026-23529.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23529",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23529"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "codigo": "2A",
+       "nombre": "II. Autoridades y personal. - A. Nombramientos, situaciones e incidencias",
+       "departamento": [
+        {
+         "codigo": "7320",
+         "nombre": "MINISTERIO DEL INTERIOR",
+         "epigrafe": [
+          {
+           "nombre": "Nombramientos",
+           "item": {
+            "identificador": "BOE-A-2026-23530",
+            "control": "2026/17378",
+            "titulo": "Resolución de 26 de octubre de 2026, de la Secretaría de Estado de Seguridad, por la que se nombra funcionario de carrera de la Policía Nacional, Escala Básica, categoría de Policía, al Policía Alumno don José Antonio Carretero Gómez.",
+            "url_pdf": {
+             "szBytes": "197884",
+             "szKBytes": "193",
+             "pagina_inicial": "151507",
+             "pagina_final": "151508",
+             "texto": "https://www.boe.es/boe/dias/2026/11/10/pdfs/BOE-A-2026-23530.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23530",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23530"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9586",
+         "nombre": "MINISTERIO DE TRANSPORTES Y MOVILIDAD SOSTENIBLE",
+         "epigrafe": [
+          {
+           "nombre": "Destinos",
+           "item": {
+            "identificador": "BOE-A-2026-23531",
+            "control": "2026/17379",
+            "titulo": "Resolución de 30 de octubre de 2026, de la Dirección de la Agencia Estatal de Seguridad Aérea, por la que se resuelve la convocatoria de libre designación, efectuada por Resolución de 28 de septiembre de 2026.",
+            "url_pdf": {
+             "szBytes": "229888",
+             "szKBytes": "225",
+             "pagina_inicial": "151509",
+             "pagina_final": "151512",
+             "texto": "https://www.boe.es/boe/dias/2026/11/10/pdfs/BOE-A-2026-23531.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23531",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23531"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9590",
+         "nombre": "MINISTERIO DE EDUCACIÓN, FORMACIÓN PROFESIONAL Y DEPORTES",
+         "epigrafe": [
+          {
+           "nombre": "Nombramientos",
+           "item": {
+            "identificador": "BOE-A-2026-23532",
+            "control": "2026/17248",
+            "titulo": "Orden EFD/1194/2026, de 29 de octubre, por la que, a propuesta de la Consejería de Educación, Ciencia y Universidades de la Comunidad de Madrid, se nombra funcionaria de carrera del Cuerpo de Catedráticos de Música y Artes Escénicas a doña Soledad Pilar Garre Rubio.",
+            "url_pdf": {
+             "szBytes": "205214",
+             "szKBytes": "200",
+             "pagina_inicial": "151513",
+             "pagina_final": "151514",
+             "texto": "https://www.boe.es/boe/dias/2026/11/10/pdfs/BOE-A-2026-23532.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23532",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23532"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "codigo": "2B",
+       "nombre": "II. Autoridades y personal. - B. Oposiciones y concursos",
+       "departamento": [
+        {
+         "codigo": "7320",
+         "nombre": "MINISTERIO DEL INTERIOR",
+         "epigrafe": [
+          {
+           "nombre": "Procedimientos de libre designación",
+           "item": {
+            "identificador": "BOE-A-2026-23541",
+            "control": "2026/17455",
+            "titulo": "Resolución de 5 de noviembre de 2026, de la Subsecretaría, por la que se convoca la provisión de puestos de trabajo por el sistema de libre designación, en los Servicios Periféricos de la Secretaría General de Instituciones Penitenciarias.",
+            "url_pdf": {
+             "szBytes": "534763",
+             "szKBytes": "522",
+             "pagina_inicial": "151526",
+             "pagina_final": "151532",
+             "texto": "https://www.boe.es/boe/dias/2026/11/10/pdfs/BOE-A-2026-23541.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23541",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23541"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "3120",
+         "nombre": "MINISTERIO DE AGRICULTURA, PESCA Y ALIMENTACIÓN",
+         "epigrafe": [
+          {
+           "nombre": "Procedimientos de libre designación",
+           "item": {
+            "identificador": "BOE-A-2026-23542",
+            "control": "2026/17273",
+            "titulo": "Resolución de 30 de octubre de 2026, de la Subsecretaría, por la que se convoca la provisión de puestos de trabajo por el sistema de libre designación.",
+            "url_pdf": {
+             "szBytes": "270300",
+             "szKBytes": "264",
+             "pagina_inicial": "151533",
+             "pagina_final": "151539",
+             "texto": "https://www.boe.es/boe/dias/2026/11/10/pdfs/BOE-A-2026-23542.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23542",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23542"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9575",
+         "nombre": "MINISTERIO PARA LA TRANSICIÓN ECOLÓGICA Y EL RETO DEMOGRÁFICO",
+         "epigrafe": [
+          {
+           "nombre": "Personal funcionario. Concursos",
+           "item": {
+            "identificador": "BOE-A-2026-23543",
+            "control": "2026/17456",
+            "titulo": "Resolución de 3 de noviembre de 2026, de la Subsecretaría, por la que se convoca concurso específico para la provisión de puestos de trabajo.",
+            "url_pdf": {
+             "szBytes": "2285433",
+             "szKBytes": "2232",
+             "pagina_inicial": "151540",
+             "pagina_final": "151653",
+             "texto": "https://www.boe.es/boe/dias/2026/11/10/pdfs/BOE-A-2026-23543.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23543",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23543"
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

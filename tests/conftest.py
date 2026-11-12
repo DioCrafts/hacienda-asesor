@@ -1,6 +1,8 @@
 import sys
 import types
 
+import pytest
+
 
 def _ensure_module(name: str) -> types.ModuleType:
     mod = sys.modules.get(name)
@@ -208,3 +210,13 @@ def pytest_sessionstart(session):
 
     lc_emb = _ensure_module("langchain_core.embeddings")
     lc_emb.Embeddings = object
+
+
+@pytest.fixture(autouse=True)
+def _formatos_sin_rastro(monkeypatch, tmp_path):
+    """The format watch writes state and samples on every real read: keep tests from touching ./data."""
+    from hacienda_gpt import settings
+
+    monkeypatch.setattr(settings, "FORMAT_WATCH", False, raising=False)
+    monkeypatch.setattr(settings, "FORMAT_STATE_PATH", str(tmp_path / "_formatos_state.json"), raising=False)
+    monkeypatch.setattr(settings, "FORMAT_DIR", str(tmp_path / "formatos"), raising=False)

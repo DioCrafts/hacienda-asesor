@@ -738,6 +738,18 @@ def _mejor_combinacion(deducciones: list[DeduccionCalculable], importes: dict[in
     return descartadas
 
 
+def _aviso_recodificada(d: DeduccionCalculable) -> str:
+    """The data of ``d`` was written by the re-encoding loop and no person has confirmed it yet."""
+    try:
+        fecha = date.fromisoformat(d.recodificada_el or "").strftime("%d/%m/%Y")
+    except ValueError:
+        fecha = d.recodificada_el or "fecha desconocida"
+    return (
+        f"«{d.titulo}» ({d.articulo}): deducción recodificada automáticamente el {fecha} a partir del BOE; "
+        "pendiente de revisión humana."
+    )
+
+
 def aplicar(
     deducciones: list[DeduccionCalculable],
     inp: Any,
@@ -772,6 +784,8 @@ def aplicar(
             continue
         if resultado.motivo is not None:
             aviso(f"Deducción autonómica «{d.titulo}» no aplicada: {resultado.motivo}.")
+            if d.recodificada_el:
+                aviso(_aviso_recodificada(d))
             continue
         importe = resultado.importe.quantize(Decimal("0.01"))
         if not importe:
@@ -824,6 +838,8 @@ def aplicar(
             aviso(f"«{d.titulo}»: el tope depende de «{d.unidad}», que no consta; se ha supuesto 1.")
         for nota in resultado.avisos:
             aviso(f"«{d.titulo}»: {nota}.")
+        if d.recodificada_el:
+            aviso(_aviso_recodificada(d))
         if d.requisitos_no_comprobados:
             aviso(
                 f"«{d.titulo}» ({d.articulo}) se ha aplicado sin comprobar estos requisitos: "

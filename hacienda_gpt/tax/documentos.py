@@ -24,10 +24,12 @@ import re
 from typing import Any, Literal
 import unicodedata
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from hacienda_gpt.agent.providers.base import Attachment
 from hacienda_gpt.decision.fact_extractor import EXPECTED_FACT_TYPE, _coerce_value
+from hacienda_gpt.ops import formatos
+from hacienda_gpt.ops.formatos_documentos import observar_lectura, palabras_permitidas
 from hacienda_gpt.tax.profile import ACTIVIDAD_FACT_FIELDS, PROFILE_FACT_TYPES
 
 logger = logging.getLogger(__name__)
@@ -215,6 +217,65 @@ SCHEMA_IMAGEN: dict[str, Any] = {
 }
 
 
+MAX_ETIQUETAS_ADICIONALES = 30
+
+
+class EtiquetaAdicional(BaseModel):
+    """One more label a profile field may appear under in a document."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    campo: str
+    etiqueta: str
+
+    @field_validator("campo")
+    @classmethod
+    def _campo_conocido(cls, value: str) -> str:
+        if value not in DOCUMENT_FACTS:
+            raise ValueError(f"campo desconocido: {value}")
+        return value
+
+    @field_validator("etiqueta")
+    @classmethod
+    def _solo_etiquetas(cls, value: str) -> str:
+        # The label ends up in the prompt of every later reading: only generic fiscal words may get there.
+        value = " ".join(value.split())
+        if not 3 <= len(value) <= 60 or not palabras_permitidas(value):
+            raise ValueError("la etiqueta debe tener de 3 a 60 caracteres y solo palabras del vocabulario fiscal")
+        return value
+
+
+class ReglasDocumentos(BaseModel):
+    """Reviewed additions to the reader's prompt, kept as data (the ``documentos`` format spec; empty in v1)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    vocabulario: tuple[EtiquetaAdicional, ...]
+
+    @field_validator("vocabulario")
+    @classmethod
+    def _acotado(cls, value: tuple[EtiquetaAdicional, ...]) -> tuple[EtiquetaAdicional, ...]:
+        if len(value) > MAX_ETIQUETAS_ADICIONALES:
+            raise ValueError(f"como máximo {MAX_ETIQUETAS_ADICIONALES} etiquetas adicionales")
+        return value
+
+
+def anexo_vocabulario() -> str:
+    """Text appended to the system prompt: empty unless a reviewed vocabulary proposal was applied."""
+    try:
+        reglas = formatos.reglas_de("documentos", ReglasDocumentos)
+    except Exception:  # the watch must never stop a document from being read
+        logger.warning("could not load the document vocabulary spec", exc_info=True)
+        return ""
+    if not reglas.vocabulario:
+        return ""
+    lineas = "\n".join(f"- {item.campo}: «{item.etiqueta}»" for item in reglas.vocabulario)
+    return (
+        "\nAlgunos documentos rotulan estos campos con otras etiquetas (añadidas tras revisar lecturas fallidas); "
+        "sirven para localizar el dato, nunca para suponerlo:\n" + lineas + "\n"
+    )
+
+
 def tipo_de_imagen(data: bytes) -> str | None:
     """Media type of an image upload, by its signature (the file name is not trusted)."""
     for signature, media_type in _IMAGE_SIGNATURES:
@@ -275,7 +336,7 @@ def _leer_imagen(provider: Any, *, filename: str, adjunto: Attachment, paginas: 
     lecturas: list[tuple[dict[str, Any], dict[str, HechoPropuesto], list[str]]] = []
     for _ in range(2):
         raw = provider.complete_json(
-            system=SYSTEM_PROMPT_IMAGEN,
+            system=SYSTEM_PROMPT_IMAGEN + anexo_vocabulario(),
             user=f'El documento adjunto se llama "{filename}". Transcríbelo y localiza los datos del perfil fiscal.',
             schema=SCHEMA_IMAGEN,
             schema_name="datos_documento_fiscal_escaneado",
@@ -303,6 +364,10 @@ def _leer_imagen(provider: Any, *, filename: str, adjunto: Attachment, paginas: 
         avisos.append("Se han descartado datos sin un pasaje legible que los respalde: " + ", ".join(sin_pasaje) + ".")
     if not hechos:
         avisos.append("No se han encontrado datos del perfil fiscal legibles en este documento.")
+    # Format watch: counters and field names only (see ops/formatos_documentos.py).
+    observar_lectura(
+        tipo_documento=_tipo(raw), propuestos=len(hechos), descartados=[*discrepan, *sin_pasaje], lectura="imagen"
+    )
     return AnalisisDocumento(
         filename=filename,
         tipo_documento=_tipo(raw),
@@ -331,7 +396,7 @@ def analizar_documento(provider: Any, *, filename: str, data: bytes) -> Analisis
             provider, filename=filename, adjunto=Attachment("application/pdf", data, filename), paginas=exc.paginas
         )
     raw = provider.complete_json(
-        system=SYSTEM_PROMPT,
+        system=SYSTEM_PROMPT + anexo_vocabulario(),
         user=f'<documento nombre="{filename}">\n{text}\n</documento>',
         schema=SCHEMA,
         schema_name="datos_documento_fiscal",
@@ -347,6 +412,10 @@ def analizar_documento(provider: Any, *, filename: str, data: bytes) -> Analisis
         )
     if not proposed:
         avisos.append("No se han encontrado datos del perfil fiscal en este documento.")
+    # Format watch: counters and field names; the text only to derive an anonymised skeleton, if enabled.
+    observar_lectura(
+        tipo_documento=_tipo(raw), propuestos=len(proposed), descartados=discarded, lectura="texto", texto=text
+    )
     return AnalisisDocumento(
         filename=filename,
         tipo_documento=_tipo(raw),

@@ -1,0 +1,12 @@
+{
+  "fuente": "boletin_andalucia_boja",
+  "version": 1,
+  "descripcion": "Listado de resultados del buscador: Boletín Oficial de la Junta de Andalucía (HTML). Selectores históricos del rastreador.",
+  "origen": "incorporada",
+  "reglas": {
+    "item_xpath": "//article[contains(@class, 'resultado') or contains(@class, 'item-resultado')]",
+    "title_xpath": ".//h2//text() | .//h3//text()",
+    "date_xpath": ".//time/@datetime | .//span[contains(@class, 'fecha')]//text()",
+    "link_xpath": ".//a/@href"
+  }
+}

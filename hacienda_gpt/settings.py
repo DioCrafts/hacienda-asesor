@@ -248,6 +248,25 @@ NOTIFY_SMTP_STARTTLS = _env_bool("NOTIFY_SMTP_STARTTLS", default=True)
 NOTIFY_EMAIL_FROM = os.environ.get("NOTIFY_EMAIL_FROM", "")
 NOTIFY_EMAIL_TO = os.environ.get("NOTIFY_EMAIL_TO", "")
 
+# --- Automatic re-encoding of legal parameters (hacienda_gpt/tax/recodificacion) ---
+# When a group of parameters stops matching the text of its law, a model re-reads
+# the law and PROPOSES new data; deterministic checks and an independent reviewer
+# decide whether the proposal stands. Proposals are JSON files under this directory.
+RECODE_PROPOSALS_PATH = os.environ.get("RECODE_PROPOSALS_PATH", "./data/recodificacion")
+# true: a proposal that passed every check with nothing left to look at, and that the
+# reviewer accepted, is written to the parameter files without waiting for a person
+# (the calculator still says "pendiente de revisión humana" until ``params-confirm``).
+# false (default): every proposal waits for ``params-apply``.
+RECODE_AUTO_APPLY = _env_bool("RECODE_AUTO_APPLY", default=False)
+# Reader passes per group before giving up ("sin_converger").
+RECODE_MAX_ITER = int(os.environ.get("RECODE_MAX_ITER", "3"))
+# Groups re-read in one run (each costs up to 2 LLM calls per pass); the rest wait for the next run.
+RECODE_MAX_PER_RUN = int(os.environ.get("RECODE_MAX_PER_RUN", "10"))
+# Models of the reader and of the reviewer; empty = the provider's default model.
+# A different reviewer model makes the review more independent.
+RECODE_MODEL = os.environ.get("RECODE_MODEL", "")
+RECODE_REVIEWER_MODEL = os.environ.get("RECODE_REVIEWER_MODEL", "")
+
 # --- Scheduled-job watchdog (hacienda_gpt/ops/vigia.py) ---------------------
 # JSON file with the last run / last success / last error of every scheduled job.
 JOBS_STATE_PATH = os.environ.get("JOBS_STATE_PATH", "./data/_jobs_state.json")
@@ -256,6 +275,31 @@ JOBS_STATE_PATH = os.environ.get("JOBS_STATE_PATH", "./data/_jobs_state.json")
 # ``HEALTHCHECK_URL_<JOB_NAME_IN_UPPERCASE>`` (e.g. HEALTHCHECK_URL_BOE_NOVEDADES)
 # takes precedence and is read when the job finishes.
 HEALTHCHECK_URL = os.environ.get("HEALTHCHECK_URL", "")
+
+# --- Format drift watch (hacienda_gpt/ops/formatos.py) -----------------------
+# Record, on every real read, whether each external format (BOE JSON/XML/HTML,
+# crawler listings, user documents) is still understood. Deterministic, no LLM.
+FORMAT_WATCH = _env_bool("FORMAT_WATCH", default=True)
+# JSON file with the recent observations and the status of every source.
+FORMAT_STATE_PATH = os.environ.get("FORMAT_STATE_PATH", "./data/_formatos_state.json")
+# Samples (known-good and latest bad, public sources only), applied specs,
+# proposals and developer reports.
+FORMAT_DIR = os.environ.get("FORMAT_DIR", "./data/formatos")
+# Apply a proposed extraction spec without a person when it passed the
+# deterministic gate AND the independent reflection had no objection. Off by
+# default: proposals wait for `ops formatos apply`.
+FORMAT_AUTO_APPLY = _env_bool("FORMAT_AUTO_APPLY", default=False)
+# Diagnosis rounds per source before giving up with a report for a developer
+# ("sin_converger"; each round costs up to two LLM calls: diagnosis and reflection).
+FORMAT_MAX_ITER = int(os.environ.get("FORMAT_MAX_ITER", "3"))
+# Models of the diagnosis and of the reflection; empty = the provider's default
+# model. A different reviewer model makes the reflection more independent.
+FORMAT_MODEL = os.environ.get("FORMAT_MODEL", "")
+FORMAT_REVIEWER_MODEL = os.environ.get("FORMAT_REVIEWER_MODEL", "")
+# Keep an ANONYMISED skeleton (known labels only; every other word and every
+# figure blanked) of user documents whose reading failed, to diagnose reader
+# drift. Off by default: nothing derived from a user document is stored.
+FORMAT_DOCUMENT_SKELETONS = _env_bool("FORMAT_DOCUMENT_SKELETONS", default=False)
 
 # --- User accounts and privacy (hacienda_gpt/auth) --------------------------
 # off      : no accounts; anyone holding a case id can read that case (the

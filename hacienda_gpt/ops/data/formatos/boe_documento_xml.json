@@ -1,0 +1,23 @@
+{
+  "fuente": "boe_documento_xml",
+  "version": 1,
+  "descripcion": "Ficha XML de una disposición del BOE (metadatos y análisis). Comportamiento histórico del lector.",
+  "origen": "incorporada",
+  "reglas": {
+    "identificador": ".//metadatos/identificador",
+    "rango": ".//metadatos/rango",
+    "origen": ".//metadatos/origen_legislativo",
+    "departamento": ".//metadatos/departamento",
+    "materia": ".//analisis/materias/materia",
+    "anterior": ".//analisis/referencias/anteriores/anterior",
+    "posterior": ".//analisis/referencias/posteriores/posterior",
+    "atributo_referencia": "referencia",
+    "palabra": "palabra",
+    "texto": "texto",
+    "estatus_derogacion": ".//metadatos/estatus_derogacion",
+    "fecha_derogacion": ".//metadatos/fecha_derogacion",
+    "valor_derogada": "S",
+    "prefijo_deroga": "SE DEROGA",
+    "marca_convalidacion": "convalidaci"
+  }
+}

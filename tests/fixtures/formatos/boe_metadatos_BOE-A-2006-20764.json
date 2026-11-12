@@ -1,0 +1,40 @@
+{
+    "status": {
+        "code": "200",
+        "text": "ok"
+    },
+    "data": [
+        {
+            "fecha_actualizacion": "20261111T094003Z",
+            "identificador": "BOE-A-2006-20764",
+            "ambito": {
+                "codigo": "1",
+                "texto": "Estatal"
+            },
+            "departamento": {
+                "codigo": "7723",
+                "texto": "Jefatura del Estado"
+            },
+            "rango": {
+                "codigo": "1300",
+                "texto": "Ley"
+            },
+            "fecha_disposicion": "20061128",
+            "numero_oficial": "35\/2006",
+            "titulo": "Ley 35\/2006, de 28 de noviembre, del Impuesto sobre la Renta de las Personas F\u00edsicas y de modificaci\u00f3n parcial de las leyes de los Impuestos sobre Sociedades, sobre la Renta de no Residentes y sobre el Patrimonio.",
+            "diario": "Bolet\u00edn Oficial del Estado",
+            "fecha_publicacion": "20061129",
+            "diario_numero": "285",
+            "fecha_vigencia": "20070101",
+            "estatus_derogacion": "N",
+            "estatus_anulacion": "N",
+            "vigencia_agotada": "N",
+            "estado_consolidacion": {
+                "codigo": "3",
+                "texto": "Finalizado"
+            },
+            "url_eli": "https:\/\/www.boe.es\/eli\/es\/l\/2006\/11\/28\/35",
+            "url_html_consolidada": "https:\/\/www.boe.es\/buscar\/act.php?id=BOE-A-2006-20764"
+        }
+    ]
+}

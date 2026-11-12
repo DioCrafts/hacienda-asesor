@@ -41,6 +41,9 @@ import urllib.request
 
 import click
 
+from hacienda_gpt.ops import formatos
+from hacienda_gpt.ops.formatos_boe import ReglasMetadatos, entrada_metadatos
+
 logger = logging.getLogger(__name__)
 
 _BOE_META_URL = "https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/{id}/metadatos"
@@ -109,14 +112,11 @@ def _fetch_metadata(boe_id: str, timeout: int = 30) -> dict:
         headers={"Accept": "application/json", "User-Agent": _USER_AGENT},
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
-        payload = json.loads(resp.read().decode("utf-8"))
-    if payload.get("status", {}).get("code") != "200":
-        raise RuntimeError(f"BOE metadata status != 200: {payload!r}")
-    data = payload.get("data") or []
-    if not data:
-        raise RuntimeError(f"BOE metadata empty payload for {boe_id}: {payload!r}")
-    entry: dict = data[0] if isinstance(data, list) else data
-    return entry
+        raw = resp.read().decode("utf-8")
+    # Format watch: recorded before parsing, so an answer in an unknown shape leaves a sample behind.
+    formatos.observar("boe_metadatos", raw, contexto=boe_id)
+    # Which keys are read is data: the ``boe_metadatos`` format spec.
+    return entrada_metadatos(formatos.reglas_de("boe_metadatos", ReglasMetadatos), json.loads(raw), boe_id)
 
 
 def _fetch_html(boe_id: str, timeout: int = 60) -> bytes:

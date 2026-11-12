@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
 from datetime import date
+import json
 import re
 from typing import Any, Literal
 import unicodedata
@@ -23,6 +24,8 @@ from xml.etree import ElementTree
 from pydantic import BaseModel, ConfigDict, Field
 
 from hacienda_gpt.decision.schemas import CaseState
+from hacienda_gpt.ops import formatos
+from hacienda_gpt.ops.formatos_boe import ReglasDocumentoXml, ReglasSumario, extraer_documento_xml, extraer_sumario
 from hacienda_gpt.proactive.impacto import CRITERIOS, VOCABULARIO
 from hacienda_gpt.proactive.store import Notification, NotificationStore
 from hacienda_gpt.tax.fuentes import comunidad_de, norma_de_parametros
@@ -166,81 +169,55 @@ class Novedad(BaseModel):
     url: str
 
 
+def _secciones_leidas() -> frozenset[str]:
+    return frozenset({SECCION_GENERAL}) | SECCIONES_POR_TITULO
+
+
+def extraer_items(reglas: ReglasSumario, payload: Mapping[str, Any]) -> list[dict[str, str]]:
+    """Items of the sections the app reads, as plain data (see ``formatos_boe.extraer_sumario``)."""
+    return extraer_sumario(reglas, payload, _secciones_leidas())
+
+
 def items_del_sumario(payload: Mapping[str, Any], fecha: date) -> list[ItemSumario]:
-    """Flatten one day's summary (the JSON of ``/datosabiertos/api/boe/sumario/<día>``)."""
+    """Flatten one day's summary (the JSON of ``/datosabiertos/api/boe/sumario/<día>``).
 
-    def lista(value: Any) -> list[Any]:
-        return value if isinstance(value, list) else [] if value is None else [value]
+    Which keys are read is data: the ``boe_sumario`` format spec.
+    """
+    reglas = formatos.reglas_de("boe_sumario", ReglasSumario)
+    return [ItemSumario(fecha=fecha, **item) for item in extraer_items(reglas, payload)]
 
-    out: list[ItemSumario] = []
 
-    def recorrer(node: Any, seccion: str, departamento: str, epigrafe: str) -> None:
-        if not isinstance(node, dict):
-            return
-        for item in lista(node.get("item")):
-            if isinstance(item, dict) and item.get("identificador") and item.get("titulo"):
-                out.append(
-                    ItemSumario(
-                        boe_id=str(item["identificador"]),
-                        fecha=fecha,
-                        seccion=seccion,
-                        departamento=departamento,
-                        epigrafe=epigrafe,
-                        titulo=" ".join(str(item["titulo"]).split()),
-                        url=str(item.get("url_html") or ""),
-                    )
-                )
-        for sub in lista(node.get("epigrafe")):
-            if isinstance(sub, dict):
-                recorrer(sub, seccion, departamento, str(sub.get("nombre") or epigrafe))
-        for sub in lista(node.get("texto")):
-            recorrer(sub, seccion, departamento, epigrafe)
-
-    sumario = (payload.get("data") or {}).get("sumario") or {}
-    for diario in lista(sumario.get("diario")):
-        for seccion in lista(diario.get("seccion") if isinstance(diario, dict) else None):
-            codigo = str(seccion.get("codigo") or "")
-            if codigo != SECCION_GENERAL and codigo not in SECCIONES_POR_TITULO:
-                continue
-            for departamento in lista(seccion.get("departamento")):
-                if isinstance(departamento, dict):
-                    recorrer(departamento, codigo, str(departamento.get("nombre") or ""), "")
-    return out
+def analisis_desde(datos: Mapping[str, Any], vigiladas: frozenset[str] = frozenset()) -> Analisis:
+    """Build an :class:`Analisis` from the plain extraction of a disposition's XML."""
+    return Analisis(
+        rango=datos["rango"],
+        origen=datos["origen"],
+        departamento=datos["departamento"],
+        materias=list(datos["materias"]),
+        modifica=[
+            NormaModificada(
+                boe_id=anterior["referencia"],
+                accion=anterior["palabra"],
+                texto=anterior["texto"],
+                vigilada=anterior["referencia"] in vigiladas,
+                parametros=norma_de_parametros(anterior["referencia"]) is not None,
+            )
+            for anterior in datos["anteriores"]
+            if anterior["referencia"]
+        ],
+    )
 
 
 def leer_analisis(xml: str | bytes, vigiladas: frozenset[str] = frozenset()) -> Analisis:
-    """Parse the BOE's XML of a disposition (``/diario_boe/xml.php?id=…``)."""
+    """Parse the BOE's XML of a disposition (``/diario_boe/xml.php?id=…``).
+
+    Which paths are read is data: the ``boe_documento_xml`` format spec.
+    """
     try:
-        root = ElementTree.fromstring(xml)
+        datos = extraer_documento_xml(formatos.reglas_de("boe_documento_xml", ReglasDocumentoXml), xml)
     except ElementTree.ParseError:
         return Analisis()
-
-    def texto(path: str) -> str:
-        node = root.find(path)
-        return " ".join((node.text or "").split()) if node is not None else ""
-
-    modifica = []
-    for anterior in root.iterfind(".//analisis/referencias/anteriores/anterior"):
-        boe_id = anterior.get("referencia") or ""
-        if not boe_id:
-            continue
-        palabra, detalle = anterior.find("palabra"), anterior.find("texto")
-        modifica.append(
-            NormaModificada(
-                boe_id=boe_id,
-                accion=" ".join((palabra.text or "").split()) if palabra is not None else "",
-                texto=" ".join((detalle.text or "").split()) if detalle is not None else "",
-                vigilada=boe_id in vigiladas,
-                parametros=norma_de_parametros(boe_id) is not None,
-            )
-        )
-    return Analisis(
-        rango=texto(".//metadatos/rango"),
-        origen=texto(".//metadatos/origen_legislativo"),
-        departamento=texto(".//metadatos/departamento"),
-        materias=[" ".join((m.text or "").split()) for m in root.iterfind(".//analisis/materias/materia") if m.text],
-        modifica=modifica,
-    )
+    return analisis_desde(datos, vigiladas)
 
 
 def _tributos_en(textos: Iterable[str]) -> tuple[list[str], bool]:
@@ -351,6 +328,17 @@ class Revision(BaseModel):
     errores: list[str] = Field(default_factory=list)
 
 
+# Dispositions read in one run (the queue spans two weeks) with not one analysed: not plausible.
+MIN_LEIDOS_COBERTURA = 15
+
+
+def _json_o_vacio(payload: Any) -> str:
+    try:
+        return json.dumps(payload, ensure_ascii=False)
+    except (TypeError, ValueError):
+        return ""
+
+
 def revisar(
     dias: Iterable[date],
     *,
@@ -374,12 +362,25 @@ def revisar(
         except Exception as exc:  # one bad day must not lose the others
             out.errores.append(f"sumario {dia.isoformat()}: {exc}")
             continue
+        if dia < hoy:
+            # Format watch: a weekday without a summary is a holiday… or an API that moved.
+            formatos.observar("boe_sumario_dias", None, extraccion={"dia": dia.isoformat(), "hay": payload is not None})
         if payload is None:
             out.dias_sin_boletin.append(dia)
             continue
-        cola.extend(items_del_sumario(payload, dia))
+        del_dia = items_del_sumario(payload, dia)
+        # Format watch: a summary that yields nothing looks exactly like a quiet day.
+        formatos.observar(
+            "boe_sumario",
+            _json_o_vacio(payload),
+            extraccion=[item.model_dump(mode="json", exclude={"fecha"}) for item in del_dia],
+            contexto=dia.isoformat(),
+        )
+        cola.extend(del_dia)
 
     vistos: set[str] = set()
+    leidos = con_analisis = 0
+    sin_analisis: tuple[str, str | bytes] | None = None
     for item in cola:
         if item.boe_id in vistos:
             continue
@@ -393,6 +394,12 @@ def revisar(
         try:
             xml = xml_de(item.boe_id)
             analisis = leer_analisis(xml, vigiladas) if xml else None
+            if xml:
+                formatos.observar("boe_documento_xml", xml, contexto=item.boe_id)
+                leidos += 1
+                con_analisis += analisis is not None and analisis.publicado
+                if analisis is not None and not analisis.publicado:
+                    sin_analisis = (item.boe_id, xml)
         except Exception as exc:
             out.errores.append(f"xml {item.boe_id}: {exc}")
         if (analisis is None or not analisis.publicado) and (hoy - item.fecha).days <= DIAS_ESPERA_ANALISIS:
@@ -401,6 +408,9 @@ def revisar(
         novedad = clasificar(item, analisis, vigiladas=vigiladas)
         if novedad is not None:
             out.novedades.append(novedad)
+    if leidos >= MIN_LEIDOS_COBERTURA and con_analisis == 0 and sin_analisis is not None:
+        # Every XML parsed, yet none carries an analysis: either the BOE moved it or it stopped publishing it.
+        formatos.observar("boe_documento_xml", sin_analisis[1], contexto=f"cobertura:{sin_analisis[0]}:{leidos}")
     return out
 
 

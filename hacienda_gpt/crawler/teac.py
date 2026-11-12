@@ -31,8 +31,11 @@ from typing import Any
 from urllib.parse import urlencode
 
 import parsel
+from pydantic import BaseModel, ConfigDict, field_validator
 import scrapy
 from scrapy.http import Response
+
+from hacienda_gpt.ops import formatos
 
 DYCTEA_BASE_URL = "https://serviciostelematicosext.hacienda.gob.es/TEAC/DYCTEA"
 DYCTEA_NOT_FOUND_MARKER = "El criterio no existe"
@@ -53,30 +56,64 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
     "criterio": ("criterio",),
 }
 
+# Keys of the sidecar that are not read from the page.
+_NO_EXTRAIDO = frozenset({"source_authority", "criterio_id", "ingested_at"})
+
 _NUM_RESOLUCION_PATTERN = re.compile(r"\b\d{2}/\d{4,6}/\d{4}(?:/\d{2}/\d{2})?\b")
 _DATE_PATTERN = re.compile(r"\b(\d{2})/(\d{2})/(\d{4})\b")
 
 
-def parse_teac_criterio(html: str, *, criterio_id: int | str | None = None) -> dict[str, Any] | None:
-    """Parse a DYCTEA resolution detail page into a structured dict.
+class ReglasTeac(BaseModel):
+    """What the parser knows about the DYCTEA page, as format-spec data (``teac_criterio``).
 
-    Returns None when the page is the "criterio no existe" error placeholder,
-    so callers can short-circuit storage.
+    Version 1 of the spec holds ``DYCTEA_NOT_FOUND_MARKER``, ``_FIELD_ALIASES``
+    and the two patterns above; a reviewed proposal may replace them.
     """
-    if DYCTEA_NOT_FOUND_MARKER in html:
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    marcador_no_existe: str
+    # Canonical field → labels it may appear under (lower case).
+    alias: dict[str, tuple[str, ...]]
+    patron_numero: str
+    patron_fecha: str
+
+    @field_validator("patron_numero", "patron_fecha")
+    @classmethod
+    def _patron(cls, value: str) -> str:
+        return formatos.patron_seguro(value)
+
+    @field_validator("patron_fecha")
+    @classmethod
+    def _tres_grupos(cls, value: str) -> str:
+        if re.compile(value).groups != 3:
+            raise ValueError("el patrón de fecha debe tener tres grupos: día, mes y año")
+        return value
+
+    @field_validator("alias")
+    @classmethod
+    def _campos(cls, value: dict[str, tuple[str, ...]]) -> dict[str, tuple[str, ...]]:
+        if set(value) != set(_FIELD_ALIASES):
+            raise ValueError(f"los campos deben ser exactamente: {', '.join(sorted(_FIELD_ALIASES))}")
+        if any("'" in alias or not alias.strip() for aliases in value.values() for alias in aliases):
+            raise ValueError("una etiqueta no puede estar vacía ni contener comillas simples")
+        return value
+
+
+def extraer_criterio(reglas: ReglasTeac, html: str) -> dict[str, Any] | None:
+    """The fields of a DYCTEA page according to ``reglas``; None for the "no existe" placeholder."""
+    if reglas.marcador_no_existe in html:
         return None
 
     selector = parsel.Selector(text=html)
     fields: dict[str, str | None] = {}
-    for canonical, aliases in _FIELD_ALIASES.items():
+    for canonical, aliases in reglas.alias.items():
         fields[canonical] = _extract_field(selector, aliases)
 
-    numero = fields.get("numero_resolucion") or _first_match(_NUM_RESOLUCION_PATTERN, html)
-    fecha = _parse_date(fields.get("fecha_resolucion") or "")
+    numero = fields.get("numero_resolucion") or _first_match(re.compile(reglas.patron_numero), html)
+    fecha = _parse_date(fields.get("fecha_resolucion") or "", re.compile(reglas.patron_fecha))
 
     return {
-        "source_authority": "TEAC",
-        "criterio_id": criterio_id,
         "numero_resolucion": numero,
         "sala": fields.get("sala"),
         "fecha_resolucion": fecha.isoformat() if fecha else None,
@@ -87,6 +124,24 @@ def parse_teac_criterio(html: str, *, criterio_id: int | str | None = None) -> d
         "norma": fields.get("norma"),
         "precepto": fields.get("precepto"),
         "criterio": fields.get("criterio"),
+    }
+
+
+def parse_teac_criterio(html: str, *, criterio_id: int | str | None = None) -> dict[str, Any] | None:
+    """Parse a DYCTEA resolution detail page into a structured dict.
+
+    Returns None when the page is the "criterio no existe" error placeholder,
+    so callers can short-circuit storage.
+    """
+    campos = extraer_criterio(formatos.reglas_de("teac_criterio", ReglasTeac), html)
+    if campos is None:
+        return None
+    numero = campos.pop("numero_resolucion")
+    return {
+        "source_authority": "TEAC",
+        "criterio_id": criterio_id,
+        "numero_resolucion": numero,
+        **campos,
         "ingested_at": datetime.now(UTC).isoformat(),
     }
 
@@ -159,8 +214,8 @@ def _normalise_vinculante(value: str | None) -> bool | None:
     return None
 
 
-def _parse_date(value: str) -> date | None:
-    match = _DATE_PATTERN.search(value)
+def _parse_date(value: str, pattern: re.Pattern[str] = _DATE_PATTERN) -> date | None:
+    match = pattern.search(value)
     if not match:
         return None
     day, month, year = (int(group) for group in match.groups())
@@ -229,6 +284,13 @@ class TEACCrawler(scrapy.Spider):
         if metadata is None:
             self.logger.debug("Criterio %s no existe; skipping.", criterio_id)
             return
+        # Format watch: a page whose labels changed still parses, with every field empty.
+        formatos.observar(
+            "teac_criterio",
+            html,
+            extraccion={k: v for k, v in metadata.items() if k not in _NO_EXTRAIDO},
+            contexto=str(criterio_id),
+        )
         self._persist(criterio_id, html, metadata)
 
     def _persist(self, criterio_id: int, html: str, metadata: dict[str, Any]) -> None:

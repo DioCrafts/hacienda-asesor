@@ -6,6 +6,11 @@ name: vigilancia
 # changed, only that someone has to look.
 #
 # Needs network access to www.boe.es and nothing else (no LLM, no secrets).
+#
+# Optional: with an ANTHROPIC_API_KEY secret, the parameters that no longer match
+# are re-read by a model and PROPOSALS of new data are uploaded as an artifact
+# (`recode-proposals`). Nothing is written to the repository: a person downloads
+# them and runs `params-apply`. Without the secret that step is skipped.
 
 on:
   schedule:
@@ -18,6 +23,9 @@ permissions:
 jobs:
   params-check:
     runs-on: ubuntu-latest
+    env:
+      # Secrets cannot be read in a step's `if:`; this boolean can.
+      HAY_CLAVE_LLM: ${{ secrets.ANTHROPIC_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -52,6 +60,40 @@ jobs:
         shell: bash
         run: |
           uv run python -m hacienda_gpt.cli.proactive params-verify --fail-on-mismatch | tee params-verify.json
+      - name: Restore earlier re-encoding proposals
+        # So that a group already proposed (or rejected) for the same legal text
+        # is not paid for again every Monday.
+        if: always() && env.HAY_CLAVE_LLM == 'true'
+        uses: actions/cache@v4
+        with:
+          path: recode-proposals
+          key: recode-proposals-${{ github.run_id }}
+          restore-keys: recode-proposals-
+      - name: Propose new data for the parameters that no longer match (LLM)
+        # Proposals only: RECODE_AUTO_APPLY stays off here, the checkout is
+        # read-only and nothing is committed. Every proposal has passed the
+        # deterministic gate and a second model's boundary cases, or says why not.
+        if: always() && env.HAY_CLAVE_LLM == 'true'
+        shell: bash
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RECODE_PROPOSALS_PATH: recode-proposals
+          RECODE_AUTO_APPLY: "false"
+          # A ceiling on what one run may spend; see docs/operacion.md.
+          LLM_DAILY_BUDGET_USD: ${{ vars.RECODE_BUDGET_USD || '10' }}
+          DECISION_STATE_DB_PATH: ${{ runner.temp }}/vigilancia.db
+          NOTIFY_WEBHOOK_URL: ${{ secrets.NOTIFY_WEBHOOK_URL }}
+        run: |
+          uv run python -m hacienda_gpt.cli.proactive params-recode | tee params-recode.json
+      - name: Upload the proposals
+        if: always() && env.HAY_CLAVE_LLM == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: recode-proposals
+          path: |
+            recode-proposals
+            params-recode.json
+          if-no-files-found: ignore
       - name: Decree-laws awaiting validation
         # Informative: prints whether each decree-law some parameters depend on
         # is still pending, validated or repealed. The deployed app keeps its own

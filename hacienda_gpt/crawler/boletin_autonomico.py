@@ -16,7 +16,7 @@ spec; no changes to the spider itself.
 from __future__ import annotations
 
 from collections.abc import Generator
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 import json
 import os
@@ -25,8 +25,11 @@ from typing import Any
 from urllib.parse import urljoin
 
 import parsel
+from pydantic import BaseModel, ConfigDict
 import scrapy
 from scrapy.http import Response
+
+from hacienda_gpt.ops import formatos
 
 
 @dataclass(frozen=True)
@@ -101,12 +104,40 @@ BUNDLED_SPECS: dict[str, RegionalBoletinSpec] = {
 }
 
 
+class ReglasBoletin(BaseModel):
+    """The selectors of one gazette as format-spec data (``boletin_<key>``, see ``hacienda_gpt.ops.formatos``)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    item_xpath: str
+    title_xpath: str
+    date_xpath: str
+    link_xpath: str
+
+
+def spec_vigente(spec: RegionalBoletinSpec) -> RegionalBoletinSpec:
+    """``spec`` with the selectors of the format spec in force for a bundled gazette.
+
+    Version 1 of each ``boletin_<key>`` spec holds the selectors written above,
+    so nothing changes until a reviewed proposal replaces them. A spec that is
+    not one of the bundled gazettes is returned untouched.
+    """
+    if BUNDLED_SPECS.get(spec.key) is not spec:
+        return spec
+    try:
+        reglas = formatos.reglas_de(f"boletin_{spec.key}", ReglasBoletin)
+    except formatos.FormatoError:
+        return spec
+    return replace(spec, **reglas.model_dump())
+
+
 def parse_listing(spec: RegionalBoletinSpec, html: str) -> list[dict[str, Any]]:
     """Apply a spec to a result-listing HTML and return structured rows.
 
     Each row carries the link resolved to an absolute URL so the spider
     can directly enqueue follow-up downloads.
     """
+    spec = spec_vigente(spec)
     selector = parsel.Selector(text=html)
     rows: list[dict[str, Any]] = []
     for item in selector.xpath(spec.item_xpath):
@@ -195,6 +226,13 @@ class RegionalBoletinCrawler(scrapy.Spider):
     def parse_listing_response(self, response: Response, spec_key: str, term: str) -> Generator[scrapy.Request]:
         spec = BUNDLED_SPECS[spec_key]
         rows = parse_listing(spec, response.text)
+        # Format watch: a results page whose markup changed yields zero rows, like a search with no hits.
+        formatos.observar(
+            f"boletin_{spec.key}",
+            response.text,
+            extraccion=[{"title": r["title"], "date_raw": r["date_raw"], "link": r["link"]} for r in rows],
+            contexto=term,
+        )
         out_dir = os.path.join(self.folder, spec.key)
         os.makedirs(out_dir, exist_ok=True)
         listing_path = os.path.join(out_dir, f"listing_{_slugify(term)}.json")

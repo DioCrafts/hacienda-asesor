@@ -727,6 +727,10 @@ class DeduccionCalculable(Condiciones):
     limite_conjunto: LimiteConjunto | None = None
     requisitos_no_comprobados: list[str] = Field(default_factory=list)
     en_vigor_desde: str
+    # Day (AAAA-MM-DD) this entry was re-encoded from the BOE by the automatic loop
+    # (hacienda_gpt.tax.recodificacion). While set, nobody has reviewed it yet and the
+    # calculator says so every time it uses the deduction; ``params-confirm`` clears it.
+    recodificada_el: str | None = None
 
     @property
     def condiciones(self) -> Condiciones:

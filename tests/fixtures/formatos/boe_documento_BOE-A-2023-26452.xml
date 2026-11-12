@@ -1,0 +1,116 @@
+<documento fecha_actualizacion="20261007112601">
+  <metadatos>
+    <identificador>BOE-A-2023-26452</identificador>
+    <origen_legislativo codigo="1">Estatal</origen_legislativo>
+    <departamento codigo="7723">Jefatura del Estado</departamento>
+    <rango codigo="1320">Real Decreto-ley</rango>
+    <fecha_disposicion>20231227</fecha_disposicion>
+    <numero_oficial>8/2023</numero_oficial>
+    <titulo>Real Decreto-ley 8/2023, de 27 de diciembre, por el que se adoptan medidas para afrontar las consecuencias económicas y sociales derivadas de los conflictos en Ucrania y Oriente Próximo, así como para paliar los efectos de la sequía.</titulo>
+    <diario codigo="BOE">Boletín Oficial del Estado</diario>
+    <fecha_publicacion>20231228</fecha_publicacion>
+    <diario_numero>310</diario_numero>
+    <seccion>1</seccion>
+    <subseccion />
+    <pagina_inicial>172622</pagina_inicial>
+    <pagina_final>172770</pagina_final>
+    <suplemento_pagina_inicial />
+    <suplemento_pagina_final />
+    <url_pdf>https://www.boe.es/boe/dias/2023/12/28/pdfs/BOE-A-2023-26452.pdf</url_pdf>
+    <url_epub>
+      <url_epub>https://www.boe.es/diario_boe/epub.php?id=BOE-A-2023-26452</url_epub>
+    </url_epub>
+    <url_pdf_catalan>/boe_catalan/dias/2023/12/28/pdfs/BOE-A-2023-26452-C.pdf</url_pdf_catalan>
+    <url_pdf_euskera />
+    <url_pdf_gallego />
+    <url_pdf_valenciano />
+    <estatus_legislativo>L</estatus_legislativo>
+    <fecha_vigencia>20231229</fecha_vigencia>
+    <estatus_derogacion>N</estatus_derogacion>
+    <fecha_derogacion />
+    <judicialmente_anulada>N</judicialmente_anulada>
+    <fecha_anulacion />
+    <vigencia_agotada>N</vigencia_agotada>
+    <estado_consolidacion codigo="3">Finalizado</estado_consolidacion>
+    <letra_imagen>A</letra_imagen>
+    <suplemento_letra_imagen />
+    <url_eli>https://www.boe.es/eli/es/rdl/2023/12/27/8</url_eli>
+  </metadatos>
+  <analisis>
+    <materias>
+      <materia codigo="173" orden="">Aguas</materia>
+      <materia codigo="329" orden="">Asistencia social</materia>
+      <materia codigo="403" orden="">Aval</materia>
+      <materia codigo="420" orden="">Ayudas</materia>
+      <materia codigo="599" orden="">Canarias</materia>
+      <materia codigo="862" orden="">Clases Pasivas</materia>
+      </materias>
+    <notas>
+      <nota codigo="9" orden="210">Entrada en vigor, con la salvedad indicada en la disposición final 13, el 29 de diciembre de 2023.</nota>
+      <nota codigo="0" orden="999">La ampliación del Real Decreto 647/2020, de 7 de julio, se establece por estar modificado por la Orden TED/724/2022, de 27 de julio.</nota>
+      <nota codigo="0" orden="999">Las modificaciones de los Real Decreto-ley 29/2021, de 21 de diciembre y Real Decreto-ley 17/2021, de 14 de septiembre, se establecen por estar modificados por el Real Decreto-ley 6/2022, de 29 de marzo.</nota>
+    </notas>
+    <referencias>
+      <anteriores>
+        <anterior referencia="BOE-A-2021-21654" orden="1010">
+          <palabra codigo="210">DEROGA</palabra>
+          <texto>la disposición adicional 1 del Real Decreto-ley 31/2021, de 28 de diciembre</texto>
+        </anterior>
+        <anterior referencia="BOE-A-2023-12203" orden="2015">
+          <palabra codigo="270">MODIFICA</palabra>
+          <texto>la referencia indicada de la disposición transitoria 3 de la Ley 12/2023, de 24 de mayo</texto>
+        </anterior>
+        <anterior referencia="BOE-A-2023-625" orden="2015">
+          <palabra codigo="270">MODIFICA</palabra>
+          <texto>los arts. 11.1.c), 27 y la disposición adicional 7 del Real Decreto-ley 1/2023, de 10 de enero</texto>
+        </anterior>
+        <anterior referencia="BOE-A-2022-22685" orden="2015">
+          <palabra codigo="270">MODIFICA</palabra>
+          <texto>el art. 72 y PRORROGA, en los términos señalados, lo indicado de los arts. 97 y 98 del Real Decreto-ley 20/2022, de 27 de diciembre</texto>
+        </anterior>
+        <anterior referencia="BOE-A-2022-22684" orden="2015">
+          <palabra codigo="270">MODIFICA</palabra>
+          <texto>en la forma señalada el art. 3.9 y 20 y PRORROGA, para 2024, lo indicado de la Ley 38/2022, de 27 de diciembre</texto>
+        </anterior>
+        <anterior referencia="BOE-A-2022-22128" orden="2015">
+          <palabra codigo="270">MODIFICA</palabra>
+          <texto>las referencias indicadas y PRORROGA, en la forma señalada, para el año 2024, el contenido del título IV y de las disposiciones adicionales concordantes de la Ley 31/2022, de 23 de diciembre</texto>
+        </anterior>
+        </anteriores>
+      <posteriores>
+        <posterior referencia="BOE-A-2026-20526" orden="">
+          <palabra codigo="230">SE DEJA SIN EFECTO</palabra>
+          <texto>la modificación del art. 86 y la adición del 86 bis, en la redacción dada por el Real Decreto-ley 26/2026, de 29 de septiembre, por Resolución de 2 de octubre de 2026</texto>
+        </posterior>
+        <posterior referencia="BOE-A-2025-15313" orden="">
+          <palabra codigo="230">SE DEJA SIN EFECTO</palabra>
+          <texto>la modificación del art. 42, en la redacción dada por el Real Decreto-ley 7/2025, de 24 de junio, por Resolución de 22 de julio de 2025</texto>
+        </posterior>
+        <posterior referencia="BOE-A-2025-1136" orden="">
+          <palabra codigo="230">SE DEJA SIN EFECTO</palabra>
+          <texto>la modificación de los arts. 51 y 64, y la prorroga hasta el 30 de junio de 2025, de lo indicado de los arts. 64 al 73, en la redacción dada por el Real Decreto-ley 9/2024, de 23 de diciembre, por Resolución de 22 de enero de 2025</texto>
+        </posterior>
+        <posterior referencia="BOE-A-2026-20823" orden="">
+          <palabra codigo="270">SE MODIFICA</palabra>
+          <texto>el art. 86 y SE AÑADE el 86 bis, por Real Decreto-ley 29/2026, de 6 de octubre</texto>
+        </posterior>
+        <posterior referencia="BOE-A-2026-20266" orden="">
+          <palabra codigo="270">SE MODIFICA</palabra>
+          <texto>el art. 86 y SE AÑADE el 86 bis, por Real Decreto-ley 26/2026, de 29 de septiembre</texto>
+        </posterior>
+        <posterior referencia="BOE-A-2026-6544" orden="">
+          <palabra codigo="270">SE MODIFICA</palabra>
+          <texto>el art. 42, por Real Decreto-ley 7/2026, de 20 de marzo</texto>
+        </posterior>
+        </posteriores>
+    </referencias>
+    <alertas>
+      <alerta codigo="138" orden="">Administración de Justicia</alerta>
+      <alerta codigo="101" orden="">Agricultura</alerta>
+      <alerta codigo="104" orden="">Asuntos sociales</alerta>
+      <alerta codigo="105" orden="">Comercio</alerta>
+      <alerta codigo="106" orden="">Consumidores y usuarios</alerta>
+      <alerta codigo="115" orden="">Energía</alerta>
+      </alertas>
+  </analisis>
+  </documento>

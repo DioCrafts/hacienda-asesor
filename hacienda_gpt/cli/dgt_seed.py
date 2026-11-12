@@ -52,6 +52,8 @@ import time
 import click
 import requests
 
+from hacienda_gpt.ops import formatos
+
 logger = logging.getLogger(__name__)
 
 _BASE = "https://petete.tributos.hacienda.gob.es"
@@ -215,6 +217,18 @@ def _search_month(
     # ``/do/document`` expects. Capture it.
     query_match = re.search(r'id="query"[^>]*value="([^"]*)"', html)
     query = query_match.group(1) if query_match else ""
+
+    # Format watch (never raises): a results page in another markup reads as "no consultas this month".
+    formatos.observar(
+        "dgt_busqueda",
+        html,
+        extraccion={
+            "filas": len(rows),
+            "con_numero": sum(1 for _doc_id, numero in rows if numero),
+            "total_paginas": total_pages_match is not None,
+            "query": bool(query),
+        },
+    )
 
     return rows, total_pages, query
 

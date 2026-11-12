@@ -164,8 +164,11 @@ def _evidencia_deducciones() -> dict[str, dict[str, Any]]:
     return data
 
 
-def comprobaciones(params: IRPFParams) -> list[Comprobacion]:
-    """One check per group of parameters of ``params``."""
+def comprobaciones(params: IRPFParams, *, evidencia: dict[str, dict[str, Any]] | None = None) -> list[Comprobacion]:
+    """One check per group of parameters of ``params``.
+
+    ``evidencia``: the quotes of the regional deductions, when they are not the ones shipped with the package.
+    """
     out: list[Comprobacion] = []
     estatal = params.fuente_principal.boe_id
     for nombre in type(params).model_fields:
@@ -183,7 +186,7 @@ def comprobaciones(params: IRPFParams) -> list[Comprobacion]:
                 Comprobacion(boe_id=estatal, ruta=[nombre], descripcion=value.fuente.referencia, tipo="cifras", cifras=_como_se_imprimen(value))
             )  # fmt: skip
 
-    evidencia = _evidencia_deducciones()
+    evidencia = _evidencia_deducciones() if evidencia is None else evidencia
     for clave, comunidad in params.comunidades.items():
         boe_id = comunidad.fuente_principal.boe_id
         base = ["comunidades", clave]
@@ -254,6 +257,11 @@ def verificar(checks: Iterable[Comprobacion], texto_de: TextoDe) -> list[Resulta
         if clave not in textos:
             pagina = texto_de(check.boe_id, check.version)
             plano = texto_plano(pagina) if pagina else ""
+            if pagina and check.version is None:
+                # Format watch (never raises): a page read as empty looks like "every figure is gone".
+                from hacienda_gpt.ops import formatos
+
+                formatos.observar("boe_consolidado_html", pagina, contexto=check.boe_id)
             textos[clave] = (plano, _comprimido(plano)) if plano else None
         par = textos[clave]
         if par is None:

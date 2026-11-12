@@ -16,12 +16,13 @@ from __future__ import annotations
 from datetime import date
 import json
 from pathlib import Path
-from typing import Literal
-from xml.etree import ElementTree
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
 from hacienda_gpt import settings
+from hacienda_gpt.ops import formatos
+from hacienda_gpt.ops.formatos_boe import ReglasDocumentoXml, extraer_documento_xml
 
 Estado = Literal["pendiente", "convalidada", "derogada"]
 
@@ -36,26 +37,30 @@ class EstadoNorma(BaseModel):
     comprobado_el: date | None = None
 
 
-def estado_desde_xml(boe_id: str, xml: str | bytes, *, hoy: date | None = None) -> EstadoNorma:
-    """Read validation / repeal from the BOE's XML of the disposition (``/diario_boe/xml.php?id=…``)."""
-    root = ElementTree.fromstring(xml)
-
-    def texto(path: str) -> str:
-        node = root.find(path)
-        return " ".join((node.text or "").split()) if node is not None else ""
-
-    posteriores = [
-        (" ".join((p.findtext("palabra") or "").split()), " ".join((p.findtext("texto") or "").split()))
-        for p in root.iterfind(".//analisis/referencias/posteriores/posterior")
-    ]
-    derogacion = next(((p, t) for p, t in posteriores if p.upper().startswith("SE DEROGA")), None)
-    if texto(".//metadatos/estatus_derogacion") == "S" or derogacion is not None:
-        detalle = " ".join(derogacion) if derogacion else f"derogada el {texto('.//metadatos/fecha_derogacion')}"
+def estado_desde_datos(boe_id: str, datos: dict[str, Any], *, hoy: date | None = None) -> EstadoNorma:
+    """Validation / repeal from the plain extraction of the disposition's XML."""
+    reglas = formatos.reglas_de("boe_documento_xml", ReglasDocumentoXml)
+    posteriores = [(p["palabra"], p["texto"]) for p in datos["posteriores"]]
+    derogacion = next(((p, t) for p, t in posteriores if p.upper().startswith(reglas.prefijo_deroga)), None)
+    if datos["estatus_derogacion"] == reglas.valor_derogada or derogacion is not None:
+        detalle = " ".join(derogacion) if derogacion else f"derogada el {datos['fecha_derogacion']}"
         return EstadoNorma(boe_id=boe_id, estado="derogada", detalle=detalle, comprobado_el=hoy)
-    convalidacion = next(((p, t) for p, t in posteriores if "convalidaci" in p.lower()), None)
+    convalidacion = next(((p, t) for p, t in posteriores if reglas.marca_convalidacion in p.lower()), None)
     if convalidacion is not None:
         return EstadoNorma(boe_id=boe_id, estado="convalidada", detalle=" ".join(convalidacion), comprobado_el=hoy)
     return EstadoNorma(boe_id=boe_id, estado="pendiente", comprobado_el=hoy)
+
+
+def estado_desde_xml(boe_id: str, xml: str | bytes, *, hoy: date | None = None) -> EstadoNorma:
+    """Read validation / repeal from the BOE's XML of the disposition (``/diario_boe/xml.php?id=…``).
+
+    Which paths and words are read is data: the ``boe_documento_xml`` format spec.
+    A record whose format is no longer understood reads as "pendiente", which is
+    why every call is reported to the format watch.
+    """
+    datos = extraer_documento_xml(formatos.reglas_de("boe_documento_xml", ReglasDocumentoXml), xml)
+    formatos.observar("boe_documento_xml", xml, extraccion=datos, contexto=boe_id)
+    return estado_desde_datos(boe_id, datos, hoy=hoy)
 
 
 def _ruta(path: str | Path | None) -> Path:

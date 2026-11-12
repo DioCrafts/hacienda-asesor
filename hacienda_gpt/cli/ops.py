@@ -12,6 +12,10 @@ Meant for cron::
     # Revisa que todas las tareas han corrido y avisa de las que no.
     0 9 * * *   cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.ops doctor >> logs/ops.log 2>&1
 
+    # Revisa si algún formato externo ha dejado de entenderse y, con modelo configurado, lo diagnostica.
+    30 9 * * *  cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.ops formatos check --diagnose \
+                    >> logs/ops.log 2>&1
+
 See ``docs/operacion.md``.
 """
 
@@ -26,6 +30,8 @@ from typing import Any
 import click
 
 from hacienda_gpt import settings
+from hacienda_gpt.cli.formatos import cli as formatos_cli
+from hacienda_gpt.ops import formatos
 from hacienda_gpt.ops.vigia import EstadoIlegibleError, informar, leer_estado, revisar, vigilado
 from hacienda_gpt.proactive.entrega import (
     Canal,
@@ -147,6 +153,8 @@ def deliver(db_path: str | None, marcar_entregadas: bool) -> None:
 def doctor(max_horas: dict[str, float], state_path: str | None, notify: bool) -> None:
     """Comprueba que las tareas programadas han corrido y han terminado bien.
 
+    Incluye las fuentes externas cuyo formato ha dejado de entenderse (ver «ops formatos check»).
+
     Imprime los problemas en JSON, los envía por los canales configurados y
     termina con código 1 si hay alguno.
     """
@@ -156,6 +164,8 @@ def doctor(max_horas: dict[str, float], state_path: str | None, notify: bool) ->
         problemas = revisar(leer_estado(state_path), ahora=datetime.now(UTC), max_horas=limites)
     except EstadoIlegibleError as exc:
         problemas = [f"No se puede leer el estado de las tareas ({exc})."]
+    # A job can run and succeed while reading nothing, because a source changed its format.
+    problemas += formatos.problemas()
 
     avisados: list[str] = []
     errores_de_envio = 0
@@ -210,6 +220,10 @@ def run(nombre: str, comando: tuple[str, ...], state_path: str | None) -> None:
     detalle = f"terminó por la señal {-codigo}" if codigo < 0 else f"código de salida {codigo}"
     informar(nombre, ok=False, detalle=detalle, path=state_path)
     raise SystemExit(128 - codigo if codigo < 0 else codigo)
+
+
+# ``ops formatos check|diagnose|proposals|apply|reject|confirm|sources``
+cli.add_command(formatos_cli)
 
 
 if __name__ == "__main__":
