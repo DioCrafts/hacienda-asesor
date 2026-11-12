@@ -2,23 +2,31 @@
 // deterministic calculator (POST /simulate) — no model call, so it answers as
 // you type. The saved case is the baseline; edits are compared against it.
 
-import { Calculator, ChevronDown, Lightbulb, RotateCcw, Save, TriangleAlert, X } from "lucide-react";
+import { Calculator, ChevronDown, Lightbulb, Plus, RotateCcw, Save, Trash2, TriangleAlert, X } from "lucide-react";
 import clsx from "clsx";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
 import type { Benefit, Fact, Simulation } from "../api";
 import { ApiError, simulate } from "../api";
-import { formatMoney } from "../lib/presentation";
+import { newId } from "../lib/id";
+import { ETAPA_LABEL, factLabel, formatMoney } from "../lib/presentation";
 
-type FieldKind = "money" | "count" | "flag";
+type FieldKind = "money" | "count" | "year" | "flag";
 interface FieldDef {
   name: string;
   label: string;
   kind: FieldKind;
   hint?: string;
+  // Narrower amounts this field is the total of (the calculator keeps total ≥ sum of parts,
+  // and takes an empty total as that sum).
+  parts?: FieldDef[];
+}
+interface Group {
+  title: string;
+  fields: FieldDef[];
 }
 
-const GROUPS: Array<{ title: string; fields: FieldDef[] }> = [
+const GROUPS: Group[] = [
   {
     title: "Ingresos del año",
     fields: [
@@ -45,9 +53,9 @@ const GROUPS: Array<{ title: string; fields: FieldDef[] }> = [
     ],
   },
 ];
-// Shown only for residents of the Comunidad de Madrid (the one community whose
-// deductions the calculator applies).
-const MADRID_GROUP: { title: string; fields: FieldDef[] } = {
+// The deductions the Comunidad de Madrid computes with its own rules; the groups below add
+// the inputs of its other deductions.
+const MADRID_GROUP: Group = {
   title: "Deducciones de la Comunidad de Madrid",
   fields: [
     { name: "edad", label: "Tu edad", kind: "count", hint: "El alquiler solo deduce si tienes menos de 40 años" },
@@ -60,38 +68,284 @@ const MADRID_GROUP: { title: string; fields: FieldDef[] } = {
     { name: "base_imponible_resto_unidad_familiar", label: "Rentas netas de tu pareja", kind: "money", hint: "Cuentan para los límites de renta familiar" },
   ],
 };
-// For residents of the other communities whose deductions are computed from data.
-const REGIONAL_GROUP: { title: string; fields: FieldDef[] } = {
-  title: "Deducciones de tu comunidad",
-  fields: [
-    { name: "edad", label: "Tu edad", kind: "count", hint: "Varias deducciones (alquiler, mayores) dependen de ella" },
-    { name: "alquiler_vivienda_habitual", label: "Alquiler pagado en el año", kind: "money" },
-    { name: "hijos_nacidos_en_el_ejercicio", label: "Hijos nacidos o adoptados este año", kind: "count" },
-    { name: "gastos_guarderia", label: "Guardería o escuela infantil (0-3)", kind: "money" },
-    { name: "num_hijos_gastos_educativos", label: "Hijos escolarizados", kind: "count", hint: "Por los que pagas libros o clases" },
-    { name: "gastos_libros_texto", label: "Libros de texto y material escolar", kind: "money" },
-    { name: "gastos_ensenanza_idiomas", label: "Clases de idiomas de los hijos", kind: "money" },
-    { name: "cotizaciones_empleada_hogar", label: "Cotizaciones de empleada de hogar", kind: "money" },
-    { name: "gastos_cuidado_familiares", label: "Cuidado de hijos, mayores o personas con discapacidad", kind: "money", hint: "Pagado a cuidadores o centros, sin las cotizaciones" },
-    { name: "num_familiares_discapacidad_a_cargo", label: "Familiares con discapacidad a tu cargo", kind: "count" },
-    { name: "menores_acogidos", label: "Menores en acogimiento familiar", kind: "count" },
-    { name: "inversion_vivienda_habitual", label: "Compra o rehabilitación de tu vivienda habitual", kind: "money", hint: "Lo pagado en el año, incluida la hipoteca" },
-    { name: "donativos_autonomicos", label: "Donativos a entidades de tu comunidad", kind: "money", hint: "Fundaciones, cultura, investigación… según tu comunidad" },
-    { name: "inversion_empresas_nueva_creacion", label: "Inversión en empresas nuevas", kind: "money" },
-    { name: "gastos_eficiencia_energetica", label: "Energía renovable o autoconsumo en tu vivienda", kind: "money", hint: "Solo instalaciones renovables; ventanas o aislamiento no suelen contar" },
-    { name: "gastos_salud", label: "Gastos sanitarios", kind: "money", hint: "Honorarios de profesionales sanitarios no cubiertos por un seguro" },
-    { name: "gastos_deporte_cultura", label: "Gastos de deporte", kind: "money", hint: "Cuotas de gimnasio, clubes o federaciones" },
-    { name: "num_ascendientes_mayores_75", label: "Ascendientes mayores de 75 a tu cargo", kind: "count" },
-    { name: "grado_discapacidad", label: "Tu grado de discapacidad (%)", kind: "count" },
-    { name: "familia_numerosa", label: "Familia numerosa", kind: "flag" },
-    { name: "familia_numerosa_especial", label: "De categoría especial", kind: "flag" },
-    { name: "familia_monoparental", label: "Familia monoparental", kind: "flag" },
-    { name: "viudedad", label: "Soy viudo o viuda", kind: "flag" },
-    { name: "vivienda_en_municipio_rural", label: "La vivienda que compro está en un municipio rural", kind: "flag" },
-    { name: "municipio_rural_o_despoblacion", label: "Vivo en un municipio pequeño, rural o en riesgo de despoblación", kind: "flag", hint: "Cada comunidad lo define a su manera; el resultado te dirá el criterio" },
-    { name: "base_imponible_resto_unidad_familiar", label: "Rentas netas de tu pareja", kind: "money", hint: "Cuentan para los límites de renta familiar" },
-  ],
-};
+// Inputs of the regional deductions computed from data, by subject. Where a law covers only
+// part of an expense (only dental care, only interest…), the part is asked under its total.
+const REGIONAL_GROUPS: Group[] = [
+  {
+    title: "Tu comunidad · tú y tu hogar",
+    fields: [
+      { name: "edad", label: "Tu edad", kind: "count", hint: "Varias deducciones (alquiler, mayores) dependen de ella" },
+      { name: "grado_discapacidad", label: "Tu grado de discapacidad (%)", kind: "count" },
+      { name: "edad_conyuge", label: "Edad de tu cónyuge", kind: "count", hint: "En conjunta, a veces basta con que uno cumpla la edad" },
+      { name: "grado_discapacidad_conyuge", label: "Discapacidad de tu cónyuge (%)", kind: "count" },
+      { name: "base_imponible_resto_unidad_familiar", label: "Rentas netas de tu pareja", kind: "money", hint: "Cuentan para los límites de renta familiar" },
+      { name: "dias_desempleo", label: "Días del año en desempleo", kind: "count", hint: "Inscrito como demandante de empleo" },
+      { name: "familia_numerosa", label: "Familia numerosa", kind: "flag" },
+      { name: "familia_numerosa_especial", label: "De categoría especial", kind: "flag" },
+      { name: "familia_monoparental", label: "Familia monoparental", kind: "flag" },
+      { name: "viudedad", label: "Soy viudo o viuda", kind: "flag" },
+      { name: "ejercicio_viudedad", label: "Año en que enviudaste", kind: "year" },
+      { name: "victima_violencia_genero", label: "Tengo reconocida la condición de víctima de violencia de género", kind: "flag" },
+      { name: "victima_terrorismo", label: "Tengo reconocida la condición de víctima del terrorismo", kind: "flag" },
+    ],
+  },
+  {
+    title: "Tu comunidad · hijos y personas a tu cargo",
+    fields: [
+      { name: "hijos_nacidos_en_el_ejercicio", label: "Hijos nacidos o adoptados este año", kind: "count" },
+      { name: "hijos_nacidos_ultimos_3_ejercicios", label: "Nacidos o adoptados este año o los dos anteriores", kind: "count" },
+      { name: "num_hijos_primer_ciclo_infantil", label: "Hijos en primer ciclo de infantil (0-3)", kind: "count" },
+      { name: "num_hijos_gastos_educativos", label: "Hijos escolarizados", kind: "count", hint: "Por los que pagas libros o clases" },
+      { name: "gastos_guarderia", label: "Guardería o escuela infantil (0-3)", kind: "money" },
+      { name: "gastos_libros_texto", label: "Libros de texto y material escolar", kind: "money" },
+      { name: "gastos_ensenanza_idiomas", label: "Clases de idiomas de los hijos", kind: "money" },
+      { name: "cotizaciones_empleada_hogar", label: "Cotizaciones de empleada de hogar", kind: "money" },
+      { name: "gastos_cuidado_familiares", label: "Cuidado de hijos, mayores o personas con discapacidad", kind: "money", hint: "Pagado a cuidadores o centros, sin las cotizaciones" },
+      { name: "progenitores_trabajan", label: "Trabajamos los dos progenitores (o yo, si no hay otro)", kind: "flag", hint: "Por cuenta ajena o propia, de alta en la Seguridad Social o en una mutualidad" },
+      { name: "num_ascendientes_mayores_75", label: "Ascendientes mayores de 75 a tu cargo", kind: "count" },
+      { name: "num_familiares_discapacidad_a_cargo", label: "Familiares con discapacidad a tu cargo", kind: "count" },
+      { name: "num_familiares_discapacidad_65_a_cargo", label: "De ellos, con discapacidad del 65 % o más", kind: "count" },
+      { name: "num_personas_acogidas_mayores_o_discapacidad", label: "Mayores de 65 o con discapacidad que acoges", kind: "count", hint: "Sin parentesco cercano y sin cobrar por ello" },
+      { name: "menores_acogidos", label: "Menores en acogimiento familiar", kind: "count" },
+      { name: "dias_acogimiento", label: "Días del año de convivencia con ellos", kind: "count" },
+    ],
+  },
+  {
+    title: "Tu comunidad · vivienda y municipio",
+    fields: [
+      { name: "alquiler_vivienda_habitual", label: "Alquiler pagado en el año", kind: "money" },
+      { name: "dias_alquiler_vivienda_habitual", label: "Días del año con el alquiler en vigor", kind: "count", hint: "365 si fue todo el año; algunos límites se prorratean" },
+      { name: "num_declaraciones_mismo_alquiler", label: "Declaraciones que deducen por ese alquiler", kind: "count", hint: "Contando la tuya: 2 si lo compartes con otro inquilino" },
+      {
+        name: "inversion_vivienda_habitual",
+        label: "Compra o rehabilitación de tu vivienda habitual (total)",
+        kind: "money",
+        hint: "Todo lo pagado en el año, hipoteca incluida",
+        parts: [
+          { name: "pagos_adquisicion_vivienda", label: "Compra: capital y gastos", kind: "money", hint: "Sin los intereses" },
+          { name: "pagos_rehabilitacion_vivienda", label: "Rehabilitación", kind: "money", hint: "Sin los intereses" },
+          { name: "intereses_prestamo_vivienda", label: "Intereses del préstamo", kind: "money" },
+        ],
+      },
+      { name: "ejercicio_adquisicion_vivienda", label: "Año en que la compraste", kind: "year" },
+      { name: "num_declaraciones_misma_vivienda", label: "Declaraciones que deducen por esa vivienda", kind: "count", hint: "Contando la tuya: 2 si la compráis entre dos" },
+      { name: "primera_vivienda", label: "Es mi primera vivienda en propiedad", kind: "flag" },
+      { name: "vivienda_protegida", label: "Es una vivienda protegida", kind: "flag" },
+      { name: "vivienda_nueva_construccion", label: "Es de nueva construcción", kind: "flag" },
+      { name: "vivienda_en_municipio_rural", label: "La vivienda que compro está en un municipio rural", kind: "flag" },
+      {
+        name: "gastos_eficiencia_energetica",
+        label: "Obras de mejora energética en tu vivienda (total)",
+        kind: "money",
+        hint: "Aislamiento, ventanas, calderas, renovables…",
+        parts: [{ name: "gastos_instalaciones_renovables", label: "Energía renovable o autoconsumo", kind: "money", hint: "Placas solares, aerotermia…" }],
+      },
+      { name: "habitantes_municipio", label: "Habitantes de tu municipio", kind: "count", hint: "Varias deducciones exigen un municipio pequeño" },
+      { name: "ejercicio_traslado_residencia", label: "Año en que te mudaste a él", kind: "year" },
+      { name: "municipio_rural_o_despoblacion", label: "Vivo en un municipio pequeño, rural o en riesgo de despoblación", kind: "flag", hint: "Cada comunidad lo define a su manera; el resultado te dirá el criterio" },
+    ],
+  },
+  {
+    title: "Tu comunidad · salud, deporte y otros gastos",
+    fields: [
+      {
+        name: "gastos_salud",
+        label: "Gastos de salud (total)",
+        kind: "money",
+        hint: "Lo pagado y no cubierto por la sanidad pública ni por un seguro",
+        parts: [
+          { name: "gastos_honorarios_sanitarios", label: "Honorarios de médicos y otros sanitarios", kind: "money", hint: "Sin dentista ni salud mental" },
+          { name: "gastos_salud_bucodental", label: "Dentista y ortodoncia", kind: "money" },
+          { name: "gastos_salud_mental", label: "Psicología y psiquiatría", kind: "money" },
+          { name: "gastos_optica", label: "Gafas, lentillas y prótesis", kind: "money" },
+          { name: "gastos_enfermedades_raras", label: "Por una enfermedad rara", kind: "money" },
+          { name: "gastos_ela", label: "Por ELA", kind: "money" },
+        ],
+      },
+      {
+        name: "gastos_deporte_cultura",
+        label: "Deporte y cultura (total)",
+        kind: "money",
+        parts: [
+          { name: "gastos_deporte", label: "Deporte", kind: "money", hint: "Cuotas de gimnasio, clubes o federaciones" },
+          { name: "gastos_cultura", label: "Cultura", kind: "money", hint: "Entradas, abonos, cuotas de actividades culturales" },
+        ],
+      },
+      { name: "gastos_veterinarios", label: "Gastos veterinarios", kind: "money" },
+      { name: "adquisicion_vehiculo_electrico", label: "Compra de un vehículo eléctrico", kind: "money" },
+    ],
+  },
+  {
+    title: "Tu comunidad · donativos e inversiones",
+    fields: [
+      {
+        name: "donativos_autonomicos",
+        label: "Donativos a entidades de tu comunidad (total)",
+        kind: "money",
+        hint: "Cada comunidad incentiva destinos distintos: indica a qué fueron",
+        parts: [
+          { name: "donativos_medio_ambiente", label: "Medio ambiente", kind: "money" },
+          { name: "donativos_cultura_patrimonio", label: "Cultura y patrimonio", kind: "money" },
+          { name: "donativos_investigacion", label: "Investigación y universidades", kind: "money" },
+          { name: "donativos_cooperacion_fines_sociales", label: "Cooperación y fines sociales", kind: "money", hint: "Desarrollo, pobreza, discapacidad" },
+          { name: "donativos_lengua_propia", label: "Fomento de la lengua propia", kind: "money" },
+          { name: "donativos_fundaciones_autonomicas", label: "Fundaciones de tu comunidad", kind: "money", hint: "Inscritas en su registro" },
+        ],
+      },
+      { name: "inversion_empresas_nueva_creacion", label: "Inversión en empresas nuevas", kind: "money" },
+      { name: "inversion_economia_social", label: "Inversión en economía social", kind: "money", hint: "Cooperativas, sociedades laborales…" },
+    ],
+  },
+];
+const MADRID_NAMES = new Set(MADRID_GROUP.fields.map((f) => f.name));
+// Madrid: its own group first, then the rest without repeating what it already asks.
+const MADRID_EXTRA_GROUPS: Group[] = REGIONAL_GROUPS.map((group) => ({
+  title: group.title,
+  fields: group.fields.filter((f) => !MADRID_NAMES.has(f.name)),
+}));
+
+// ---- Detail of each child --------------------------------------------------
+
+// Expenses the editor offers per child (the calculator accepts any expense input per child;
+// other ones already in a saved detail are kept and shown too).
+const CHILD_EXPENSES: Array<{ name: string; label: string }> = [
+  { name: "gastos_guarderia", label: "Guardería" },
+  { name: "gastos_escolaridad", label: "Escolaridad" },
+  { name: "gastos_libros_texto", label: "Libros y material" },
+  { name: "gastos_ensenanza_idiomas", label: "Idiomas" },
+  { name: "gastos_uniformes_escolares", label: "Uniformes" },
+];
+
+interface ChildRow {
+  id: string;
+  fecha: string; // AAAA-MM-DD, or ""
+  edad: string; // age at 31 December; ignored when the date is given
+  discapacidad: string;
+  etapa: string;
+  adopcion: string; // year of the adoption, or ""
+  internacional: boolean;
+  multiple: boolean;
+  mesesGuarderia: string;
+  gastos: Record<string, string>;
+}
+type ApiChild = Record<string, unknown>;
+
+const emptyChild = (): ChildRow => ({ id: newId(), fecha: "", edad: "", discapacidad: "", etapa: "", adopcion: "", internacional: false, multiple: false, mesesGuarderia: "", gastos: {} });
+
+const text = (value: unknown): string => (typeof value === "number" || typeof value === "string" ? String(value) : "");
+
+/** The saved `descendientes` fact (JSON text of a list) as editor rows. */
+function parseChildrenFact(facts: Fact[]): { rows: ChildRow[]; broken: boolean; saved: boolean } {
+  const fact = facts.find((f) => f.name === "descendientes");
+  if (!fact) return { rows: [], broken: false, saved: false };
+  let list: unknown = fact.value;
+  if (typeof list === "string") {
+    try {
+      list = JSON.parse(list);
+    } catch {
+      return { rows: [], broken: true, saved: true };
+    }
+  }
+  if (!Array.isArray(list) || list.some((item) => typeof item !== "object" || item === null || Array.isArray(item))) return { rows: [], broken: true, saved: true };
+  const rows = (list as Array<Record<string, unknown>>).map((item): ChildRow => {
+    const gastos: Record<string, string> = {};
+    if (typeof item.gastos === "object" && item.gastos !== null) {
+      for (const [name, amount] of Object.entries(item.gastos as Record<string, unknown>)) gastos[name] = text(amount).replace(".", ",");
+    }
+    return {
+      id: newId(),
+      fecha: typeof item.fecha_nacimiento === "string" ? item.fecha_nacimiento : "",
+      edad: typeof item.fecha_nacimiento === "string" ? "" : text(item.edad),
+      discapacidad: text(item.grado_discapacidad),
+      etapa: typeof item.etapa_educativa === "string" ? item.etapa_educativa : "",
+      adopcion: text(item.ejercicio_adopcion),
+      internacional: item.adopcion_internacional === true,
+      multiple: item.parto_multiple === true,
+      mesesGuarderia: text(item.meses_guarderia),
+      gastos,
+    };
+  });
+  return { rows, broken: false, saved: true };
+}
+
+/** Age reached at 31 December of `year`, or null while the row does not say. */
+function childAge(row: ChildRow, year: number): number | null {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(row.fecha)) return year - Number(row.fecha.slice(0, 4));
+  const edad = parseNumber(row.edad);
+  return edad !== null && Number.isInteger(edad) ? edad : null;
+}
+
+/** What is wrong with a row, in words; null when it can be sent. */
+function childProblem(row: ChildRow, year: number): string | null {
+  const age = childAge(row, year);
+  if (age === null) return "indica su fecha de nacimiento o la edad que cumple en el año.";
+  if (age < 0) return `nació después de ${year}, el ejercicio que estás simulando.`;
+  if (age > 130) return "revisa la fecha de nacimiento o la edad.";
+  const whole = (raw: string, max: number) => {
+    const n = parseNumber(raw);
+    return raw.trim() === "" || (n !== null && Number.isInteger(n) && n >= 0 && n <= max);
+  };
+  if (!whole(row.discapacidad, 100)) return "el grado de discapacidad va de 0 a 100.";
+  if (!whole(row.mesesGuarderia, 12)) return "los meses de guardería van de 0 a 12.";
+  if (row.adopcion.trim() !== "") {
+    const adopcion = parseNumber(row.adopcion);
+    if (adopcion === null || !Number.isInteger(adopcion) || adopcion < year - age || adopcion > year) return `el año de adopción debe estar entre ${year - age} y ${year}.`;
+  }
+  for (const [name, raw] of Object.entries(row.gastos)) {
+    const n = parseNumber(raw);
+    if (raw.trim() !== "" && (n === null || n < 0)) return `revisa el importe de «${factLabel(name).toLowerCase()}».`;
+  }
+  return null;
+}
+
+/** A row as the API takes it (defaults left out, so equal details compare equal). */
+function childToApi(row: ChildRow): ApiChild {
+  const out: ApiChild = {};
+  if (/^\d{4}-\d{2}-\d{2}$/.test(row.fecha)) out.fecha_nacimiento = row.fecha;
+  else out.edad = parseNumber(row.edad);
+  const discapacidad = parseNumber(row.discapacidad);
+  if (discapacidad) out.grado_discapacidad = discapacidad;
+  if (row.etapa) out.etapa_educativa = row.etapa;
+  const adopcion = parseNumber(row.adopcion);
+  if (adopcion !== null) {
+    out.ejercicio_adopcion = adopcion;
+    if (row.internacional) out.adopcion_internacional = true;
+  }
+  if (row.multiple) out.parto_multiple = true;
+  const meses = parseNumber(row.mesesGuarderia);
+  if (meses !== null) out.meses_guarderia = meses;
+  const gastos: Record<string, number> = {};
+  for (const name of Object.keys(row.gastos).sort()) {
+    const n = parseNumber(row.gastos[name]);
+    if (n) gastos[name] = n;
+  }
+  if (Object.keys(gastos).length > 0) out.gastos = gastos;
+  return out;
+}
+
+/** The counts and per-child expense totals a complete detail determines. */
+function derivedFromChildren(rows: ChildRow[], year: number): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (rows.length === 0 || rows.some((row) => childProblem(row, year) !== null)) return out;
+  const arrival = (row: ChildRow) => year - (parseNumber(row.adopcion) ?? year - (childAge(row, year) ?? 0));
+  const count = (test: (row: ChildRow) => boolean) => String(rows.filter(test).length);
+  out.num_descendientes = String(rows.length);
+  out.num_descendientes_menores_3 = count((row) => (childAge(row, year) ?? 0) < 3);
+  out.hijos_nacidos_en_el_ejercicio = count((row) => arrival(row) === 0);
+  out.hijos_nacidos_ultimos_3_ejercicios = count((row) => arrival(row) <= 2);
+  out.hijos_adoptados_en_el_ejercicio = count((row) => parseNumber(row.adopcion) === year);
+  out.num_hijos_primer_ciclo_infantil = count((row) => row.etapa === "infantil_primer_ciclo");
+  const totals: Record<string, number> = {};
+  for (const row of rows) {
+    for (const [name, raw] of Object.entries(row.gastos)) {
+      const n = parseNumber(raw);
+      if (n) totals[name] = (totals[name] ?? 0) + n;
+    }
+  }
+  for (const [name, total] of Object.entries(totals)) out[name] = String(Math.round(total * 100) / 100).replace(".", ",");
+  return out;
+}
+
 const COMUNIDADES = [
   { value: "", label: "Sin indicar" },
   { value: "Andalucía", label: "Andalucía" },
@@ -117,7 +371,7 @@ const plain = (text: string) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
-const FIELDS = [...GROUPS, MADRID_GROUP, REGIONAL_GROUP].flatMap((g) => g.fields);
+const FIELDS = [...GROUPS, MADRID_GROUP, ...REGIONAL_GROUPS].flatMap((g) => g.fields).flatMap((f) => [f, ...(f.parts ?? [])]);
 const FLAGS = new Set(FIELDS.filter((f) => f.kind === "flag").map((f) => f.name));
 const TRIBUTACION = [
   { value: "individual", label: "Individual" },
@@ -143,10 +397,13 @@ interface SimulatorPanelProps {
   caseId: string | null;
   facts: Fact[];
   taxPeriod: string | null;
-  // Persist edited figures to the case. Resolves true when saved.
-  onSaveFact: (factName: string, value: number | string | boolean) => Promise<boolean>;
+  // Persist edited figures to the case (null removes the fact). Resolves true when saved.
+  onSaveFact: (factName: string, value: number | string | boolean | null) => Promise<boolean>;
   busy: boolean;
 }
+
+const INPUT_CLASS = "w-full rounded-lg border bg-surface px-3 py-2 text-[16px] text-ink focus:outline-none sm:text-[14px]";
+const SMALL_INPUT_CLASS = "w-full rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[16px] text-ink focus:border-primary focus:outline-none sm:text-[13.5px]";
 
 export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSaveFact, busy }: SimulatorPanelProps) {
   // Edits layered over the case facts: { field: raw text }. Empty = baseline.
@@ -154,6 +411,10 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   const [tributacion, setTributacion] = useState("individual");
   // null = keep whatever the case says.
   const [comunidadEdit, setComunidadEdit] = useState<string | null>(null);
+  // The detail of each child being edited; null = the one saved in the case.
+  const [childrenEdit, setChildrenEdit] = useState<ChildRow[] | null>(null);
+  // Breakdowns the user opened or closed by hand (otherwise open when they hold a figure).
+  const [openParts, setOpenParts] = useState<Record<string, boolean>>({});
   const [simulation, setSimulation] = useState<Simulation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -175,9 +436,29 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
     return match ? match.value : "Otra";
   }, [facts]);
 
+  const savedChildren = useMemo(() => parseChildrenFact(facts), [facts]);
+  const children = childrenEdit ?? savedChildren.rows;
+  const simulatedYear = simulation?.ejercicio;
+  const year = simulatedYear ?? (taxPeriod && /^\d{4}/.test(taxPeriod) ? Number(taxPeriod.slice(0, 4)) : new Date().getFullYear());
+  // Figures the detail of the children determines: shown read-only and never sent.
+  const derived = useMemo(() => derivedFromChildren(children, year), [children, year]);
+  const childProblems = useMemo(() => children.map((row) => childProblem(row, year)), [children, year]);
+
+  const value = (name: string) => derived[name] ?? edits[name] ?? baseline[name] ?? "";
+  // Totals smaller than their breakdown: the calculator would reject them, so they are not sent.
+  const partsSum = (field: FieldDef) => (field.parts ?? []).reduce((sum, part) => sum + Math.max(0, parseNumber(value(part.name)) ?? 0), 0);
+  const totalProblem = (field: FieldDef): string | null => {
+    if (!field.parts) return null;
+    const total = parseNumber(value(field.name)) ?? 0;
+    const sum = partsSum(field);
+    return total > 0 && sum > total + 0.005 ? `El desglose suma ${formatMoney(sum)}, más que este total (${formatMoney(total)}). Sube el total o corrige el desglose.` : null;
+  };
+  const invalid = childProblems.some((problem) => problem !== null) || FIELDS.some((field) => totalProblem(field) !== null);
+
   const cambios = useMemo(() => {
     const out: Record<string, unknown> = {};
     for (const [name, raw] of Object.entries(edits)) {
+      if (name in derived) continue;
       if (FLAGS.has(name)) {
         if (raw !== (baseline[name] ?? "false")) out[name] = raw === "true";
         continue;
@@ -187,10 +468,15 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
     }
     if (tributacion !== "individual") out.tributacion = tributacion;
     if (comunidadEdit !== null && comunidadEdit !== savedComunidad) out.comunidad_autonoma = comunidadEdit === "Otra" ? "otra comunidad" : comunidadEdit || null;
+    if (childrenEdit !== null || savedChildren.broken) {
+      const detail = children.map(childToApi);
+      // A saved detail that cannot be read is always replaced, even by an empty one.
+      if (savedChildren.broken || JSON.stringify(detail) !== JSON.stringify(savedChildren.rows.map(childToApi))) out.descendientes = detail;
+    }
     return out;
-  }, [edits, tributacion, baseline, comunidadEdit, savedComunidad]);
+  }, [edits, tributacion, baseline, comunidadEdit, savedComunidad, derived, childrenEdit, children, savedChildren]);
   const comunidad = comunidadEdit ?? savedComunidad;
-  const groups = /madrid/i.test(comunidad) ? [...GROUPS, MADRID_GROUP] : comunidad && comunidad !== "Otra" ? [...GROUPS, REGIONAL_GROUP] : GROUPS;
+  const groups = /madrid/i.test(comunidad) ? [...GROUPS, MADRID_GROUP, ...MADRID_EXTRA_GROUPS] : comunidad && comunidad !== "Otra" ? [...GROUPS, ...REGIONAL_GROUPS] : GROUPS;
   const changed = Object.keys(cambios).length > 0;
   const cambiosKey = JSON.stringify(cambios);
 
@@ -201,16 +487,17 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  // Debounced, last-request-wins simulation.
+  // Debounced, last-request-wins simulation. Nothing is sent while a figure is marked as
+  // inconsistent: the last good result stays on screen.
   useEffect(() => {
-    if (!open) return;
+    if (!open || invalid) return;
     const seq = ++requestSeq.current;
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      const year = taxPeriod ? Number(taxPeriod.slice(0, 4)) : null;
+      const requestYear = taxPeriod ? Number(taxPeriod.slice(0, 4)) : null;
       simulate({
         caseId,
-        ejercicio: caseId ? null : year,
+        ejercicio: caseId ? null : requestYear,
         escenarios: [
           { nombre: "Tu expediente", cambios: {} },
           { nombre: "Simulación", cambios: JSON.parse(cambiosKey) as Record<string, unknown> },
@@ -233,7 +520,7 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
       clearTimeout(timer);
       controller.abort();
     };
-  }, [open, caseId, taxPeriod, cambiosKey, facts]);
+  }, [open, caseId, taxPeriod, cambiosKey, facts, invalid]);
 
   if (!open) return null;
 
@@ -247,13 +534,21 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   async function saveAll() {
     setSaving(true);
     try {
-      for (const [name, value] of Object.entries(cambios)) {
-        const saveable = typeof value === "number" || typeof value === "boolean" || (name === "comunidad_autonoma" && typeof value === "string");
+      for (const [name, changedValue] of Object.entries(cambios)) {
+        if (name === "descendientes") {
+          const detail = changedValue as ApiChild[];
+          // An empty detail removes the saved one; otherwise it is stored as JSON text.
+          if (detail.length === 0 && !savedChildren.saved) continue;
+          if (!(await onSaveFact(name, detail.length > 0 ? JSON.stringify(detail) : null))) return;
+          continue;
+        }
+        const saveable = typeof changedValue === "number" || typeof changedValue === "boolean" || (name === "comunidad_autonoma" && typeof changedValue === "string");
         if (!saveable) continue;
-        if (!(await onSaveFact(name, value))) return;
+        if (!(await onSaveFact(name, changedValue))) return;
       }
       setEdits({});
       setComunidadEdit(null);
+      setChildrenEdit(null);
     } finally {
       setSaving(false);
     }
@@ -289,6 +584,198 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
     );
   }
 
+  function renderField(field: FieldDef) {
+    const current = value(field.name);
+    const dirty = field.name in cambios;
+    if (field.kind === "flag") {
+      return (
+        <label key={field.name} className="flex items-start gap-2.5 sm:col-span-2">
+          <input
+            type="checkbox"
+            checked={current === "true"}
+            onChange={(e) => setEdits((prev) => ({ ...prev, [field.name]: String(e.target.checked) }))}
+            className="mt-0.5 h-4 w-4 accent-[rgb(var(--primary))]"
+          />
+          <span>
+            <span className={clsx("text-[13.5px]", dirty ? "font-semibold text-primary-dark" : "text-ink")}>{field.label}</span>
+            {field.hint && <span className="block text-[11.5px] leading-snug text-muted">{field.hint}</span>}
+          </span>
+        </label>
+      );
+    }
+    const fromChildren = field.name in derived;
+    const sum = partsSum(field);
+    const problem = totalProblem(field);
+    const autoTotal = !!field.parts && sum > 0 && !(parseNumber(current) ?? 0);
+    const input = (
+      <label className="block">
+        <span className="text-[12.5px] text-ink-soft">{field.label}</span>
+        <span className="relative mt-1 block">
+          <input
+            value={current}
+            onChange={(e) => setEdits((prev) => ({ ...prev, [field.name]: e.target.value }))}
+            readOnly={fromChildren}
+            aria-invalid={problem ? true : undefined}
+            aria-describedby={problem ? `problem-${field.name}` : undefined}
+            inputMode={field.kind === "money" ? "decimal" : "numeric"}
+            maxLength={field.kind === "year" ? 4 : undefined}
+            placeholder={autoTotal ? String(Math.round(sum * 100) / 100).replace(".", ",") : field.kind === "year" ? "AAAA" : "0"}
+            className={clsx(
+              INPUT_CLASS,
+              field.kind === "money" && "pr-7",
+              fromChildren && "cursor-default bg-line/40 text-ink-soft",
+              problem ? "border-risk-high-fg" : dirty ? "border-primary" : "border-line focus:border-primary",
+            )}
+          />
+          {field.kind === "money" && <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-muted">€</span>}
+        </span>
+        {fromChildren ? (
+          <span className="mt-1 block text-[11.5px] leading-snug text-muted">Sale del detalle de cada hijo.</span>
+        ) : problem ? (
+          <span id={`problem-${field.name}`} role="alert" className="mt-1 block text-[11.5px] font-semibold leading-snug text-risk-high-fg">
+            {problem}
+          </span>
+        ) : autoTotal ? (
+          <span className="mt-1 block text-[11.5px] leading-snug text-muted">Sin total, se toma la suma del desglose: {formatMoney(sum)}.</span>
+        ) : (
+          field.hint && <span className="mt-1 block text-[11.5px] leading-snug text-muted">{field.hint}</span>
+        )}
+      </label>
+    );
+    if (!field.parts) return <div key={field.name}>{input}</div>;
+    const isOpen = openParts[field.name] ?? (sum > 0 || problem !== null);
+    return (
+      <div key={field.name} className="sm:col-span-2">
+        {input}
+        <details open={isOpen} onToggle={(e) => setOpenParts((prev) => ({ ...prev, [field.name]: (e.currentTarget as HTMLDetailsElement).open }))} className="group/parts mt-1.5">
+          <summary className="flex cursor-pointer list-none items-center gap-1 text-[12.5px] font-semibold text-primary-dark [&::-webkit-details-marker]:hidden">
+            <ChevronDown size={14} aria-hidden className="transition group-open/parts:rotate-180" />
+            Desglose por tipo{sum > 0 ? ` · ${formatMoney(sum)}` : " (opcional)"}
+          </summary>
+          <div className="mt-2 grid gap-3 border-l-2 border-line pl-3 sm:grid-cols-2">{field.parts.map(renderField)}</div>
+          <p className="mt-1.5 pl-3 text-[11.5px] leading-snug text-muted">Algunas deducciones solo admiten una parte de estos gastos. Cada importe va en una sola casilla.</p>
+        </details>
+      </div>
+    );
+  }
+
+  const setChild = (id: string, patch: Partial<ChildRow>) => setChildrenEdit(children.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+
+  function renderChild(row: ChildRow, index: number) {
+    const problem = childProblems[index];
+    const hasDate = row.fecha !== "";
+    const age = childAge(row, year);
+    const expenses = [...CHILD_EXPENSES, ...Object.keys(row.gastos).filter((name) => !CHILD_EXPENSES.some((e) => e.name === name)).map((name) => ({ name, label: factLabel(name) }))];
+    const small = (label: string, node: ReactNode) => (
+      <label className="block">
+        <span className="text-[12px] text-ink-soft">{label}</span>
+        <span className="mt-0.5 block">{node}</span>
+      </label>
+    );
+    return (
+      <li key={row.id} className="rounded-xl border border-line bg-surface px-3 py-3">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-[13px] font-semibold text-ink">
+            Hijo {index + 1}
+            {age !== null && age >= 0 && <span className="font-normal text-muted"> · {age === 0 ? `nacido en ${year}` : `${age} ${age === 1 ? "año" : "años"} a 31-12-${year}`}</span>}
+          </p>
+          <button type="button" onClick={() => setChildrenEdit(children.filter((r) => r.id !== row.id))} aria-label={`Quitar el hijo ${index + 1}`} title="Quitar" className="rounded-lg p-1.5 text-muted transition hover:bg-risk-high-bg hover:text-risk-high-fg">
+            <Trash2 size={15} />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          {small("Fecha de nacimiento", <input type="date" value={row.fecha} max={`${year}-12-31`} onChange={(e) => setChild(row.id, { fecha: e.target.value })} className={SMALL_INPUT_CLASS} />)}
+          {small(
+            `o edad a 31-12-${year}`,
+            <input
+              value={hasDate ? (age !== null && age >= 0 ? String(age) : "") : row.edad}
+              onChange={(e) => setChild(row.id, { edad: e.target.value })}
+              readOnly={hasDate}
+              inputMode="numeric"
+              placeholder="0 si nació este año"
+              className={clsx(SMALL_INPUT_CLASS, hasDate && "cursor-default bg-line/40 text-ink-soft")}
+            />,
+          )}
+          {small(
+            "Etapa educativa",
+            <select value={row.etapa} onChange={(e) => setChild(row.id, { etapa: e.target.value })} className={SMALL_INPUT_CLASS}>
+              <option value="">Sin indicar</option>
+              {Object.entries(ETAPA_LABEL).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>,
+          )}
+          {small("Discapacidad (%)", <input value={row.discapacidad} onChange={(e) => setChild(row.id, { discapacidad: e.target.value })} inputMode="numeric" placeholder="0" className={SMALL_INPUT_CLASS} />)}
+          {small("Meses en guardería este año", <input value={row.mesesGuarderia} onChange={(e) => setChild(row.id, { mesesGuarderia: e.target.value })} inputMode="numeric" placeholder="—" className={SMALL_INPUT_CLASS} />)}
+          {small("Año de adopción (si es adoptado)", <input value={row.adopcion} onChange={(e) => setChild(row.id, { adopcion: e.target.value })} inputMode="numeric" maxLength={4} placeholder="—" className={SMALL_INPUT_CLASS} />)}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
+          <label className="flex items-center gap-2 text-[12.5px] text-ink">
+            <input type="checkbox" checked={row.multiple} onChange={(e) => setChild(row.id, { multiple: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--primary))]" />
+            Parto o adopción múltiple
+          </label>
+          {row.adopcion.trim() !== "" && (
+            <label className="flex items-center gap-2 text-[12.5px] text-ink">
+              <input type="checkbox" checked={row.internacional} onChange={(e) => setChild(row.id, { internacional: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--primary))]" />
+              Adopción internacional
+            </label>
+          )}
+        </div>
+        <p className="mb-1 mt-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">Gastos de este hijo en el año</p>
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {expenses.map((expense) => (
+            <label key={expense.name} className="block">
+              <span className="text-[12px] text-ink-soft">{expense.label}</span>
+              <span className="relative mt-0.5 block">
+                <input
+                  value={row.gastos[expense.name] ?? ""}
+                  onChange={(e) => setChild(row.id, { gastos: { ...row.gastos, [expense.name]: e.target.value } })}
+                  inputMode="decimal"
+                  placeholder="0"
+                  aria-label={`${expense.label} del hijo ${index + 1}`}
+                  className={clsx(SMALL_INPUT_CLASS, "pr-6")}
+                />
+                <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[12px] text-muted">€</span>
+              </span>
+            </label>
+          ))}
+        </div>
+        {problem && (
+          <p role="alert" className="mt-2 text-[12px] font-semibold leading-snug text-risk-high-fg">
+            Hijo {index + 1}: {problem}
+          </p>
+        )}
+      </li>
+    );
+  }
+
+  const childrenEditor = (
+    <div className="sm:col-span-2">
+      <p className="text-[12.5px] font-semibold text-ink">Detalle de cada hijo</p>
+      <p className="mt-0.5 text-[11.5px] leading-snug text-muted">
+        Opcional. Con él no hace falta contar los hijos a mano y se aplican bien las deducciones que dependen de la edad, la etapa educativa, la discapacidad o los gastos de cada hijo (los
+        máximos «por hijo» se calculan hijo a hijo).
+      </p>
+      {savedChildren.broken && childrenEdit === null && (
+        <p role="alert" className="mt-1.5 text-[12px] font-semibold leading-snug text-risk-high-fg">
+          El detalle guardado en tu expediente no se puede leer. Vuelve a introducirlo y guárdalo.
+        </p>
+      )}
+      {children.length > 0 && <ul className="mt-2 space-y-2.5">{children.map(renderChild)}</ul>}
+      <button
+        type="button"
+        onClick={() => setChildrenEdit([...children, emptyChild()])}
+        disabled={children.length >= 20}
+        className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[12.5px] font-semibold text-primary-dark transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <Plus size={14} aria-hidden />
+        {children.length === 0 ? "Añadir el detalle de un hijo" : "Añadir otro hijo"}
+      </button>
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
       <button type="button" aria-label="Cerrar el simulador" className="absolute inset-0 bg-ink/40" onClick={onClose} />
@@ -307,10 +794,13 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
         </header>
 
         <div className="flex-1 space-y-5 overflow-y-auto px-5 pb-5 pt-3">
-          {error && (
+          {error && !invalid && (
             <p role="alert" className="flex gap-2 rounded-lg border border-risk-high-fg/30 bg-risk-high-bg px-3 py-2 text-[13px] text-ink-soft">
               <TriangleAlert size={15} aria-hidden className="mt-0.5 flex-shrink-0 text-risk-high-fg" />
-              {error}
+              <span>
+                {error}
+                {simulation && <span className="block text-[12px] text-muted">El resultado de abajo es el del último cálculo válido.</span>}
+              </span>
             </p>
           )}
 
@@ -324,11 +814,18 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
               <p className="mt-2 text-[13px] text-ink-soft">
                 Cuota del año: {formatMoney(sim.resultado.cuota_liquida)} · tipo medio {sim.resultado.tipo_medio_efectivo.replace(".", ",")} %
               </p>
-              {changed && (
-                <p className={clsx("mt-2 rounded-lg px-3 py-1.5 text-[13.5px] font-semibold", ahorro > 0 ? "bg-grounding-cited-bg text-grounding-cited-fg" : ahorro < 0 ? "bg-grounding-uncited-bg text-grounding-uncited-fg" : "bg-grounding-abstain-bg text-grounding-abstain-fg")}>
-                  {ahorro > 0 ? `Con estos cambios pagas ${formatMoney(ahorro)} menos` : ahorro < 0 ? `Con estos cambios pagas ${formatMoney(-ahorro)} más` : "Estos cambios no alteran el resultado"}
-                  {base && <span className="font-normal"> (antes: {formatMoney(base.resultado.resultado)})</span>}
+              {invalid ? (
+                <p role="status" className="mt-2 flex gap-2 rounded-lg bg-risk-high-bg px-3 py-1.5 text-[13px] font-semibold text-risk-high-fg">
+                  <TriangleAlert size={15} aria-hidden className="mt-0.5 flex-shrink-0" />
+                  Hay datos que no cuadran (marcados en rojo más abajo). Este resultado no incluye tus últimos cambios.
                 </p>
+              ) : (
+                changed && (
+                  <p className={clsx("mt-2 rounded-lg px-3 py-1.5 text-[13.5px] font-semibold", ahorro > 0 ? "bg-grounding-cited-bg text-grounding-cited-fg" : ahorro < 0 ? "bg-grounding-uncited-bg text-grounding-uncited-fg" : "bg-grounding-abstain-bg text-grounding-abstain-fg")}>
+                    {ahorro > 0 ? `Con estos cambios pagas ${formatMoney(ahorro)} menos` : ahorro < 0 ? `Con estos cambios pagas ${formatMoney(-ahorro)} más` : "Estos cambios no alteran el resultado"}
+                    {base && <span className="font-normal"> (antes: {formatMoney(base.resultado.resultado)})</span>}
+                  </p>
+                )
               )}
               {!hasIncome && <p className="mt-2 text-[12.5px] text-muted">Introduce al menos tu salario bruto para obtener una estimación.</p>}
             </section>
@@ -338,46 +835,8 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
             <fieldset key={group.title}>
               <legend className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">{group.title}</legend>
               <div className="grid gap-3 sm:grid-cols-2">
-                {group.fields.map((field) => {
-                  const value = edits[field.name] ?? baseline[field.name] ?? "";
-                  const dirty = field.name in cambios;
-                  if (field.kind === "flag") {
-                    return (
-                      <label key={field.name} className="flex items-start gap-2.5 sm:col-span-2">
-                        <input
-                          type="checkbox"
-                          checked={value === "true"}
-                          onChange={(e) => setEdits((prev) => ({ ...prev, [field.name]: String(e.target.checked) }))}
-                          className="mt-0.5 h-4 w-4 accent-[rgb(var(--primary))]"
-                        />
-                        <span>
-                          <span className={clsx("text-[13.5px]", dirty ? "font-semibold text-primary-dark" : "text-ink")}>{field.label}</span>
-                          {field.hint && <span className="block text-[11.5px] leading-snug text-muted">{field.hint}</span>}
-                        </span>
-                      </label>
-                    );
-                  }
-                  return (
-                    <label key={field.name} className="block">
-                      <span className="text-[12.5px] text-ink-soft">{field.label}</span>
-                      <span className="relative mt-1 block">
-                        <input
-                          value={value}
-                          onChange={(e) => setEdits((prev) => ({ ...prev, [field.name]: e.target.value }))}
-                          inputMode={field.kind === "count" ? "numeric" : "decimal"}
-                          placeholder="0"
-                          className={clsx(
-                            "w-full rounded-lg border bg-surface px-3 py-2 text-[16px] text-ink focus:outline-none sm:text-[14px]",
-                            field.kind === "money" && "pr-7",
-                            dirty ? "border-primary" : "border-line focus:border-primary",
-                          )}
-                        />
-                        {field.kind === "money" && <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-muted">€</span>}
-                      </span>
-                      {field.hint && <span className="mt-1 block text-[11.5px] leading-snug text-muted">{field.hint}</span>}
-                    </label>
-                  );
-                })}
+                {group.fields.map(renderField)}
+                {group.title === "Familia" && childrenEditor}
                 {group.title === "Familia" && (
                   <label className="block sm:col-span-2">
                     <span className="text-[12.5px] text-ink-soft">Comunidad autónoma</span>
@@ -423,7 +882,7 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
           {changed && (
             <div className="flex flex-wrap gap-2">
               {caseId && (
-                <button type="button" onClick={() => void saveAll()} disabled={saving || busy} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-[13px] font-semibold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50">
+                <button type="button" onClick={() => void saveAll()} disabled={saving || busy || invalid} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-[13px] font-semibold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50">
                   <Save size={14} aria-hidden />
                   {saving ? "Guardando…" : "Guardar en mi expediente"}
                 </button>
@@ -434,6 +893,7 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
                   setEdits({});
                   setTributacion("individual");
                   setComunidadEdit(null);
+                  setChildrenEdit(null);
                 }}
                 className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-soft hover:bg-line/60"
               >

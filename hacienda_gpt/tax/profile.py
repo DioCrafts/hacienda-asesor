@@ -7,15 +7,16 @@ calculator with no translation layer to drift out of sync.
 
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+import json
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from hacienda_gpt.tax.actividad import ActividadInput, ResultadoActividad, calcular_rendimiento_actividad
 from hacienda_gpt.tax.autonomos_params import load_autonomos_params
-from hacienda_gpt.tax.irpf import IRPFInput, IRPFResult, calcular_irpf
-from hacienda_gpt.tax.params import EjercicioNoDisponibleError
+from hacienda_gpt.tax.irpf import Descendiente, IRPFInput, IRPFResult, calcular_irpf
+from hacienda_gpt.tax.params import CAMPOS_GASTO, GASTOS_DESGLOSADOS, EjercicioNoDisponibleError
 
 # Profile facts and their value types ("string" | "number" | "boolean"); merged
 # into the extractor's vocabulary. Plain strings on purpose: this module must
@@ -84,9 +85,72 @@ PROFILE_FACT_TYPES: dict[str, str] = {
     "viudedad": "boolean",
     "vivienda_en_municipio_rural": "boolean",
     "municipio_rural_o_despoblacion": "boolean",
+    "num_hijos_gastos_educativos": "number",
+    "num_hijos_primer_ciclo_infantil": "number",
+    # Finer facts for regional deductions: spouse, municipality, parts of the year, sharing.
+    "edad_conyuge": "number",
+    "grado_discapacidad_conyuge": "number",
+    "num_familiares_discapacidad_65_a_cargo": "number",
+    "num_personas_acogidas_mayores_o_discapacidad": "number",
+    "habitantes_municipio": "number",
+    "dias_alquiler_vivienda_habitual": "number",
+    "dias_acogimiento": "number",
+    "dias_desempleo": "number",
+    "num_declaraciones_mismo_alquiler": "number",
+    "num_declaraciones_misma_vivienda": "number",
+    "progenitores_trabajan": "boolean",
+    "victima_violencia_genero": "boolean",
+    "victima_terrorismo": "boolean",
+    "vivienda_protegida": "boolean",
+    "vivienda_nueva_construccion": "boolean",
+    "primera_vivienda": "boolean",
+    "ejercicio_viudedad": "number",
+    "ejercicio_adquisicion_vivienda": "number",
+    "ejercicio_traslado_residencia": "number",
+    # Narrower expenses: parts of a broad total above (params.GASTOS_DESGLOSADOS).
+    "gastos_instalaciones_renovables": "number",
+    "gastos_deporte": "number",
+    "gastos_cultura": "number",
+    "gastos_honorarios_sanitarios": "number",
+    "gastos_salud_bucodental": "number",
+    "gastos_salud_mental": "number",
+    "gastos_optica": "number",
+    "gastos_enfermedades_raras": "number",
+    "gastos_ela": "number",
+    "pagos_adquisicion_vivienda": "number",
+    "pagos_rehabilitacion_vivienda": "number",
+    "intereses_prestamo_vivienda": "number",
+    "donativos_medio_ambiente": "number",
+    "donativos_cultura_patrimonio": "number",
+    "donativos_investigacion": "number",
+    "donativos_cooperacion_fines_sociales": "number",
+    "donativos_lengua_propia": "number",
+    "donativos_fundaciones_autonomicas": "number",
+    "gastos_veterinarios": "number",
+    "adquisicion_vehiculo_electrico": "number",
+    "inversion_economia_social": "number",
     # Drives the fiscal calendar (modelo 720), not the IRPF computation.
     "bienes_en_el_extranjero": "boolean",
 }
+
+# The detail of each child: ONE fact whose value is the JSON text of a list of objects with the
+# fields of :class:`hacienda_gpt.tax.irpf.Descendiente` (the fact store, the PUT endpoint and the
+# agent's ``registrar_hechos`` only carry strings, numbers and booleans). It is not offered to
+# the conversational extractor nor to the document reader: free text would not parse. It is
+# written by the simulator and by the agent, both through :func:`descendientes_a_texto`.
+DESCENDIENTES = "descendientes"
+DETALLE_FACT_TYPES: dict[str, str] = {DESCENDIENTES: "string"}
+MAX_DESCENDIENTES = 20
+# Counts the calculator derives from the detail (IRPFInput fills them when they are zero and
+# rejects a different figure): with the detail they are never asked for again.
+RECUENTOS_DEL_DETALLE: tuple[str, ...] = (
+    "num_descendientes",
+    "num_descendientes_menores_3",
+    "hijos_nacidos_en_el_ejercicio",
+    "hijos_nacidos_ultimos_3_ejercicios",
+    "hijos_adoptados_en_el_ejercicio",
+    "num_hijos_primer_ciclo_infantil",
+)
 
 # Facts of a self-employed activity, annual totals without VAT; also merged into the extractor's
 # vocabulary. Kept apart from PROFILE_FACT_TYPES because they are not IRPFInput fields:
@@ -166,15 +230,200 @@ def _capas(*sources: dict[str, Any] | None) -> list[dict[str, Any]]:
     return [{name: value for name, value in (source or {}).items() if value is not None} for source in sources]
 
 
+_MENSAJES_VALIDACION: dict[str, str] = {
+    "greater_than_equal": "debe ser mayor o igual que {ge}",
+    "greater_than": "debe ser mayor que {gt}",
+    "less_than_equal": "debe ser menor o igual que {le}",
+    "less_than": "debe ser menor que {lt}",
+    "int_parsing": "debe ser un número entero",
+    "int_from_float": "debe ser un número entero, sin decimales",
+    "int_type": "debe ser un número entero",
+    "decimal_parsing": "debe ser un importe numérico",
+    "decimal_type": "debe ser un importe numérico",
+    "bool_parsing": "debe ser verdadero o falso",
+    "bool_type": "debe ser verdadero o falso",
+    "string_type": "debe ser un texto",
+    "date_from_datetime_parsing": "debe ser una fecha con formato AAAA-MM-DD",
+    "date_parsing": "debe ser una fecha con formato AAAA-MM-DD",
+    "date_type": "debe ser una fecha con formato AAAA-MM-DD",
+    "literal_error": "debe ser uno de estos valores: {expected}",
+    "extra_forbidden": "campo desconocido",
+    "missing": "falta este dato",
+    "list_type": "debe ser una lista",
+    "dict_type": "debe ser un objeto {{campo: valor}}",
+    "model_type": "debe ser un objeto {{campo: valor}}",
+    "too_long": "admite como máximo {max_length} elementos",
+}
+
+
+def _problemas(exc: ValidationError) -> str:
+    """The errors of a pydantic validation as one Spanish sentence the user (or the agent) can act on."""
+    partes: list[str] = []
+    for error in exc.errors():
+        donde = ".".join(
+            f"hijo {p + 1}" if isinstance(p, int) and i and error["loc"][i - 1] == DESCENDIENTES else str(p)
+            for i, p in enumerate(error["loc"])
+        )
+        plantilla = _MENSAJES_VALIDACION.get(error["type"])
+        if error["type"] == "value_error":
+            mensaje = error["msg"].removeprefix("Value error, ")
+        elif plantilla is not None:
+            try:
+                mensaje = plantilla.format(**(error.get("ctx") or {})).replace("' or '", "' o '")
+            except (KeyError, IndexError):
+                mensaje = error["msg"]
+        else:
+            mensaje = error["msg"]
+        partes.append(f"{donde}: {mensaje}" if donde else mensaje)
+    return "; ".join(partes)
+
+
+def normalizar_descendientes(valor: Any) -> list[dict[str, Any]]:
+    """The detail of the children as a list of plain JSON-ready dicts, whatever shape it came in.
+
+    Accepts the JSON text kept in the fact store or a list of objects (tool
+    arguments, simulator). Each child is checked against
+    :class:`Descendiente` on its own; what depends on the tax year (the age
+    against the date of birth, the year of adoption) and on the other inputs
+    is checked by ``IRPFInput``. Raises :class:`DatosInvalidosError` with a
+    sentence in Spanish.
+    """
+    if isinstance(valor, str):
+        try:
+            valor = json.loads(valor) if valor.strip() else []
+        except json.JSONDecodeError as exc:
+            raise DatosInvalidosError(
+                "El detalle de los hijos («descendientes») no se puede leer: debe ser una lista JSON con un objeto "
+                'por hijo, por ejemplo [{"edad": 2, "gastos": {"gastos_guarderia": 1800}}].'
+            ) from exc
+    if not isinstance(valor, list):
+        raise DatosInvalidosError(
+            "El detalle de los hijos («descendientes») debe ser una lista con un objeto por hijo, por ejemplo "
+            '[{"edad": 2, "gastos": {"gastos_guarderia": 1800}}].'
+        )
+    if len(valor) > MAX_DESCENDIENTES:
+        raise DatosInvalidosError(f"El detalle de los hijos admite como máximo {MAX_DESCENDIENTES} hijos.")
+    hijos: list[dict[str, Any]] = []
+    for numero, item in enumerate(valor, start=1):
+        if isinstance(item, Descendiente):
+            item = item.model_dump(mode="json")
+        if not isinstance(item, dict):
+            raise DatosInvalidosError(f"Detalle de los hijos, hijo {numero}: debe ser un objeto {{campo: valor}}.")
+        try:
+            hijo = Descendiente.model_validate(item)
+        except ValidationError as exc:
+            raise DatosInvalidosError(f"Detalle de los hijos, hijo {numero}: {_problemas(exc)}.") from exc
+        if hijo.edad is None and hijo.fecha_nacimiento is None:
+            raise DatosInvalidosError(
+                f"Detalle de los hijos, hijo {numero}: falta la edad a 31 de diciembre o la fecha de nacimiento."
+            )
+        desconocidos = sorted(set(hijo.gastos) - CAMPOS_GASTO)
+        if desconocidos:
+            raise DatosInvalidosError(
+                f"Detalle de los hijos, hijo {numero}: gastos desconocidos ({', '.join(desconocidos)}). "
+                f"Gastos admitidos: {', '.join(sorted(CAMPOS_GASTO))}."
+            )
+        if any(importe < 0 for importe in hijo.gastos.values()):
+            raise DatosInvalidosError(f"Detalle de los hijos, hijo {numero}: los gastos no pueden ser negativos.")
+        hijo.gastos = {campo: importe for campo, importe in hijo.gastos.items() if importe}
+        hijos.append(hijo.model_dump(mode="json", exclude_defaults=True))
+    return hijos
+
+
+def descendientes_a_texto(valor: Any) -> str:
+    """Canonical JSON text of the children's detail, as the ``descendientes`` fact stores it."""
+    return json.dumps(normalizar_descendientes(valor), ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+
+
+def _decimal(valor: Any) -> Decimal | None:
+    if isinstance(valor, bool) or valor is None:
+        return None
+    try:
+        numero = Decimal(str(valor))
+    except InvalidOperation:
+        return None
+    return numero if numero.is_finite() else None
+
+
+def _conciliar(merged: dict[str, Any], origen: dict[str, int]) -> None:
+    """Make the layers agree where the calculator would otherwise reject them.
+
+    ``IRPFInput`` refuses a count that differs from the children's detail, a
+    total that differs from its per-child breakdown and a broad total smaller
+    than its parts. That is right for figures given together, but the layers
+    are written at different times: a count the advisor recorded months ago
+    must not make every later calculation fail once the detail is known. So a
+    derived figure (a count, a total) gives way when it comes from a LESS
+    specific layer than the detail or the parts that now determine it, or
+    when both sit in the stored facts (layer 0), which nobody wrote as one
+    consistent set. Figures given in the same explicit layer (``datos`` or
+    ``cambios``), or a derived figure in a more specific layer than its
+    detail, are left alone, and the calculator's error says what does not add up.
+    """
+    por_hijo: dict[str, Decimal] = {}
+    capa_detalle = -1
+    if DESCENDIENTES in merged:
+        try:
+            hijos = normalizar_descendientes(merged[DESCENDIENTES])
+        except DatosInvalidosError as exc:
+            if origen[DESCENDIENTES] == 0:
+                raise DatosInvalidosError(
+                    f"{exc} Es el detalle guardado en el expediente: vuelve a guardarlo desde el simulador."
+                ) from exc
+            raise
+        if not hijos:
+            # An empty list is "no detail": the counts are whatever the layers say.
+            del merged[DESCENDIENTES]
+        else:
+            merged[DESCENDIENTES] = hijos
+            capa_detalle = origen[DESCENDIENTES]
+            for hijo in hijos:
+                for campo, importe in (hijo.get("gastos") or {}).items():
+                    por_hijo[campo] = por_hijo.get(campo, Decimal(0)) + Decimal(str(importe))
+            for campo in (*RECUENTOS_DEL_DETALLE, *por_hijo):
+                if campo in merged and (origen[campo] == 0 or origen[campo] < capa_detalle):
+                    del merged[campo]
+
+    def cede(total: str, capa_partes: int) -> bool:
+        return origen[total] == 0 or origen[total] < capa_partes
+
+    for total, partes in GASTOS_DESGLOSADOS.items():
+        importe_total = _decimal(merged.get(total))
+        if not importe_total:
+            continue
+        suma, capa_partes = Decimal(0), -1
+        for parte in partes:
+            if parte in merged:
+                importe = _decimal(merged[parte])
+                capa = origen[parte]
+            elif parte in por_hijo:
+                importe, capa = por_hijo[parte], capa_detalle
+            else:
+                continue
+            if importe:
+                suma += importe
+                capa_partes = max(capa_partes, capa)
+        if suma > importe_total + Decimal("0.01") and cede(total, capa_partes):
+            # The calculator takes a missing total as the sum of its parts.
+            del merged[total]
+
+
 def _merge_irpf(*sources: dict[str, Any] | None) -> dict[str, Any]:
+    """Calculator fields of the layers, the later (more specific) layer winning.
+
+    The first layer is taken to be the stored case facts (see :func:`_conciliar`).
+    """
     merged: dict[str, Any] = {}
-    for source in sources:
+    origen: dict[str, int] = {}
+    for capa, source in enumerate(sources):
         for name, value in (source or {}).items():
             if name in IRPFInput.model_fields and name != "ejercicio" and value is not None:
                 # Counts arrive as floats from the fact store (NUMBER facts).
                 if name in _INTEGER_FIELDS and isinstance(value, float) and value.is_integer():
                     value = int(value)
                 merged[name] = value
+                origen[name] = capa
+    _conciliar(merged, origen)
     return merged
 
 
@@ -182,8 +431,18 @@ def _irpf_input(ejercicio: int, merged: dict[str, Any]) -> IRPFInput:
     try:
         return IRPFInput(ejercicio=ejercicio, **merged)
     except ValidationError as exc:
-        problems = "; ".join(f"{'.'.join(str(p) for p in e['loc'])}: {e['msg']}" for e in exc.errors())
-        raise DatosInvalidosError(f"Datos no válidos para el cálculo: {problems}") from exc
+        pista = (
+            " Con el detalle de cada hijo («descendientes») no hace falta indicar los recuentos de hijos ni los "
+            "totales de los gastos repartidos por hijo: se calculan a partir del detalle. Quita esos campos o "
+            "corrige el detalle."
+            if merged.get(DESCENDIENTES)
+            and any(
+                e["type"] == "value_error" and ("detalle de descendientes" in e["msg"] or "desglose por hijo" in e["msg"])
+                for e in exc.errors()
+            )
+            else ""
+        )
+        raise DatosInvalidosError(f"Datos no válidos para el cálculo: {_problemas(exc)}.{pista}") from exc
 
 
 _LINEA_REDUCCION_TRABAJO = "Reducción por obtención de rendimientos del trabajo"
@@ -230,10 +489,7 @@ def _calcular_actividad(datos: dict[str, Any]) -> ResultadoActividad:
     try:
         entrada = ActividadInput(**datos)
     except ValidationError as exc:
-        problems = "; ".join(
-            f"{'.'.join(str(p) for p in e['loc'])}: {e['msg'].removeprefix('Value error, ')}" for e in exc.errors()
-        )
-        raise DatosInvalidosError(f"Datos de la actividad no válidos: {problems}") from exc
+        raise DatosInvalidosError(f"Datos de la actividad no válidos: {_problemas(exc)}") from exc
     return calcular_rendimiento_actividad(entrada)
 
 

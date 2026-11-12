@@ -229,12 +229,69 @@ const FACT_LABEL: Record<string, string> = {
   donativos_autonomicos: "Donativos a entidades de tu comunidad",
   inversion_vivienda_habitual: "Compra o rehabilitación de vivienda habitual",
   inversion_empresas_nueva_creacion: "Inversión en empresas nuevas",
-  gastos_eficiencia_energetica: "Energía renovable o autoconsumo en tu vivienda",
-  gastos_salud: "Gastos sanitarios",
-  gastos_deporte_cultura: "Gastos de deporte",
+  gastos_eficiencia_energetica: "Obras de mejora energética en tu vivienda (total)",
+  gastos_salud: "Gastos de salud (total)",
+  gastos_deporte_cultura: "Gastos de deporte y cultura (total)",
   viudedad: "Viudo o viuda",
   vivienda_en_municipio_rural: "Vivienda comprada en municipio rural",
   municipio_rural_o_despoblacion: "Municipio rural o en riesgo de despoblación",
+  num_hijos_gastos_educativos: "Hijos escolarizados con gastos educativos",
+  num_hijos_primer_ciclo_infantil: "Hijos en primer ciclo de infantil (0-3)",
+  descendientes: "Detalle de cada hijo",
+  edad_conyuge: "Edad de tu cónyuge",
+  grado_discapacidad_conyuge: "Grado de discapacidad de tu cónyuge (%)",
+  num_familiares_discapacidad_65_a_cargo: "Familiares a cargo con discapacidad del 65 % o más",
+  num_personas_acogidas_mayores_o_discapacidad: "Mayores o personas con discapacidad acogidos sin contraprestación",
+  habitantes_municipio: "Habitantes de tu municipio",
+  dias_alquiler_vivienda_habitual: "Días del año con el alquiler en vigor",
+  dias_acogimiento: "Días del año de convivencia con los menores acogidos",
+  dias_desempleo: "Días del año en desempleo",
+  num_declaraciones_mismo_alquiler: "Declaraciones que deducen por el mismo alquiler",
+  num_declaraciones_misma_vivienda: "Declaraciones que deducen por la misma vivienda",
+  progenitores_trabajan: "Los dos progenitores trabajan",
+  victima_violencia_genero: "Víctima de violencia de género",
+  victima_terrorismo: "Víctima del terrorismo",
+  vivienda_protegida: "Vivienda protegida",
+  vivienda_nueva_construccion: "Vivienda de nueva construcción",
+  primera_vivienda: "Primera vivienda en propiedad",
+  ejercicio_viudedad: "Año en que enviudaste",
+  ejercicio_adquisicion_vivienda: "Año de compra de la vivienda habitual",
+  ejercicio_traslado_residencia: "Año del traslado de residencia",
+  gastos_instalaciones_renovables: "Instalaciones de energía renovable o autoconsumo",
+  gastos_deporte: "Gastos de deporte",
+  gastos_cultura: "Gastos de cultura",
+  gastos_honorarios_sanitarios: "Honorarios de profesionales sanitarios",
+  gastos_salud_bucodental: "Dentista y salud bucodental",
+  gastos_salud_mental: "Salud mental (psicología, psiquiatría)",
+  gastos_optica: "Gafas, lentillas y prótesis",
+  gastos_enfermedades_raras: "Gastos por enfermedades raras",
+  gastos_ela: "Gastos por ELA",
+  pagos_adquisicion_vivienda: "Compra de la vivienda habitual (sin intereses)",
+  pagos_rehabilitacion_vivienda: "Rehabilitación de la vivienda habitual (sin intereses)",
+  intereses_prestamo_vivienda: "Intereses del préstamo de la vivienda",
+  donativos_medio_ambiente: "Donativos a medio ambiente",
+  donativos_cultura_patrimonio: "Donativos a cultura y patrimonio",
+  donativos_investigacion: "Donativos a investigación y universidades",
+  donativos_cooperacion_fines_sociales: "Donativos a cooperación y fines sociales",
+  donativos_lengua_propia: "Donativos al fomento de la lengua propia",
+  donativos_fundaciones_autonomicas: "Donativos a fundaciones de tu comunidad",
+  gastos_veterinarios: "Gastos veterinarios",
+  adquisicion_vehiculo_electrico: "Compra de vehículo eléctrico",
+  inversion_economia_social: "Inversión en entidades de economía social",
+};
+
+/** Educational stages of a child (`descendientes[].etapa_educativa`), in school order. */
+export const ETAPA_LABEL: Record<string, string> = {
+  infantil_primer_ciclo: "Infantil, primer ciclo (0-3)",
+  infantil_segundo_ciclo: "Infantil, segundo ciclo (3-6)",
+  primaria: "Primaria",
+  eso: "ESO",
+  educacion_especial: "Educación especial",
+  bachillerato: "Bachillerato",
+  fp_basica: "FP básica",
+  fp_grado_medio: "FP de grado medio",
+  fp_grado_superior: "FP de grado superior",
+  universidad: "Universidad",
 };
 
 // Enum values the backend stores as ASCII slugs.
@@ -273,6 +330,35 @@ const MONEY_FACTS = new Set([
   "cotizaciones_empleada_hogar",
   "donativos_fundaciones_madrid",
   "base_imponible_resto_unidad_familiar",
+  "gastos_libros_texto",
+  "gastos_cuidado_familiares",
+  "donativos_autonomicos",
+  "inversion_vivienda_habitual",
+  "inversion_empresas_nueva_creacion",
+  "gastos_eficiencia_energetica",
+  "gastos_salud",
+  "gastos_deporte_cultura",
+  "gastos_instalaciones_renovables",
+  "gastos_deporte",
+  "gastos_cultura",
+  "gastos_honorarios_sanitarios",
+  "gastos_salud_bucodental",
+  "gastos_salud_mental",
+  "gastos_optica",
+  "gastos_enfermedades_raras",
+  "gastos_ela",
+  "pagos_adquisicion_vivienda",
+  "pagos_rehabilitacion_vivienda",
+  "intereses_prestamo_vivienda",
+  "donativos_medio_ambiente",
+  "donativos_cultura_patrimonio",
+  "donativos_investigacion",
+  "donativos_cooperacion_fines_sociales",
+  "donativos_lengua_propia",
+  "donativos_fundaciones_autonomicas",
+  "gastos_veterinarios",
+  "adquisicion_vehiculo_electrico",
+  "inversion_economia_social",
 ]);
 // Cents are kept when present: showing 6.502,57 € as "6503 €" would misstate the figure.
 const EUR = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -285,10 +371,27 @@ export function factLabel(name: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
+/** The `descendientes` fact holds the JSON text of a list (one object per child): say how
+ *  many there are rather than showing the JSON. It is edited in the simulator. */
+function childrenSummary(value: Fact["value"]): string {
+  let list: unknown = value;
+  if (typeof value === "string") {
+    try {
+      list = JSON.parse(value);
+    } catch {
+      return "No se puede leer · vuelve a guardarlo desde el simulador";
+    }
+  }
+  if (!Array.isArray(list)) return "No se puede leer · vuelve a guardarlo desde el simulador";
+  if (list.length === 0) return "Sin detalle";
+  return `${list.length} ${list.length === 1 ? "hijo" : "hijos"} · se edita en el simulador`;
+}
+
 export function factValue(fact: Pick<Fact, "name" | "value">): string {
   const { name, value } = fact;
   if (typeof value === "boolean") return value ? "Sí" : "No";
   if (typeof value === "number") return MONEY_FACTS.has(name) ? EUR.format(value) : String(value);
+  if (name === "descendientes") return childrenSummary(value);
   if (typeof value === "string") {
     if (name === "residencia_fiscal") return value === "ES" ? "España" : value === "OTHER" ? "Fuera de España" : value;
     const known = VALUE_LABEL[value];

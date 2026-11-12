@@ -45,13 +45,20 @@ EXPECTED_FACT_TYPE: dict[str, FactValueType] = {
 
 # Fiscal-profile facts (family, income breakdown, deductions) that feed the IRPF
 # calculator. Declared next to the calculator input they map onto.
-from hacienda_gpt.tax.profile import ACTIVIDAD_FACT_TYPES, PROFILE_FACT_TYPES  # noqa: E402
+from hacienda_gpt.tax.profile import ACTIVIDAD_FACT_TYPES, DETALLE_FACT_TYPES, PROFILE_FACT_TYPES  # noqa: E402
 
 EXPECTED_FACT_TYPE.update({name: FactValueType(kind) for name, kind in PROFILE_FACT_TYPES.items()})
 # Income and expenses of a self-employed activity (the profile bridge computes the net income from them).
 EXPECTED_FACT_TYPE.update({name: FactValueType(kind) for name, kind in ACTIVIDAD_FACT_TYPES.items()})
 
+# Structured facts (JSON text): accepted in the case, never asked from an extractor (see below).
+EXPECTED_FACT_TYPE.update({name: FactValueType(kind) for name, kind in DETALLE_FACT_TYPES.items()})
+
 KNOWN_FACT_NAMES: tuple[str, ...] = tuple(EXPECTED_FACT_TYPE.keys())
+# What the extractors may emit: every known fact except the structured ones, whose value is a
+# JSON document that free text from a model would not respect. Those are written by the
+# simulator and by the agent's ``registrar_hechos``, which validate them.
+EXTRACTOR_FACT_NAMES: tuple[str, ...] = tuple(name for name in KNOWN_FACT_NAMES if name not in DETALLE_FACT_TYPES)
 
 
 KNOWN_INTENTS = (
@@ -252,6 +259,42 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     hijos_nacidos_ultimos_3_ejercicios  → hijos nacidos o adoptados este año o en los dos anteriores
     base_imponible_resto_unidad_familiar → base imponible (rentas netas) del cónyuge y demás miembros de la unidad familiar
     miembros_unidad_familiar            → número de miembros de la unidad familiar
+    num_hijos_gastos_educativos         → hijos escolarizados por los que paga libros, clases o colegio
+    num_hijos_primer_ciclo_infantil     → hijos en el primer ciclo de educación infantil (0-3 años)
+    edad_conyuge                        → edad del cónyuge
+    grado_discapacidad_conyuge          → porcentaje de discapacidad reconocido al cónyuge
+    num_familiares_discapacidad_65_a_cargo → ascendientes o descendientes a su cargo con discapacidad del 65 % o más
+    num_personas_acogidas_mayores_o_discapacidad → mayores de 65 o personas con discapacidad, sin parentesco cercano, que acoge sin cobrar
+    habitantes_municipio                → número de habitantes del municipio donde vive
+    dias_alquiler_vivienda_habitual     → días del año con el contrato de alquiler de su vivienda en vigor
+    dias_acogimiento                    → días del año de convivencia con los menores acogidos
+    dias_desempleo                      → días del año inscrito como demandante de empleo
+    num_declaraciones_mismo_alquiler    → declaraciones (incluida la suya) con derecho a deducir por el mismo alquiler
+    num_declaraciones_misma_vivienda    → declaraciones (incluida la suya) con derecho a deducir por la compra u obras de la misma vivienda
+    ejercicio_viudedad                  → año en que enviudó
+    ejercicio_adquisicion_vivienda      → año en que compró su vivienda habitual
+    ejercicio_traslado_residencia       → año en que trasladó su residencia al municipio o a la comunidad
+    gastos_instalaciones_renovables     → de los gastos de eficiencia energética, lo pagado en instalaciones de energía renovable o autoconsumo
+    gastos_deporte                      → cuotas de gimnasio, clubes o federaciones deportivas
+    gastos_cultura                      → entradas, abonos o cuotas de actividades culturales
+    gastos_honorarios_sanitarios        → honorarios de médicos y otros profesionales sanitarios, SIN dentista ni salud mental
+    gastos_salud_bucodental             → dentista y ortodoncia
+    gastos_salud_mental                 → psicólogo o psiquiatra
+    gastos_optica                       → gafas graduadas, lentillas, prótesis y aparatos similares
+    gastos_enfermedades_raras           → gastos por una enfermedad rara
+    gastos_ela                          → gastos por esclerosis lateral amiotrófica (ELA)
+    pagos_adquisicion_vivienda          → pagado en el año por la compra de su vivienda habitual (capital y gastos, SIN intereses)
+    pagos_rehabilitacion_vivienda       → pagado en el año por rehabilitar su vivienda habitual (SIN intereses)
+    intereses_prestamo_vivienda         → intereses pagados en el año por el préstamo de su vivienda habitual
+    donativos_medio_ambiente            → donado a entidades de defensa del medio ambiente
+    donativos_cultura_patrimonio        → donado a cultura o patrimonio histórico
+    donativos_investigacion             → donado a investigación, desarrollo, innovación o universidades
+    donativos_cooperacion_fines_sociales → donado a cooperación al desarrollo, lucha contra la pobreza o discapacidad
+    donativos_lengua_propia             → donado al fomento de la lengua propia de la comunidad
+    donativos_fundaciones_autonomicas   → donado a fundaciones inscritas en el registro de la comunidad
+    gastos_veterinarios                 → gastos veterinarios de sus animales de compañía
+    adquisicion_vehiculo_electrico      → pagado en el año por comprar un vehículo eléctrico
+    inversion_economia_social           → invertido en cooperativas, sociedades laborales u otras entidades de economía social
     actividad_ingresos_integros         → autónomos: ingresos anuales de la actividad, sin IVA
     actividad_seguridad_social_autonomo → autónomos: cuotas de autónomos (RETA) pagadas en el año
     actividad_suministros               → autónomos: gasto anual de la actividad en luz, agua, gas, teléfono e internet, sin IVA
@@ -271,15 +314,21 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     num_familiares_discapacidad_a_cargo → ascendientes o descendientes con discapacidad que dependen de él
     menores_acogidos                    → menores en acogimiento familiar
     hijos_adoptados_en_el_ejercicio     → hijos adoptados en el año
-    donativos_autonomicos               → donado en el año a las entidades que incentiva su comunidad autónoma
-    inversion_vivienda_habitual         → pagado en el año por comprar o rehabilitar su vivienda habitual
+    donativos_autonomicos               → TOTAL donado en el año a las entidades que incentiva su comunidad autónoma
+    inversion_vivienda_habitual         → TOTAL pagado en el año por comprar o rehabilitar su vivienda habitual, intereses incluidos
     inversion_empresas_nueva_creacion   → invertido en acciones o participaciones de empresas nuevas
-    gastos_eficiencia_energetica        → pagado en instalaciones de energía renovable o autoconsumo en su vivienda
-    gastos_salud                        → gastos sanitarios no cubiertos por un seguro (honorarios médicos, dentista…)
-    gastos_deporte_cultura              → cuotas de gimnasio, clubes o actividades deportivas
+    gastos_eficiencia_energetica        → TOTAL pagado en obras de mejora energética de su vivienda habitual (aislamiento, ventanas, calderas, renovables…)
+    gastos_salud                        → TOTAL de gastos sanitarios no cubiertos por un seguro (honorarios médicos, dentista, gafas…); si detalla el tipo, emite además la parte (gastos_salud_bucodental, gastos_optica…)
+    gastos_deporte_cultura              → TOTAL de gastos de deporte y de cultura; si los distingue, emite además gastos_deporte o gastos_cultura
     viudedad                            → true si es viudo o viuda
     vivienda_en_municipio_rural         → true si la vivienda que compra está en un municipio rural o en riesgo de despoblación
     municipio_rural_o_despoblacion      → true si vive en un municipio pequeño, rural o en riesgo de despoblación
+    progenitores_trabajan               → true si él y, si lo hay, el otro progenitor o cónyuge trabajan (por cuenta ajena o propia) de alta en la Seguridad Social o mutualidad
+    victima_violencia_genero            → true si tiene reconocida la condición de víctima de violencia de género
+    victima_terrorismo                  → true si tiene reconocida la condición de víctima del terrorismo
+    vivienda_protegida                  → true si su vivienda habitual es de protección pública
+    vivienda_nueva_construccion         → true si la vivienda que compra es de nueva construcción
+    primera_vivienda                    → true si es la primera vivienda que tiene en propiedad
     bienes_en_el_extranjero             → true si tiene cuentas, valores o inmuebles fuera de España
     es_autonomo                         → true si trabaja por cuenta propia (autónomo)
     actividad_profesional               → true si su actividad es profesional (abogado, médico, programador, diseñador…); false si es empresarial (comercio, hostelería, taller…)
@@ -335,7 +384,7 @@ _RESPONSE_SCHEMA: dict[str, Any] = {
                     "type": "object",
                     "additionalProperties": False,
                     "properties": {
-                        "name": {"type": "string", "enum": list(KNOWN_FACT_NAMES)},
+                        "name": {"type": "string", "enum": list(EXTRACTOR_FACT_NAMES)},
                         "value_string": {"type": ["string", "null"]},
                         "value_number": {"type": ["number", "null"]},
                         "value_boolean": {"type": ["boolean", "null"]},
@@ -469,7 +518,7 @@ class OpenAIFactExtractor:
         facts: list[Fact] = []
         for raw in raw_facts:
             name = raw.get("name")
-            if name not in EXPECTED_FACT_TYPE:
+            if name not in EXPECTED_FACT_TYPE or name in DETALLE_FACT_TYPES:
                 continue
 
             expected = EXPECTED_FACT_TYPE[name]
@@ -541,7 +590,7 @@ _PROVIDER_SCHEMA: dict[str, Any] = {
                 "type": "object",
                 "additionalProperties": False,
                 "properties": {
-                    "name": {"type": "string", "enum": list(KNOWN_FACT_NAMES)},
+                    "name": {"type": "string", "enum": list(EXTRACTOR_FACT_NAMES)},
                     "value": {"type": "string"},
                     "confidence": {"type": "number"},
                 },

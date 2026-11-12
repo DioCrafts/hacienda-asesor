@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 import json
 import logging
-from typing import Any
+from typing import Any, get_args
 
 from pydantic import ValidationError
 
@@ -33,10 +33,16 @@ from hacienda_gpt.tax.conjunta import comparar_tributacion
 from hacienda_gpt.tax.irpf import IRPFInput, IRPFResult
 from hacienda_gpt.tax.iva import Modelo303Input, calcular_modelo_303
 from hacienda_gpt.tax.pagos_fraccionados import Modelo130Input, calcular_modelo_130
-from hacienda_gpt.tax.params import EjercicioNoDisponibleError, ejercicios_disponibles, load_params
+from hacienda_gpt.tax.params import EjercicioNoDisponibleError, EtapaEducativa, ejercicios_disponibles, load_params
 from hacienda_gpt.tax.patrimonio import PatrimonioInput, calcular_patrimonio
 from hacienda_gpt.tax.patrimonio_params import ejercicios_patrimonio_disponibles
-from hacienda_gpt.tax.profile import DatosInvalidosError, build_input_con_actividad
+from hacienda_gpt.tax.profile import (
+    DESCENDIENTES,
+    RECUENTOS_DEL_DETALLE,
+    DatosInvalidosError,
+    build_input_con_actividad,
+    descendientes_a_texto,
+)
 from hacienda_gpt.tax.simulador import simular
 from hacienda_gpt.tax.sociedades import (
     ComparacionInput,
@@ -53,6 +59,7 @@ from hacienda_gpt.tax.sucesiones_params import ejercicios_isd_disponibles
 logger = logging.getLogger(__name__)
 
 MAX_SEARCH_RESULTS = 10
+_ETAPAS_EDUCATIVAS = list(get_args(EtapaEducativa))
 
 SEARCH_TOOL = ToolSpec(
     name="buscar_fuentes",
@@ -123,7 +130,14 @@ RECORD_FACTS_TOOL = ToolSpec(
     description=(
         "Guarda en el expediente hechos que el usuario ha declarado expresamente en esta conversación (o que ha "
         "corregido). No registres inferencias ni supuestos tuyos. Valores esperados: residencia_fiscal 'ES' o "
-        "código ISO del país; periodo_fiscal año de 4 dígitos; importes en euros como número; booleanos true/false."
+        "código ISO del país; periodo_fiscal año de 4 dígitos; importes en euros como número; booleanos true/false. "
+        "`descendientes` (detalle de cada hijo) se guarda como texto JSON: una lista con un objeto por hijo, con "
+        "`edad` (a 31 de diciembre) o `fecha_nacimiento` (AAAA-MM-DD) y, si constan, grado_discapacidad, "
+        f"etapa_educativa ({' | '.join(_ETAPAS_EDUCATIVAS)}), ejercicio_adopcion, adopcion_internacional, "
+        "parto_multiple, meses_guarderia y gastos {campo: euros}; por ejemplo "
+        '[{"fecha_nacimiento": "2024-03-10", "etapa_educativa": "infantil_primer_ciclo", "gastos": '
+        '{"gastos_guarderia": 1800}}]. Envía siempre la lista completa (sustituye a la anterior); con ella no '
+        "registres num_descendientes ni los demás recuentos de hijos."
     ),
     input_schema={
         "type": "object",
@@ -178,8 +192,91 @@ _INPUT_FIELDS_DOC = (
     "donativos_autonomicos, inversion_vivienda_habitual, inversion_empresas_nueva_creacion, "
     "gastos_eficiencia_energetica, gastos_salud, gastos_deporte_cultura, viudedad (bool), "
     "vivienda_en_municipio_rural "
-    "(bool), base_imponible_resto_unidad_familiar, miembros_unidad_familiar"
+    "(bool), municipio_rural_o_despoblacion (bool), base_imponible_resto_unidad_familiar, miembros_unidad_familiar. "
+    "Datos más finos de las deducciones autonómicas — cónyuge: edad_conyuge, grado_discapacidad_conyuge; a cargo: "
+    "num_familiares_discapacidad_65_a_cargo, num_personas_acogidas_mayores_o_discapacidad; municipio: "
+    "habitantes_municipio; partes del año (días): dias_alquiler_vivienda_habitual, dias_acogimiento, dias_desempleo; "
+    "declaraciones entre las que se reparte la deducción (la del usuario incluida): "
+    "num_declaraciones_mismo_alquiler, num_declaraciones_misma_vivienda; condiciones (bool): progenitores_trabajan, "
+    "victima_violencia_genero, victima_terrorismo, vivienda_protegida, vivienda_nueva_construccion, "
+    "primera_vivienda; años (AAAA): ejercicio_viudedad, ejercicio_adquisicion_vivienda, "
+    "ejercicio_traslado_residencia; otros gastos: gastos_veterinarios, adquisicion_vehiculo_electrico, "
+    "inversion_economia_social. Algunos gastos son un TOTAL que admite desglose en partes excluyentes entre sí: "
+    "gastos_eficiencia_energetica (parte: gastos_instalaciones_renovables); gastos_deporte_cultura (gastos_deporte, "
+    "gastos_cultura); gastos_salud (gastos_honorarios_sanitarios —sin dentista ni salud mental—, "
+    "gastos_salud_bucodental, gastos_salud_mental, gastos_optica, gastos_enfermedades_raras, gastos_ela); "
+    "inversion_vivienda_habitual (pagos_adquisicion_vivienda y pagos_rehabilitacion_vivienda, ambos sin intereses, e "
+    "intereses_prestamo_vivienda); donativos_autonomicos (donativos_medio_ambiente, donativos_cultura_patrimonio, "
+    "donativos_investigacion, donativos_cooperacion_fines_sociales, donativos_lengua_propia, "
+    "donativos_fundaciones_autonomicas). Si solo das las partes, el total es su suma; si das también el total, no "
+    "puede ser menor que la suma de sus partes (el cálculo lo rechaza). Detalle de cada hijo: `descendientes`, una "
+    "lista con un objeto por hijo (ver el esquema). Con ese detalle NO indiques num_descendientes, "
+    "num_descendientes_menores_3, hijos_nacidos_en_el_ejercicio, hijos_nacidos_ultimos_3_ejercicios, "
+    "hijos_adoptados_en_el_ejercicio ni num_hijos_primer_ciclo_infantil, ni el total de los gastos que repartas por "
+    "hijo: se obtienen del detalle, y una cifra distinta se rechaza"
 )
+
+# One child of ``descendientes`` (hacienda_gpt.tax.irpf.Descendiente).
+_DESCENDIENTE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "edad": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Edad cumplida a 31 de diciembre del ejercicio (0 = nacido ese año).",
+        },
+        "fecha_nacimiento": {
+            "type": "string",
+            "description": "AAAA-MM-DD. Alternativa a `edad`; permite prorratear por días.",
+        },
+        "grado_discapacidad": {"type": "integer", "minimum": 0, "maximum": 100},
+        "etapa_educativa": {"type": "string", "enum": _ETAPAS_EDUCATIVAS},
+        "ejercicio_adopcion": {"type": "integer", "description": "Año de la adopción; omítelo si no es adoptado."},
+        "adopcion_internacional": {"type": "boolean"},
+        "parto_multiple": {
+            "type": "boolean",
+            "description": "Nacido en parto múltiple, o adoptado junto con otros en la misma fecha.",
+        },
+        "meses_guarderia": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12,
+            "description": "Meses del ejercicio en guardería o escuela infantil.",
+        },
+        "gastos": {
+            "type": "object",
+            "description": (
+                "Gastos del año pagados por ESTE hijo, {campo: euros}, con los mismos nombres que los gastos de "
+                "`datos`: gastos_guarderia, gastos_escolaridad, gastos_libros_texto, gastos_ensenanza_idiomas, "
+                "gastos_uniformes_escolares, gastos_optica, gastos_deporte… El total de cada gasto será la suma de "
+                "los hijos."
+            ),
+            "additionalProperties": {"type": "number", "minimum": 0},
+        },
+    },
+}
+_DESCENDIENTES_SCHEMA: dict[str, Any] = {
+    "type": "array",
+    "description": (
+        "Detalle de cada hijo con derecho al mínimo por descendientes (cada uno con `edad` o `fecha_nacimiento`). "
+        "Permite aplicar las deducciones autonómicas que dependen de la edad, la etapa educativa, la discapacidad "
+        "o los gastos de cada hijo. Los recuentos de hijos se calculan a partir de esta lista. Una lista vacía "
+        "quita el detalle guardado."
+    ),
+    "items": _DESCENDIENTE_SCHEMA,
+}
+
+
+def _datos_schema(description: str) -> dict[str, Any]:
+    """Schema of a ``{campo: valor}`` object of calculator inputs.
+
+    The scalar fields are listed in the tool description (``_INPUT_FIELDS_DOC``)
+    and checked by the calculator, whose error names the offending field; only
+    the structured input is spelled out here.
+    """
+    return {"type": "object", "description": description, "properties": {"descendientes": _DESCENDIENTES_SCHEMA}}
+
 
 CALCULATE_TOOL = ToolSpec(
     name="calcular_irpf",
@@ -199,10 +296,7 @@ CALCULATE_TOOL = ToolSpec(
         "additionalProperties": False,
         "properties": {
             "ejercicio": {"type": "integer", "description": "Año fiscal. Por defecto, el del expediente."},
-            "datos": {
-                "type": "object",
-                "description": "Cifras del contribuyente que añadir o corregir sobre el expediente.",
-            },
+            "datos": _datos_schema("Cifras del contribuyente que añadir o corregir sobre el expediente."),
             "escenarios": {
                 "type": "array",
                 "description": "Alternativas a comparar. Omítelo para un único cálculo.",
@@ -211,7 +305,7 @@ CALCULATE_TOOL = ToolSpec(
                     "additionalProperties": False,
                     "properties": {
                         "nombre": {"type": "string", "description": "Etiqueta corta, p. ej. 'Con plan de pensiones'."},
-                        "cambios": {"type": "object", "description": "Campos que cambian respecto a los datos base."},
+                        "cambios": _datos_schema("Campos que cambian respecto a los datos base."),
                     },
                     "required": ["nombre", "cambios"],
                 },
@@ -235,13 +329,16 @@ JOINT_TOOL = ToolSpec(
         "additionalProperties": False,
         "properties": {
             "ejercicio": {"type": "integer", "description": "Año fiscal. Por defecto, el del expediente."},
-            "conyuge_a": {
-                "type": "object",
-                "description": "Cifras del usuario que añadir o corregir sobre su expediente.",
-            },
+            "conyuge_a": _datos_schema(
+                "Cifras del usuario que añadir o corregir sobre su expediente. El detalle de los hijos comunes "
+                "(`descendientes`) va aquí."
+            ),
             "conyuge_b": {
                 "type": "object",
-                "description": "Cifras del otro cónyuge (salario, cotizaciones, retenciones…).",
+                "description": (
+                    "Cifras del otro cónyuge (salario, cotizaciones, retenciones…). No repitas aquí los gastos de "
+                    "los hijos que ya estén repartidos en `descendientes` de conyuge_a."
+                ),
             },
         },
         "required": ["conyuge_b"],
@@ -598,10 +695,7 @@ BENEFITS_TOOL = ToolSpec(
         "additionalProperties": False,
         "properties": {
             "ejercicio": {"type": "integer", "description": "Año fiscal. Por defecto, el del expediente."},
-            "datos": {
-                "type": "object",
-                "description": "Cifras del contribuyente que añadir o corregir sobre el expediente.",
-            },
+            "datos": _datos_schema("Cifras del contribuyente que añadir o corregir sobre el expediente."),
         },
     },
 )
@@ -986,7 +1080,16 @@ class Toolbox:
             b, actividad_b = build_input_con_actividad(
                 ejercicio=year, datos={"comunidad_autonoma": a.comunidad_autonoma, **otro}
             )
-            comparacion = comparar_tributacion(a, b)
+            try:
+                comparacion = comparar_tributacion(a, b)
+            except ValidationError as exc:
+                # The joint return adds both spouses' figures: the sum can contradict the detail of
+                # the children (a per-child expense given again by the other spouse) or a breakdown.
+                problemas = "; ".join(e["msg"].removeprefix("Value error, ") for e in exc.errors())
+                raise DatosInvalidosError(
+                    f"No se puede formar la declaración conjunta sumando los datos de los dos cónyuges: {problemas}. "
+                    "Los gastos repartidos por hijo en `descendientes` deben figurar solo en conyuge_a."
+                ) from exc
         except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
             return _error(str(exc))
         # Where each spouse's activity income came from (computed from the breakdown or given).
@@ -1085,6 +1188,9 @@ class Toolbox:
         except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
             return _error(str(exc))
         conocidos = {name for name in (*facts, *datos) if name in IRPFInput.model_fields or name == "estado_civil"}
+        if inp.descendientes:
+            # The counts of children are known through the detail of each child.
+            conocidos.update(RECUENTOS_DEL_DETALLE)
         beneficios = evaluar_beneficios(inp, conocidos=conocidos, params=params)
         payload = {
             "ejercicio": year,
@@ -1245,6 +1351,13 @@ class Toolbox:
             if not isinstance(name, str) or expected is None:
                 rejected.append(f"{name!r}: nombre de hecho desconocido")
                 continue
+            if name == DESCENDIENTES:
+                # Structured fact: checked child by child and stored as canonical JSON text.
+                try:
+                    value = descendientes_a_texto(value)
+                except DatosInvalidosError as exc:
+                    rejected.append(f"{name}: {exc}")
+                    continue
             coerced = _coerce_value(
                 expected=expected,
                 value_string=value if isinstance(value, str) else None,

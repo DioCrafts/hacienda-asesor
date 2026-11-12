@@ -13,6 +13,7 @@ from hacienda_gpt.tax.params import load_params
 from hacienda_gpt.tax.profile import (
     ACTIVIDAD_FACT_FIELDS,
     CORE_FIELDS,
+    RECUENTOS_DEL_DETALLE,
     ActividadPerfil,
     DatosInvalidosError,
     build_input_con_actividad,
@@ -102,6 +103,9 @@ def simular(
     ):
         # The activity's net income is known through its breakdown.
         provided.add("rendimiento_actividad_neto")
+    if inputs[0][1].descendientes:
+        # The counts of children are known through the detail of each child.
+        provided.update(RECUENTOS_DEL_DETALLE)
     return Simulacion(
         ejercicio=ejercicio,
         escenarios=[
