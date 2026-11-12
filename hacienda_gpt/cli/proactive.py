@@ -280,7 +280,17 @@ def _get(url: str, *, accept: str, timeout: int = 60, intentos: int = 3) -> byte
 def _sumario(dia: date) -> dict[str, Any] | None:
     raw = _get(_SUMARIO_URL.format(dia=dia.strftime("%Y%m%d")), accept="application/json")
     time.sleep(0.3)
-    return json.loads(raw) if raw else None
+    if not raw:
+        return None
+    try:
+        payload: dict[str, Any] = json.loads(raw)
+    except ValueError:
+        # An HTML error page served with 200 never reaches the parser: tell the format watch before failing.
+        from hacienda_gpt.ops import formatos
+
+        formatos.observar("boe_sumario", raw.decode("utf-8", errors="replace"), contexto=dia.isoformat())
+        raise
+    return payload
 
 
 def _xml(boe_id: str) -> bytes | None:
