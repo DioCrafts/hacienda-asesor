@@ -10,7 +10,8 @@ import formatos_util as util
 import pytest
 
 from hacienda_gpt import settings
-from hacienda_gpt.cli import formatos as cli_formatos, ops as ops_module
+from hacienda_gpt.cli import formatos as cli_formatos
+from hacienda_gpt.cli import ops as ops_module
 from hacienda_gpt.cli.ops import cli
 from hacienda_gpt.ops import formatos, formatos_agente, vigia
 from hacienda_gpt.ops.formatos import Fallo, Fuente, Lectura, Observacion, calcular_estado
@@ -123,8 +124,12 @@ def test_consolidado_markup_change_is_only_a_warning() -> None:
 def test_boletin_and_teac_canaries() -> None:
     listado = (util.FIXTURES / "boletines" / "bocm_listing.html").read_text(encoding="utf-8")
     assert _canarios("boletin_madrid_bocm", listado, "IRPF") == set()
-    assert _canarios("boletin_madrid_bocm", listado.replace('class="resultado"', 'class="hit"'), "IRPF") == {"resultados"}
-    assert _canarios("boletin_madrid_bocm", listado.replace("<h3>", "<p>").replace("</h3>", "</p>"), "IRPF") == {"titulos"}
+    assert _canarios("boletin_madrid_bocm", listado.replace('class="resultado"', 'class="hit"'), "IRPF") == {
+        "resultados"
+    }
+    assert _canarios("boletin_madrid_bocm", listado.replace("<h3>", "<p>").replace("</h3>", "</p>"), "IRPF") == {
+        "titulos"
+    }
 
     for nombre in ("criterio_dl.html", "criterio_tabla.html"):
         ficha = (util.FIXTURES / "teac" / nombre).read_text(encoding="utf-8")
@@ -256,9 +261,7 @@ def test_an_unreadable_state_file_is_set_aside(vigilancia) -> None:
 
 
 def _revisar(sumario_de, xml_de, hoy=date(2026, 11, 13)):
-    return novedades.revisar(
-        [date(2026, 11, 10), date(2026, 11, 11)], sumario_de=sumario_de, xml_de=xml_de, hoy=hoy
-    )
+    return novedades.revisar([date(2026, 11, 10), date(2026, 11, 11)], sumario_de=sumario_de, xml_de=xml_de, hoy=hoy)
 
 
 def test_revisar_reports_what_it_reads_without_changing_its_result(vigilancia, monkeypatch) -> None:
@@ -307,7 +310,9 @@ def test_revisar_flags_a_run_where_no_disposition_has_an_analysis(vigilancia, mo
 def test_documents_reader_reports_counters_only(vigilancia) -> None:
     from hacienda_gpt.tax.documentos import analizar_documento
 
-    texto = "CERTIFICADO DE RETENCIONES\nPerceptor: Ana Pérez Gómez NIF 12345678Z\nRetribuciones dinerarias 41.250,37\n" * 2
+    texto = (
+        "CERTIFICADO DE RETENCIONES\nPerceptor: Ana Pérez Gómez NIF 12345678Z\nRetribuciones dinerarias 41.250,37\n" * 2
+    )
     for _ in range(5):
         proveedor = util.ProveedorGuionizado(
             [{"tipo_documento": "Certificado de retenciones", "hechos": [{"name": "retenciones", "value": "7000", "evidencia": "no está en el documento"}]}]  # fmt: skip

@@ -792,6 +792,46 @@ cláusula de efectos citada sea la que rige. Por eso existe la revisión humana
 y por eso la calculadora avisa mientras no se ha hecho. Detalle y pasos en
 [`docs/operacion.md`](docs/operacion.md#5-recodificación-automática-de-parámetros).
 
+### Deriva de formatos: que una fuente cambie de forma sin que nadie se entere
+
+Las leyes cambian y el BOE lo publica; lo que nadie publica es que una clave del JSON del sumario
+se ha renombrado o que el análisis jurídico ha cambiado de sitio en el XML. El lector devuelve
+entonces «nada», que es exactamente lo que devuelve un día sin novedades. `hacienda_gpt/ops/formatos.py`
+convierte ese silencio en un estado visible:
+
+- **Canarios deterministas.** Cada lector de un formato externo declara lo que da por supuesto
+  (un sumario de día laborable tiene disposiciones en la sección I; una página consolidada tiene
+  artículos con fecha de versión; entre quince disposiciones recientes alguna trae análisis…) y lo
+  comprueba en cada lectura real. Resultado por fuente: `ok`, `degradada` o `rota`, visible en
+  `ops doctor` y por los canales de aviso de siempre. Sin modelo.
+- **El formato es un dato.** Las claves, rutas XML, XPath, etiquetas y expresiones regulares de
+  los lectores del BOE, del TEAC y de los boletines autonómicos están en specs versionadas
+  (`hacienda_gpt/ops/data/formatos/*.json`). La versión 1 es el comportamiento de siempre, con
+  pruebas que lo comparan con el código anterior sobre muestras reales.
+- **Diagnóstico agéntico.** Ante una fuente que falla, un modelo recibe los supuestos del lector,
+  la última muestra bien leída y la nueva, y debe decir qué ha cambiado citando literalmente la
+  muestra. Si propone una spec nueva, un **ensayo determinista** la ejecuta sobre las dos
+  muestras: debe reproducir exactamente lo que se extraía de la antigua y cumplir los canarios en
+  la nueva. Después, una **segunda llamada independiente** intenta refutar el diagnóstico. Lo que
+  no converge, o lo que exige cambiar código, acaba en un informe para un desarrollador con las
+  muestras adjuntas; la fuente sigue marcada. El agente nunca puede declarar sana una fuente.
+- **Nada se aplica solo** salvo con `FORMAT_AUTO_APPLY=true` (por defecto `false`):
+  `ops formatos apply|reject|confirm`.
+- **Documentos de usuarios.** Solo contadores por tipo de documento; nunca contenido. El análisis
+  de estructura es opcional (`FORMAT_DOCUMENT_SKELETONS`), trabaja sobre un esqueleto anónimo y
+  sus propuestas las revisa siempre una persona.
+
+```bash
+uv run python -m hacienda_gpt.cli.ops formatos check              # estado, sin modelo
+uv run python -m hacienda_gpt.cli.ops formatos probe              # lee ahora del BOE y comprueba
+uv run python -m hacienda_gpt.cli.ops formatos check --diagnose   # + diagnóstico si hay modelo
+uv run python -m hacienda_gpt.cli.ops formatos proposals
+```
+
+Inventario de fuentes y de lo que queda por instrumentar: `docs/formatos_inventario.md`. Operación
+paso a paso: `docs/operacion.md`, sección 6. **No se ha ejecutado contra un modelo real**: las
+pruebas usan un proveedor guionizado; ver «Antes de fiarte» en la guía de operación.
+
 ### Autónomos, pérdidas y declaración conjunta
 
 - **Autónomos en estimación directa simplificada** — `calcular_rendimiento_actividad`

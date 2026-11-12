@@ -17,6 +17,7 @@ uv run python -m hacienda_gpt.cli.ops --help
 | `run <nombre> -- <comando...>` | Ejecuta el comando bajo vigilancia: apunta el resultado y avisa al *healthcheck*. |
 | `deliver` | Envía por los canales configurados los avisos que aún no han salido. |
 | `doctor` | Revisa que las tareas han corrido y han terminado bien; avisa de las que no. |
+| `formatos …` | Vigila si los formatos externos (BOE, boletines, documentos) siguen entendiéndose; ver la sección 6. |
 
 ## 1. Líneas de cron
 
@@ -346,6 +347,113 @@ de cada ejecución está acotado por la variable de repositorio
   no la ve.
 - El control comprueba que las cifras están en las citas, no que signifiquen lo
   que la codificación dice. Para eso están el revisor, sus casos y tú.
+
+## 6. Deriva de formatos: saber que una fuente ha dejado de entenderse
+
+Una tarea puede correr, terminar bien y no haber leído nada, porque el BOE (o un boletín, o el
+TEAC) ha cambiado una clave, una ruta o un rótulo. `ops doctor` no lo veía. Ahora cada lector
+informa, en cada lectura real, de si lo que ha leído cumple lo que da por supuesto. El inventario
+de fuentes, supuestos y síntomas está en [`docs/formatos_inventario.md`](formatos_inventario.md).
+
+| Subcomando | Qué hace | ¿Usa un modelo? |
+|---|---|---|
+| `ops formatos check [--diagnose]` | Estado de cada fuente (`ok`, `degradada`, `rota`) según las últimas lecturas; avisa por los canales `NOTIFY_*`. Con `--diagnose`, además diagnostica lo que falla. | Solo con `--diagnose` y si hay modelo configurado |
+| `ops formatos probe` | Lee ahora del BOE una muestra de cada formato con los lectores reales. Para CI o para comprobar una spec. | No |
+| `ops formatos diagnose [--fuente X] [--force] [--dry-run] [--auto-apply]` | Pide el diagnóstico de las fuentes que fallan y deja una propuesta o un informe. | Sí |
+| `ops formatos proposals [--estado E] [--show ID]` | Lista propuestas e informes. | No |
+| `ops formatos apply ID` / `reject ID --motivo …` / `confirm ID` | Pone en vigor una spec, la descarta (restaurando la anterior si ya estaba aplicada) o la da por revisada. | No |
+| `ops formatos sources` | Qué fuentes se vigilan, qué supone cada lector y con qué versión de spec. | No |
+
+### Puesta en marcha
+
+1. No hay nada que activar: `FORMAT_WATCH` está encendido por defecto y las tareas que ya tienes
+   (`boe-novedades`, `boe_watch`, `boe-impact`, `params-verify`, `normas-check`, los rastreadores,
+   la subida de documentos) empiezan a dejar observaciones en `FORMAT_STATE_PATH` y muestras en
+   `FORMAT_DIR`. Ambas rutas deben estar en un volumen persistente, como `JOBS_STATE_PATH`.
+2. Añade una línea de cron **después** de las tareas diarias:
+
+   ```cron
+   30 9 * * *  cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.ops formatos check --diagnose >> logs/ops.log 2>&1
+   ```
+
+   Sin clave de modelo, `--diagnose` no hace nada salvo decirlo (`"llm": "no configurado…"`); el
+   estado determinista se informa igual.
+3. `ops doctor` ya incluye las fuentes degradadas o rotas entre sus problemas: si lo tienes
+   programado, te llegará por el mismo canal sin más cambios.
+4. En GitHub Actions, `.github/workflows/formatos.yml` ejecuta `ops formatos probe
+   --fail-on-problem` de lunes a viernes: una ejecución en rojo significa que un formato del BOE
+   ya no se entiende (o que no se pudo leer); las muestras quedan como artefacto.
+
+### Ajustes
+
+| Variable | Por defecto | Para qué |
+|---|---|---|
+| `FORMAT_WATCH` | `true` | Registrar observaciones en cada lectura. |
+| `FORMAT_STATE_PATH` | `./data/_formatos_state.json` | Estado y últimas 40 observaciones por fuente. |
+| `FORMAT_DIR` | `./data/formatos` | Muestras, specs aplicadas (`specs/`, con historial), propuestas e informes. |
+| `FORMAT_AUTO_APPLY` | `false` | Aplicar sin persona lo que supere el ensayo determinista **y** la reflexión. |
+| `FORMAT_MAX_ITER` | `3` | Rondas de diagnóstico por fuente (hasta 2 llamadas cada una). |
+| `FORMAT_MODEL`, `FORMAT_REVIEWER_MODEL` | vacío | Modelo del diagnóstico y de la reflexión (distintos = revisión más independiente). |
+| `FORMAT_DOCUMENT_SKELETONS` | `false` | Guardar esqueletos anónimos de documentos mal leídos (ver `docs/privacidad.md`). |
+
+Las llamadas se miden con el propósito `formatos` / `formatos-revisor` y respetan
+`LLM_DAILY_BUDGET_USD`: si el presupuesto está agotado, el diagnóstico lo dice y no deja nada a
+medias; se reintenta en la siguiente ejecución.
+
+### Cuando llega un aviso
+
+1. **Mira qué falla**: `ops formatos check --no-notify`. Cada problema nombra el canario y da el
+   detalle («No se ha leído ninguna disposición de la sección I…»).
+2. **Si hay una propuesta** (`resultado: spec_propuesta`): `ops formatos proposals --show ID`.
+   Lee `que_ha_cambiado`, compara `reglas_propuestas` con la spec vigente (`ops formatos sources`)
+   y comprueba que el cambio es el mínimo que explica el fallo. El ensayo ya ha comprobado que la
+   muestra antigua se lee igual y que la nueva cumple los canarios; lo que te toca a ti es decidir
+   si la explicación es verdadera.
+3. **Aplica** con `ops formatos apply ID`. La siguiente lectura real de esa fuente la devuelve a
+   `ok` por sí sola; hasta entonces sigue marcada. Si no te convence: `ops formatos reject ID
+   --motivo "…"`.
+4. **Recupera lo perdido**. La spec arregla las lecturas futuras, no las pasadas: si el sumario
+   estuvo sin leerse unos días, repite `boe-novedades --desde AAAA-MM-DD`.
+5. **Si es un informe** (`informe_para_desarrollador`, estado `sin_converger`): el cambio no se
+   resuelve con datos o el agente no ha convergido. En `FORMAT_DIR/informes/<ID>/` están el
+   informe, la muestra buena y la nueva. La fuente sigue rota hasta que alguien toque el lector.
+   `ops formatos confirm ID` lo da por leído.
+6. Con `FORMAT_AUTO_APPLY=true` el paso 3 ocurre solo, pero la propuesta queda en estado
+   `aplicada` hasta que la revises (`confirm`) o la deshagas (`reject`).
+
+### Documentos de usuarios
+
+De los documentos subidos solo se cuentan resultados por tipo (cuántos datos se proponen y los
+nombres de los descartados). Si un tipo degrada, el diagnóstico sin esqueletos es un informe con
+esos contadores y **no llama a ningún modelo**. Con `FORMAT_DOCUMENT_SKELETONS=true` el agente
+recibe esqueletos anónimos y puede proponer etiquetas adicionales para el *prompt* del lector;
+esa propuesta nunca se aplica sola.
+
+### Antes de fiarte
+
+Nada de esto se ha ejecutado contra un modelo real: las pruebas usan un proveedor guionizado. Con
+una clave, valida al menos una vez:
+
+1. Provoca una deriva controlada en un entorno de pruebas (por ejemplo, copia la muestra buena de
+   `FORMAT_DIR/muestras/boe_sumario/buena.json` como `mala.json` renombrando una clave en su
+   `texto` y añadiendo el fallo correspondiente) y ejecuta `ops formatos diagnose --fuente
+   boe_sumario --no-auto-apply`.
+2. Comprueba que el modelo devuelve `reglas_json` con **todas** las claves (si las omite, el
+   ensayo lo rechaza y verás intentos fallidos: es señal de que hay que afinar el *prompt*), que
+   usa alternativas (`["nombre_viejo", "nombre_nuevo"]`) en vez de sustituir, y que la reflexión
+   no se limita a asentir.
+3. Mira el coste en `consumo` con el propósito `formatos`: cada muestra enviada se recorta a
+   12 000 caracteres, y van dos (buena y nueva) por llamada.
+
+### Límites
+
+- Un canario dice que algo no cuadra, no por qué: una caída de la fuente y un cambio de formato
+  dan el mismo síntoma. Por eso el diagnóstico distingue causas y solo propone spec para la segunda.
+- Los umbrales (dos lecturas seguidas, caída del 80 %, 15 disposiciones sin análisis) son
+  conservadores y no están calibrados con historia real.
+- Las expresiones regulares propuestas se acotan con una heurística (longitud, sin grupos
+  cuantificados anidados, sin retrorreferencias), no con una prueba formal.
+- Fuentes aún sin instrumentar: ver «Lo que queda» en el inventario.
 
 ## Consumo de modelos de IA: medirlo y limitarlo
 

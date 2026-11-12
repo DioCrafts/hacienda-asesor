@@ -60,6 +60,20 @@ Además:
 - **Documentos subidos** (nóminas, certificados…): se procesan en memoria y **no se almacenan**. En
   el rastro de auditoría queda el nombre del fichero, el tipo de documento detectado y los nombres
   (no los valores) de los datos propuestos.
+- **Vigilancia del lector de documentos** (`hacienda_gpt/ops/formatos_documentos.py`): por cada
+  documento analizado se anota, en `FORMAT_STATE_PATH` y sin vínculo con el expediente ni con el
+  usuario, el tipo de documento detectado, cuántos datos se propusieron y los nombres (no los
+  valores) de los descartados. Sirve para detectar que un tipo de documento ha dejado de leerse
+  bien. Si el operador activa `FORMAT_DOCUMENT_SKELETONS` (desactivado por defecto), de cada
+  documento **mal leído** se guarda además un *esqueleto anónimo* (los tres últimos por tipo, en
+  `FORMAT_DIR/esqueletos/`): la disposición de las líneas, conservando solo las palabras de una
+  lista cerrada de rótulos fiscales genéricos («importe», «retenciones», «líquido»…) y
+  sustituyendo cualquier otra palabra por `_` y cualquier cifra por `#`. Nombres, NIF,
+  direcciones, razones sociales e importes no pueden sobrevivir a ese filtro salvo que coincidan
+  con una de esas palabras genéricas. Ese esqueleto es lo único que se envía al proveedor del
+  modelo cuando se diagnostica el lector (`ops formatos diagnose`). No está ligado a una cuenta,
+  así que **no se borra al eliminar la cuenta** ni figura en la exportación: quien active la
+  opción debe valorar si ese residuo es admisible en su despliegue.
 - **Registros del servidor**: el registro estructurado de la aplicación anota método, plantilla de
   ruta, estado y latencia; no anota cuerpos, identificadores de expediente ni direcciones IP. Pero
   el registro de accesos de uvicorn, activo por defecto, sí escribe la IP del cliente y la ruta

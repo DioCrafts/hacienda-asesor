@@ -90,7 +90,12 @@ def _canarios_sumario(items: Any, muestra: str, contexto: str, reglas: Any) -> L
         except ValueError:
             estado = None
         if estado != reglas.estado_ok:
-            fallos.append(_grave("estado_api", f"La API no declara éxito ({'.'.join(paso[0] for paso in reglas.estado)} = {estado!r})."))
+            fallos.append(
+                _grave(
+                    "estado_api",
+                    f"La API no declara éxito ({'.'.join(paso[0] for paso in reglas.estado)} = {estado!r}).",
+                )
+            )
     if not items:
         fallos.append(_grave("items", "El sumario existe pero no se ha leído de él ninguna disposición."))
     elif not generales:
@@ -419,8 +424,8 @@ def _registrar_dgt() -> None:
             clave="dgt_busqueda",
             descripcion="resultados del buscador de consultas de la DGT (Petete/Knosys, HTML)",
             expectativas=(
-                "Cada resultado es un <td id=\"doc_NNN\"> con el número en un elemento class=\"NUM-CONSULTA\".",
-                "La página trae id=\"total_pages\" y un campo oculto id=\"query\" con la consulta Knosys, "
+                'Cada resultado es un <td id="doc_NNN"> con el número en un elemento class="NUM-CONSULTA".',
+                'La página trae id="total_pages" y un campo oculto id="query" con la consulta Knosys, '
                 "imprescindible para descargar cada documento.",
             ),
             canarios=_canarios_dgt,

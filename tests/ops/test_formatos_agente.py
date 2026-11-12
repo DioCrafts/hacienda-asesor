@@ -194,7 +194,9 @@ def test_the_reviewer_can_be_a_different_provider(deriva) -> None:
 
 
 def test_apply_puts_the_spec_in_force_and_reject_restores_the_previous_one(deriva) -> None:
-    propuesta = formatos_agente.diagnosticar("boe_sumario", util.ProveedorGuionizado([_diagnostico(CON_ALIAS), CONFORME]))
+    propuesta = formatos_agente.diagnosticar(
+        "boe_sumario", util.ProveedorGuionizado([_diagnostico(CON_ALIAS), CONFORME])
+    )
     viejo, nuevo = json.loads(deriva.bueno), json.loads(deriva.nuevo)
     antes = novedades.items_del_sumario(viejo, date(2026, 11, 10))
 
@@ -222,7 +224,9 @@ def test_apply_puts_the_spec_in_force_and_reject_restores_the_previous_one(deriv
 
 
 def test_apply_runs_the_gate_again(deriva) -> None:
-    propuesta = formatos_agente.diagnosticar("boe_sumario", util.ProveedorGuionizado([_diagnostico(CON_ALIAS), CONFORME]))
+    propuesta = formatos_agente.diagnosticar(
+        "boe_sumario", util.ProveedorGuionizado([_diagnostico(CON_ALIAS), CONFORME])
+    )
     # Someone edits the stored proposal after the fact.
     propuesta.reglas_propuestas = SUSTITUIDO
     formatos.guardar_propuesta(propuesta)
@@ -236,7 +240,9 @@ def test_auto_apply_is_off_by_default_and_applies_only_what_passed_everything(de
     assert settings.FORMAT_AUTO_APPLY is False
     monkeypatch.setattr(settings, "FORMAT_AUTO_APPLY", True)
 
-    propuesta = formatos_agente.diagnosticar("boe_sumario", util.ProveedorGuionizado([_diagnostico(CON_ALIAS), CONFORME]))
+    propuesta = formatos_agente.diagnosticar(
+        "boe_sumario", util.ProveedorGuionizado([_diagnostico(CON_ALIAS), CONFORME])
+    )
 
     assert (propuesta.estado, propuesta.aplicada_por) == ("aplicada", "auto")
     assert formatos.spec_activa("boe_sumario").version == 2
