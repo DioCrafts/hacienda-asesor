@@ -228,6 +228,9 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     pagos_vivienda_habitual_pre2013     → pagado en el año por la hipoteca de una vivienda habitual comprada antes de 2013
     gastos_guarderia                    → pagado a guarderías en el año
 
+  value_boolean:
+    bienes_en_el_extranjero             → true si tiene cuentas, valores o inmuebles fuera de España
+
   "gano 38.000 brutos al año, vivo en Valencia, tengo dos hijos, uno de 2 años"
     → rendimiento_trabajo_bruto value_number=38000 · comunidad_autonoma value_string="Comunidad Valenciana"
     → residencia_fiscal value_string="ES" · num_descendientes value_number=2 · num_descendientes_menores_3 value_number=1

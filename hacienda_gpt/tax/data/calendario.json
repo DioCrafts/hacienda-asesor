@@ -1,0 +1,71 @@
+{
+  "consultado_el": "2026-11-12",
+  "regla_dia_inhabil": {
+    "referencia": "art. 30.5 Ley 39/2015 (BOE-A-2015-10565)",
+    "en_vigor_desde": "2016-10-02",
+    "verificado": true,
+    "nota": "Si el último día del plazo es inhábil se prorroga al primer día hábil siguiente. Aquí solo se ajustan sábados y domingos: los festivos nacionales, autonómicos y locales no están cargados."
+  },
+  "obligaciones": [
+    {
+      "id": "irpf_cierre_ejercicio",
+      "modelo": null,
+      "titulo": "Último día para actuar con efecto en el IRPF del ejercicio",
+      "detalle": "El impuesto se devenga el 31 de diciembre: las aportaciones a planes de pensiones, los donativos y las ventas con ganancia o pérdida cuentan para este ejercicio solo si se hacen hasta ese día.",
+      "aplica": "siempre",
+      "plazos": [{"mes": 12, "dia": 31, "desfase_anual": 0, "periodo": "Ejercicio {anio}", "ajustar_inhabil": false}],
+      "fuente": {"referencia": "art. 12 LIRPF (BOE-A-2006-20764)", "en_vigor_desde": "2007-01-01", "verificado": true}
+    },
+    {
+      "id": "irpf_declaracion",
+      "modelo": "100",
+      "titulo": "Declaración de la Renta",
+      "detalle": "Fin del plazo de presentación de la declaración anual. El calendario exacto de cada campaña (inicio, fin y fecha límite para domiciliar el pago) lo fija una orden ministerial anual.",
+      "aplica": "siempre",
+      "plazos": [{"mes": 6, "dia": 30, "desfase_anual": 1, "periodo": "Renta {anio}", "ajustar_inhabil": true}],
+      "fuente": {
+        "referencia": "art. 96.5 LIRPF y orden ministerial anual de la campaña",
+        "en_vigor_desde": "2007-01-01",
+        "verificado": false,
+        "nota": "El 30 de junio es el fin habitual de la campaña; la orden de la campaña concreta no se ha contrastado."
+      }
+    },
+    {
+      "id": "iva_trimestral",
+      "modelo": "303",
+      "titulo": "IVA: autoliquidación trimestral",
+      "detalle": "Se presenta durante los veinte primeros días naturales del mes siguiente a cada trimestre; la del cuarto trimestre, durante los treinta primeros días de enero.",
+      "aplica": "actividad_economica_iva_trimestral",
+      "plazos": [
+        {"mes": 4, "dia": 20, "desfase_anual": 0, "periodo": "1T {anio}", "ajustar_inhabil": true},
+        {"mes": 7, "dia": 20, "desfase_anual": 0, "periodo": "2T {anio}", "ajustar_inhabil": true},
+        {"mes": 10, "dia": 20, "desfase_anual": 0, "periodo": "3T {anio}", "ajustar_inhabil": true},
+        {"mes": 1, "dia": 30, "desfase_anual": 1, "periodo": "4T {anio}", "ajustar_inhabil": true}
+      ],
+      "fuente": {"referencia": "art. 71.4 Reglamento del IVA, RD 1624/1992 (BOE-A-1992-28925)", "en_vigor_desde": "1993-01-01", "verificado": true}
+    },
+    {
+      "id": "irpf_pago_fraccionado",
+      "modelo": "130",
+      "titulo": "IRPF: pago fraccionado de actividades económicas",
+      "detalle": "Los tres primeros trimestres, entre el 1 y el 20 de abril, julio y octubre; el cuarto, entre el 1 y el 30 de enero. Los profesionales con al menos el 70 % de sus ingresos sujetos a retención pueden no estar obligados; en estimación objetiva se usa el modelo 131.",
+      "aplica": "actividad_economica",
+      "plazos": [
+        {"mes": 4, "dia": 20, "desfase_anual": 0, "periodo": "1T {anio}", "ajustar_inhabil": true},
+        {"mes": 7, "dia": 20, "desfase_anual": 0, "periodo": "2T {anio}", "ajustar_inhabil": true},
+        {"mes": 10, "dia": 20, "desfase_anual": 0, "periodo": "3T {anio}", "ajustar_inhabil": true},
+        {"mes": 1, "dia": 30, "desfase_anual": 1, "periodo": "4T {anio}", "ajustar_inhabil": true}
+      ],
+      "fuente": {"referencia": "art. 111 Reglamento del IRPF, RD 439/2007 (BOE-A-2007-6820)", "en_vigor_desde": "2007-04-01", "verificado": true}
+    },
+    {
+      "id": "modelo_720",
+      "modelo": "720",
+      "titulo": "Declaración de bienes y derechos en el extranjero",
+      "detalle": "Se presenta entre el 1 de enero y el 31 de marzo del año siguiente. No hay obligación por cuentas si los saldos a 31 de diciembre y los saldos medios no superan conjuntamente 50.000 €; en años posteriores solo si el saldo conjunto aumenta más de 20.000 €.",
+      "aplica": "bienes_en_el_extranjero",
+      "plazos": [{"mes": 3, "dia": 31, "desfase_anual": 1, "periodo": "Ejercicio {anio}", "ajustar_inhabil": true}],
+      "fuente": {"referencia": "arts. 42 bis y 42 ter RD 1065/2007 (BOE-A-2007-15984)", "en_vigor_desde": "2012-11-25", "verificado": true}
+    }
+  ]
+}

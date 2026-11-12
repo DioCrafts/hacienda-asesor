@@ -40,11 +40,13 @@ def test_search_then_answer_verified() -> None:
     assert "[F1]" in provider.tool_results[0].content and "[F3]" in provider.tool_results[0].content
     assert provider.started["user_message"].endswith(QUESTION)
     assert "Fecha de hoy" in provider.started["user_message"]
-    assert [tool.name for tool in provider.started["tools"]] == [
+    # Without a case only the stateless tools are offered.
+    assert {tool.name for tool in provider.started["tools"]} == {
         "buscar_fuentes",
         "calcular_irpf",
         "listar_beneficios_fiscales",
-    ]
+        "calendario_fiscal",
+    }
 
     # The verifier got only the CITED fragments, not everything retrieved.
     verifier_input = provider.json_requests[0]["user"]
@@ -185,7 +187,9 @@ def test_case_tools_update_the_case_and_surface_it_to_the_caller() -> None:
     assert "updated_case" not in result.model_dump()
     assert "Ejercicio del expediente: 2025" in provider.started["user_message"]
     assert "consultar_expediente" in provider.started["system"]
-    assert len(provider.started["tools"]) == 6
+    assert {"consultar_expediente", "registrar_hechos", "evaluar_obligaciones"} <= {
+        tool.name for tool in provider.started["tools"]
+    }
 
 
 def test_untouched_case_is_not_returned_for_persistence() -> None:

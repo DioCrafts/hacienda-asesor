@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 import json
 import queue
 import threading
@@ -65,7 +65,7 @@ def _thread_safe_singleton(factory: Callable[[], T]) -> Callable[[], T]:
 
 
 from hacienda_gpt.agent.agent import AgentResult, TaxAgent
-from hacienda_gpt.agent.providers.base import ProviderError
+from hacienda_gpt.agent.providers.base import LLMProvider, ProviderError
 from hacienda_gpt.api.observability import ApiMetrics, observability_middleware
 from hacienda_gpt.api.security import (
     RateLimiter,
@@ -94,6 +94,11 @@ from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.decision.turn_service import process_turn
 from hacienda_gpt.llm.grounding import AnswerEnvelope
 from hacienda_gpt.settings import API_RATE_LIMIT_PER_MIN, DECISION_STATE_DB_PATH
+from hacienda_gpt.tax.calendario import Vencimiento, aviso_festivos, proximos_vencimientos
+from hacienda_gpt.tax.documentos import AnalisisDocumento, DocumentoNoLegibleError, analizar_documento, decode_upload
+from hacienda_gpt.tax.params import EjercicioNoDisponibleError, ejercicios_disponibles
+from hacienda_gpt.tax.profile import DatosInvalidosError
+from hacienda_gpt.tax.simulador import Simulacion, simular
 
 app = FastAPI(title="HaciendaGPT Decision API", version="1.0.0")
 
@@ -655,6 +660,127 @@ def delete_case_fact(
     return _save_case_after_user_edit(
         case, remaining, store, {"event_type": "fact_removed_by_user", "fact_name": fact_name}
     )
+
+
+class SimulateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # With a case, its facts are the base; `datos` adds or overrides figures.
+    case_id: str | None = None
+    ejercicio: int | None = None
+    datos: dict = Field(default_factory=dict)
+    escenarios: list[dict] | None = None
+
+
+@app.post("/simulate", response_model=Simulacion, dependencies=[Depends(require_api_key)])
+def post_simulate(
+    payload: SimulateRequest,
+    store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+) -> Simulacion:
+    """Deterministic IRPF simulation — no LLM involved, so it is instant and free.
+
+    Returns the base scenario, each alternative with its saving versus the
+    base, and the tax-benefit catalogue checked against the profile.
+    """
+    case = _load_agent_case(payload.case_id, store)
+    facts = {fact.name: fact.value for fact in case.facts} if case is not None else {}
+    year = payload.ejercicio
+    if year is None:
+        year = (parse_fiscal_year(case.tax_period) if case is not None else None) or max(ejercicios_disponibles())
+    try:
+        return simular(ejercicio=year, facts=facts, datos=payload.datos, escenarios=payload.escenarios)
+    except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+class CalendarResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str
+    hoy: date
+    vencimientos: list[Vencimiento]
+    aviso: str
+
+
+@app.get("/cases/{case_id}/calendar", response_model=CalendarResponse, dependencies=[Depends(require_api_key)])
+def get_case_calendar(
+    case_id: str,
+    store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+    dias: int = 365,
+) -> CalendarResponse:
+    """Upcoming filing deadlines that apply to this case's profile."""
+    case = store.get_case(case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="case not found")
+    today = datetime.now(UTC).date()
+    facts = {fact.name: fact.value for fact in case.facts}
+    return CalendarResponse(
+        case_id=case_id,
+        hoy=today,
+        vencimientos=proximos_vencimientos(facts, hoy=today, dias=max(1, min(730, dias))),
+        aviso=aviso_festivos(),
+    )
+
+
+class DocumentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    filename: str = Field(min_length=1, max_length=200)
+    # Base64 of the file. JSON instead of multipart keeps the API dependency-free.
+    content_base64: str = Field(min_length=1)
+
+
+@_thread_safe_singleton
+def _build_document_provider() -> LLMProvider:
+    from hacienda_gpt import settings
+    from hacienda_gpt.agent.providers import create_provider
+
+    # Locating labelled figures in a document is a constrained task: low effort.
+    return create_provider(effort=settings.DECISION_EXTRACTOR_EFFORT)
+
+
+def get_document_provider() -> LLMProvider:
+    """FastAPI dependency (overridable in tests); a failed build is a 503."""
+    try:
+        return _build_document_provider()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"El lector de documentos no está disponible: {exc}") from exc
+
+
+@app.post("/cases/{case_id}/documents", response_model=AnalisisDocumento, dependencies=[Depends(require_api_key)])
+def post_case_document(
+    case_id: str,
+    payload: DocumentRequest,
+    store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+    provider: Annotated[LLMProvider, Depends(get_document_provider)],
+) -> AnalisisDocumento:
+    """Read one of the user's tax documents and PROPOSE profile facts from it.
+
+    Nothing is written to the case: the client shows the proposals and applies
+    the ones the user accepts through ``PUT /cases/{id}/facts/{name}``. The
+    document is processed in memory and not stored; its text is sent to the
+    configured LLM provider. Only the file name and the proposed fact names are
+    audited.
+    """
+    if store.get_case(case_id) is None:
+        raise HTTPException(status_code=404, detail="case not found")
+    try:
+        data = decode_upload(payload.content_base64)
+        analysis = analizar_documento(provider, filename=payload.filename, data=data)
+    except DocumentoNoLegibleError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except ProviderError as exc:
+        raise HTTPException(status_code=503, detail=f"No se pudo analizar el documento: {exc}") from exc
+    store.append_audit_event(
+        case_id,
+        {
+            "event_type": "document_analyzed",
+            "filename": payload.filename,
+            "document_type": analysis.tipo_documento,
+            "proposed_facts": [fact.name for fact in analysis.hechos_propuestos],
+        },
+    )
+    return analysis
 
 
 @app.get("/cases/{case_id}/audit/export", dependencies=[Depends(require_api_key)])

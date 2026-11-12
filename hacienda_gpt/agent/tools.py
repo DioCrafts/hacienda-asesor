@@ -22,9 +22,11 @@ from hacienda_gpt.decision.interpreter import _merge_facts
 from hacienda_gpt.decision.rules_engine import evaluate_rules
 from hacienda_gpt.decision.schemas import CaseState, Fact, parse_fiscal_year
 from hacienda_gpt.tax.beneficios import evaluar_beneficios
-from hacienda_gpt.tax.irpf import IRPFInput, IRPFResult, calcular_irpf
+from hacienda_gpt.tax.calendario import aviso_festivos, proximos_vencimientos
+from hacienda_gpt.tax.irpf import IRPFInput, IRPFResult
 from hacienda_gpt.tax.params import EjercicioNoDisponibleError, ejercicios_disponibles, load_params
-from hacienda_gpt.tax.profile import DatosInvalidosError, build_input, missing_core_fields
+from hacienda_gpt.tax.profile import DatosInvalidosError, build_input
+from hacienda_gpt.tax.simulador import simular
 
 logger = logging.getLogger(__name__)
 
@@ -205,6 +207,22 @@ BENEFITS_TOOL = ToolSpec(
 )
 
 
+CALENDAR_TOOL = ToolSpec(
+    name="calendario_fiscal",
+    description=(
+        "Devuelve los próximos plazos fiscales que aplican al usuario según su expediente (fin del ejercicio para "
+        "aportaciones y donativos, declaración de la Renta, IVA y pagos fraccionados si tiene actividad económica, "
+        "modelo 720 si tiene bienes en el extranjero), con su fecha, días restantes y referencia legal, como un "
+        "fragmento citable. Úsala cuando pregunte por plazos o cuando una recomendación dependa de una fecha."
+    ),
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {"dias": {"type": "integer", "description": "Horizonte en días (por defecto 365)."}},
+    },
+)
+
+
 @dataclass(frozen=True)
 class ToolOutcome:
     content: str
@@ -256,7 +274,7 @@ class Toolbox:
         self._default_k = default_k
 
     def specs(self) -> list[ToolSpec]:
-        specs = [SEARCH_TOOL, CALCULATE_TOOL, BENEFITS_TOOL]
+        specs = [SEARCH_TOOL, CALCULATE_TOOL, BENEFITS_TOOL, CALENDAR_TOOL]
         if self.case is not None:
             specs.extend([READ_CASE_TOOL, RECORD_FACTS_TOOL, EVALUATE_RULES_TOOL])
         return specs
@@ -268,6 +286,7 @@ class Toolbox:
             SEARCH_TOOL.name: self._search,
             CALCULATE_TOOL.name: self._calculate,
             BENEFITS_TOOL.name: self._benefits,
+            CALENDAR_TOOL.name: self._calendar,
             READ_CASE_TOOL.name: self._read_case,
             RECORD_FACTS_TOOL.name: self._record_facts,
             EVALUATE_RULES_TOOL.name: self._evaluate_rules,
@@ -347,31 +366,17 @@ class Toolbox:
     def _calculate(self, arguments: dict[str, Any]) -> ToolOutcome:
         try:
             year, facts, datos = self._scenario_base(arguments)
-            params = load_params(year)
-            raw_scenarios = arguments.get("escenarios") or [{"nombre": "Situación actual", "cambios": {}}]
-            if not isinstance(raw_scenarios, list) or len(raw_scenarios) > 6:
-                return _error("'escenarios' debe ser una lista de hasta 6 alternativas.")
-            scenarios: list[tuple[str, IRPFInput]] = []
-            for item in raw_scenarios:
-                if not isinstance(item, dict) or not isinstance(item.get("nombre"), str) or not item["nombre"].strip():
-                    return _error("Cada escenario necesita un 'nombre' y un objeto 'cambios'.")
-                cambios = item.get("cambios") or {}
-                if not isinstance(cambios, dict):
-                    return _error("'cambios' debe ser un objeto {campo: valor}.")
-                scenarios.append(
-                    (item["nombre"].strip(), build_input(ejercicio=year, facts=facts, datos=datos, cambios=cambios))
-                )
+            simulacion = simular(
+                ejercicio=year, facts=facts, datos=datos, escenarios=arguments.get("escenarios"), con_beneficios=False
+            )
         except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
             return _error(str(exc))
 
-        results = [(nombre, calcular_irpf(inp, params)) for nombre, inp in scenarios]
-        provided = {name for name in (*facts, *datos) if name in IRPFInput.model_fields}
-        missing = missing_core_fields(scenarios[0][1], provided)
-
         blocks: list[str] = []
         fragment_ids: list[str] = []
-        base_name, base_result = results[0]
-        for nombre, result in results:
+        base_name = simulacion.escenarios[0].nombre
+        for escenario in simulacion.escenarios:
+            nombre, result = escenario.nombre, escenario.resultado
             # Each scenario is registered as evidence: the answer cites it like
             # any other source and the verifier checks figures against it.
             fragment = self.ledger.register(
@@ -386,7 +391,7 @@ class Toolbox:
             fragment_ids.append(fragment.fragment_id)
             block = f"[{fragment.fragment_id}] " + _render_result(nombre, result)
             if nombre != base_name:
-                diff = base_result.resultado - result.resultado
+                diff = escenario.ahorro_frente_a_base
                 verb = "ahorra" if diff > 0 else "cuesta"
                 block += (
                     f"\nFrente a «{base_name}»: {verb} {_money(abs(diff))}."
@@ -394,15 +399,52 @@ class Toolbox:
                     else f"\nFrente a «{base_name}»: sin diferencia."
                 )
             blocks.append(block)
-        if missing:
+        if simulacion.datos_no_aportados:
             blocks.append(
                 "DATOS NO APORTADOS (el cálculo los ha tomado como cero o sin informar): "
-                + ", ".join(missing)
+                + ", ".join(simulacion.datos_no_aportados)
                 + ". Pídeselos al usuario si pueden cambiar el resultado, y dile que el cálculo es provisional sin ellos."
             )
         return ToolOutcome(
             content="\n\n".join(blocks),
-            summary=f"{len(results)} cálculo(s): {', '.join(fragment_ids)}",
+            summary=f"{len(simulacion.escenarios)} cálculo(s): {', '.join(fragment_ids)}",
+        )
+
+    def _calendar(self, arguments: dict[str, Any]) -> ToolOutcome:
+        raw_days = arguments.get("dias", 365)
+        days = raw_days if isinstance(raw_days, int) and not isinstance(raw_days, bool) else 365
+        days = max(1, min(730, days))
+        facts = {fact.name: fact.value for fact in self.case.facts} if self.case is not None else {}
+        today = datetime.now(UTC).date()
+        vencimientos = proximos_vencimientos(facts, hoy=today, dias=days)
+        if not vencimientos:
+            return ToolOutcome(content="No hay vencimientos en ese plazo.", summary="0 vencimientos")
+        lines = [
+            f"- {v.fecha.strftime('%d/%m/%Y')} (en {v.dias_restantes} días): {v.titulo} — {v.periodo}"
+            + (f", modelo {v.modelo}" if v.modelo else "")
+            + f". {v.detalle} [{v.referencia}{'' if v.verificado else '; fecha no contrastada'}]"
+            + (f" Nota: {v.nota}" if v.nota else "")
+            for v in vencimientos
+        ]
+        text = (
+            f"Calendario fiscal del usuario a {today.strftime('%d/%m/%Y')} (próximos {days} días)\n"
+            + "\n".join(lines)
+            + f"\n{aviso_festivos()}\nSolo se listan las obligaciones que constan en el expediente: si el usuario "
+            "tiene actividad económica o bienes en el extranjero y no lo ha dicho, no aparecen."
+        )
+        # Registered as evidence so dates in the answer can be cited and verified.
+        fragment = self.ledger.register(
+            text=text,
+            metadata={
+                "title": f"Calendario fiscal a {today.strftime('%d/%m/%Y')}",
+                "source": f"calendario://{today.isoformat()}/{days}",
+                "source_authority": "CALCULADORA",
+                "section": "Plazos de presentación",
+            },
+        )
+        return ToolOutcome(
+            content=f"[{fragment.fragment_id}] {text}",
+            summary=f"{len(vencimientos)} vencimientos: {fragment.fragment_id}",
         )
 
     def _benefits(self, arguments: dict[str, Any]) -> ToolOutcome:

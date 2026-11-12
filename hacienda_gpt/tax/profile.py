@@ -36,6 +36,8 @@ PROFILE_FACT_TYPES: dict[str, FactValueType] = {
     "donativos": FactValueType.NUMBER,
     "pagos_vivienda_habitual_pre2013": FactValueType.NUMBER,
     "gastos_guarderia": FactValueType.NUMBER,
+    # Drives the fiscal calendar (modelo 720), not the IRPF computation.
+    "bienes_en_el_extranjero": FactValueType.BOOLEAN,
 }
 
 _INTEGER_FIELDS = frozenset(
@@ -77,8 +79,3 @@ def build_input(
     except ValidationError as exc:
         problems = "; ".join(f"{'.'.join(str(p) for p in e['loc'])}: {e['msg']}" for e in exc.errors())
         raise DatosInvalidosError(f"Datos no válidos para el cálculo: {problems}") from exc
-
-
-def missing_core_fields(inp: IRPFInput, provided: set[str]) -> list[str]:
-    """Core figures nobody supplied (so the simulation silently used zero)."""
-    return [name for name in CORE_FIELDS if name not in provided]
