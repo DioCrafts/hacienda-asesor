@@ -51,7 +51,7 @@ const ACTIVIDAD_MAS: FieldDef[] = [
 ];
 const M130_FIELDS: FieldDef[] = [
   { name: "ingresos_acumulados", label: "Ingresos acumulados", hint: "Sin IVA" },
-  { name: "gastos_acumulados", label: "Gastos acumulados", hint: "Sin IVA; no añadas el 5 % de gastos de difícil justificación" },
+  { name: "gastos_acumulados", label: "Gastos acumulados", hint: "Sin IVA; no añadas los gastos de difícil justificación, los suma el cálculo" },
   { name: "retenciones_acumuladas", label: "Retenciones acumuladas", hint: "El IRPF que tus clientes te han descontado en las facturas" },
 ];
 const M303_VENTAS: FieldDef[] = [
@@ -394,7 +394,7 @@ export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: Auton
           <Flag
             name="cumple_requisitos_reduccion_dependiente"
             label="Trabajo para un único cliente y cumplo los requisitos de la reducción"
-            hint="Autónomo dependiente o de cliente único no vinculado, sin sueldo y con retención en al menos el 70 % de los ingresos. Sustituye a los gastos de difícil justificación."
+            hint="Autónomo dependiente o de cliente único no vinculado, sin sueldo y con retención en casi todos los ingresos. Sustituye a los gastos de difícil justificación; el resultado detalla los requisitos."
             flags={actividadFlags}
             onChange={setFlagIn(setActividadFlags)}
           />
@@ -424,7 +424,7 @@ export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: Auton
         {r && (
           <ResultCard title={`Pago del ${TRIMESTRES[r.trimestre - 1]?.label ?? ""} trimestre (modelo 130)`} amount={r.a_ingresar} suffix={Number(r.a_ingresar) > 0 ? "a ingresar" : "nada que ingresar"} good={Number(r.a_ingresar) === 0}>
             <p className="mt-2 text-[13px] text-ink-soft">
-              Beneficio acumulado {formatMoney(r.rendimiento_neto_acumulado)} · el 20 % son {formatMoney(r.pago_sobre_rendimiento)}
+              Beneficio acumulado {formatMoney(r.rendimiento_neto_acumulado)} · pago a cuenta sobre ese beneficio {formatMoney(r.pago_sobre_rendimiento)}
             </p>
             <p
               className={clsx(
@@ -466,14 +466,14 @@ export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: Auton
           <Flag
             name="aplicar_gastos_dificil_justificacion"
             label="Estoy en estimación directa simplificada"
-            hint="Lo habitual. Añade un 5 % de gastos de difícil justificación (máximo 2.000 € al año)."
+            hint="Lo habitual. El cálculo añade el porcentaje de gastos de difícil justificación que permite la norma."
             flags={m130Flags}
             onChange={setFlagIn(setM130Flags)}
           />
         </Group>
         <Optional title="Rebaja por ingresos bajos el año pasado (opcional)">
           <MoneyField
-            field={{ name: "rendimiento_neto_ejercicio_anterior", label: "Beneficio neto de la actividad el año pasado", hint: "Si no pasó de 12.000 €, el pago se rebaja entre 25 y 100 € por trimestre" }}
+            field={{ name: "rendimiento_neto_ejercicio_anterior", label: "Beneficio neto de la actividad el año pasado", hint: "Si fue bajo, el pago se rebaja una cantidad fija cada trimestre; el resultado te dirá cuánto" }}
             values={m130}
             onChange={setIn(setM130)}
           />
@@ -498,7 +498,7 @@ export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: Auton
               <>
                 <MoneyField field={{ name: "ingresos_ano_anterior", label: "Ingresos del año pasado" }} values={m130} onChange={setIn(setM130)} />
                 <MoneyField
-                  field={{ name: "ingresos_con_retencion_ano_anterior", label: "De ellos, con retención", hint: "Si al menos el 70 % llevaba retención, no tienes que presentar el modelo 130" }}
+                  field={{ name: "ingresos_con_retencion_ano_anterior", label: "De ellos, con retención", hint: "Si la mayor parte llevaba retención de IRPF, no tienes que presentar el modelo 130; el resultado te lo dirá" }}
                   values={m130}
                   onChange={setIn(setM130)}
                 />

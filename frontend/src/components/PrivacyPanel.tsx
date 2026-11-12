@@ -67,11 +67,12 @@ export function PrivacyPanel({ open, onClose, email, noticeUrl, onAccountDeleted
   const [noticeOpen, setNoticeOpen] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    // While the privacy summary is on top, Escape closes that one, not the panel.
+    if (!open || noticeOpen) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, noticeOpen, onClose]);
 
   useEffect(() => {
     if (!open) return;

@@ -40,12 +40,10 @@ export function setSessionToken(token: string | null): void {
 
 /**
  * The conversation history in localStorage belongs to whoever was signed in
- * when it was written. Returns true when `userId` is a different account, in
- * which case the caller must discard that history before showing anything.
+ * when it was written: the id of that account, or null when it predates accounts.
  */
-export function historyBelongsToSomeoneElse(userId: string): boolean {
-  const owner = read(OWNER_KEY);
-  return owner !== userId;
+export function historyOwner(): string | null {
+  return read(OWNER_KEY);
 }
 
 export function setHistoryOwner(userId: string | null): void {

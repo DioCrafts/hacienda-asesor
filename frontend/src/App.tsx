@@ -1,22 +1,32 @@
 // Application shell: sidebar (history) + main column (top bar, chat, composer)
 // + the case-file panel. All cross-component state lives here.
+//
+// When the backend requires an account (AUTH_MODE=required) the shell is
+// wrapped by a gate that shows the login screen first; with accounts off the
+// gate renders the shell directly and nothing else changes.
 
 import { Check, Copy, RotateCcw, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ProgressEvent } from "./api";
-import type { AdvisorNotification } from "./api";
+import type { AdvisorNotification, AuthConfig, SessionResponse, SessionUser } from "./api";
 import {
   ApiError,
   createCase,
   deleteCaseFact,
+  getAuthConfig,
+  getMe,
   getNotifications,
+  logout,
   markNotificationRead,
+  onSessionExpired,
   runProactive,
   streamAgent,
   updateCaseFact,
 } from "./api";
 import { ActivitySummary, LiveActivity } from "./components/ActivityPanel";
+import { AuthAccountBar } from "./components/AuthAccountBar";
+import { AuthScreen } from "./components/AuthScreen";
 import { CasePanel } from "./components/CasePanel";
 import { DoctrineNotice } from "./components/DoctrineNotice";
 import { AssistantBubble, UserBubble } from "./components/ChatBubbles";
@@ -24,6 +34,7 @@ import { Composer } from "./components/Composer";
 import { EmptyState } from "./components/EmptyState";
 import { NotificationsPanel } from "./components/NotificationsPanel";
 import { ObligationCardList } from "./components/ObligationCard";
+import { PrivacyPanel } from "./components/PrivacyPanel";
 import { RichText } from "./components/RichText";
 import { SimulatorPanel } from "./components/SimulatorPanel";
 import { Sidebar } from "./components/Sidebar";
@@ -33,6 +44,7 @@ import { TrustStrip } from "./components/TrustStrip";
 import { VerificationPanel } from "./components/VerificationPanel";
 import { newId } from "./lib/id";
 import { activityRows, sourceAnchorId, verificationSummary } from "./lib/presentation";
+import { cacheAuthMode, cachedAuthMode, getSessionToken, historyOwner, setHistoryOwner, setSessionToken } from "./lib/session";
 import { type ChatTurn, type Conversation, emptyConversation, loadConversations, saveConversations } from "./lib/storage";
 import { useTheme } from "./lib/theme";
 
@@ -81,7 +93,14 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-export default function App() {
+// The signed-in account, when the backend has accounts.
+interface AccountControls {
+  email: string;
+  onOpenPrivacy: () => void;
+  onLogout: () => void;
+}
+
+function Advisor({ account }: { account?: AccountControls }) {
   const [theme, toggleTheme] = useTheme();
   const [conversations, setConversations] = useState<Conversation[]>(loadConversations);
   const [activeId, setActiveId] = useState<string>(() => newId());
@@ -375,6 +394,7 @@ export default function App() {
         onClose={() => setMenuOpen(false)}
       />
       <main className="flex h-full min-w-0 flex-1 flex-col bg-paper">
+        {account && <AuthAccountBar email={account.email} onOpenPrivacy={account.onOpenPrivacy} onLogout={account.onLogout} />}
         <TopBar
           title={active.title}
           factCount={visibleFactCount}
@@ -515,5 +535,168 @@ export default function App() {
         busy={busy}
       />
     </div>
+  );
+}
+
+function Splash({ message }: { message?: string }) {
+  return (
+    <div role="status" className="flex h-[100dvh] w-screen items-center justify-center bg-paper px-6 text-center text-[13.5px] text-muted">
+      {message}
+    </div>
+  );
+}
+
+/**
+ * Make the conversation history in this browser safe to show to `userId`.
+ * Another account's history is discarded. History from before accounts existed
+ * is kept, detached from its cases: those have no owner and cannot be reached.
+ */
+function adoptLocalHistory(userId: string): void {
+  const owner = historyOwner();
+  if (owner === userId) return;
+  if (owner === null) {
+    saveConversations(loadConversations().map((c) => ({ ...c, caseId: null, facts: [], obligations: [], taxPeriod: null })));
+  } else {
+    saveConversations([]);
+  }
+  setHistoryOwner(userId);
+}
+
+const CONFIG_RETRY_MS = 5_000;
+
+export default function App() {
+  // Applies the stored theme to the document, also on the screens shown before the shell.
+  useTheme();
+  const [lastKnownMode] = useState(cachedAuthMode);
+  const [config, setConfig] = useState<AuthConfig | null>(null);
+  const [configFailed, setConfigFailed] = useState(false);
+  const [configAttempt, setConfigAttempt] = useState(0);
+  const [user, setUser] = useState<SessionUser | null>(null);
+  // A stored token must be checked with the server before it is trusted.
+  const [sessionChecked, setSessionChecked] = useState(() => getSessionToken() === null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  // Set by an explicit sign-out or an account deletion: the history in this browser must go.
+  const wipeHistoryRef = useRef(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    getAuthConfig(controller.signal).then(
+      (loaded) => {
+        cacheAuthMode(loaded.auth_mode);
+        setConfig(loaded);
+        setConfigFailed(false);
+      },
+      () => {
+        if (controller.signal.aborted) return;
+        // Backend unreachable: keep asking, so the right screen appears as soon as it is back.
+        setConfigFailed(true);
+        retry = setTimeout(() => setConfigAttempt((n) => n + 1), CONFIG_RETRY_MS);
+      },
+    );
+    return () => {
+      controller.abort();
+      clearTimeout(retry);
+    };
+  }, [configAttempt]);
+
+  const required = config?.auth_mode === "required";
+
+  useEffect(() => {
+    onSessionExpired(() => {
+      setSessionToken(null);
+      setUser(null);
+      setPrivacyOpen(false);
+      setSessionChecked(true);
+      setNotice("Tu sesión ha caducado. Vuelve a iniciar sesión.");
+      // If we believed accounts were off, the backend has changed: ask again.
+      if (!required) setConfigAttempt((n) => n + 1);
+    });
+    return () => onSessionExpired(null);
+  }, [required]);
+
+  useEffect(() => {
+    if (!required || sessionChecked) return;
+    const controller = new AbortController();
+    getMe(controller.signal).then(
+      (me) => {
+        adoptLocalHistory(me.id);
+        setUser(me);
+        setSessionChecked(true);
+      },
+      (err: unknown) => {
+        if (controller.signal.aborted) return;
+        // A rejected token was already dropped by the session-expired handler.
+        if (!(err instanceof ApiError && err.status === 401)) {
+          setNotice("No se pudo comprobar tu sesión. Inicia sesión de nuevo.");
+        }
+        setSessionChecked(true);
+      },
+    );
+    return () => controller.abort();
+  }, [required, sessionChecked]);
+
+  // Runs once the shell is unmounted, so nothing it still held can be written back.
+  useEffect(() => {
+    if (user !== null || !wipeHistoryRef.current) return;
+    wipeHistoryRef.current = false;
+    saveConversations([]);
+    setHistoryOwner(null);
+  }, [user]);
+
+  function handleSignedIn(session: SessionResponse) {
+    setSessionToken(session.token);
+    adoptLocalHistory(session.user.id);
+    setNotice(null);
+    setUser(session.user);
+  }
+
+  /** Forget the session on this browser, and the conversations with it. */
+  function signOutLocally(message: string | null) {
+    setSessionToken(null);
+    wipeHistoryRef.current = true;
+    setPrivacyOpen(false);
+    setUser(null);
+    setNotice(message);
+  }
+
+  function handleLogout() {
+    const confirmed = window.confirm(
+      "Al cerrar sesión se borra de este navegador el historial de conversaciones. Tu expediente sigue guardado en tu cuenta. ¿Cerrar sesión?",
+    );
+    if (!confirmed) return;
+    // Best effort: the session is dropped here even if the server cannot be told.
+    logout()
+      .catch(() => undefined)
+      .finally(() => signOutLocally(null));
+  }
+
+  if (config === null) {
+    // Until the backend answers, trust what it said last time; a first visit
+    // (or an unreachable backend that never had accounts) gets the open app.
+    if (lastKnownMode === "required") {
+      return <Splash message={configFailed ? "No hay conexión con el servicio. Reintentando…" : undefined} />;
+    }
+    if (lastKnownMode === "off" || configFailed) return <Advisor key="open" />;
+    return <Splash />;
+  }
+  if (!required) return <Advisor key="open" />;
+  if (!sessionChecked) return <Splash />;
+  if (!user) return <AuthScreen config={config} notice={notice} onSignedIn={handleSignedIn} />;
+  return (
+    <>
+      <Advisor key={user.id} account={{ email: user.email, onOpenPrivacy: () => setPrivacyOpen(true), onLogout: handleLogout }} />
+      {/* Mounted only while open, so the typed password never outlives the panel. */}
+      {privacyOpen && (
+        <PrivacyPanel
+          open
+          onClose={() => setPrivacyOpen(false)}
+          email={user.email}
+          noticeUrl={config.privacy_notice_url}
+          onAccountDeleted={() => signOutLocally("Tu cuenta y tus datos se han eliminado.")}
+        />
+      )}
+    </>
   );
 }
