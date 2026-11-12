@@ -1,6 +1,32 @@
 # Extracto literal de https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764 descargado el 2026-11-12. Texto consolidado: «Última actualización, publicada el 11/11/2026»
 # Solo los artículos de los que se leen los parámetros de autonomos_2026.json; generado, no editar a mano.
 
+Artículo 20. Reducción por obtención de rendimientos del trabajo.
+Los contribuyentes con rendimientos netos del trabajo inferiores a 19.747,5 euros siempre que no tengan rentas, excluidas las exentas, distintas de las del trabajo superiores a 6.500 euros, minorarán el rendimiento neto del trabajo en las siguientes cuantías:
+a) Contribuyentes con rendimientos netos del trabajo iguales o inferiores a 14.852 euros: 7.302 euros anuales.
+b) Contribuyentes con rendimientos netos del trabajo superiores a 14.852 euros, pero iguales o inferiores a 17.673,52 euros: 7.302 euros menos el resultado de multiplicar por 1,75 la diferencia entre el rendimiento del trabajo y 14.852 euros anuales.
+c) Contribuyentes con rendimientos netos del trabajo comprendidos entre 17.673,52 y 19.747,5 euros: 2.364,34 euros menos el resultado de multiplicar por 1,14 la diferencia entre el rendimiento del trabajo y 17.673,52 euros anuales.
+A estos efectos, el rendimiento neto del trabajo será el resultante de minorar el rendimiento íntegro en los gastos previstos en las letras a), b), c), d) y e) del artículo 19.2 de esta Ley.
+Como consecuencia de la aplicación de la reducción prevista en este artículo, el saldo resultante no podrá ser negativo.
+Se modifica, con efectos desde el 1 de enero de 2024, por el art. 3.1 del Real Decreto-ley 4/2024, de 26 de junio. Ref. BOE-A-2024-12944
+Se modifica por el art. 59.1 de la Ley 31/2022, de 23 de diciembre. Ref. BOE-A-2022-22128
+Se modifica por el art. 59.1 de la Ley 6/2018, de 3 de julio. Ref. BOE-A-2018-9268
+Se modifica por el art. 1.12 de la Ley 26/2014, de 27 de noviembre. Ref. BOE-A-2014-12327.
+Se modifica, con efectos desde 1 de enero de 2011, por el art. 60.1 de la Ley 39/2010, de 22 de diciembre. Ref. BOE-A-2010-19703.
+Se modifica, con vigencia exclusiva para el ejercicio 2010 por el art. 66.1 del a Ley 26/2009, de 23 de diciembre. Ref. BOE-A-2009-20765
+Se modifica, con vigencia exclusiva para el ejercicio 2009 por el art. 65.1 de la Ley 2/2008, de 23 de diciembre. Ref. BOE-A-2008-20744
+Se modifica, con vigencia exclusiva para el ejercicio 2008 por el art. 65.1 de la Ley 51/2007, de 28 de diciembre. Ref. BOE-A-2007-22295
+Seleccionar redacción: Última actualización, publicada el 27/06/2024, en vigor a partir del 28/06/2024.
+Modificación publicada el 24/12/2022, en vigor a partir del 01/01/2023.
+Modificación publicada el 04/07/2018, en vigor a partir del 05/07/2018.
+Modificación publicada el 28/11/2014, en vigor a partir del 01/01/2015.
+Modificación publicada el 23/12/2010, en vigor a partir del 12/01/2011.
+Modificación publicada el 24/12/2009, en vigor a partir del 13/01/2010.
+Modificación publicada el 24/12/2008, en vigor a partir del 13/01/2009.
+Modificación publicada el 27/12/2007, en vigor a partir del 16/01/2008.
+Texto original, publicado el 29/11/2006, en vigor a partir del 01/01/2007.
+Subir
+
 Artículo 30. Normas para la determinación del rendimiento neto en estimación directa.
 1. La determinación de los rendimientos de actividades económicas se efectuará, con carácter general, por el método de estimación directa, admitiendo dos modalidades, la normal y la simplificada.
 La modalidad simplificada se aplicará para determinadas actividades económicas cuyo importe neto de cifra de negocios, para el conjunto de actividades desarrolladas por el contribuyente, no supere los 600.000 euros en el año inmediato anterior, salvo que renuncie a su aplicación, en los términos que reglamentariamente se establezcan.
@@ -20,12 +46,12 @@ Se modifica la regla 5ª del apartado 2, con efectos de 1 de enero de 2018, por 
 Se modifica la regla 5ª del apartado 2, con efectos de 1 de enero de 2016, por el art. 60.1 de la Ley 48/2015, de 29 de octubre. Ref. BOE-A-2015-11644.
 Se modifica por el art. 1.17 de la Ley 26/2014, de 27 de noviembre. Ref. BOE-A-2014-12327.
 Se añade el apartado 2.6, con efectos desde el 1 de enero de 2013, por el art. 3.1 de la Ley 16/2013, de 29 de octubre. Ref. BOE-A-2013-11331.
-Seleccionar redacción:
-Última actualización, publicada el 25/10/2017, en vigor a partir del 01/01/2018.
+Seleccionar redacción: Última actualización, publicada el 25/10/2017, en vigor a partir del 01/01/2018.
 Modificación publicada el 30/10/2015, en vigor a partir del 01/01/2016.
 Modificación publicada el 28/11/2014, en vigor a partir del 01/01/2015.
 Modificación publicada el 30/10/2013, en vigor a partir del 31/10/2013.
 Texto original, publicado el 29/11/2006, en vigor a partir del 01/01/2007.
+Subir
 
 Artículo 32. Reducciones.
 1. Los rendimientos netos con un período de generación superior a dos años, así como aquéllos que se califiquen reglamentariamente como obtenidos de forma notoriamente irregular en el tiempo, se reducirán en un 30 por ciento, cuando, en ambos casos, se imputen en un único período impositivo.
@@ -66,8 +92,7 @@ Se modifica el apartado 2.1, con efectos desde 1 de enero de 2011, por el art. 6
 Se modifica el apartado 2.1, con vigencia exclusiva para el ejercicio 2010 por el art. 66.2 de la Ley 26/2009, de 23 de diciembre. Ref. BOE-A-2009-20765
 Se modifica el apartado 2.1, con vigencia exclusiva para el ejercicio 2009 por el art. 65.2 de la Ley 2/2008, de 23 de diciembre. Ref. BOE-A-2008-20744
 Se modifica el apartado 2.1, con vigencia exclusiva para el ejercicio 2008 por el art. 65.2 de la Ley 51/2007, de 28 de diciembre. Ref. BOE-A-2007-22295
-Seleccionar redacción:
-Última actualización, publicada el 24/12/2022, en vigor a partir del 01/01/2023.
+Seleccionar redacción: Última actualización, publicada el 24/12/2022, en vigor a partir del 01/01/2023.
 Modificación publicada el 28/11/2014, en vigor a partir del 01/01/2015.
 Modificación publicada el 27/07/2013, en vigor a partir del 28/07/2013.
 Modificación publicada el 23/02/2013, en vigor a partir del 24/02/2013.
@@ -77,6 +102,28 @@ Modificación publicada el 24/12/2009, en vigor a partir del 13/01/2010.
 Modificación publicada el 24/12/2008, en vigor a partir del 13/01/2009.
 Modificación publicada el 27/12/2007, en vigor a partir del 16/01/2008.
 Texto original, publicado el 29/11/2006, en vigor a partir del 01/01/2007.
+Subir
+
+Artículo 60. Mínimo por discapacidad.
+El mínimo por discapacidad será la suma del mínimo por discapacidad del contribuyente y del mínimo por discapacidad de ascendientes y descendientes.
+1. El mínimo por discapacidad del contribuyente será de 3.000 euros anuales cuando sea una persona con discapacidad y 9.000 euros anuales cuando sea una persona con discapacidad y acredite un grado de discapacidad igual o superior al 65 por ciento.
+Dicho mínimo se aumentará, en concepto de gastos de asistencia, en 3.000 euros anuales cuando acredite necesitar ayuda de terceras personas o movilidad reducida, o un grado de discapacidad igual o superior al 65 por ciento.
+2. El mínimo por discapacidad de ascendientes o descendientes será de 3.000 euros anuales por cada uno de los descendientes o ascendientes que generen derecho a la aplicación del mínimo a que se refieren los artículos 58 y 59 de esta Ley, que sean personas con discapacidad, cualquiera que sea su edad. El mínimo será de 9.000 euros anuales, por cada uno de ellos que acrediten un grado de discapacidad igual o superior al 65 por ciento.
+Dicho mínimo se aumentará, en concepto de gastos de asistencia, en 3.000 euros anuales por cada ascendiente o descendiente que acredite necesitar ayuda de terceras personas o movilidad reducida, o un grado de discapacidad igual o superior al 65 por ciento.
+3. A los efectos de este Impuesto, tendrán la consideración de personas con discapacidad los contribuyentes que acrediten, en las condiciones que reglamentariamente se establezcan, un grado de discapacidad igual o superior al 33 por ciento.
+En particular, se considerará acreditado un grado de discapacidad igual o superior al 33 por ciento en el caso de los pensionistas de la Seguridad Social que tengan reconocida una pensión de incapacidad permanente total, absoluta o gran invalidez y en el caso de los pensionistas de clases pasivas que tengan reconocida una pensión de jubilación o retiro por incapacidad permanente para el servicio o inutilidad. Igualmente, se considerará acreditado un grado de discapacidad igual o superior al 65 por ciento, cuando se trate de personas cuya incapacidad sea declarada judicialmente, aunque no alcance dicho grado.
+Se modifica por el art. 1.36 de la Ley 26/2014, de 27 de noviembre. Ref. BOE-A-2014-12327.
+Se modifica, con efectos desde 1 de enero de 2011, por el art. 61.4 de la Ley 39/2010, de 22 de diciembre. Ref. BOE-A-2010-19703.
+Se modifica, con vigencia exclusiva para el ejercicio 2010 por el art. 67.4 de la Ley 26/2009, de 23 de diciembre. Ref. BOE-A-2009-20765
+Se modifica, con vigencia exclusiva para el ejercicio 2009 por el art. 66.4 de la Ley 2/2008, de 23 de diciembre. Ref. BOE-A-2008-20744
+Se modifica, con vigencia exclusiva para el ejercicio 2008 por el art. 66.4 de la Ley 51/2007, de 28 de diciembre. Ref. BOE-A-2007-22295
+Seleccionar redacción: Última actualización, publicada el 28/11/2014, en vigor a partir del 01/01/2015.
+Modificación publicada el 23/12/2010, en vigor a partir del 12/01/2011.
+Modificación publicada el 24/12/2009, en vigor a partir del 13/01/2010.
+Modificación publicada el 24/12/2008, en vigor a partir del 13/01/2009.
+Modificación publicada el 27/12/2007, en vigor a partir del 16/01/2008.
+Texto original, publicado el 29/11/2006, en vigor a partir del 01/01/2007.
+Subir
 
 Artículo 101. Importe de los pagos a cuenta.
 1. El porcentaje de retención e ingreso a cuenta sobre los rendimientos del trabajo derivados de relaciones laborales o estatutarias y de pensiones y haberes pasivos se determinará con arreglo al procedimiento que reglamentariamente se establezca.
@@ -160,8 +207,7 @@ La modificación del apartado 6 entra en vigor el 1 de enero de 2017, según est
 Se modifican los apartados 3 y 5.a), con efectos desde el 1 de septiembre de 2012, por el art. 25.2.1 y 2 del Real Decreto-ley 20/2012, de 13 de julio. Ref. BOE-A-2012-9364.
 Se modifica, con efectos desde el 1 de enero de 2010 por el art. 71 de la Ley 26/2009, de 23 de diciembre. Ref. BOE-A-2009-20765
 Se modifica el apartado 1 por el art. 1.3 del Real Decreto-Ley 2/2008, de 21 de abril. Ref. BOE-A-2008-6994
-Seleccionar redacción:
-Última actualización, publicada el 24/12/2022, en vigor a partir del 01/01/2023.
+Seleccionar redacción: Última actualización, publicada el 24/12/2022, en vigor a partir del 01/01/2023.
 Modificación publicada el 31/12/2020, en vigor a partir del 01/01/2021.
 Modificación publicada el 29/12/2018, en vigor a partir del 29/12/2018.
 Modificación publicada el 04/07/2018, en vigor a partir del 05/07/2018.
@@ -171,6 +217,7 @@ Modificación publicada el 14/07/2012, en vigor a partir del 15/07/2012.
 Modificación publicada el 24/12/2009, en vigor a partir del 13/01/2010.
 Modificación publicada el 22/04/2008, en vigor a partir del 22/04/2008.
 Texto original, publicado el 29/11/2006, en vigor a partir del 01/01/2007.
+Subir
 
 Disposición adicional sexagésima cuarta. Reducción en 2026 para el cálculo del rendimiento neto de las actividades económicas desarrolladas en Ceuta.
 1. El porcentaje de deducción para el conjunto de las provisiones deducibles y los gastos de difícil justificación a que se refiere el artículo 30 del Reglamento del Impuesto sobre la Renta de las Personas Físicas aplicable por los contribuyentes que determinen el rendimiento neto de sus actividades económicas por la modalidad simplificada del método de estimación directa correspondiente a las actividades económicas desarrolladas en Ceuta a cuyos rendimientos les resulte de aplicación la deducción prevista en el apartado 4 del artículo 68 de esta ley, será, durante el período impositivo 2026, del 10 por ciento.
@@ -178,3 +225,4 @@ Disposición adicional sexagésima cuarta. Reducción en 2026 para el cálculo d
 3. Estas reducciones se tendrán en cuenta para cuantificar el rendimiento neto a efectos de los pagos fraccionados correspondientes a 2026 cuyo plazo de presentación se inicie transcurrido un mes desde la entrada en vigor de Real Decreto-ley 22/2026, de 1 de septiembre, por el que se aprueban medidas urgentes de carácter social y económico de apoyo a la ciudad de Ceuta.
 Se añade por el art. 2 del Real Decreto-ley 22/2026, de 1 de septiembre. Ref. BOE-A-2026-18429
 Texto añadido, publicado el 02/09/2026, en vigor a partir del 03/09/2026.
+Subir

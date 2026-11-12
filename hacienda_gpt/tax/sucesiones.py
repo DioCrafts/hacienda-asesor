@@ -602,7 +602,7 @@ def _porcentaje_bonificacion(regla: ReglaBonificacion, magnitud: Decimal) -> Dec
     if regla.porcentaje is not None:
         return regla.porcentaje
     if regla.tramos_metodo == "por_tramo":
-        return next(tr.porcentaje for tr in regla.tramos if tr.hasta is None or magnitud <= tr.hasta)
+        return next((tr.porcentaje for tr in regla.tramos if tr.hasta is None or magnitud <= tr.hasta), ZERO)
     if magnitud <= 0:
         return regla.tramos[0].porcentaje
     ponderado, previo = ZERO, ZERO

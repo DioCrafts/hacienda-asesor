@@ -1,0 +1,252 @@
+# Extracto literal de https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764 descargado el 2026-11-12. Texto consolidado: «Última actualización publicada el 11/11/2026»
+# Solo un párrafo del preámbulo y los artículos que cita la comparación autónomo/sociedad de sociedades_2026.json; generado, no editar a mano.
+
+Preámbulo (párrafo sobre el Título VIII)
+El Título VIII regula la obtención de la cuota diferencial del impuesto, manteniendo una regulación similar a la actual con la única excepción de la desaparición de la deducción por doble imposición de dividendos, paralela a la supresión de la norma de integración en la base imponible referida con anterioridad.
+
+Artículo 17. Rendimientos íntegros del trabajo.
+1. Se considerarán rendimientos íntegros del trabajo todas las contraprestaciones o utilidades, cualquiera que sea su denominación o naturaleza, dinerarias o en especie, que deriven, directa o indirectamente, del trabajo personal o de la relación laboral o estatutaria y no tengan el carácter de rendimientos de actividades económicas.
+Se incluirán, en particular:
+a) Los sueldos y salarios.
+b) Las prestaciones por desempleo.
+c) Las remuneraciones en concepto de gastos de representación.
+d) Las dietas y asignaciones para gastos de viaje, excepto los de locomoción y los normales de manutención y estancia en establecimientos de hostelería con los límites que reglamentariamente se establezcan.
+e) Las contribuciones o aportaciones satisfechas por los promotores de planes de pensiones previstos en el texto refundido de la Ley de regulación de los planes y fondos de pensiones, aprobado por el Real Decreto Legislativo 1/2002, de 29 de noviembre, o por las empresas promotoras previstas en la Directiva 2003/41/CE del Parlamento Europeo y del Consejo, de 3 de junio de 2003, relativa a las actividades y la supervisión de fondos de pensiones de empleo.
+f) Las contribuciones o aportaciones satisfechas por los empresarios para hacer frente a los compromisos por pensiones en los términos previstos por la disposición adicional primera del texto refundido de la Ley de regulación de los planes y fondos de pensiones, y en su normativa de desarrollo, cuando aquellas sean imputadas a las personas a quienes se vinculen las prestaciones. Esta imputación fiscal tendrá carácter voluntario en los contratos de seguro colectivo distintos de los planes de previsión social empresarial, debiendo mantenerse la decisión que se adopte respecto del resto de primas que se satisfagan hasta la extinción del contrato de seguro. No obstante, la imputación fiscal tendrá carácter obligatorio en los contratos de seguro de riesgo. Cuando los contratos de seguro cubran conjuntamente las contingencias de jubilación y de fallecimiento o incapacidad, será obligatoria la imputación fiscal de la parte de las primas satisfechas que corresponda al capital en riesgo por fallecimiento o incapacidad, siempre que el importe de dicha parte exceda de 50 euros anuales. A estos efectos se considera capital en riesgo la diferencia entre el capital asegurado para fallecimiento o incapacidad y la provisión matemática.
+No obstante lo previsto en el párrafo anterior, en todo caso, la imputación fiscal de primas de los contratos de seguro antes señalados será obligatoria por el importe que exceda de 100.000 euros anuales por contribuyente y respecto del mismo empresario, salvo en los seguros colectivos contratados a consecuencia de despidos colectivos realizados de conformidad con lo dispuesto en el artículo 51 del Estatuto de los Trabajadores.
+2. En todo caso, tendrán la consideración de rendimientos del trabajo:
+a) Las siguientes prestaciones:
+1.ª Las pensiones y haberes pasivos percibidos de los regímenes públicos de la Seguridad Social y clases pasivas y demás prestaciones públicas por situaciones de incapacidad, jubilación, accidente, enfermedad, viudedad, o similares, sin perjuicio de lo dispuesto en el artículo 7 de esta Ley.
+2.ª Las prestaciones percibidas por los beneficiarios de mutualidades generales obligatorias de funcionarios, colegios de huérfanos y otras entidades similares.
+3.ª Las prestaciones percibidas por los beneficiarios de planes de pensiones y las percibidas de los planes de pensiones regulados en la Directiva (UE) 2016/2341 del Parlamento Europeo y del Consejo, de 14 de diciembre de 2016, relativa a las actividades y la supervisión de fondos de pensiones de empleo.
+Asimismo, las cantidades percibidas en los supuestos contemplados en el artículo 8.8 del texto refundido de la Ley de Regulación de los Planes y Fondos de Pensiones, aprobado por el Real Decreto Legislativo 1/2002, de 29 de noviembre, tendrán el mismo tratamiento fiscal que las prestaciones de los planes de pensiones.
+4.ª Las prestaciones percibidas por los beneficiarios de contratos de seguros concertados con mutualidades de previsión social, cuyas aportaciones hayan podido ser, al menos en parte, gasto deducible para la determinación del rendimiento neto de actividades económicas, u objeto de reducción en la base imponible del Impuesto.
+En el supuesto de prestaciones por jubilación e invalidez derivadas de dichos contratos, se integrarán en la base imponible en el importe de la cuantía percibida que exceda de las aportaciones que no hayan podido ser objeto de reducción o minoración en la base imponible del Impuesto, por incumplir los requisitos subjetivos previstos en el párrafo a) del apartado 2 del artículo 51 o en la disposición adicional novena de esta Ley.
+5.ª Las prestaciones percibidas por los beneficiarios de los planes de previsión social empresarial.
+Asimismo, las prestaciones por jubilación e invalidez percibidas por los beneficiarios de contratos de seguro colectivo, distintos de los planes de previsión social empresarial, que instrumenten los compromisos por pensiones asumidos por las empresas, en los términos previstos en la disposición adicional primera del texto refundido de la Ley de Regulación de los Planes y Fondos de Pensiones, y en su normativa de desarrollo, en la medida en que su cuantía exceda de las contribuciones imputadas fiscalmente y de las aportaciones directamente realizadas por el trabajador.
+6.ª Las prestaciones percibidas por los beneficiarios de los planes de previsión asegurados.
+7.ª Las prestaciones percibidas por los beneficiarios de los seguros de dependencia conforme a lo dispuesto en la Ley de promoción de la autonomía personal y atención a las personas en situación de dependencia.
+b) Las cantidades que se abonen, por razón de su cargo, a los diputados españoles en el Parlamento Europeo, a los diputados y senadores de las Cortes Generales, a los miembros de las asambleas legislativas autonómicas, concejales de ayuntamiento y miembros de las diputaciones provinciales, cabildos insulares u otras entidades locales, con exclusión, en todo caso, de la parte de aquellas que dichas instituciones asignen para gastos de viaje y desplazamiento.
+c) Los rendimientos derivados de impartir cursos, conferencias, coloquios, seminarios y similares.
+d) Los rendimientos derivados de la elaboración de obras literarias, artísticas o científicas, siempre que se ceda el derecho a su explotación.
+e) Las retribuciones de los administradores y miembros de los Consejos de Administración, de las Juntas que hagan sus veces y demás miembros de otros órganos representativos.
+f) Las pensiones compensatorias recibidas del cónyuge y las anualidades por alimentos, sin perjuicio de lo dispuesto en el artículo 7 de esta Ley.
+g) Los derechos especiales de contenido económico que se reserven los fundadores o promotores de una sociedad como remuneración de servicios personales.
+h) Las becas, sin perjuicio de lo dispuesto en el artículo 7 de esta Ley.
+i) Las retribuciones percibidas por quienes colaboren en actividades humanitarias o de asistencia social promovidas por entidades sin ánimo de lucro.
+j) Las retribuciones derivadas de relaciones laborales de carácter especial.
+k) Las aportaciones realizadas al patrimonio protegido de las personas con discapacidad en los términos previstos en la disposición adicional decimoctava de esta Ley.
+3. No obstante, cuando los rendimientos a que se refieren los párrafos c) y d) del apartado anterior y los derivados de la relación laboral especial de los artistas en espectáculos públicos y de la relación laboral especial de las personas que intervengan en operaciones mercantiles por cuenta de uno o más empresarios sin asumir el riesgo y ventura de aquéllas supongan la ordenación por cuenta propia de medios de producción y de recursos humanos o de uno de ambos, con la finalidad de intervenir en la producción o distribución de bienes o servicios, se calificarán como rendimientos de actividades económicas.
+Se modifica el epígrafe 3º del apartado 2.a) por la disposición final 4 del Real Decreto-ley 3/2020, de 4 de febrero. Ref. BOE-A-2020-1651
+Se modifica la letra f) del apartado 1 por el art. 1.9 de la Ley 26/2014, de 27 de noviembre. Ref. BOE-A-2014-12327.
+Se modifica el apartado 1.f), con efectos desde el 1 de enero de 2013, por la disposición final 10.2 de la Ley 16/2012, de 27 de diciembre. Ref. BOE-A-2012-15650.
+Seleccionar redacción: Última actualización, publicada el 05/02/2020, en vigor a partir del 06/02/2020.
+Modificación publicada el 28/11/2014, en vigor a partir del 01/01/2015.
+Modificación publicada el 28/12/2012, en vigor a partir del 28/12/2012.
+Texto original, publicado el 29/11/2006, en vigor a partir del 01/01/2007.
+
+Artículo 19. Rendimiento neto del trabajo.
+1. El rendimiento neto del trabajo será el resultado de disminuir el rendimiento íntegro en el importe de los gastos deducibles.
+2. Tendrán la consideración de gastos deducibles exclusivamente los siguientes:
+a) Las cotizaciones a la Seguridad Social o a mutualidades generales obligatorias de funcionarios.
+b) Las detracciones por derechos pasivos.
+c) Las cotizaciones a los colegios de huérfanos o entidades similares.
+d) Las cuotas satisfechas a sindicatos y colegios profesionales, cuando la colegiación tenga carácter obligatorio, en la parte que corresponda a los fines esenciales de estas instituciones, y con el límite que reglamentariamente se establezca.
+e) Los gastos de defensa jurídica derivados directamente de litigios suscitados en la relación del contribuyente con la persona de la que percibe los rendimientos, con el límite de 300 euros anuales.
+f) En concepto de otros gastos distintos de los anteriores, 2.000 euros anuales.
+Tratándose de contribuyentes desempleados inscritos en la oficina de empleo que acepten un puesto de trabajo que exija el traslado de su residencia habitual a un nuevo municipio, en las condiciones que reglamentariamente se determinen, se incrementará dicha cuantía, en el periodo impositivo en el que se produzca el cambio de residencia y en el siguiente, en 2.000 euros anuales adicionales.
+Tratándose de personas con discapacidad que obtengan rendimientos del trabajo como trabajadores activos, se incrementará dicha cuantía en 3.500 euros anuales. Dicho incremento será de 7.750 euros anuales, para las personas con discapacidad que siendo trabajadores activos acrediten necesitar ayuda de terceras personas o movilidad reducida, o un grado de discapacidad igual o superior al 65 por ciento.
+Los gastos deducibles a que se refiere esta letra f) tendrán como límite el rendimiento íntegro del trabajo una vez minorado por el resto de gastos deducibles previstos en este apartado.
+Se modifica el apartado 2 por el art. 1.11 de la Ley 26/2014, de 27 de noviembre. Ref. BOE-A-2014-12327.
+Seleccionar redacción: Última actualización, publicada el 28/11/2014, en vigor a partir del 01/01/2015.
+Texto original, publicado el 29/11/2006, en vigor a partir del 01/01/2007.
+
+Artículo 25. Rendimientos íntegros del capital mobiliario.
+Tendrán la consideración de rendimientos íntegros del capital mobiliario los siguientes:
+1. Rendimientos obtenidos por la participación en los fondos propios de cualquier tipo de entidad.
+Quedan incluidos dentro de esta categoría los siguientes rendimientos, dinerarios o en especie:
+a) Los dividendos, primas de asistencia a juntas y participaciones en los beneficios de cualquier tipo de entidad.
+b) Los rendimientos procedentes de cualquier clase de activos, excepto la entrega de acciones liberadas que, estatutariamente o por decisión de los órganos sociales, faculten para participar en los beneficios, ventas, operaciones, ingresos o conceptos análogos de una entidad por causa distinta de la remuneración del trabajo personal.
+c) Los rendimientos que se deriven de la constitución o cesión de derechos o facultades de uso o disfrute, cualquiera que sea su denominación o naturaleza, sobre los valores o participaciones que representen la participación en los fondos propios de la entidad.
+d) Cualquier otra utilidad, distinta de las anteriores, procedente de una entidad por la condición de socio, accionista, asociado o partícipe.
+e) La distribución de la prima de emisión de acciones o participaciones. El importe obtenido minorará, hasta su anulación, el valor de adquisición de las acciones o participaciones afectadas y el exceso que pudiera resultar tributará como rendimiento del capital mobiliario.
+No obstante lo dispuesto en el párrafo anterior, en el caso de distribución de la prima de emisión correspondiente a valores no admitidos a negociación en alguno de los mercados regulados de valores definidos en la Directiva 2004/39/CE del Parlamento Europeo y del Consejo, de 21 de abril de 2004, relativa a los mercados de instrumentos financieros, y representativos de la participación en fondos propios de sociedades o entidades, cuando la diferencia entre el valor de los fondos propios de las acciones o participaciones correspondiente al último ejercicio cerrado con anterioridad a la fecha de la distribución de la prima y su valor de adquisición sea positiva, el importe obtenido o el valor normal de mercado de los bienes o derechos recibidos se considerará rendimiento del capital mobiliario con el límite de la citada diferencia positiva.
+A estos efectos, el valor de los fondos propios a que se refiere el párrafo anterior se minorará en el importe de los beneficios repartidos con anterioridad a la fecha de la distribución de la prima de emisión, procedentes de reservas incluidas en los citados fondos propios, así como en el importe de las reservas legalmente indisponibles incluidas en dichos fondos propios que se hubieran generado con posterioridad a la adquisición de las acciones o participaciones.
+El exceso sobre el citado límite minorará el valor de adquisición de las acciones o participaciones conforme a lo dispuesto en el primer párrafo de esta letra e).
+Cuando por aplicación de lo dispuesto en el párrafo segundo de esta letra e) la distribución de la prima de emisión hubiera determinado el cómputo como rendimiento del capital mobiliario de la totalidad o parte del importe obtenido o del valor normal de mercado de los bienes o derechos recibidos, y con posterioridad el contribuyente obtuviera dividendos o participaciones en beneficios conforme al artículo 25.1 a) de esta Ley procedentes de la misma entidad en relación con acciones o participaciones que hubieran permanecido en su patrimonio desde la distribución de la prima de emisión, el importe obtenido de los dividendos o participaciones en beneficios minorará, con el límite de los rendimientos del capital mobiliario previamente computados que correspondan a las citadas acciones o participaciones, el valor de adquisición de las mismas conforme a lo dispuesto en el primer párrafo de esta letra e).
+2. Rendimientos obtenidos por la cesión a terceros de capitales propios.
+Tienen esta consideración las contraprestaciones de todo tipo, cualquiera que sea su denominación o naturaleza, dinerarias o en especie, como los intereses y cualquier otra forma de retribución pactada como remuneración por tal cesión, así como las derivadas de la transmisión, reembolso, amortización, canje o conversión de cualquier clase de activos representativos de la captación y utilización de capitales ajenos.
+a) En particular, tendrán esta consideración:
+1.º Los rendimientos procedentes de cualquier instrumento de giro, incluso los originados por operaciones comerciales, a partir del momento en que se endose o transmita, salvo que el endoso o cesión se haga como pago de un crédito de proveedores o suministradores.
+2.º La contraprestación, cualquiera que sea su denominación o naturaleza, derivada de cuentas en toda clase de instituciones financieras, incluyendo las basadas en operaciones sobre activos financieros.
+3.º Las rentas derivadas de operaciones de cesión temporal de activos financieros con pacto de recompra.
+4.º Las rentas satisfechas por una entidad financiera, como consecuencia de la transmisión, cesión o transferencia, total o parcial, de un crédito titularidad de aquélla.
+b) En el caso de transmisión, reembolso, amortización, canje o conversión de valores, se computará como rendimiento la diferencia entre el valor de transmisión, reembolso, amortización, canje o conversión de los mismos y su valor de adquisición o suscripción.
+Como valor de canje o conversión se tomará el que corresponda a los valores que se reciban.
+Los gastos accesorios de adquisición y enajenación serán computados para la cuantificación del rendimiento, en tanto se justifiquen adecuadamente.
+Los rendimientos negativos derivados de transmisiones de activos financieros, cuando el contribuyente hubiera adquirido activos financieros homogéneos dentro de los dos meses anteriores o posteriores a dichas transmisiones, se integrarán a medida que se transmitan los activos financieros que permanezcan en el patrimonio del contribuyente.
+3. Rendimientos procedentes de operaciones de capitalización, de contratos de seguro de vida o invalidez y de rentas derivadas de la imposición de capitales.
+a) Rendimientos dinerarios o en especie procedentes de operaciones de capitalización y de contratos de seguro de vida o invalidez, excepto cuando, con arreglo a lo previsto en el artículo 17.2.a) de esta Ley, deban tributar como rendimientos del trabajo.
+En particular, se aplicarán a estos rendimientos de capital mobiliario las siguientes reglas:
+1.º) Cuando se perciba un capital diferido, el rendimiento del capital mobiliario vendrá determinado por la diferencia entre el capital percibido y el importe de las primas satisfechas.
+No obstante lo anterior, si el contrato de seguro combina la contingencia de supervivencia con las de fallecimiento o incapacidad y el capital percibido corresponde a la contingencia de supervivencia, podrá detraerse también la parte de las primas satisfechas que corresponda al capital en riesgo por fallecimiento o incapacidad que se haya consumido hasta el momento, siempre que durante toda la vigencia del contrato, el capital en riesgo sea igual o inferior al cinco por ciento de la provisión matemática. A estos efectos se considera capital en riesgo la diferencia entre el capital asegurado para fallecimiento o incapacidad y la provisión matemática.
+2.º) En el caso de rentas vitalicias inmediatas, que no hayan sido adquiridas por herencia, legado o cualquier otro título sucesorio, se considerará rendimiento de capital mobiliario el resultado de aplicar a cada anualidad los porcentajes siguientes:
+40 por ciento, cuando el perceptor tenga menos de 40 años.
+35 por ciento, cuando el perceptor tenga entre 40 y 49 años.
+28 por ciento, cuando el perceptor tenga entre 50 y 59 años.
+24 por ciento, cuando el perceptor tenga entre 60 y 65 años.
+20 por ciento, cuando el perceptor tenga entre 66 y 69 años.
+8 por ciento, cuando el perceptor tenga más de 70 años.
+Estos porcentajes serán los correspondientes a la edad del rentista en el momento de la constitución de la renta y permanecerán constantes durante toda su vigencia.
+3.º) Si se trata de rentas temporales inmediatas, que no hayan sido adquiridas por herencia, legado o cualquier otro título sucesorio, se considerará rendimiento del capital mobiliario el resultado de aplicar a cada anualidad los porcentajes siguientes:
+12 por ciento, cuando la renta tenga una duración inferior o igual a 5 años.
+16 por ciento, cuando la renta tenga una duración superior a 5 e inferior o igual a 10 años.
+20 por ciento, cuando la renta tenga una duración superior a 10 e inferior o igual a 15 años.
+25 por ciento, cuando la renta tenga una duración superior a 15 años.
+4.º) Cuando se perciban rentas diferidas, vitalicias o temporales, que no hayan sido adquiridas por herencia, legado o cualquier otro título sucesorio, se considerará rendimiento del capital mobiliario el resultado de aplicar a cada anualidad el porcentaje que corresponda de los previstos en los números 2.º) y 3.º) anteriores, incrementado en la rentabilidad obtenida hasta la constitución de la renta, en la forma que reglamentariamente se determine. Cuando las rentas hayan sido adquiridas por donación o cualquier otro negocio jurídico a título gratuito e inter vivos, el rendimiento del capital mobiliario será, exclusivamente, el resultado de aplicar a cada anualidad el porcentaje que corresponda de los previstos en los números 2.º) y 3.º) anteriores.
+No obstante lo previsto en el párrafo anterior, en los términos que reglamentariamente se establezcan, las prestaciones por jubilación e invalidez percibidas en forma de renta por los beneficiarios de contratos de seguro de vida o invalidez, distintos de los establecidos en el artículo 17.2. a), y en los que no haya existido ningún tipo de movilización de las provisiones del contrato de seguro durante su vigencia, se integrarán en la base imponible del impuesto, en concepto de rendimientos del capital mobiliario, a partir del momento en que su cuantía exceda de las primas que hayan sido satisfechas en virtud del contrato o, en el caso de que la renta haya sido adquirida por donación o cualquier otro negocio jurídico a título gratuito e inter vivos, cuando excedan del valor actual actuarial de las rentas en el momento de la constitución de éstas. En estos casos no serán de aplicación los porcentajes previstos en los números 2.º) y 3.º) anteriores. Para la aplicación de este régimen será necesario que el contrato de seguro se haya concertado, al menos, con dos años de anterioridad a la fecha de jubilación.
+5.º) En el caso de extinción de las rentas temporales o vitalicias, que no hayan sido adquiridas por herencia, legado o cualquier otro título sucesorio, cuando la extinción de la renta tenga su origen en el ejercicio del derecho de rescate, el rendimiento del capital mobiliario será el resultado de sumar al importe del rescate las rentas satisfechas hasta dicho momento y de restar las primas satisfechas y las cuantías que, de acuerdo con los párrafos anteriores de este apartado, hayan tributado como rendimientos del capital mobiliario. Cuando las rentas hayan sido adquiridas por donación o cualquier otro negocio jurídico a título gratuito e inter vivos, se restará, adicionalmente, la rentabilidad acumulada hasta la constitución de las rentas.
+6.°) Los seguros de vida o invalidez que prevean prestaciones en forma de capital y dicho capital se destine a la constitución de rentas vitalicias o temporales, siempre que esta posibilidad de conversión se recoja en el contrato de seguro, tributarán de acuerdo con lo establecido en el primer párrafo del número 4.° anterior. En ningún caso, resultará de aplicación lo dispuesto en este número cuando el capital se ponga a disposición del contribuyente por cualquier medio.
+b) Las rentas vitalicias u otras temporales que tengan por causa la imposición de capitales, salvo cuando hayan sido adquiridas por herencia, legado o cualquier otro título sucesorio. Se considerará rendimiento del capital mobiliario el resultado de aplicar a cada anualidad los porcentajes previstos por los números 2.º) y 3.º) de la letra a) de este apartado para las rentas, vitalicias o temporales, inmediatas derivadas de contratos de seguro de vida.
+4. Otros rendimientos del capital mobiliario.
+Quedan incluidos en este apartado, entre otros, los siguientes rendimientos, dinerarios o en especie:
+a) Los procedentes de la propiedad intelectual cuando el contribuyente no sea el autor y los procedentes de la propiedad industrial que no se encuentre afecta a actividades económicas realizadas por el contribuyente.
+b) Los procedentes de la prestación de asistencia técnica, salvo que dicha prestación tenga lugar en el ámbito de una actividad económica.
+c) Los procedentes del arrendamiento de bienes muebles, negocios o minas, así como los procedentes del subarrendamiento percibidos por el subarrendador, que no constituyan actividades económicas.
+d) Los procedentes de la cesión del derecho a la explotación de la imagen o del consentimiento o autorización para su utilización, salvo que dicha cesión tenga lugar en el ámbito de una actividad económica.
+5. No tendrá la consideración de rendimiento de capital mobiliario, sin perjuicio de su tributación por el concepto que corresponda, la contraprestación obtenida por el contribuyente por el aplazamiento o fraccionamiento del precio de las operaciones realizadas en desarrollo de su actividad económica habitual.
+6. En relación con los activos representativos de la captación y utilización de capitales ajenos a que se refiere el apartado 2 de este artículo, se estimará que no existe rendimiento del capital mobiliario en las transmisiones lucrativas de los mismos, por causa de muerte del contribuyente, ni se computará el rendimiento del capital mobiliario negativo derivado de la transmisión lucrativa de aquellos por actos "inter vivos".
+Se modifica la letra e) del apartado 1, el apartado 3.a).1 y el apartado 6 por el art. 1.14 de la Ley 26/2014, de 27 de noviembre. Ref. BOE-A-2014-12327.
+Redactado el apartado 3.2, párrafo 6 conforme a la corrección de errores publicada en BOE núm. 57, de 7 de marzo de 2007. Ref. BOE-A-2007-4731
+Seleccionar redacción: Última actualización, publicada el 28/11/2014, en vigor a partir del 01/01/2015.
+Texto original, publicado el 29/11/2006, en vigor a partir del 01/01/2007.
+
+Artículo 27. Rendimientos íntegros de actividades económicas.
+1. Se considerarán rendimientos íntegros de actividades económicas aquellos que, procediendo del trabajo personal y del capital conjuntamente, o de uno solo de estos factores, supongan por parte del contribuyente la ordenación por cuenta propia de medios de producción y de recursos humanos o de uno de ambos, con la finalidad de intervenir en la producción o distribución de bienes o servicios.
+En particular, tienen esta consideración los rendimientos de las actividades extractivas, de fabricación, comercio o prestación de servicios, incluidas las de artesanía, agrícolas, forestales, ganaderas, pesqueras, de construcción, mineras, y el ejercicio de profesiones liberales, artísticas y deportivas.
+No obstante, tratándose de rendimientos obtenidos por el contribuyente procedentes de una entidad en cuyo capital participe derivados de la realización de actividades incluidas en la Sección Segunda de las Tarifas del Impuesto sobre Actividades Económicas, aprobadas por el Real Decreto Legislativo 1175/1990, de 28 de septiembre, tendrán esta consideración cuando el contribuyente esté incluido, a tal efecto, en el régimen especial de la Seguridad Social de los trabajadores por cuenta propia o autónomos, o en una mutualidad de previsión social que actúe como alternativa al citado régimen especial conforme a lo previsto en la disposición adicional decimoquinta de la Ley 30/1995, de 8 de noviembre, de ordenación y supervisión de los seguros privados.
+2. A efectos de lo dispuesto en el apartado anterior, se entenderá que el arrendamiento de inmuebles se realiza como actividad económica, únicamente cuando para la ordenación de esta se utilice, al menos, una persona empleada con contrato laboral y a jornada completa.
+Se modifica por el art. 1.16 de la Ley 26/2014, de 27 de noviembre. Ref. BOE-A-2014-12327.
+Seleccionar redacción: Última actualización, publicada el 28/11/2014, en vigor a partir del 01/01/2015.
+Texto original, publicado el 29/11/2006, en vigor a partir del 01/01/2007.
+
+Artículo 28. Reglas generales de cálculo del rendimiento neto.
+1. El rendimiento neto de las actividades económicas se determinará según las normas del Impuesto sobre Sociedades, sin perjuicio de las reglas especiales contenidas en este artículo, en el artículo 30 de esta Ley para la estimación directa, y en el artículo 31 de esta Ley para la estimación objetiva.
+A efectos de lo dispuesto en el artículo 108 del texto refundido de la Ley del Impuesto sobre Sociedades, para determinar el importe neto de la cifra de negocios se tendrá en cuenta el conjunto de actividades económicas ejercidas por el contribuyente.
+2. Para la determinación del rendimiento neto de las actividades económicas no se incluirán las ganancias o pérdidas patrimoniales derivadas de los elementos patrimoniales afectos a las mismas, que se cuantificarán conforme a lo previsto en la sección 4.ª de este capítulo.
+3. La afectación de elementos patrimoniales o la desafectación de activos fijos por el contribuyente no constituirá alteración patrimonial, siempre que los bienes o derechos continúen formando parte de su patrimonio.
+Se entenderá que no ha existido afectación si se llevase a cabo la enajenación de los bienes o derechos antes de transcurridos tres años desde ésta.
+4. Se atenderá al valor normal en el mercado de los bienes o servicios objeto de la actividad, que el contribuyente ceda o preste a terceros de forma gratuita o destine al uso o consumo propio.
+Asimismo, cuando medie contraprestación y ésta sea notoriamente inferior al valor normal en el mercado de los bienes y servicios, se atenderá a este último.
+
+Artículo 41. Operaciones vinculadas.
+La valoración de las operaciones entre personas o entidades vinculadas se realizará por su valor normal de mercado, en los términos previstos en el artículo 16 del texto refundido de la Ley del Impuesto sobre Sociedades.
+
+Artículo 46. Renta del ahorro.
+Constituyen la renta del ahorro:
+a) Los rendimientos del capital mobiliario previstos en los apartados 1, 2 y 3 del artículo 25 de esta Ley.
+No obstante, formarán parte de la renta general los rendimientos del capital mobiliario previstos en el apartado 2 del artículo 25 de esta Ley correspondientes al exceso del importe de los capitales propios cedidos a una entidad vinculada respecto del resultado de multiplicar por tres los fondos propios, en la parte que corresponda a la participación del contribuyente, de esta última.
+A efectos de computar dicho exceso, se tendrá en consideración el importe de los fondos propios de la entidad vinculada reflejados en el balance correspondiente al último ejercicio cerrado con anterioridad a la fecha de devengo del Impuesto y el porcentaje de participación del contribuyente existente en esta fecha.
+En los supuestos en los que la vinculación no se defina en función de la relación socios o partícipes-entidad, el porcentaje de participación a considerar será el 25 por ciento.
+b) Las ganancias y pérdidas patrimoniales que se pongan de manifiesto con ocasión de transmisiones de elementos patrimoniales.
+Se modifica por el art. 1.27 de la Ley 26/2014, de 27 de noviembre. Ref. BOE-A-2014-12327.
+Se modifica la letra b), con efectos desde el 1 de enero de 2013, por el art. 3.1 de la Ley 16/2012, de 27 de diciembre. Ref. BOE-A-2012-15650.
+Se modifica por la disposición final 7 de la Ley 11/2009, de 26 de octubre. Ref. BOE-A-2009-17000
+Esta modificación tiene efectos desde el 1 de enero de 2009, según establece la disposición final 12.d)
+Seleccionar redacción: Última actualización, publicada el 28/11/2014, en vigor a partir del 01/01/2015.
+Modificación publicada el 28/12/2012, en vigor a partir del 28/12/2012.
+Modificación publicada el 27/10/2009, en vigor a partir del 28/10/2009.
+Texto original, publicado el 29/11/2006, en vigor a partir del 01/01/2007.
+
+Artículo 101. Importe de los pagos a cuenta.
+1. El porcentaje de retención e ingreso a cuenta sobre los rendimientos del trabajo derivados de relaciones laborales o estatutarias y de pensiones y haberes pasivos se determinará con arreglo al procedimiento que reglamentariamente se establezca.
+Para determinar el porcentaje de retención o ingreso a cuenta se podrán tener en consideración las circunstancias personales y familiares y, en su caso, las rentas del cónyuge y las reducciones y deducciones, así como las retribuciones variables previsibles, en los términos que reglamentariamente se establezcan, y se aplicará la siguiente escala:
+Base para calcular el tipo de retención
+–
+Hasta euros
+Cuota de retención
+–
+Euros
+Resto base para calcular el tipo de retención
+–
+Hasta euros
+Tipo aplicable
+–
+Porcentaje
+0,00
+0,00
+12.450,00
+19,00
+12.450,00
+2.365,50
+7.750,00
+24,00
+20.200,00
+4.225,50
+15.000,00
+30,00
+35.200,00
+8.725,50
+24.800,00
+37,00
+60.000,00
+17.901,50
+240.000,00
+45,00
+300.000,00
+125.901,50
+En adelante
+47,00
+A estos efectos, se presumirán retribuciones variables previsibles, como mínimo, las obtenidas en el año anterior, salvo que concurran circunstancias que permitan acreditar de manera objetiva un importe inferior.
+Tratándose de atrasos que corresponda imputar a ejercicios anteriores, el porcentaje de retención e ingreso a cuenta será del 15 por ciento, salvo que resulte de aplicación los porcentajes previstos en los apartados 2 y 3 de este artículo.
+Los porcentajes de retención e ingreso a cuenta previstos en este apartado se reducirán en un 60 por ciento cuando se trate de rendimientos obtenidos en Ceuta o Melilla que tengan derecho a la deducción en la cuota prevista en el artículo 68.4 de esta Ley.
+2. El porcentaje de retención e ingreso a cuenta sobre los rendimientos del trabajo que se perciban por la condición de administradores y miembros de los consejos de administración, de las juntas que hagan sus veces, y demás miembros de otros órganos representativos, será del 35 por ciento.
+No obstante, en los términos que reglamentariamente se establezcan, cuando los rendimientos procedan de entidades con un importe neto de la cifra de negocios inferior a 100.000 euros, el porcentaje de retención e ingreso a cuenta será del 19 por ciento.
+Los porcentajes de retención e ingreso a cuenta previstos en este apartado se reducirán en un 60 por ciento cuando se trate de rendimientos obtenidos en Ceuta o Melilla que tengan derecho a la deducción en la cuota prevista en el artículo 68.4 de esta Ley.
+3. El porcentaje de retención e ingreso a cuenta sobre los rendimientos del trabajo derivados de impartir cursos, conferencias, coloquios, seminarios y similares, o derivados de la elaboración de obras literarias, artísticas o científicas, siempre que se ceda el derecho a su explotación, será del 15 por ciento.
+No obstante lo anterior, el porcentaje de retención sobre los rendimientos del trabajo derivados de la elaboración de obras literarias, artísticas o científicas a que se refiere el párrafo anterior será del 7 por ciento cuando el volumen de tales rendimientos íntegros correspondiente al ejercicio inmediato anterior sea inferior a 15.000 euros y represente más del 75 por ciento de la suma de los rendimientos íntegros de actividades económicas y del trabajo obtenidos por el contribuyente en dicho ejercicio. Para la aplicación de este tipo de retención, los contribuyentes deberán comunicar al pagador de los rendimientos la concurrencia de dichas circunstancias, quedando obligado el pagador a conservar la comunicación debidamente firmada.
+Estos porcentajes se reducirán en un 60 por ciento cuando se trate de rendimientos del trabajo obtenidos en Ceuta y Melilla que tengan derecho a la deducción en la cuota prevista en el artículo 68.4 de esta ley.
+4. El porcentaje de retención e ingreso a cuenta sobre los rendimientos del capital mobiliario será del 19 por ciento. Dicho porcentaje será el 15 por ciento para los rendimientos del capital mobiliario procedentes de la propiedad intelectual cuando el contribuyente no sea el autor.
+Este porcentaje se reducirá en un 60 por ciento cuando se trate de rendimientos que tengan derecho a la deducción en la cuota prevista en el artículo 68.4 de esta Ley procedentes de las sociedades a que se refiere la letra h) del número 3.º del citado artículo.
+5. Los porcentajes de las retenciones e ingresos a cuenta sobre los rendimientos derivados de actividades económicas serán:
+a) El 15 por ciento, en el caso de los rendimientos de actividades profesionales establecidos en vía reglamentaria.
+No obstante, se aplicará el porcentaje del 7 por ciento sobre los rendimientos de actividades profesionales que se establezcan reglamentariamente.
+Estos porcentajes se reducirán en un 60 por ciento cuando los rendimientos tengan derecho a la deducción en la cuota prevista en el artículo 68.4 de esta Ley.
+b) El 2 por ciento en el caso de rendimientos procedentes de actividades agrícolas o ganaderas, salvo en el caso de las actividades ganaderas de engorde de porcino y avicultura, en que se aplicará el 1 por ciento.
+c) El 2 por ciento en el caso de rendimientos procedentes de actividades forestales.
+d) El 1 por ciento para otras actividades empresariales que determinen su rendimiento neto por el método de estimación objetiva, en los supuestos y condiciones que reglamentariamente se establezcan.
+6. El porcentaje de pagos a cuenta sobre las ganancias patrimoniales derivadas de las transmisiones o reembolsos de acciones y participaciones de instituciones de inversión colectiva será del 19 por ciento.
+No se aplicará retención cuando no proceda computar la ganancia patrimonial, de acuerdo con lo previsto en el artículo 94.1.a) de esta Ley.
+El porcentaje de retención e ingreso a cuenta sobre las ganancias patrimoniales derivadas de los aprovechamientos forestales de los vecinos en montes públicos que reglamentariamente se establezcan, será del 19 por 100.
+El porcentaje de retención e ingreso a cuenta sobre las ganancias patrimoniales derivadas de la transmisión de derechos de suscripción será el 19 por ciento.
+7. El porcentaje de retención e ingreso a cuenta sobre los premios que se entreguen como consecuencia de la participación en juegos, concursos, rifas o combinaciones aleatorias, estén o no vinculadas a la oferta, promoción o venta de determinados bienes, productos o servicios, será del 19 por ciento.
+8. El porcentaje de retención e ingreso a cuenta sobre los rendimientos procedentes del arrendamiento o subarrendamiento de bienes inmuebles urbanos, cualquiera que sea su calificación, será del 19 por ciento.
+Este porcentaje se reducirá en un 60 por ciento cuando el inmueble esté situado en Ceuta o Melilla en los términos previstos en el artículo 68.4 de esta Ley.
+9. El porcentaje de retención e ingreso a cuenta sobre los rendimientos procedentes de la propiedad industrial, de la prestación de asistencia técnica, del arrendamiento de bienes muebles, negocios o minas y del subarrendamiento sobre los bienes anteriores, cualquiera que sea su calificación, será del 19 por ciento.
+El porcentaje de retención e ingreso a cuenta sobre los rendimientos procedentes de la propiedad intelectual, cualquiera que sea su calificación, será del 15 por ciento¸ salvo cuando resulte de aplicación el tipo del 7 por ciento previsto en los apartados 3 y 5 de este artículo. Igualmente, dicho porcentaje será del 7 por ciento cuando se trate de anticipos a cuenta derivados de la cesión de la explotación de derechos de autor que se vayan a devengar a lo largo de varios años.
+10. El porcentaje de retención e ingreso a cuenta sobre los rendimientos procedentes de la cesión del derecho a la explotación del derecho de imagen, cualquiera que sea su calificación, será el 24 por ciento. El porcentaje de ingreso a cuenta en el supuesto previsto en el artículo 92.8 de esta Ley será del 19 por ciento.
+11. Los porcentajes de los pagos fraccionados que deban practicar los contribuyentes que ejerzan actividades económicas serán los siguientes:
+a) El 20 por ciento, cuando se trate de actividades que determinen el rendimiento neto por el método de estimación directa, en cualquiera de sus modalidades.
+b) El 4 por ciento, cuando se trate de actividades que determinen el rendimiento neto por el método de estimación objetiva. El porcentaje será el 3 por ciento cuando se trate de actividades que tengan sólo una persona asalariada, y el 2 por ciento cuando no se disponga de personal asalariado.
+c) El 2 por ciento, cuando se trate de actividades agrícolas, ganaderas, forestales o pesqueras, cualquiera que fuese el método de determinación del rendimiento neto.
+Estos porcentajes se reducirán en un 60 por ciento para las actividades económicas que tengan derecho a la deducción en la cuota prevista en el artículo 68.4 de esta Ley.
+Se modifican los apartados 3 y 9 por el art. 65 de la Ley 31/2022, de 23 de diciembre. Ref. BOE-A-2022-22128
+Se modifica el apartado 1, con efectos desde 1 de enero de 2021, por el art. 60 de la Ley 11/2020, de 30 de diciembre. Ref. BOE-A-2020-17339
+Se modifica el apartado 4, con efectos desde el 1 de enero de 2019, por el art. 1 del Real Decreto-ley 26/2018, de 28 de diciembre. Ref. BOE-A-2018-17990
+Se modifican los apartados 1 a 5, 8 y 11 por el art. 64 de la Ley 6/2018, de 3 de julio. Ref. BOE-A-2018-9268
+Se modifican los apartados 3 y 5.a), con efectos desde el 1 de enero de 2015, por el art. 1.3 del Real Decreto-ley 9/2015, de 10 de julio. Ref. BOE-A-2015-7765.
+Se modifican los apartados 1 a 6 por el art. 1.65 de la Ley 26/2014, de 27 de noviembre. Ref. BOE-A-2014-12327.
+La modificación del apartado 6 entra en vigor el 1 de enero de 2017, según establece la disposición final 6.
+Se modifican los apartados 3 y 5.a), con efectos desde el 1 de septiembre de 2012, por el art. 25.2.1 y 2 del Real Decreto-ley 20/2012, de 13 de julio. Ref. BOE-A-2012-9364.
+Se modifica, con efectos desde el 1 de enero de 2010 por el art. 71 de la Ley 26/2009, de 23 de diciembre. Ref. BOE-A-2009-20765
+Se modifica el apartado 1 por el art. 1.3 del Real Decreto-Ley 2/2008, de 21 de abril. Ref. BOE-A-2008-6994
+Seleccionar redacción: Última actualización, publicada el 24/12/2022, en vigor a partir del 01/01/2023.
+Modificación publicada el 31/12/2020, en vigor a partir del 01/01/2021.
+Modificación publicada el 29/12/2018, en vigor a partir del 29/12/2018.
+Modificación publicada el 04/07/2018, en vigor a partir del 05/07/2018.
+Modificación publicada el 11/07/2015, en vigor a partir del 12/07/2015.
+Modificación publicada el 28/11/2014, en vigor a partir del 01/01/2015.
+Modificación publicada el 14/07/2012, en vigor a partir del 15/07/2012.
+Modificación publicada el 24/12/2009, en vigor a partir del 13/01/2010.
+Modificación publicada el 22/04/2008, en vigor a partir del 22/04/2008.
+Texto original, publicado el 29/11/2006, en vigor a partir del 01/01/2007.

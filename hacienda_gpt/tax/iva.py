@@ -133,7 +133,8 @@ def calcular_modelo_303(inp: Modelo303Input, params: AutonomosParams | None = No
         "Cálculo solo para el régimen general con operaciones interiores. No cubre: prorrata, regímenes especiales "
         "(recargo de equivalencia, simplificado, criterio de caja, agricultura, ganadería y pesca), operaciones "
         "intracomunitarias, importaciones y exportaciones, inversión del sujeto pasivo, tipo del 0 %, facturas "
-        "rectificativas ni regularización de bienes de inversión."
+        "rectificativas ni regularización de bienes de inversión. El IVA no se aplica en Canarias, Ceuta ni Melilla "
+        "(art. 3 LIVA): este cálculo no vale para actividades desarrolladas allí."
     )
     t.cerrar()
 

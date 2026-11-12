@@ -2310,7 +2310,32 @@
         "consultado_el": "2026-11-12",
         "sha256_html": "212153983b5387467b7622e243423bf973f9cb2ad321efbb14141b41675ef510"
       },
-      "equiparaciones": [],
+      "equiparaciones": [
+        {
+          "parentesco": "pareja_de_hecho",
+          "equivale_a": "conyuge",
+          "alcance": "autonomico",
+          "solo_en": [
+            "reducciones",
+            "reducciones_bienes"
+          ],
+          "articulo": "disp. adicional primera DLeg 1/2005 (Aragón)",
+          "resumen": "Las referencias a los cónyuges de los beneficios aragoneses valen para las parejas estables no casadas inscritas con al menos cuatro años de antelación. Se ha aplicado a las reducciones de los arts. 131-5, 132-2, 131-3 y 131-4, que nombran al cónyuge; no a la reducción estatal por parentesco y por vivienda habitual, ni al coeficiente, ni a la bonificación de donaciones del art. 132-6, que se define por el «Grupo II».",
+          "en_vigor_desde": "2024-01-01",
+          "requisitos_no_comprobados": [
+            "Pareja inscrita con al menos cuatro años de antelación al devengo en un registro público de un Estado de la Unión Europea o del Espacio Económico Europeo, manteniendo los requisitos de la inscripción",
+            "Anotada o mencionada en el Registro Civil cuando la legislación lo exija",
+            "Sin parentesco entre sus miembros en línea recta ni colateral hasta el segundo grado"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOA-d-2005-90006",
+              "articulo": "disp. adicional primera DLeg 1/2005 (Aragón)",
+              "cita": "Las referencias que, en el Capítulo III del Título I de este texto refundido se efectúan a las personas en su recíproca condición de cónyuges se entenderán también realizadas a las personas que forman las parejas estables no casadas, siempre que se cumplan las siguientes condiciones respecto a dicha relación: a) Que se encuentre inscrita con, al menos, cuatro años de antelación al devengo del impuesto correspondiente y se mantengan en dicho momento los requisitos exigidos para su inscripción en los correspondientes registros públicos que, a tal efecto, se encuentren constituidos en cualquier Estado miembro de la Unión Europea o perteneciente al Espacio Económico Europeo. b) Que se encuentre anotada o mencionada en el Registro Civil competente, cuando así lo exija la legislación de cualquier Estado miembro de la Unión Europea o perteneciente al Espacio Económico Europeo. c) Que no exista, entre las personas que la forman, relación de parentesco en línea recta por consanguinidad o adopción, ni como colaterales por consanguinidad o adopción hasta el segundo grado."
+            }
+          ]
+        }
+      ],
       "reducciones": [
         {
           "clave": "parentesco_hermanos",
@@ -2345,6 +2370,75 @@
           ]
         },
         {
+          "clave": "aragon_hijos_menores",
+          "titulo": "Reducción aragonesa para hijos del fallecido menores de edad",
+          "clase": "otra",
+          "caracter": "propia",
+          "articulo": "art. 131-1 DLeg 1/2005 (Aragón)",
+          "resumen": "Reducción propia del 100 % de la base imponible para los hijos del fallecido menores de edad, con un máximo de 3.000.000 €.",
+          "en_vigor_desde": "2018-11-01",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "tramos": [
+            {
+              "cuando": {
+                "parentescos": [
+                  "hijo"
+                ],
+                "edad_menor_de": 18
+              },
+              "porcentaje_base": "1",
+              "maximo": "3000000"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Que el adquirente sea hijo del fallecido y menor de edad al fallecer este: el artículo dice «menores de edad» sin imprimir la edad, que se ha tomado del art. 12 de la Constitución (dieciocho años); no se ha comprobado si la ley civil aplicable le atribuye antes la mayoría de edad"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOA-d-2005-90006",
+              "articulo": "art. 131-1 DLeg 1/2005 (Aragón)",
+              "cita": "Con el carácter de reducción propia de la Comunidad Autónoma de Aragón, se aplicará en el Impuesto sobre Sucesiones y Donaciones una reducción de la base imponible del 100 por 100 del valor de ésta a las adquisiciones hereditarias que correspondan a los hijos del causante menores de edad. El importe de esta reducción no podrá exceder de 3.000.000 euros."
+            },
+            {
+              "boe_id": "BOE-A-1978-31229",
+              "articulo": "art. 12 de la Constitución",
+              "cita": "Los españoles son mayores de edad a los dieciocho años."
+            }
+          ]
+        },
+        {
+          "clave": "aragon_discapacidad_65",
+          "titulo": "Reducción aragonesa para personas con discapacidad igual o superior al 65 %",
+          "clase": "discapacidad",
+          "caracter": "propia",
+          "articulo": "art. 131-2 DLeg 1/2005 (Aragón)",
+          "resumen": "Reducción propia del 100 % de la base imponible para los adquirentes con un grado de discapacidad igual o superior al 65 %, cualquiera que sea su parentesco.",
+          "en_vigor_desde": "2015-12-30",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "tramos": [
+            {
+              "cuando": {
+                "discapacidad_desde": 65
+              },
+              "porcentaje_base": "1"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Grado de discapacidad reconocido conforme al Real Decreto 1971/1999 o la normativa vigente"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOA-d-2005-90006",
+              "articulo": "art. 131-2 DLeg 1/2005 (Aragón)",
+              "cita": "Con el carácter de reducción propia de la Comunidad Autónoma de Aragón, se aplicará en el Impuesto sobre Sucesiones y Donaciones una reducción de la base imponible del 100 por 100 del valor de esta a las adquisiciones hereditarias que correspondan a personas con un grado de discapacidad igual o superior al 65 por 100"
+            }
+          ]
+        },
+        {
           "clave": "aragon_conyuge_ascendientes_descendientes",
           "titulo": "Reducción aragonesa a favor del cónyuge, ascendientes y descendientes",
           "clase": "otra",
@@ -2366,19 +2460,24 @@
                 "discapacidad_menor_de": 65
               },
               "importe": "575000",
-              "hasta_completar": true
+              "hasta_completar": true,
+              "hasta_completar_excluye": [
+                "seguro_vida"
+              ]
             },
             {
               "cuando": {
                 "parentescos": [
-                  "hijastro",
-                  "pareja_de_hecho"
+                  "hijastro"
                 ],
                 "discapacidad_desde": 33,
                 "discapacidad_menor_de": 65
               },
               "importe": "575000",
-              "hasta_completar": true
+              "hasta_completar": true,
+              "hasta_completar_excluye": [
+                "seguro_vida"
+              ]
             },
             {
               "cuando": {
@@ -2388,25 +2487,28 @@
                 ]
               },
               "importe": "500000",
-              "hasta_completar": true
+              "hasta_completar": true,
+              "hasta_completar_excluye": [
+                "seguro_vida"
+              ]
             },
             {
               "cuando": {
                 "parentescos": [
-                  "hijastro",
-                  "pareja_de_hecho"
+                  "hijastro"
                 ]
               },
               "importe": "500000",
-              "hasta_completar": true
+              "hasta_completar": true,
+              "hasta_completar_excluye": [
+                "seguro_vida"
+              ]
             }
           ],
           "requisitos_no_comprobados": [
             "Optar expresamente por la reducción en el período voluntario de autoliquidación (art. 133-4.1)",
             "El límite se reduce por las reducciones de los arts. 132-2 y 132-8 aplicadas en donaciones del mismo fallecido en los cinco años anteriores, y la reducción se minora en el 65 % de las bases de las donaciones del fallecido bonificadas por el art. 132-6 en esos cinco años (art. 131-5.6 y 7)",
-            "Si heredan descendientes de distinto grado de una misma línea (por ejemplo, un hijo y sus propios hijos), el límite es conjunto para la línea y se reparte en proporción a sus bases (art. 131-5.3): aquí se ha aplicado entero a este heredero",
-            "La ley no cuenta la reducción por seguro de vida para el límite; aquí sí se ha contado, de modo que con seguro de vida la reducción real puede ser algo mayor",
-            "Si se trata de una pareja estable no casada: que esté inscrita con al menos cuatro años de antelación al devengo en un registro público, anotada en el Registro Civil cuando la ley lo exija y sin parentesco entre sus miembros en línea recta ni colateral hasta el segundo grado (disp. adicional primera)"
+            "Si heredan descendientes de distinto grado de una misma línea (por ejemplo, un hijo y sus propios hijos), el límite es conjunto para la línea y se reparte en proporción a sus bases (art. 131-5.3): aquí se ha aplicado entero a este heredero"
           ],
           "evidencia": [
             {
@@ -2423,11 +2525,6 @@
               "boe_id": "BOA-d-2005-90006",
               "articulo": "art. 131-5.6 y 7 DLeg 1/2005 (Aragón)",
               "cita": "6. Cuando, en los cinco años anteriores a la fecha del devengo del impuesto, el contribuyente se hubiera practicado las reducciones previstas en los artículos 132-2 y 132-8, coincidiendo la condición de donante y fallecido en la misma persona, los importes de las reducciones aplicadas por las donaciones en dicho periodo minorarán el límite establecido en la letra b) del apartado 1 de este artículo. 7. Cuando, en los cinco años anteriores a la fecha del devengo del impuesto, el contribuyente se hubiera aplicado la bonificación establecida en el artículo 132-6, coincidiendo la condición de donante y fallecido en la misma persona, el importe de la reducción prevista en este artículo se minorará en el 65 por 100 de la suma de las bases imponibles correspondientes a las donaciones acogidas a dicha bonificación."
-            },
-            {
-              "boe_id": "BOA-d-2005-90006",
-              "articulo": "disp. adicional primera DLeg 1/2005 (Aragón)",
-              "cita": "Las referencias que, en el Capítulo III del Título I de este texto refundido se efectúan a las personas en su recíproca condición de cónyuges se entenderán también realizadas a las personas que forman las parejas estables no casadas, siempre que se cumplan las siguientes condiciones respecto a dicha relación: a) Que se encuentre inscrita con, al menos, cuatro años de antelación al devengo del impuesto correspondiente y se mantengan en dicho momento los requisitos exigidos para su inscripción en los correspondientes registros públicos que, a tal efecto, se encuentren constituidos en cualquier Estado miembro de la Unión Europea o perteneciente al Espacio Económico Europeo. b) Que se encuentre anotada o mencionada en el Registro Civil competente, cuando así lo exija la legislación de cualquier Estado miembro de la Unión Europea o perteneciente al Espacio Económico Europeo. c) Que no exista, entre las personas que la forman, relación de parentesco en línea recta por consanguinidad o adopción, ni como colaterales por consanguinidad o adopción hasta el segundo grado."
             }
           ]
         },
@@ -2447,7 +2544,6 @@
               "cuando": {
                 "parentescos": [
                   "conyuge",
-                  "pareja_de_hecho",
                   "hijo"
                 ]
               },
@@ -2457,19 +2553,13 @@
           ],
           "requisitos_no_comprobados": [
             "El límite de 100.000 € es para el conjunto de las donaciones recibidas (de uno o varios donantes) y cuenta todas las reducciones aplicadas por donaciones en los últimos cinco años: aquí solo se ha tenido en cuenta esta donación",
-            "Presentar la autoliquidación dentro del plazo de pago en período voluntario",
-            "Si se trata de una pareja estable no casada: que esté inscrita con al menos cuatro años de antelación al devengo en un registro público, anotada en el Registro Civil cuando la ley lo exija y sin parentesco entre sus miembros en línea recta ni colateral hasta el segundo grado (disp. adicional primera)"
+            "Presentar la autoliquidación dentro del plazo de pago en período voluntario"
           ],
           "evidencia": [
             {
               "boe_id": "BOA-d-2005-90006",
               "articulo": "art. 132-2.1 DLeg 1/2005 (Aragón)",
               "cita": "1. Sin perjuicio de las reducciones de la base imponible previstas en la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones, y de cualquier otra aplicable por disposición dictada por la Comunidad Autónoma de Aragón, las donaciones a favor del cónyuge y de los hijos otorgarán al donatario el derecho a la aplicación de una reducción del 100 por 100 de la base imponible del impuesto, conforme al siguiente régimen: a) El importe de esta reducción, haya una o varias donaciones, de uno o varios donantes, sumado al de las restantes reducciones aplicadas por el contribuyente por el concepto \"Donaciones\" en los últimos cinco años, no podrá exceder de 100.000 euros. En caso contrario, se aplicará esta reducción en la cuantía correspondiente hasta alcanzar dicho límite. b) La autoliquidación correspondiente a la donación, en la que se aplique este beneficio, deberá presentarse dentro del plazo para el pago del impuesto en período voluntario. c) La reducción tiene el carácter de propia a los efectos previstos en el artículo 48 de la Ley 22/2009, de 18 de diciembre, por la que se regula el sistema de financiación de las Comunidades Autónomas de régimen común y Ciudades con Estatuto de Autonomía."
-            },
-            {
-              "boe_id": "BOA-d-2005-90006",
-              "articulo": "disp. adicional primera DLeg 1/2005 (Aragón)",
-              "cita": "Las referencias que, en el Capítulo III del Título I de este texto refundido se efectúan a las personas en su recíproca condición de cónyuges se entenderán también realizadas a las personas que forman las parejas estables no casadas, siempre que se cumplan las siguientes condiciones respecto a dicha relación: a) Que se encuentre inscrita con, al menos, cuatro años de antelación al devengo del impuesto correspondiente y se mantengan en dicho momento los requisitos exigidos para su inscripción en los correspondientes registros públicos que, a tal efecto, se encuentren constituidos en cualquier Estado miembro de la Unión Europea o perteneciente al Espacio Económico Europeo. b) Que se encuentre anotada o mencionada en el Registro Civil competente, cuando así lo exija la legislación de cualquier Estado miembro de la Unión Europea o perteneciente al Espacio Económico Europeo. c) Que no exista, entre las personas que la forman, relación de parentesco en línea recta por consanguinidad o adopción, ni como colaterales por consanguinidad o adopción hasta el segundo grado."
             }
           ]
         }
@@ -2516,16 +2606,13 @@
             "modo": "sucesion",
             "parentescos": [
               "conyuge",
-              "pareja_de_hecho",
               "hijo",
               "otro_descendiente"
             ]
           },
           "porcentaje": "0.99",
           "anos_mantenimiento": 5,
-          "requisitos_no_comprobados": [
-            "Si se trata de una pareja estable no casada: que esté inscrita con al menos cuatro años de antelación al devengo en un registro público, anotada en el Registro Civil cuando la ley lo exija y sin parentesco entre sus miembros en línea recta ni colateral hasta el segundo grado (disp. adicional primera)"
-          ],
+          "requisitos_no_comprobados": [],
           "evidencia": [
             {
               "boe_id": "BOA-d-2005-90006",
@@ -2546,11 +2633,6 @@
               "boe_id": "BOA-d-2005-90006",
               "articulo": "art. 131-4.4 DLeg 1/2005 (Aragón)",
               "cita": "4. La reducción estará condicionada a que el adquirente mantenga las participaciones durante el plazo de los cinco años siguientes al fallecimiento del causante, salvo que aquel falleciera dentro de este plazo."
-            },
-            {
-              "boe_id": "BOA-d-2005-90006",
-              "articulo": "disp. adicional primera DLeg 1/2005 (Aragón)",
-              "cita": "Las referencias que, en el Capítulo III del Título I de este texto refundido se efectúan a las personas en su recíproca condición de cónyuges se entenderán también realizadas a las personas que forman las parejas estables no casadas, siempre que se cumplan las siguientes condiciones respecto a dicha relación: a) Que se encuentre inscrita con, al menos, cuatro años de antelación al devengo del impuesto correspondiente y se mantengan en dicho momento los requisitos exigidos para su inscripción en los correspondientes registros públicos que, a tal efecto, se encuentren constituidos en cualquier Estado miembro de la Unión Europea o perteneciente al Espacio Económico Europeo. b) Que se encuentre anotada o mencionada en el Registro Civil competente, cuando así lo exija la legislación de cualquier Estado miembro de la Unión Europea o perteneciente al Espacio Económico Europeo. c) Que no exista, entre las personas que la forman, relación de parentesco en línea recta por consanguinidad o adopción, ni como colaterales por consanguinidad o adopción hasta el segundo grado."
             }
           ]
         }
@@ -2634,16 +2716,6 @@
       ],
       "otras_reducciones": [
         {
-          "articulo": "art. 131-1 DLeg 1/2005 (Aragón)",
-          "titulo": "Hijos del fallecido menores de edad: reducción del 100 % de la base imponible, con un máximo de 3.000.000 €",
-          "modo": "sucesion"
-        },
-        {
-          "articulo": "art. 131-2 DLeg 1/2005 (Aragón)",
-          "titulo": "Herederos con discapacidad igual o superior al 65 %: reducción del 100 % de la base imponible",
-          "modo": "sucesion"
-        },
-        {
           "articulo": "art. 131-6 DLeg 1/2005 (Aragón)",
           "titulo": "Empresa, negocio o participaciones heredados por personas distintas del cónyuge y los descendientes: 99 % con requisitos adicionales",
           "modo": "sucesion"
@@ -2681,18 +2753,26 @@
       ],
       "notas": [
         "Aragón no tiene tarifa ni coeficientes propios: se aplican los de la Ley 29/1987.",
-        "Los herederos con discapacidad igual o superior al 65 % (art. 131-2) y, hasta 3.000.000 €, los hijos menores de edad del fallecido (art. 131-1) tienen una reducción del 100 % de la base imponible, es decir, no pagan: esa reducción NO se calcula aquí (solo la general de 500.000 € del art. 131-5); si es tu caso, indícala en otras_reducciones.",
         "El cónyuge viudo suma 150.000 € al límite de 500.000 € por cada hijo menor de edad del fallecido que conviva con él (art. 131-5.2): no se ha tenido en cuenta.",
-        "Las parejas estables no casadas se equiparan a los cónyuges solo para los beneficios aragoneses (disp. adicional primera, con inscripción de al menos cuatro años): se les aplican las reducciones aragonesas de los arts. 131-5 y 132-2, pero la reducción por parentesco, el coeficiente (grupo IV) y las bonificaciones definidas por el «Grupo II» se calculan sin equiparar.",
-        "Los pactos sucesorios de presente tributan con los beneficios de las donaciones (art. 133-4.3): calcúlalos como donación."
+        "Los pactos sucesorios de presente tributan con los beneficios de las donaciones (art. 133-4.3): calcúlalos como donación.",
+        "Parejas estables no casadas (disp. adicional primera, inscritas con al menos cuatro años de antelación): se les aplican como a los cónyuges las reducciones aragonesas de los arts. 131-5 y 132-2 y la de empresa de los arts. 131-3 y 131-4; la reducción por vivienda habitual, el coeficiente (grupo IV) y la bonificación de donaciones del art. 132-6 (definida por el «Grupo II») se calculan sin equiparar."
       ],
       "no_modelado": [
         "Bonificación del 65 % de la cuota que corresponde a la vivienda habitual del fallecido para cónyuge, ascendientes y descendientes cuando la vivienda vale 300.000 € o menos (art. 131-10): depende del valor total de la vivienda y de la parte de cuota que le corresponde.",
-        "Reducciones del 100 % de la base para hijos menores de edad (art. 131-1, máximo 3.000.000 €) y para personas con discapacidad igual o superior al 65 % (art. 131-2): son porcentajes de toda la base.",
         "Incremento de 150.000 € por hijo menor conviviente en el límite del cónyuge (art. 131-5.2), reparto del límite entre descendientes de distinto grado (art. 131-5.3) y minoraciones por donaciones previas del fallecido (art. 131-5.6 y 7).",
         "Nietos del donante cuyo progenitor (hijo del donante) hubiera premuerto: también tienen la reducción de 100.000 € del art. 132-2; no se aplica automáticamente.",
         "Reducciones del 99 % por empresa o participaciones para herederos distintos del cónyuge y descendientes, por creación de empresas y empleo, y las de donaciones de empresa, participaciones y vivienda habitual de los hijos (arts. 131-6, 131-7, 132-1, 132-3 a 132-5 y 132-8).",
         "Liquidación de herencias ordenadas mediante fiducia (art. 133-2)."
+      ],
+      "fuentes_complementarias": [
+        {
+          "norma": "Constitución Española (texto consolidado)",
+          "boe_id": "BOE-A-1978-31229",
+          "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1978-31229",
+          "consolidado_a": "2026-05-20",
+          "consultado_el": "2026-11-12",
+          "sha256_html": "7c586cbf6e91e433cb15d9accdb41237d40818240ad84fa4c0f00d5c68b4f2f0"
+        }
       ]
     },
     "asturias": {
@@ -2765,7 +2845,58 @@
           ]
         }
       ],
-      "vivienda_habitual": [],
+      "vivienda_habitual": [
+        {
+          "articulo": "art. 17 bis DLeg 2/2014 (Asturias)",
+          "resumen": "Mejora el porcentaje de la reducción estatal por la vivienda habitual del fallecido según el valor real del inmueble (99 % hasta 90.000 €, 98 % hasta 120.000 €, 97 % hasta 180.000 €, 96 % hasta 240.000 € y 95 % por encima) y exige mantenerla tres años; los demás límites y requisitos son los estatales.",
+          "en_vigor_desde": "2017-07-13",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "tramos_valor": [
+            {
+              "valor_hasta": "90000",
+              "porcentaje": "0.99"
+            },
+            {
+              "valor_hasta": "120000",
+              "porcentaje": "0.98"
+            },
+            {
+              "valor_hasta": "180000",
+              "porcentaje": "0.97"
+            },
+            {
+              "valor_hasta": "240000",
+              "porcentaje": "0.96"
+            },
+            {
+              "valor_hasta": null,
+              "porcentaje": "0.95"
+            }
+          ],
+          "mantiene_limite_estatal": true,
+          "anos_mantenimiento": 3,
+          "colateral_mayor_de": 65,
+          "colateral_anos_convivencia": 2,
+          "requisitos_no_comprobados": [
+            "Que el inmueble fuera la vivienda habitual del fallecido",
+            "El porcentaje se elige por el valor real del inmueble entero, no por la parte que se hereda"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2015-945",
+              "articulo": "art. 17 bis DLeg 2/2014 (Asturias)",
+              "cita": "1. El porcentaje de reducción previsto en el artículo 20.2.c) de la Ley del Impuesto sobre Sucesiones y Donaciones será el que resulte de aplicar la siguiente escala: Valor real inmueble – Euros Porcentaje de reducción Hasta 90.000 99 De 90.000,01 a 120.000 98 De 120.000,01 a 180.000 97 De 180.000,01 a 240.000 96 Más de 240.000 95 2. Este porcentaje será de aplicación cuando la adquisición se mantenga durante los tres años siguientes al fallecimiento del causante, salvo que falleciera el adquirente dentro de este plazo. Los restantes límites y requisitos serán los establecidos en la legislación estatal."
+            },
+            {
+              "boe_id": "BOE-A-1987-28141",
+              "articulo": "art. 20.2.c) Ley 29/1987",
+              "cita": "Del mismo porcentaje de reducción, con el límite de 122.606,47 euros para cada sujeto pasivo y con el requisito de permanencia señalado anteriormente, gozarán las adquisiciones \"mortis causa\" de la vivienda habitual de la persona fallecida, siempre que los causahabientes sean cónyuge, ascendientes o descendientes de aquél, o bien pariente colateral mayor de sesenta y cinco años que hubiese convivido con el causante durante los dos años anteriores al fallecimiento."
+            }
+          ]
+        }
+      ],
       "seguro_vida": [],
       "reducciones_bienes": [],
       "tarifas": [
@@ -3129,11 +3260,9 @@
       ],
       "notas": [
         "En las herencias de los grupos I y II la tarifa asturiana (art. 21.2) empieza en el 21,25 %; se compensa con la reducción por parentesco de 300.000 €.",
-        "Vivienda habitual del fallecido: Asturias eleva el porcentaje de reducción del 95 % al 99 % según el valor del inmueble y solo exige mantenerla tres años (art. 17 bis); aquí se aplica la regla estatal (95 %, diez años), que nunca da una reducción mayor que la asturiana.",
         "Las personas en acogimiento familiar permanente o preadoptivo se equiparan a los adoptados, y quienes acogen a los adoptantes (art. 24.1.b y c): indícalos como hijo o padre."
       ],
       "no_modelado": [
-        "Porcentaje de reducción por vivienda habitual según el valor real del inmueble (art. 17 bis: 99 % hasta 90.000 €, 98 % hasta 120.000 €, 97 % hasta 180.000 €, 96 % hasta 240.000 € y 95 % por encima; tres años de mantenimiento): depende del valor total de la vivienda.",
         "Reducciones propias por empresa, negocio, participaciones y explotaciones agrarias situados en Asturias (arts. 18 a 19 ter) y por donaciones para la primera vivienda protegida (art. 20)."
       ]
     },
@@ -4238,7 +4367,26 @@
         "consultado_el": "2026-11-12",
         "sha256_html": "e993a342658c4e9c5acef347b53ae17d31fd84cc8364e783f447ea192ac7d822"
       },
-      "equiparaciones": [],
+      "equiparaciones": [
+        {
+          "parentesco": "pareja_de_hecho",
+          "equivale_a": "conyuge",
+          "alcance": "autonomico",
+          "articulo": "art. 41 DLeg 1/2009 (Canarias)",
+          "resumen": "La asimilación solo produce efectos en lo que Canarias ha regulado (sus reducciones por parentesco, seguro de vida y vivienda habitual y sus bonificaciones); la condición de pareja de hecho puede acreditarse por cualquier medio de prueba admitido en Derecho.",
+          "en_vigor_desde": "2023-01-01",
+          "requisitos_no_comprobados": [
+            "Acreditar la condición de pareja de hecho por cualquier medio de prueba admitido en Derecho"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOC-j-2009-90008",
+              "articulo": "art. 41 DLeg 1/2009 (Canarias)",
+              "cita": "1. Los miembros de las parejas de hecho tienen la asimilación a los cónyuges, con respecto al Impuesto sobre Sucesiones y Donaciones, el Impuesto sobre Transmisiones Patrimoniales y Actos Jurídicos Documentados y a las deducciones autonómicas del Impuesto sobre la Renta de las Personas Físicas. Lo anterior no será de aplicación a la tributación conjunta respecto al tramo autonómico del Impuesto sobre la Renta de las Personas Físicas. Los efectos de esta asimilación sólo se producirán con relación a las materias que, en el ejercicio de las competencias normativas delegadas por el Estado, hayan sido dictadas por la Comunidad Autónoma de Canarias. 2. La acreditación de la condición de pareja de hecho puede realizarse, a los efectos de lo dispuesto en el apartado 1 anterior, por cualquier medio de prueba admitido en Derecho."
+            }
+          ]
+        }
+      ],
       "reducciones": [
         {
           "clave": "parentesco",
@@ -4294,8 +4442,7 @@
             {
               "cuando": {
                 "parentescos": [
-                  "conyuge",
-                  "pareja_de_hecho"
+                  "conyuge"
                 ]
               },
               "importe": "40400"
@@ -4346,10 +4493,12 @@
             },
             {
               "boe_id": "BOC-j-2009-90008",
-              "articulo": "art. 41 DLeg 1/2009 (Canarias)",
-              "cita": "1. Los miembros de las parejas de hecho tienen la asimilación a los cónyuges, con respecto al Impuesto sobre Sucesiones y Donaciones, el Impuesto sobre Transmisiones Patrimoniales y Actos Jurídicos Documentados y a las deducciones autonómicas del Impuesto sobre la Renta de las Personas Físicas. Lo anterior no será de aplicación a la tributación conjunta respecto al tramo autonómico del Impuesto sobre la Renta de las Personas Físicas. Los efectos de esta asimilación sólo se producirán con relación a las materias que, en el ejercicio de las competencias normativas delegadas por el Estado, hayan sido dictadas por la Comunidad Autónoma de Canarias. 2. La acreditación de la condición de pareja de hecho puede realizarse, a los efectos de lo dispuesto en el apartado 1 anterior, por cualquier medio de prueba admitido en Derecho."
+              "articulo": "art. 19.5 DLeg 1/2009 (Canarias)",
+              "cita": "5. No obstante lo anterior, siempre serán de aplicación las reducciones establecidas en la normativa estatal reguladora del Impuesto cuando las mismas determinen unas condiciones más favorables para el obligado tributario."
             }
-          ]
+          ],
+          "estatal_si_mas_favorable": true,
+          "requisitos_no_comprobados": []
         },
         {
           "clave": "discapacidad",
@@ -4390,8 +4539,14 @@
               "boe_id": "BOC-j-2009-90008",
               "articulo": "art. 19.2 DLeg 1/2009 (Canarias)",
               "cita": "2. Las reducciones establecidas en los artículos citados a continuación mejoran las reducciones análogas del Estado: – Artículo 20: Reducción por parentesco (sustituye a la establecida en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones). – Artículo 20 bis: Reducción por discapacidad (sustituye a la establecida en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones). – Artículo 21: Reducción por seguros de vida (sustituye a la establecida en el artículo 20.2.b) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones). – Artículo 22: Reducción por la adquisición de una empresa individual o de un negocio profesional (sustituye a la establecida en el artículo 20.2.c) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones). – Artículo 22 bis: Reducción por la adquisición de participaciones en entidades (sustituye a la establecida en el artículo 20.2.c) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones). – Artículo 22 ter: Reducción por la adquisición de la vivienda habitual del causante (sustituye a la establecida en el artículo 20.2.c) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones)."
+            },
+            {
+              "boe_id": "BOC-j-2009-90008",
+              "articulo": "art. 19.5 DLeg 1/2009 (Canarias)",
+              "cita": "5. No obstante lo anterior, siempre serán de aplicación las reducciones establecidas en la normativa estatal reguladora del Impuesto cuando las mismas determinen unas condiciones más favorables para el obligado tributario."
             }
-          ]
+          ],
+          "estatal_si_mas_favorable": true
         },
         {
           "clave": "edad",
@@ -4441,8 +4596,7 @@
           "colateral_anos_convivencia": 2,
           "requisitos_no_comprobados": [
             "Que la vivienda esté radicada en Canarias y fuera la vivienda habitual del fallecido según la normativa del IRPF",
-            "Si el bien era ganancial, la reducción solo alcanza a la mitad de su valor (art. 24 bis.3)",
-            "Se aplica la reducción estatal (95 %, 122.606,47 € por adquirente, diez años) si resulta más favorable (art. 19.5): compáralo"
+            "Si el bien era ganancial, la reducción solo alcanza a la mitad de su valor (art. 24 bis.3)"
           ],
           "evidencia": [
             {
@@ -4454,6 +4608,11 @@
               "boe_id": "BOC-j-2009-90008",
               "articulo": "art. 22 ter.4 DLeg 1/2009 (Canarias)",
               "cita": "4. Para la aplicación de la reducción establecida en el presente artículo, la vivienda habitual ha de estar radicada en Canarias. La aplicación de esta reducción queda condicionada al mantenimiento de la vivienda en el patrimonio del adquirente durante los cinco años siguientes al fallecimiento del causante, salvo que el adquirente falleciera en este plazo."
+            },
+            {
+              "boe_id": "BOC-j-2009-90008",
+              "articulo": "art. 19.5 DLeg 1/2009 (Canarias)",
+              "cita": "5. No obstante lo anterior, siempre serán de aplicación las reducciones establecidas en la normativa estatal reguladora del Impuesto cuando las mismas determinen unas condiciones más favorables para el obligado tributario."
             }
           ],
           "cuando": {
@@ -4461,7 +4620,8 @@
             "grupos": [
               "I"
             ]
-          }
+          },
+          "estatal_si_mas_favorable": true
         },
         {
           "articulo": "art. 22 ter DLeg 1/2009 (Canarias)",
@@ -4474,8 +4634,7 @@
           "colateral_anos_convivencia": 2,
           "requisitos_no_comprobados": [
             "Que la vivienda esté radicada en Canarias y fuera la vivienda habitual del fallecido según la normativa del IRPF",
-            "Si el bien era ganancial, la reducción solo alcanza a la mitad de su valor (art. 24 bis.3)",
-            "Se aplica la reducción estatal (95 %, 122.606,47 € por adquirente, diez años) si resulta más favorable (art. 19.5): compáralo"
+            "Si el bien era ganancial, la reducción solo alcanza a la mitad de su valor (art. 24 bis.3)"
           ],
           "evidencia": [
             {
@@ -4487,6 +4646,11 @@
               "boe_id": "BOC-j-2009-90008",
               "articulo": "art. 22 ter.4 DLeg 1/2009 (Canarias)",
               "cita": "4. Para la aplicación de la reducción establecida en el presente artículo, la vivienda habitual ha de estar radicada en Canarias. La aplicación de esta reducción queda condicionada al mantenimiento de la vivienda en el patrimonio del adquirente durante los cinco años siguientes al fallecimiento del causante, salvo que el adquirente falleciera en este plazo."
+            },
+            {
+              "boe_id": "BOC-j-2009-90008",
+              "articulo": "art. 19.5 DLeg 1/2009 (Canarias)",
+              "cita": "5. No obstante lo anterior, siempre serán de aplicación las reducciones establecidas en la normativa estatal reguladora del Impuesto cuando las mismas determinen unas condiciones más favorables para el obligado tributario."
             }
           ],
           "cuando": {
@@ -4501,7 +4665,8 @@
               "colateral_cuarto_grado",
               "colateral_lejano"
             ]
-          }
+          },
+          "estatal_si_mas_favorable": true
         }
       ],
       "seguro_vida": [
@@ -4528,8 +4693,14 @@
               "boe_id": "BOC-j-2009-90008",
               "articulo": "art. 19.2 DLeg 1/2009 (Canarias)",
               "cita": "2. Las reducciones establecidas en los artículos citados a continuación mejoran las reducciones análogas del Estado: – Artículo 20: Reducción por parentesco (sustituye a la establecida en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones). – Artículo 20 bis: Reducción por discapacidad (sustituye a la establecida en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones). – Artículo 21: Reducción por seguros de vida (sustituye a la establecida en el artículo 20.2.b) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones). – Artículo 22: Reducción por la adquisición de una empresa individual o de un negocio profesional (sustituye a la establecida en el artículo 20.2.c) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones). – Artículo 22 bis: Reducción por la adquisición de participaciones en entidades (sustituye a la establecida en el artículo 20.2.c) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones). – Artículo 22 ter: Reducción por la adquisición de la vivienda habitual del causante (sustituye a la establecida en el artículo 20.2.c) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones)."
+            },
+            {
+              "boe_id": "BOC-j-2009-90008",
+              "articulo": "art. 19.5 DLeg 1/2009 (Canarias)",
+              "cita": "5. No obstante lo anterior, siempre serán de aplicación las reducciones establecidas en la normativa estatal reguladora del Impuesto cuando las mismas determinen unas condiciones más favorables para el obligado tributario."
             }
-          ]
+          ],
+          "estatal_si_mas_favorable": true
         }
       ],
       "reducciones_bienes": [],
@@ -4559,34 +4730,6 @@
           ]
         },
         {
-          "titulo": "Bonificación de Canarias por parentesco (herencias, pareja de hecho asimilada al cónyuge)",
-          "articulo": "art. 24 ter y art. 41 DLeg 1/2009 (Canarias)",
-          "resumen": "Bonificación del 99,9 % de la cuota tributaria en herencias para la pareja de hecho, que Canarias asimila al cónyuge (grupo II) en las materias que ha regulado.",
-          "en_vigor_desde": "2023-09-06",
-          "cuando": {
-            "modo": "sucesion",
-            "parentescos": [
-              "pareja_de_hecho"
-            ]
-          },
-          "porcentaje": "0.999",
-          "requisitos_no_comprobados": [
-            "Pareja de hecho: acreditar esa condición por cualquier medio de prueba admitido en Derecho (art. 41.2)"
-          ],
-          "evidencia": [
-            {
-              "boe_id": "BOC-j-2009-90008",
-              "articulo": "art. 24 ter DLeg 1/2009 (Canarias)",
-              "cita": "Los sujetos pasivos incluidos en los grupos I, II y III de los previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones, aplicarán una bonificación del 99,9 por 100 de la cuota tributaria derivada de las adquisiciones mortis causa y de cantidades percibidas por los beneficiarios de seguros sobre la vida que se acumulen al resto de bienes y derechos que integran la porción hereditaria del beneficiario."
-            },
-            {
-              "boe_id": "BOC-j-2009-90008",
-              "articulo": "art. 41 DLeg 1/2009 (Canarias)",
-              "cita": "1. Los miembros de las parejas de hecho tienen la asimilación a los cónyuges, con respecto al Impuesto sobre Sucesiones y Donaciones, el Impuesto sobre Transmisiones Patrimoniales y Actos Jurídicos Documentados y a las deducciones autonómicas del Impuesto sobre la Renta de las Personas Físicas. Lo anterior no será de aplicación a la tributación conjunta respecto al tramo autonómico del Impuesto sobre la Renta de las Personas Físicas. Los efectos de esta asimilación sólo se producirán con relación a las materias que, en el ejercicio de las competencias normativas delegadas por el Estado, hayan sido dictadas por la Comunidad Autónoma de Canarias. 2. La acreditación de la condición de pareja de hecho puede realizarse, a los efectos de lo dispuesto en el apartado 1 anterior, por cualquier medio de prueba admitido en Derecho."
-            }
-          ]
-        },
-        {
           "titulo": "Bonificación de Canarias por parentesco (donaciones, grupos I y II)",
           "articulo": "art. 26 sexies DLeg 1/2009 (Canarias)",
           "resumen": "Bonificación del 99,9 % de la cuota tributaria en donaciones a los grupos I y II formalizadas en documento público.",
@@ -4611,39 +4754,6 @@
               "boe_id": "BOC-j-2009-90008",
               "articulo": "art. 26 sexies DLeg 1/2009 (Canarias)",
               "cita": "Los sujetos pasivos incluidos en los grupos I y II de los previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones, aplicarán una bonificación del 99,9 por 100 de la cuota tributaria derivada de las adquisiciones “inter vivos”, siempre que la donación se formalice en documento público. No será necesaria esta formalización cuando se trate de contratos de seguros que deban tributar como donación. Esta bonificación no será aplicable a aquellas adquisiciones “inter vivos” que en los tres años anteriores se hayan beneficiado de la bonificación prevista en este artículo, salvo que, en dicho plazo, se produzca su adquisición “mortis causa”."
-            }
-          ]
-        },
-        {
-          "titulo": "Bonificación de Canarias por parentesco (donaciones, pareja de hecho asimilada al cónyuge)",
-          "articulo": "art. 26 sexies y art. 41 DLeg 1/2009 (Canarias)",
-          "resumen": "Bonificación del 99,9 % de la cuota tributaria en donaciones formalizadas en documento público a la pareja de hecho, que Canarias asimila al cónyuge (grupo II) en las materias que ha regulado.",
-          "en_vigor_desde": "2023-09-06",
-          "cuando": {
-            "modo": "donacion",
-            "parentescos": [
-              "pareja_de_hecho"
-            ],
-            "requiere": [
-              "escritura_publica"
-            ]
-          },
-          "porcentaje": "0.999",
-          "requisitos_no_comprobados": [
-            "Pareja de hecho: acreditar esa condición por cualquier medio de prueba admitido en Derecho (art. 41.2)",
-            "Que la donación se formalice en documento público (no hace falta en seguros que tributen como donación)",
-            "Que lo donado no se haya beneficiado de esta misma bonificación en los tres años anteriores (salvo adquisición por herencia en ese plazo)"
-          ],
-          "evidencia": [
-            {
-              "boe_id": "BOC-j-2009-90008",
-              "articulo": "art. 26 sexies DLeg 1/2009 (Canarias)",
-              "cita": "Los sujetos pasivos incluidos en los grupos I y II de los previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones, aplicarán una bonificación del 99,9 por 100 de la cuota tributaria derivada de las adquisiciones “inter vivos”, siempre que la donación se formalice en documento público. No será necesaria esta formalización cuando se trate de contratos de seguros que deban tributar como donación. Esta bonificación no será aplicable a aquellas adquisiciones “inter vivos” que en los tres años anteriores se hayan beneficiado de la bonificación prevista en este artículo, salvo que, en dicho plazo, se produzca su adquisición “mortis causa”."
-            },
-            {
-              "boe_id": "BOC-j-2009-90008",
-              "articulo": "art. 41 DLeg 1/2009 (Canarias)",
-              "cita": "1. Los miembros de las parejas de hecho tienen la asimilación a los cónyuges, con respecto al Impuesto sobre Sucesiones y Donaciones, el Impuesto sobre Transmisiones Patrimoniales y Actos Jurídicos Documentados y a las deducciones autonómicas del Impuesto sobre la Renta de las Personas Físicas. Lo anterior no será de aplicación a la tributación conjunta respecto al tramo autonómico del Impuesto sobre la Renta de las Personas Físicas. Los efectos de esta asimilación sólo se producirán con relación a las materias que, en el ejercicio de las competencias normativas delegadas por el Estado, hayan sido dictadas por la Comunidad Autónoma de Canarias. 2. La acreditación de la condición de pareja de hecho puede realizarse, a los efectos de lo dispuesto en el apartado 1 anterior, por cualquier medio de prueba admitido en Derecho."
             }
           ]
         }
@@ -4693,15 +4803,15 @@
       "notas": [
         "Canarias no tiene tarifa ni coeficientes multiplicadores propios: se aplican los estatales. Su ventaja principal es la bonificación del 99,9 % de la cuota: en herencias para los grupos I, II y III; en donaciones solo para los grupos I y II y con documento público.",
         "La bonificación en donaciones no se aplica a lo que ya se haya beneficiado de ella en los tres años anteriores (art. 26 sexies).",
-        "Pareja de hecho: Canarias la asimila al cónyuge en lo que ella misma ha regulado (reducción por parentesco y bonificaciones, art. 41); su condición ha de acreditarse por cualquier medio de prueba admitido en Derecho. El coeficiente multiplicador es de la ley estatal y se ha calculado como grupo IV; con la bonificación del 99,9 % el efecto es mínimo. La reducción por vivienda habitual no se ha calculado para la pareja de hecho.",
-        "Las reducciones estatales se aplican siempre que resulten más favorables que las canarias (arts. 19.5 y 25.3): la calculadora aplica la regla canaria cuando existe, sin comparar. Puede ocurrir, por ejemplo, con la vivienda habitual repartida entre varios herederos (límite canario de 200.000 € para toda la vivienda frente a 122.606,47 € por heredero en la estatal).",
-        "Los acogidos en acogimiento familiar permanente o preadoptivo se equiparan a los adoptados, y los acogedores a los adoptantes, para las reducciones y los coeficientes (art. 24 bis.5): indícalos como hijo o padre."
+        "Los acogidos en acogimiento familiar permanente o preadoptivo se equiparan a los adoptados, y los acogedores a los adoptantes, para las reducciones y los coeficientes (art. 24 bis.5): indícalos como hijo o padre.",
+        "Pareja de hecho: Canarias la asimila al cónyuge solo en lo que ella misma ha regulado (art. 41): reducciones por parentesco, seguro de vida y vivienda habitual y bonificaciones. El coeficiente multiplicador es el de la ley estatal y se calcula como grupo IV; con la bonificación del 99,9 % el efecto es mínimo.",
+        "Las reducciones estatales se aplican cuando resultan más favorables que las canarias (art. 19.5): la calculadora compara la de parentesco, la de discapacidad, la de seguro de vida y la de vivienda habitual, aplica la mayor e indica cuál ha sido. Ocurre, por ejemplo, con la vivienda repartida entre varios herederos (límite canario de 200.000 € para toda la vivienda frente a 122.606,47 € por heredero en la estatal)."
       ],
       "no_modelado": [
         "Reducciones canarias por empresa individual, negocio profesional o participaciones (arts. 22, 22 bis, 26 y 26 bis) y por Patrimonio Histórico, Cultural o Natural (arts. 23 y 23 bis): si declaras esos bienes se aplica la reducción estatal (95 %); las canarias (99 % o 97 % para cónyuge y descendientes en herencias) tienen requisitos propios y no se calculan.",
         "Reducciones propias en donaciones de dinero para vivienda habitual (art. 26 ter) o para empresa (art. 26 quáter) y por aportaciones a patrimonios protegidos (art. 26 quinquies): dependen del donante, del destino del dinero y de límites propios; pueden declararse en «otras reducciones».",
         "Reducción por sobreimposición decenal (art. 24) y seguro de vida sin límite por actos de terrorismo o misiones internacionales (art. 21.3).",
-        "Reducción por vivienda habitual para la pareja de hecho (art. 22 ter en relación con el art. 41) y regla de la mitad del valor en bienes gananciales (art. 24 bis.3)."
+        "Regla de la mitad del valor en bienes gananciales para las reducciones por bienes (art. 24 bis.3)."
       ]
     },
     "cantabria": {
@@ -5290,7 +5400,31 @@
         "consultado_el": "2026-11-12",
         "sha256_html": "5d1a440503c656bfca5a3621de1381db3f42d96a1f14b21acc2c066b30ee0a85"
       },
-      "equiparaciones": [],
+      "equiparaciones": [
+        {
+          "parentesco": "pareja_de_hecho",
+          "equivale_a": "conyuge",
+          "alcance": "autonomico",
+          "solo_en": [
+            "bonificaciones"
+          ],
+          "articulo": "art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
+          "resumen": "Exige convivencia estable de pareja durante al menos los dos años anteriores al devengo e inscripción en el Registro de Parejas de Hecho de Castilla-La Mancha o en uno análogo, y que ambas circunstancias consten en el documento público del acto.",
+          "en_vigor_desde": "2023-02-01",
+          "requisitos_no_comprobados": [
+            "Convivencia estable de pareja durante, al menos, los dos años anteriores al devengo",
+            "Unión inscrita en el Registro de Parejas de Hecho de Castilla-La Mancha o en registros análogos de otras administraciones",
+            "Que ambas circunstancias consten en el documento público que recoja el acto o contrato sujeto al impuesto"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2014-1368",
+              "articulo": "art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
+              "cita": "1. A los efectos de lo dispuesto en los artículos 17 y 17 bis de esta ley se asimilan a cónyuges los miembros de parejas de hecho que hayan tenido convivencia estable de pareja durante, al menos, los dos años anteriores a la fecha de devengo del impuesto y cuya unión esté inscrita en el Registro de Parejas de Hecho de la Comunidad Autónoma de Castilla-La Mancha o en registros análogos de otras administraciones públicas, de Estados miembros de la Unión Europea o de un tercer país. Ambas circunstancias deberán constar en el documento público que recoja el acto o contrato sujeto al impuesto."
+            }
+          ]
+        }
+      ],
       "reducciones": [
         {
           "clave": "discapacidad",
@@ -5361,61 +5495,6 @@
               "boe_id": "BOE-A-2014-1368",
               "articulo": "art. 17.1).a) Ley 8/2013 (Castilla-La Mancha)",
               "cita": "a) Declaraciones tributarias cuya base liquidable sea inferior a 175.000 euros, una bonificación del 100 por ciento de la cuota tributaria."
-            }
-          ]
-        },
-        {
-          "titulo": "Bonificación de Castilla-La Mancha en herencias, parejas de hecho asimiladas a cónyuges",
-          "articulo": "art. 17.1).a) Ley 8/2013 (Castilla-La Mancha) y art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-          "resumen": "Bonificación del 100 % de la cuota tributaria para parejas de hecho asimiladas a cónyuges con base liquidable inferior a 175.000 €.",
-          "en_vigor_desde": "2023-02-01",
-          "cuando": {
-            "modo": "sucesion",
-            "parentescos": [
-              "pareja_de_hecho"
-            ],
-            "base_liquidable_menor_de": "175000"
-          },
-          "porcentaje": "1",
-          "requisitos_no_comprobados": [
-            "Pareja de hecho: convivencia estable durante al menos los dos años anteriores al devengo e inscripción en el Registro de Parejas de Hecho de Castilla-La Mancha o en uno análogo; ambas circunstancias han de constar en el documento público del acto"
-          ],
-          "evidencia": [
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17.1) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "En las adquisiciones “mortis causa”, incluida la percepción de cantidades por beneficiarios de contratos de seguros sobre la vida, se establecen las siguientes bonificaciones en la cuota del Impuesto sobre Sucesiones y Donaciones: 1) En función del importe de la base liquidable de sus respectivas declaraciones tributarias, los sujetos pasivos incluidos en los grupos I y II de parentesco previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, podrán aplicarse en la cuota tributaria la que corresponda de las siguientes bonificaciones:"
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17.1).a) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "a) Declaraciones tributarias cuya base liquidable sea inferior a 175.000 euros, una bonificación del 100 por ciento de la cuota tributaria."
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "1. A los efectos de lo dispuesto en los artículos 17 y 17 bis de esta ley se asimilan a cónyuges los miembros de parejas de hecho que hayan tenido convivencia estable de pareja durante, al menos, los dos años anteriores a la fecha de devengo del impuesto y cuya unión esté inscrita en el Registro de Parejas de Hecho de la Comunidad Autónoma de Castilla-La Mancha o en registros análogos de otras administraciones públicas, de Estados miembros de la Unión Europea o de un tercer país. Ambas circunstancias deberán constar en el documento público que recoja el acto o contrato sujeto al impuesto."
-            }
-          ]
-        },
-        {
-          "titulo": "Bonificación de Castilla-La Mancha por discapacidad igual o superior al 65 % (herencias)",
-          "articulo": "art. 17.2) Ley 8/2013 (Castilla-La Mancha)",
-          "resumen": "Bonificación del 95 % de la cuota tributaria para adquirentes con discapacidad igual o superior al 65 %, cualquiera que sea su parentesco. En los grupos I y II es compatible con la bonificación por tramos de base liquidable y se aplica después de ella: aquí solo se ha calculado esta, por lo que la cuota real puede ser algo menor.",
-          "en_vigor_desde": "2016-06-01",
-          "cuando": {
-            "modo": "sucesion",
-            "discapacidad_desde": 65
-          },
-          "porcentaje": "0.95",
-          "requisitos_no_comprobados": [
-            "Que el grado de discapacidad esté acreditado"
-          ],
-          "evidencia": [
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17.2) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "2) Los sujetos pasivos con un grado de discapacidad igual o superior al 65 por ciento podrán aplicarse una bonificación del 95 por ciento de la cuota tributaria. El mismo porcentaje de bonificación se aplicará a las aportaciones sujetas al impuesto que se realicen al patrimonio protegido de las personas con discapacidad regulado en la Ley 41/2003, de 18 de noviembre, de protección patrimonial de las personas con discapacidad y de modificación del Código Civil, de la Ley de Enjuiciamiento Civil y de la Normativa Tributaria con esta finalidad. Estas bonificaciones son compatibles con la establecida en el apartado anterior y se aplicarán con posterioridad a la misma."
             }
           ]
         },
@@ -5527,172 +5606,6 @@
               "boe_id": "BOE-A-2014-1368",
               "articulo": "art. 17.1).e) Ley 8/2013 (Castilla-La Mancha)",
               "cita": "e) Declaraciones tributarias cuya base liquidable sea igual o superior a 300.000 euros, una bonificación del 80 por ciento de la cuota tributaria."
-            }
-          ]
-        },
-        {
-          "titulo": "Bonificación de Castilla-La Mancha en herencias, parejas de hecho asimiladas a cónyuges",
-          "articulo": "art. 17.1).b) Ley 8/2013 (Castilla-La Mancha) y art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-          "resumen": "Bonificación del 95 % de la cuota tributaria para parejas de hecho asimiladas a cónyuges con base liquidable igual o superior a 175.000 € e inferior a 225.000 €.",
-          "en_vigor_desde": "2023-02-01",
-          "cuando": {
-            "modo": "sucesion",
-            "parentescos": [
-              "pareja_de_hecho"
-            ],
-            "base_liquidable_menor_de": "225000"
-          },
-          "porcentaje": "0.95",
-          "requisitos_no_comprobados": [
-            "Pareja de hecho: convivencia estable durante al menos los dos años anteriores al devengo e inscripción en el Registro de Parejas de Hecho de Castilla-La Mancha o en uno análogo; ambas circunstancias han de constar en el documento público del acto"
-          ],
-          "evidencia": [
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17.1) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "En las adquisiciones “mortis causa”, incluida la percepción de cantidades por beneficiarios de contratos de seguros sobre la vida, se establecen las siguientes bonificaciones en la cuota del Impuesto sobre Sucesiones y Donaciones: 1) En función del importe de la base liquidable de sus respectivas declaraciones tributarias, los sujetos pasivos incluidos en los grupos I y II de parentesco previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, podrán aplicarse en la cuota tributaria la que corresponda de las siguientes bonificaciones:"
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17.1).b) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "b) Declaraciones tributarias cuya base liquidable sea igual o superior a 175.000 euros e inferior a 225.000 euros, una bonificación del 95 por ciento de la cuota tributaria."
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "1. A los efectos de lo dispuesto en los artículos 17 y 17 bis de esta ley se asimilan a cónyuges los miembros de parejas de hecho que hayan tenido convivencia estable de pareja durante, al menos, los dos años anteriores a la fecha de devengo del impuesto y cuya unión esté inscrita en el Registro de Parejas de Hecho de la Comunidad Autónoma de Castilla-La Mancha o en registros análogos de otras administraciones públicas, de Estados miembros de la Unión Europea o de un tercer país. Ambas circunstancias deberán constar en el documento público que recoja el acto o contrato sujeto al impuesto."
-            }
-          ]
-        },
-        {
-          "titulo": "Bonificación de Castilla-La Mancha en herencias, parejas de hecho asimiladas a cónyuges",
-          "articulo": "art. 17.1).c) Ley 8/2013 (Castilla-La Mancha) y art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-          "resumen": "Bonificación del 90 % de la cuota tributaria para parejas de hecho asimiladas a cónyuges con base liquidable igual o superior a 225.000 € e inferior a 275.000 €.",
-          "en_vigor_desde": "2023-02-01",
-          "cuando": {
-            "modo": "sucesion",
-            "parentescos": [
-              "pareja_de_hecho"
-            ],
-            "base_liquidable_menor_de": "275000"
-          },
-          "porcentaje": "0.9",
-          "requisitos_no_comprobados": [
-            "Pareja de hecho: convivencia estable durante al menos los dos años anteriores al devengo e inscripción en el Registro de Parejas de Hecho de Castilla-La Mancha o en uno análogo; ambas circunstancias han de constar en el documento público del acto"
-          ],
-          "evidencia": [
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17.1) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "En las adquisiciones “mortis causa”, incluida la percepción de cantidades por beneficiarios de contratos de seguros sobre la vida, se establecen las siguientes bonificaciones en la cuota del Impuesto sobre Sucesiones y Donaciones: 1) En función del importe de la base liquidable de sus respectivas declaraciones tributarias, los sujetos pasivos incluidos en los grupos I y II de parentesco previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, podrán aplicarse en la cuota tributaria la que corresponda de las siguientes bonificaciones:"
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17.1).c) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "c) Declaraciones tributarias cuya base liquidable sea igual o superior a 225.000 euros e inferior a 275.000 euros, una bonificación del 90 por ciento de la cuota tributaria."
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "1. A los efectos de lo dispuesto en los artículos 17 y 17 bis de esta ley se asimilan a cónyuges los miembros de parejas de hecho que hayan tenido convivencia estable de pareja durante, al menos, los dos años anteriores a la fecha de devengo del impuesto y cuya unión esté inscrita en el Registro de Parejas de Hecho de la Comunidad Autónoma de Castilla-La Mancha o en registros análogos de otras administraciones públicas, de Estados miembros de la Unión Europea o de un tercer país. Ambas circunstancias deberán constar en el documento público que recoja el acto o contrato sujeto al impuesto."
-            }
-          ]
-        },
-        {
-          "titulo": "Bonificación de Castilla-La Mancha en herencias, parejas de hecho asimiladas a cónyuges",
-          "articulo": "art. 17.1).d) Ley 8/2013 (Castilla-La Mancha) y art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-          "resumen": "Bonificación del 85 % de la cuota tributaria para parejas de hecho asimiladas a cónyuges con base liquidable igual o superior a 275.000 € e inferior a 300.000 €.",
-          "en_vigor_desde": "2023-02-01",
-          "cuando": {
-            "modo": "sucesion",
-            "parentescos": [
-              "pareja_de_hecho"
-            ],
-            "base_liquidable_menor_de": "300000"
-          },
-          "porcentaje": "0.85",
-          "requisitos_no_comprobados": [
-            "Pareja de hecho: convivencia estable durante al menos los dos años anteriores al devengo e inscripción en el Registro de Parejas de Hecho de Castilla-La Mancha o en uno análogo; ambas circunstancias han de constar en el documento público del acto"
-          ],
-          "evidencia": [
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17.1) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "En las adquisiciones “mortis causa”, incluida la percepción de cantidades por beneficiarios de contratos de seguros sobre la vida, se establecen las siguientes bonificaciones en la cuota del Impuesto sobre Sucesiones y Donaciones: 1) En función del importe de la base liquidable de sus respectivas declaraciones tributarias, los sujetos pasivos incluidos en los grupos I y II de parentesco previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, podrán aplicarse en la cuota tributaria la que corresponda de las siguientes bonificaciones:"
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17.1).d) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "d) Declaraciones tributarias cuya base liquidable sea igual o superior a 275.000 euros e inferior a 300.000 euros, una bonificación del 85 por ciento de la cuota tributaria."
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "1. A los efectos de lo dispuesto en los artículos 17 y 17 bis de esta ley se asimilan a cónyuges los miembros de parejas de hecho que hayan tenido convivencia estable de pareja durante, al menos, los dos años anteriores a la fecha de devengo del impuesto y cuya unión esté inscrita en el Registro de Parejas de Hecho de la Comunidad Autónoma de Castilla-La Mancha o en registros análogos de otras administraciones públicas, de Estados miembros de la Unión Europea o de un tercer país. Ambas circunstancias deberán constar en el documento público que recoja el acto o contrato sujeto al impuesto."
-            }
-          ]
-        },
-        {
-          "titulo": "Bonificación de Castilla-La Mancha en herencias, parejas de hecho asimiladas a cónyuges",
-          "articulo": "art. 17.1).e) Ley 8/2013 (Castilla-La Mancha) y art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-          "resumen": "Bonificación del 80 % de la cuota tributaria para parejas de hecho asimiladas a cónyuges con base liquidable igual o superior a 300.000 €.",
-          "en_vigor_desde": "2023-02-01",
-          "cuando": {
-            "modo": "sucesion",
-            "parentescos": [
-              "pareja_de_hecho"
-            ]
-          },
-          "porcentaje": "0.8",
-          "requisitos_no_comprobados": [
-            "Pareja de hecho: convivencia estable durante al menos los dos años anteriores al devengo e inscripción en el Registro de Parejas de Hecho de Castilla-La Mancha o en uno análogo; ambas circunstancias han de constar en el documento público del acto"
-          ],
-          "evidencia": [
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17.1) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "En las adquisiciones “mortis causa”, incluida la percepción de cantidades por beneficiarios de contratos de seguros sobre la vida, se establecen las siguientes bonificaciones en la cuota del Impuesto sobre Sucesiones y Donaciones: 1) En función del importe de la base liquidable de sus respectivas declaraciones tributarias, los sujetos pasivos incluidos en los grupos I y II de parentesco previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, podrán aplicarse en la cuota tributaria la que corresponda de las siguientes bonificaciones:"
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17.1).e) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "e) Declaraciones tributarias cuya base liquidable sea igual o superior a 300.000 euros, una bonificación del 80 por ciento de la cuota tributaria."
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "1. A los efectos de lo dispuesto en los artículos 17 y 17 bis de esta ley se asimilan a cónyuges los miembros de parejas de hecho que hayan tenido convivencia estable de pareja durante, al menos, los dos años anteriores a la fecha de devengo del impuesto y cuya unión esté inscrita en el Registro de Parejas de Hecho de la Comunidad Autónoma de Castilla-La Mancha o en registros análogos de otras administraciones públicas, de Estados miembros de la Unión Europea o de un tercer país. Ambas circunstancias deberán constar en el documento público que recoja el acto o contrato sujeto al impuesto."
-            }
-          ]
-        },
-        {
-          "titulo": "Bonificación de Castilla-La Mancha por discapacidad igual o superior al 65 % (donaciones)",
-          "articulo": "art. 17 bis.2) Ley 8/2013 (Castilla-La Mancha)",
-          "resumen": "Bonificación del 95 % de la cuota tributaria para adquirentes con discapacidad igual o superior al 65 %, cualquiera que sea su parentesco, siempre que la donación se formalice en escritura pública. En los grupos I y II es compatible con la bonificación por tramos de base liquidable y se aplica después de ella: aquí solo se ha calculado esta, por lo que la cuota real puede ser algo menor.",
-          "en_vigor_desde": "2023-02-01",
-          "cuando": {
-            "modo": "donacion",
-            "discapacidad_desde": 65,
-            "requiere": [
-              "escritura_publica"
-            ]
-          },
-          "porcentaje": "0.95",
-          "requisitos_no_comprobados": [
-            "Que el grado de discapacidad esté acreditado",
-            "Que en la escritura pública conste expresamente el origen y la situación de los bienes y derechos donados y, si no son dinero, su identificación fiscal completa",
-            "Si lo donado no es dinero: mantenerlo en el patrimonio, sin transmitirlo, durante los cinco años siguientes al devengo"
-          ],
-          "evidencia": [
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17 bis.2) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "2) Los sujetos pasivos con un grado de discapacidad igual o superior al 65 por ciento podrán aplicarse una bonificación del 95 por ciento de la cuota tributaria. El mismo porcentaje de bonificación se aplicará a las aportaciones sujetas al impuesto que se realicen al patrimonio protegido de las personas con discapacidad regulado en la Ley 41/2003, de 18 de noviembre, de protección patrimonial de las personas con discapacidad y de modificación del Código Civil, de la Ley de Enjuiciamiento Civil y de la normativa tributaria con esta finalidad. Estas bonificaciones son compatibles con la establecida en el apartado anterior y se aplicarán con posterioridad a la misma."
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 18.3 Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "3. En el caso de transmisiones lucrativas “inter vivos”, la aplicación de las bonificaciones establecidas en el artículo 17 bis queda sujeta al cumplimiento de los siguientes requisitos: a) La transmisión deberá formalizarse en escritura pública, en la que expresamente deberá constar el origen y situación de los bienes y derechos transmitidos, así como su correcta y completa identificación fiscal cuando se trate de bienes o derechos no consistentes en dinero o signo que lo represente. b) En transmisiones de bienes o derechos no consistentes en dinero o signo que lo represente, los bienes y derechos donados no podrán ser objeto de transmisión y deberán mantenerse en el patrimonio del adquirente durante los cinco años siguientes a la fecha de devengo del impuesto."
             }
           ]
         },
@@ -5811,137 +5724,6 @@
               "cita": "3. En el caso de transmisiones lucrativas “inter vivos”, la aplicación de las bonificaciones establecidas en el artículo 17 bis queda sujeta al cumplimiento de los siguientes requisitos: a) La transmisión deberá formalizarse en escritura pública, en la que expresamente deberá constar el origen y situación de los bienes y derechos transmitidos, así como su correcta y completa identificación fiscal cuando se trate de bienes o derechos no consistentes en dinero o signo que lo represente. b) En transmisiones de bienes o derechos no consistentes en dinero o signo que lo represente, los bienes y derechos donados no podrán ser objeto de transmisión y deberán mantenerse en el patrimonio del adquirente durante los cinco años siguientes a la fecha de devengo del impuesto."
             }
           ]
-        },
-        {
-          "titulo": "Bonificación de Castilla-La Mancha en donaciones, parejas de hecho asimiladas a cónyuges",
-          "articulo": "art. 17 bis.1).a) Ley 8/2013 (Castilla-La Mancha) y art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-          "resumen": "Bonificación del 95 % de la cuota tributaria para parejas de hecho asimiladas a cónyuges con base liquidable inferior a 120.000 €, siempre que la donación se formalice en escritura pública.",
-          "en_vigor_desde": "2023-02-01",
-          "cuando": {
-            "modo": "donacion",
-            "parentescos": [
-              "pareja_de_hecho"
-            ],
-            "base_liquidable_menor_de": "120000",
-            "requiere": [
-              "escritura_publica"
-            ]
-          },
-          "porcentaje": "0.95",
-          "requisitos_no_comprobados": [
-            "Pareja de hecho: convivencia estable durante al menos los dos años anteriores al devengo e inscripción en el Registro de Parejas de Hecho de Castilla-La Mancha o en uno análogo; ambas circunstancias han de constar en el documento público del acto",
-            "Que en la escritura pública conste expresamente el origen y la situación de los bienes y derechos donados y, si no son dinero, su identificación fiscal completa",
-            "Si lo donado no es dinero: mantenerlo en el patrimonio, sin transmitirlo, durante los cinco años siguientes al devengo"
-          ],
-          "evidencia": [
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17 bis.1) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "En las adquisiciones “inter vivos”, incluida la percepción de cantidades por beneficiarios de contratos de seguros sobre la vida, se establecen las siguientes bonificaciones en la cuota del Impuesto sobre Sucesiones y Donaciones: 1) En función del importe de la base liquidable de sus respectivas declaraciones tributarias, los sujetos pasivos incluidos en los grupos I y II de parentesco previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, podrán aplicarse en la cuota tributaria la que corresponda de las siguientes bonificaciones:"
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17 bis.1).a) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "a) Declaraciones tributarias cuya base liquidable sea inferior a 120.000 euros, una bonificación del 95 por ciento de la cuota tributaria."
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "1. A los efectos de lo dispuesto en los artículos 17 y 17 bis de esta ley se asimilan a cónyuges los miembros de parejas de hecho que hayan tenido convivencia estable de pareja durante, al menos, los dos años anteriores a la fecha de devengo del impuesto y cuya unión esté inscrita en el Registro de Parejas de Hecho de la Comunidad Autónoma de Castilla-La Mancha o en registros análogos de otras administraciones públicas, de Estados miembros de la Unión Europea o de un tercer país. Ambas circunstancias deberán constar en el documento público que recoja el acto o contrato sujeto al impuesto."
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 18.3 Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "3. En el caso de transmisiones lucrativas “inter vivos”, la aplicación de las bonificaciones establecidas en el artículo 17 bis queda sujeta al cumplimiento de los siguientes requisitos: a) La transmisión deberá formalizarse en escritura pública, en la que expresamente deberá constar el origen y situación de los bienes y derechos transmitidos, así como su correcta y completa identificación fiscal cuando se trate de bienes o derechos no consistentes en dinero o signo que lo represente. b) En transmisiones de bienes o derechos no consistentes en dinero o signo que lo represente, los bienes y derechos donados no podrán ser objeto de transmisión y deberán mantenerse en el patrimonio del adquirente durante los cinco años siguientes a la fecha de devengo del impuesto."
-            }
-          ]
-        },
-        {
-          "titulo": "Bonificación de Castilla-La Mancha en donaciones, parejas de hecho asimiladas a cónyuges",
-          "articulo": "art. 17 bis.1).b) Ley 8/2013 (Castilla-La Mancha) y art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-          "resumen": "Bonificación del 90 % de la cuota tributaria para parejas de hecho asimiladas a cónyuges con base liquidable igual o superior a 120.000 € e inferior a 240.000 €, siempre que la donación se formalice en escritura pública.",
-          "en_vigor_desde": "2023-02-01",
-          "cuando": {
-            "modo": "donacion",
-            "parentescos": [
-              "pareja_de_hecho"
-            ],
-            "base_liquidable_menor_de": "240000",
-            "requiere": [
-              "escritura_publica"
-            ]
-          },
-          "porcentaje": "0.9",
-          "requisitos_no_comprobados": [
-            "Pareja de hecho: convivencia estable durante al menos los dos años anteriores al devengo e inscripción en el Registro de Parejas de Hecho de Castilla-La Mancha o en uno análogo; ambas circunstancias han de constar en el documento público del acto",
-            "Que en la escritura pública conste expresamente el origen y la situación de los bienes y derechos donados y, si no son dinero, su identificación fiscal completa",
-            "Si lo donado no es dinero: mantenerlo en el patrimonio, sin transmitirlo, durante los cinco años siguientes al devengo"
-          ],
-          "evidencia": [
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17 bis.1) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "En las adquisiciones “inter vivos”, incluida la percepción de cantidades por beneficiarios de contratos de seguros sobre la vida, se establecen las siguientes bonificaciones en la cuota del Impuesto sobre Sucesiones y Donaciones: 1) En función del importe de la base liquidable de sus respectivas declaraciones tributarias, los sujetos pasivos incluidos en los grupos I y II de parentesco previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, podrán aplicarse en la cuota tributaria la que corresponda de las siguientes bonificaciones:"
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17 bis.1).b) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "b) Declaraciones tributarias cuya base liquidable sea igual o superior a 120.000 euros e inferior a 240.000 euros, una bonificación del 90 por ciento de la cuota tributaria."
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "1. A los efectos de lo dispuesto en los artículos 17 y 17 bis de esta ley se asimilan a cónyuges los miembros de parejas de hecho que hayan tenido convivencia estable de pareja durante, al menos, los dos años anteriores a la fecha de devengo del impuesto y cuya unión esté inscrita en el Registro de Parejas de Hecho de la Comunidad Autónoma de Castilla-La Mancha o en registros análogos de otras administraciones públicas, de Estados miembros de la Unión Europea o de un tercer país. Ambas circunstancias deberán constar en el documento público que recoja el acto o contrato sujeto al impuesto."
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 18.3 Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "3. En el caso de transmisiones lucrativas “inter vivos”, la aplicación de las bonificaciones establecidas en el artículo 17 bis queda sujeta al cumplimiento de los siguientes requisitos: a) La transmisión deberá formalizarse en escritura pública, en la que expresamente deberá constar el origen y situación de los bienes y derechos transmitidos, así como su correcta y completa identificación fiscal cuando se trate de bienes o derechos no consistentes en dinero o signo que lo represente. b) En transmisiones de bienes o derechos no consistentes en dinero o signo que lo represente, los bienes y derechos donados no podrán ser objeto de transmisión y deberán mantenerse en el patrimonio del adquirente durante los cinco años siguientes a la fecha de devengo del impuesto."
-            }
-          ]
-        },
-        {
-          "titulo": "Bonificación de Castilla-La Mancha en donaciones, parejas de hecho asimiladas a cónyuges",
-          "articulo": "art. 17 bis.1).c) Ley 8/2013 (Castilla-La Mancha) y art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-          "resumen": "Bonificación del 85 % de la cuota tributaria para parejas de hecho asimiladas a cónyuges con base liquidable igual o superior a 240.000 €, siempre que la donación se formalice en escritura pública.",
-          "en_vigor_desde": "2023-02-01",
-          "cuando": {
-            "modo": "donacion",
-            "parentescos": [
-              "pareja_de_hecho"
-            ],
-            "requiere": [
-              "escritura_publica"
-            ]
-          },
-          "porcentaje": "0.85",
-          "requisitos_no_comprobados": [
-            "Pareja de hecho: convivencia estable durante al menos los dos años anteriores al devengo e inscripción en el Registro de Parejas de Hecho de Castilla-La Mancha o en uno análogo; ambas circunstancias han de constar en el documento público del acto",
-            "Que en la escritura pública conste expresamente el origen y la situación de los bienes y derechos donados y, si no son dinero, su identificación fiscal completa",
-            "Si lo donado no es dinero: mantenerlo en el patrimonio, sin transmitirlo, durante los cinco años siguientes al devengo"
-          ],
-          "evidencia": [
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17 bis.1) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "En las adquisiciones “inter vivos”, incluida la percepción de cantidades por beneficiarios de contratos de seguros sobre la vida, se establecen las siguientes bonificaciones en la cuota del Impuesto sobre Sucesiones y Donaciones: 1) En función del importe de la base liquidable de sus respectivas declaraciones tributarias, los sujetos pasivos incluidos en los grupos I y II de parentesco previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, podrán aplicarse en la cuota tributaria la que corresponda de las siguientes bonificaciones:"
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 17 bis.1).c) Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "c) Declaraciones tributarias cuya base liquidable sea igual o superior a 240.000 euros, una bonificación del 85 por ciento de la cuota tributaria."
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 18.1 Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "1. A los efectos de lo dispuesto en los artículos 17 y 17 bis de esta ley se asimilan a cónyuges los miembros de parejas de hecho que hayan tenido convivencia estable de pareja durante, al menos, los dos años anteriores a la fecha de devengo del impuesto y cuya unión esté inscrita en el Registro de Parejas de Hecho de la Comunidad Autónoma de Castilla-La Mancha o en registros análogos de otras administraciones públicas, de Estados miembros de la Unión Europea o de un tercer país. Ambas circunstancias deberán constar en el documento público que recoja el acto o contrato sujeto al impuesto."
-            },
-            {
-              "boe_id": "BOE-A-2014-1368",
-              "articulo": "art. 18.3 Ley 8/2013 (Castilla-La Mancha)",
-              "cita": "3. En el caso de transmisiones lucrativas “inter vivos”, la aplicación de las bonificaciones establecidas en el artículo 17 bis queda sujeta al cumplimiento de los siguientes requisitos: a) La transmisión deberá formalizarse en escritura pública, en la que expresamente deberá constar el origen y situación de los bienes y derechos transmitidos, así como su correcta y completa identificación fiscal cuando se trate de bienes o derechos no consistentes en dinero o signo que lo represente. b) En transmisiones de bienes o derechos no consistentes en dinero o signo que lo represente, los bienes y derechos donados no podrán ser objeto de transmisión y deberán mantenerse en el patrimonio del adquirente durante los cinco años siguientes a la fecha de devengo del impuesto."
-            }
-          ]
         }
       ],
       "otras_reducciones": [
@@ -5973,9 +5755,62 @@
         "Los acogidos en acogimiento familiar permanente o guarda con fines de adopción se equiparan a los adoptados, y los acogedores a los adoptantes, a efectos de las bonificaciones (art. 18.2): indícalos como hijo o padre."
       ],
       "no_modelado": [
-        "Acumulación de las dos bonificaciones (arts. 17 y 17 bis): con discapacidad igual o superior al 65 % en los grupos I y II, la bonificación del 95 % se aplica además y después de la de tramos; la calculadora aplica solo una (la primera que corresponda), de modo que la cuota real puede ser menor.",
         "Bonificación del 95 % para las aportaciones a patrimonios protegidos de personas con discapacidad (arts. 17.2 y 17 bis.2): no se calcula porque depende del destino de lo aportado.",
         "Reducción propia del 4 % adicional por empresa familiar (arts. 14 y 16) y reducción por cesión de bienes del Patrimonio Cultural (art. 16 bis): no se calculan; pueden declararse en «otras reducciones»."
+      ],
+      "bonificaciones_sucesivas": [
+        {
+          "titulo": "Bonificación de Castilla-La Mancha por discapacidad igual o superior al 65 % (herencias)",
+          "articulo": "art. 17.2) Ley 8/2013 (Castilla-La Mancha)",
+          "resumen": "Bonificación del 95 % de la cuota tributaria para adquirentes con discapacidad igual o superior al 65 %, cualquiera que sea su parentesco. Es compatible con la bonificación por tramos de base liquidable de los grupos I y II y se aplica después de ella, sobre la cuota que queda.",
+          "en_vigor_desde": "2016-06-01",
+          "cuando": {
+            "modo": "sucesion",
+            "discapacidad_desde": 65
+          },
+          "porcentaje": "0.95",
+          "requisitos_no_comprobados": [
+            "Que el grado de discapacidad esté acreditado"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2014-1368",
+              "articulo": "art. 17.2) Ley 8/2013 (Castilla-La Mancha)",
+              "cita": "2) Los sujetos pasivos con un grado de discapacidad igual o superior al 65 por ciento podrán aplicarse una bonificación del 95 por ciento de la cuota tributaria. El mismo porcentaje de bonificación se aplicará a las aportaciones sujetas al impuesto que se realicen al patrimonio protegido de las personas con discapacidad regulado en la Ley 41/2003, de 18 de noviembre, de protección patrimonial de las personas con discapacidad y de modificación del Código Civil, de la Ley de Enjuiciamiento Civil y de la Normativa Tributaria con esta finalidad. Estas bonificaciones son compatibles con la establecida en el apartado anterior y se aplicarán con posterioridad a la misma."
+            }
+          ]
+        },
+        {
+          "titulo": "Bonificación de Castilla-La Mancha por discapacidad igual o superior al 65 % (donaciones)",
+          "articulo": "art. 17 bis.2) Ley 8/2013 (Castilla-La Mancha)",
+          "resumen": "Bonificación del 95 % de la cuota tributaria para adquirentes con discapacidad igual o superior al 65 %, cualquiera que sea su parentesco, siempre que la donación se formalice en escritura pública. Es compatible con la bonificación por tramos de base liquidable de los grupos I y II y se aplica después de ella, sobre la cuota que queda.",
+          "en_vigor_desde": "2023-02-01",
+          "cuando": {
+            "modo": "donacion",
+            "discapacidad_desde": 65,
+            "requiere": [
+              "escritura_publica"
+            ]
+          },
+          "porcentaje": "0.95",
+          "requisitos_no_comprobados": [
+            "Que el grado de discapacidad esté acreditado",
+            "Que en la escritura pública conste expresamente el origen y la situación de los bienes y derechos donados y, si no son dinero, su identificación fiscal completa",
+            "Si lo donado no es dinero: mantenerlo en el patrimonio, sin transmitirlo, durante los cinco años siguientes al devengo"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2014-1368",
+              "articulo": "art. 17 bis.2) Ley 8/2013 (Castilla-La Mancha)",
+              "cita": "2) Los sujetos pasivos con un grado de discapacidad igual o superior al 65 por ciento podrán aplicarse una bonificación del 95 por ciento de la cuota tributaria. El mismo porcentaje de bonificación se aplicará a las aportaciones sujetas al impuesto que se realicen al patrimonio protegido de las personas con discapacidad regulado en la Ley 41/2003, de 18 de noviembre, de protección patrimonial de las personas con discapacidad y de modificación del Código Civil, de la Ley de Enjuiciamiento Civil y de la normativa tributaria con esta finalidad. Estas bonificaciones son compatibles con la establecida en el apartado anterior y se aplicarán con posterioridad a la misma."
+            },
+            {
+              "boe_id": "BOE-A-2014-1368",
+              "articulo": "art. 18.3 Ley 8/2013 (Castilla-La Mancha)",
+              "cita": "3. En el caso de transmisiones lucrativas “inter vivos”, la aplicación de las bonificaciones establecidas en el artículo 17 bis queda sujeta al cumplimiento de los siguientes requisitos: a) La transmisión deberá formalizarse en escritura pública, en la que expresamente deberá constar el origen y situación de los bienes y derechos transmitidos, así como su correcta y completa identificación fiscal cuando se trate de bienes o derechos no consistentes en dinero o signo que lo represente. b) En transmisiones de bienes o derechos no consistentes en dinero o signo que lo represente, los bienes y derechos donados no podrán ser objeto de transmisión y deberán mantenerse en el patrimonio del adquirente durante los cinco años siguientes a la fecha de devengo del impuesto."
+            }
+          ]
+        }
       ]
     },
     "castilla_y_leon": {
@@ -5994,7 +5829,27 @@
         "consultado_el": "2026-11-12",
         "sha256_html": "c56f725f65fa21bba5a4884cb0ad582b72d4e40cde65bb8ad00a6a160a970e7e"
       },
-      "equiparaciones": [],
+      "equiparaciones": [
+        {
+          "parentesco": "pareja_de_hecho",
+          "equivale_a": "conyuge",
+          "alcance": "autonomico",
+          "articulo": "art. 22.1.a) DLeg 1/2013 (Castilla y León)",
+          "resumen": "Exige convivencia estable de pareja durante al menos los dos años anteriores al devengo e inscripción de la unión en el Registro de Uniones de Hecho de Castilla y León o en un registro análogo.",
+          "en_vigor_desde": "2024-05-15",
+          "requisitos_no_comprobados": [
+            "Convivencia estable de pareja durante, al menos, los dos años anteriores al devengo",
+            "Unión inscrita en el Registro de Uniones de Hecho de Castilla y León o en registros análogos de otras administraciones (Unión Europea o Espacio Económico Europeo)"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOCL-h-2013-90254",
+              "articulo": "art. 22.1.a) DLeg 1/2013 (Castilla y León)",
+              "cita": "1. A los efectos de la aplicación de las reducciones y bonificaciones, en su caso, contempladas en este capítulo: a) Se asimilan a los cónyuges los miembros de uniones de hecho que hayan tenido convivencia estable de pareja durante, al menos, dos años anteriores a la fecha de devengo del impuesto y cuya unión se haya inscrito en el Registro de Uniones de Hecho de Castilla y León o en registros análogos de otras administraciones públicas, tanto de estados miembros de la Unión Europea como pertenecientes al Espacio Económico Europeo."
+            }
+          ]
+        }
+      ],
       "reducciones": [
         {
           "clave": "parentesco",
@@ -6259,11 +6114,10 @@
       ],
       "notas": [
         "Castilla y León no tiene tarifa ni coeficientes multiplicadores propios, ni regula la reducción por vivienda habitual del causante ni la de seguros de vida: en todo eso se aplica la Ley 29/1987.",
-        "Parejas de hecho: el art. 22.1.a) del DLeg 1/2013 las asimila a cónyuges SOLO para las reducciones y bonificaciones autonómicas, y solo con convivencia estable de al menos dos años e inscripción en el Registro de Uniones de Hecho de Castilla y León o análogo. Esta calculadora no aplica esa asimilación (trata a la pareja de hecho como grupo IV), de modo que para una pareja de hecho inscrita el resultado está muy sobrevalorado: le corresponderían la reducción de 60.000 €, la variable hasta 400.000 € y la bonificación del 99 %.",
-        "La bonificación del 99 % en donaciones (art. 20 bis) exige documento público y, si se dona dinero, que conste en él el origen de los fondos."
+        "La bonificación del 99 % en donaciones (art. 20 bis) exige documento público y, si se dona dinero, que conste en él el origen de los fondos.",
+        "Parejas de hecho inscritas: el art. 22.1.a) las asimila a los cónyuges solo para las reducciones y bonificaciones de Castilla y León (60.000 €, la variable hasta 400.000 € y la bonificación del 99 %); el coeficiente multiplicador, la tarifa y las reducciones por vivienda habitual y seguro de vida son de la ley estatal y se calculan con el parentesco real (grupo IV)."
       ],
       "no_modelado": [
-        "Asimilación de las parejas de hecho inscritas a cónyuges para reducciones y bonificaciones autonómicas (art. 22.1.a DLeg 1/2013): no se aplica porque no alcanza al coeficiente multiplicador estatal ni a las reducciones estatales.",
         "Reducciones del 99 % por bienes del patrimonio cultural cedidos (art. 14), indemnizaciones y víctimas del terrorismo o de violencia de género (art. 15) y explotaciones agrarias (art. 16): no se calculan; pueden declararse como importe en otras_reducciones.",
         "Reducciones en donaciones: patrimonio protegido de personas con discapacidad (art. 18), víctimas del terrorismo (art. 18 bis), dinero para la primera vivienda habitual (art. 19) y empresa o negocio (art. 20): no se calculan porque dependen del destino de lo donado y de datos del donante."
       ]
@@ -7286,7 +7140,7 @@
         {
           "titulo": "Bonificación de Extremadura para cónyuge, descendientes y ascendientes (donaciones en documento público)",
           "articulo": "art. 30 DLeg 1/2018 (Extremadura)",
-          "resumen": "Bonificación del 99 % de la cuota en donaciones a los grupos I y II cuando la base liquidable es inferior o igual a 300.000 €; con base imponible superior a 10.000 € exige documento público.",
+          "resumen": "Bonificación en donaciones a los grupos I y II: 99 % de la cuota que corresponde a la base liquidable hasta 300.000 €, 50 % de la que corresponde a la parte entre 300.000 € y 600.000 € y nada por encima; con base imponible superior a 10.000 € exige documento público.",
           "en_vigor_desde": "2026-08-05",
           "cuando": {
             "modo": "donacion",
@@ -7294,31 +7148,44 @@
               "I",
               "II"
             ],
-            "base_liquidable_hasta": "300000",
             "requiere": [
               "escritura_publica"
             ]
           },
-          "porcentaje": "0.99",
+          "porcentaje": null,
           "requisitos_no_comprobados": [
             "Para el umbral de 10.000 € se suman todas las donaciones del mismo donante al mismo donatario en los tres años anteriores; la ley exige «documento público» (salvo cantidades derivadas de un contrato de seguro)",
             "En donaciones de dinero o de bienes del art. 12 de la Ley del Impuesto sobre el Patrimonio: entrega por transferencia, tarjeta, cheque nominativo o ingreso en cuenta; autoliquidación presentada en el plazo de un mes desde la entrega con el justificante bancario; y origen de los fondos justificado y expresado en el documento de la donación",
             "Presentar la declaración o autoliquidación en plazo",
             "Incompatible con la reducción por donación de explotaciones agrarias del art. 28",
-            "Con donaciones sucesivas o desmembración del dominio, el límite de 300.000 € se refiere al valor acumulado o íntegro de los bienes (art. 30.2 y 3)"
+            "Con donaciones sucesivas o desmembración del dominio, el límite de 300.000 € se refiere al valor acumulado o íntegro de los bienes (art. 30.2 y 3)",
+            "Lectura aplicada del art. 30.1: el 99 % se mantiene para los primeros 300.000 € de base liquidable y el 50 % se aplica solo a la parte que los supera, hasta 600.000 €. La redacción admite una lectura más estricta (perder el 99 % al superar 300.000 €), con la que se pagaría más: confírmalo con la Administración si tu base liquidable supera 300.000 €",
+            "No se han aplicado los límites más altos (450.000 € y 750.000 €) de los donatarios con la consideración legal de persona con discapacidad"
           ],
           "evidencia": [
             {
               "boe_id": "BOE-A-2018-8159",
               "articulo": "art. 30.1 DLeg 1/2018 (Extremadura)",
-              "cita": "1. En las adquisiciones inter vivos de los sujetos pasivos incluidos en los grupos I y II de parentesco de los previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones, se aplicará una bonificación del 99 % de la cuota tributaria derivada de las mismas si la base liquidable es inferior o igual a 300.000 euros."
+              "cita": "1. En las adquisiciones inter vivos de los sujetos pasivos incluidos en los grupos I y II de parentesco de los previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones, se aplicará una bonificación del 99 % de la cuota tributaria derivada de las mismas si la base liquidable es inferior o igual a 300.000 euros. La bonificación será del 50 % para la parte de base liquidable que supere los 300.000 euros con el límite de 600.000 euros."
             },
             {
               "boe_id": "BOE-A-2018-8159",
               "articulo": "art. 30.1 DLeg 1/2018 (Extremadura)",
               "cita": "Cuando la base imponible sea superior a 10.000 euros será requisito necesario para la aplicación de esta bonificación que la donación se formalice en documento público, salvo que las cantidades donadas deriven de un contrato de seguro. A estos efectos, se computarán todos los negocios jurídicos gratuitos e inter vivos efectuados por el mismo donante al mismo donatario en los tres años anteriores al momento del devengo."
             }
-          ]
+          ],
+          "tramos": [
+            {
+              "hasta": "300000",
+              "porcentaje": "0.99"
+            },
+            {
+              "hasta": "600000",
+              "porcentaje": "0.5"
+            }
+          ],
+          "tramos_sobre": "base_liquidable",
+          "tramos_metodo": "medio_ponderado"
         }
       ],
       "otras_reducciones": [
@@ -7365,14 +7232,14 @@
       ],
       "notas": [
         "Extremadura no tiene tarifa ni coeficientes multiplicadores propios, ni regula la reducción por vivienda habitual del causante ni la de seguros de vida: en todo eso se aplica la Ley 29/1987.",
-        "Donaciones a cónyuge, descendientes y ascendientes en Extremadura: SOLO se calcula la bonificación del 99 % cuando la base liquidable no supera 300.000 €. Por encima de esa cifra (o de 450.000 € si el donatario tiene discapacidad) la ley prevé una bonificación del 50 % para la parte de base liquidable entre 300.000 € y 600.000 € (450.000 € y 750.000 € con discapacidad) que esta calculadora NO aplica: en esos casos la cuota mostrada no incluye ninguna bonificación y puede ser superior a la real.",
         "El art. 30 del DLeg 1/2018 (bonificación en donaciones) cambió el 05/08/2026: hasta entonces el documento público era exigible siempre; desde esa fecha solo cuando la base imponible supera 10.000 € (acumulando tres años), y se añadieron requisitos de entrega bancaria y de presentación en un mes para donaciones de dinero.",
-        "Los beneficios autonómicos de Extremadura quedan condicionados a que los pagos se hagan por tarjeta, transferencia, cheque nominativo o ingreso en cuenta (art. 52.3)."
+        "Los beneficios autonómicos de Extremadura quedan condicionados a que los pagos se hagan por tarjeta, transferencia, cheque nominativo o ingreso en cuenta (art. 52.3).",
+        "Donaciones a cónyuge, descendientes y ascendientes en Extremadura (art. 30.1): se aplica el 99 % a la cuota de los primeros 300.000 € de base liquidable y el 50 % a la de la parte entre 300.000 € y 600.000 €. La redacción admite una lectura más estricta (perder el 99 % al superar 300.000 €); y no se aplican los límites elevados (450.000 € y 750.000 €) de los donatarios con discapacidad."
       ],
       "no_modelado": [
-        "Bonificación del 50 % en donaciones a los grupos I y II para la parte de base liquidable que supere 300.000 € con el límite de 600.000 €, y límites elevados a 450.000 € y 750.000 € para donatarios con discapacidad (art. 30.1 DLeg 1/2018): no se calcula porque la redacción no permite determinar con seguridad cómo se combinan los porcentajes del 99 % y del 50 %.",
         "Personas con especial vinculación inscritas en el Registro Autonómico (hijastros, cónyuge o pareja de un ascendiente, sobrinos de causante sin descendientes, convivientes de los tres últimos años): se les extienden en herencias los beneficios de los grupos I y II (arts. 20 bis a 20 quater); no se aplica porque depende de la inscripción en el registro y de datos que la calculadora no tiene.",
-        "Reducciones en donaciones de los arts. 21 a 29 (vivienda habitual, solar, dinero para empresa, empresa o negocio, participaciones, explotaciones agrarias, patrocinio a deportistas): no se calculan porque dependen del destino de lo donado, de la renta del donatario o de datos del donante; pueden declararse como importe en otras_reducciones."
+        "Reducciones en donaciones de los arts. 21 a 29 (vivienda habitual, solar, dinero para empresa, empresa o negocio, participaciones, explotaciones agrarias, patrocinio a deportistas): no se calculan porque dependen del destino de lo donado, de la renta del donatario o de datos del donante; pueden declararse como importe en otras_reducciones.",
+        "Límites elevados a 450.000 € y 750.000 € de la bonificación de donaciones para donatarios con la consideración legal de persona con discapacidad (art. 30.1): el artículo no cifra el grado."
       ]
     },
     "galicia": {
@@ -7478,7 +7345,7 @@
           "clase": "discapacidad",
           "caracter": "mejora",
           "articulo": "art. 6.Tres DLeg 1/2011 (Galicia)",
-          "resumen": "Sustituye a la estatal: 150.000 € con discapacidad igual o superior al 33 % e inferior al 65 %; 300.000 € con el 65 % o más para quien no tenga derecho a la reducción del 100 % de la base (grupos III y IV). La reducción del 100 % de la base para los grupos I y II con el 65 % o más y patrimonio preexistente de hasta 3.000.000 € NO se calcula.",
+          "resumen": "Sustituye a la estatal: 150.000 € con discapacidad del 33 % al 65 %; desde el 65 %, el 100 % de la base imponible para los grupos I y II con patrimonio preexistente de hasta 3.000.000 €, y 300.000 € en los demás casos.",
           "en_vigor_desde": "2026-01-01",
           "cuando": {
             "modo": "sucesion"
@@ -7486,20 +7353,27 @@
           "tramos": [
             {
               "cuando": {
+                "grupos": [
+                  "I",
+                  "II"
+                ],
+                "discapacidad_desde": 65,
+                "patrimonio_preexistente_hasta": "3000000"
+              },
+              "porcentaje_base": "1"
+            },
+            {
+              "cuando": {
+                "discapacidad_desde": 65
+              },
+              "importe": "300000"
+            },
+            {
+              "cuando": {
                 "discapacidad_desde": 33,
                 "discapacidad_menor_de": 65
               },
               "importe": "150000"
-            },
-            {
-              "cuando": {
-                "grupos": [
-                  "III",
-                  "IV"
-                ],
-                "discapacidad_desde": 65
-              },
-              "importe": "300000"
             }
           ],
           "requisitos_no_comprobados": [
@@ -7545,6 +7419,62 @@
               "boe_id": "BOE-A-2011-18161",
               "articulo": "art. 7.Tres.1 DLeg 1/2011 (Galicia)",
               "cita": "Cuando la adquisición corresponda al cónyuge, la reducción será del 100 % del valor en la base imponible, con un límite de 600.000 euros."
+            },
+            {
+              "boe_id": "BOE-A-2011-18161",
+              "articulo": "art. 7.Tres.2 DLeg 1/2011 (Galicia)",
+              "cita": "2. Las personas adquirentes deberán mantener la vivienda adquirida durante los cinco años siguientes al devengo del impuesto, salvo que dentro de dicho plazo falleciese la persona adquirente o transmitiese la vivienda en virtud de pacto sucesorio con arreglo a lo previsto en la Ley de derecho civil de Galicia."
+            }
+          ]
+        },
+        {
+          "articulo": "art. 7.Tres DLeg 1/2011 (Galicia)",
+          "resumen": "Reducción por la vivienda habitual del causante para descendientes, ascendientes y colaterales por consanguinidad: 99 %, 97 % o 95 % según el valor real total del inmueble (hasta 150.000 €, hasta 300.000 € o más), con un límite de 600.000 € y cinco años de mantenimiento.",
+          "en_vigor_desde": "2023-01-01",
+          "cuando": {
+            "modo": "sucesion",
+            "parentescos": [
+              "hijo",
+              "otro_descendiente",
+              "padre",
+              "otro_ascendiente",
+              "hermano",
+              "sobrino",
+              "tio",
+              "colateral_cuarto_grado",
+              "colateral_lejano"
+            ]
+          },
+          "tramos_valor": [
+            {
+              "valor_hasta": "150000",
+              "porcentaje": "0.99"
+            },
+            {
+              "valor_hasta": "300000",
+              "porcentaje": "0.97"
+            },
+            {
+              "valor_hasta": null,
+              "porcentaje": "0.95"
+            }
+          ],
+          "limite_por_sujeto": "600000",
+          "anos_mantenimiento": 5,
+          "colateral_mayor_de": 65,
+          "colateral_anos_convivencia": 2,
+          "requisitos_no_comprobados": [
+            "Que el inmueble fuera la vivienda habitual del causante (no pierde ese carácter si se trasladó a un centro especializado o con familiares para recibir cuidados)",
+            "La reducción no se aplica de oficio: hay que solicitarla en la autoliquidación presentada en plazo (arts. 7.Dos y 23)",
+            "Si el mismo transmitente transmite varias viviendas habituales (por muerte o pacto sucesorio), solo cabe la reducción por una",
+            "La ley no dice que el límite de 600.000 € sea «por sujeto pasivo»; se ha aplicado a la base de cada adquirente",
+            "El porcentaje se elige por el valor real TOTAL del inmueble, no por la parte que se hereda"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2011-18161",
+              "articulo": "art. 7.Tres.1 DLeg 1/2011 (Galicia)",
+              "cita": "1. Cuando en la base imponible de una adquisición mortis causa esté incluido el valor de la vivienda habitual del causante, y la adquisición corresponda a sus descendientes o adoptados, ascendientes o adoptantes y colaterales, por consanguinidad, se practicará una reducción con un límite de 600.000 euros y se aplicará el porcentaje de reducción que corresponda en función del valor real total del inmueble: Valor real del inmueble Porcentaje de reducción Hasta 150.000,00 euros 99 De 150.000,01 a 300.000,00 euros 97 Más de 300.000,00 95 Cuando la adquisición corresponda al cónyuge, la reducción será del 100 % del valor en la base imponible, con un límite de 600.000 euros. En caso del pariente colateral, este habrá de ser mayor de 65 años y será necesaria la convivencia con el causante durante los dos años anteriores al fallecimiento."
             },
             {
               "boe_id": "BOE-A-2011-18161",
@@ -7871,18 +7801,8 @@
       ],
       "otras_reducciones": [
         {
-          "articulo": "art. 6.Tres.b) DLeg 1/2011 (Galicia)",
-          "titulo": "Reducción del 100 % de la base imponible para herederos de los grupos I y II con discapacidad igual o superior al 65 % y patrimonio preexistente de hasta 3.000.000 €",
-          "modo": "sucesion"
-        },
-        {
           "articulo": "art. 6.Cuatro DLeg 1/2011 (Galicia)",
           "titulo": "Indemnizaciones del síndrome tóxico y prestaciones públicas extraordinarias por actos de terrorismo (99 %)",
-          "modo": "sucesion"
-        },
-        {
-          "articulo": "art. 7.Tres DLeg 1/2011 (Galicia)",
-          "titulo": "Vivienda habitual del causante para descendientes, ascendientes y colaterales por consanguinidad: 99 %, 97 % o 95 % según el valor real total del inmueble, con límite de 600.000 € (en lugar de la estatal)",
           "modo": "sucesion"
         },
         {
@@ -7947,15 +7867,11 @@
         }
       ],
       "notas": [
-        "Herederos de los grupos I y II con discapacidad igual o superior al 65 % y patrimonio preexistente de hasta 3.000.000 €: la ley reduce el 100 % de su base imponible (art. 6.Tres.b), de modo que no pagan; la calculadora NO aplica esa regla (les deja la reducción estatal por discapacidad) y el resultado que muestra para ellos es demasiado alto. Con patrimonio superior a 3.000.000 € les corresponden 300.000 € (art. 6.Tres.c), que tampoco se aplican automáticamente: indícalos en «otras_reducciones».",
-        "Vivienda habitual del causante (art. 7.Tres): solo se calcula la regla del cónyuge (100 %, límite 600.000 €). A descendientes, ascendientes y colaterales la ley gallega les da el 99 %, 97 % o 95 % según el valor real total del inmueble, con límite de 600.000 €; la calculadora les aplica la reducción estatal (95 % con el límite estatal), que es menor o igual.",
         "Los pactos sucesorios gallegos (apartación, mejora) tributan como adquisiciones por causa de muerte (art. 3.1.a de la Ley 29/1987): indícalos como «sucesion». Las reducciones por parentesco y discapacidad son únicas entre el mismo causante y el mismo causahabiente y solo se aplican en adquisiciones sucesivas por el importe no agotado (art. 6.Cinco); la calculadora no lleva esa cuenta.",
         "Galicia no tiene bonificación en cuota para donaciones ni reducciones por parentesco en donaciones; las donaciones a los grupos I y II tributan por la tarifa reducida del art. 9.b) solo si se formalizan en escritura pública.",
         "También se asimila al descendiente el hijo concebido y no nacido (art. 3.Cuatro, con carnet familiar gallego o certificado)."
       ],
       "no_modelado": [
-        "Reducción del 100 % de la base imponible por discapacidad igual o superior al 65 % en los grupos I y II con patrimonio preexistente de hasta 3.000.000 € (art. 6.Tres.b): no se calcula porque es un porcentaje de la base y no un importe fijo.",
-        "Reducción por vivienda habitual para descendientes, ascendientes y colaterales (art. 7.Tres): no se calcula porque el porcentaje depende del valor real total del inmueble; se aplica la estatal.",
         "Donaciones derivadas de contratos de vitalicio con alimentante de los grupos III o IV (art. 12): tarifa del art. 9.a) y coeficiente de los grupos I y II si se cumplen sus requisitos; no se calcula.",
         "Las reducciones propias por empresa, explotaciones agrarias, fincas rústicas y forestales, dinero para vivienda o para crear una empresa (arts. 7 y 8): si declaras valor_empresa_familiar se aplica la reducción estatal del 95 %."
       ]
@@ -8504,6 +8420,16 @@
         "Reducciones propias por bienes culturales cedidos, fincas rústicas y donaciones dinerarias para empresas (arts. 3.Dos, 3.Tres y 4.Dos a 4.Cinco): no se calculan.",
         "Acumulación de donaciones del mismo donante en tres años a efectos de las reducciones propias (art. 4.Ocho): no se calcula."
       ]
+    }
+  },
+  "fuentes_complementarias": {
+    "BOE-A-1978-31229": {
+      "norma": "Constitución Española (texto consolidado)",
+      "boe_id": "BOE-A-1978-31229",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1978-31229",
+      "consolidado_a": "2026-05-20",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "7c586cbf6e91e433cb15d9accdb41237d40818240ad84fa4c0f00d5c68b4f2f0"
     }
   }
 }

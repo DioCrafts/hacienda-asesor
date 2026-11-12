@@ -1,14 +1,26 @@
 # Extracto literal de https://www.boe.es/buscar/act.php?id=BOE-A-2007-6820 descargado el 2026-11-12. Texto consolidado: «Última actualización, publicada el 07/10/2026»
 # Solo los artículos de los que se leen los parámetros de autonomos_2026.json; generado, no editar a mano.
 
+Artículo 25. Rendimientos de actividades económicas obtenidos de forma notoriamente irregular en el tiempo.
+A efectos de la aplicación de la reducción prevista en el artículo 32.1 de la Ley del Impuesto, se consideran rendimientos de actividades económicas obtenidos de forma notoriamente irregular en el tiempo, exclusivamente, los siguientes, cuando se imputen en único período impositivo:
+a) Subvenciones de capital para la adquisición de elementos del inmovilizado no amortizables.
+b) Indemnizaciones y ayudas por cese de actividades económicas.
+c) Premios literarios, artísticos o científicos que no gocen de exención en este Impuesto. No se consideran premios, a estos efectos, las contraprestaciones económicas derivadas de la cesión de derechos de propiedad intelectual o industrial o que sustituyan a éstas.
+d) Las indemnizaciones percibidas en sustitución de derechos económicos de duración indefinida.
+Se modifica por el art. 1.8 del Real Decreto 633/2015, de 10 de julio. Ref. BOE-A-2015-7770.
+Esta modificación resulta aplicable a los periodos impositivos que se inicien a partir del 1 de enero de 2015, según establece la disposición final 2.2 del citado Real Decreto.
+Seleccionar redacción: Última actualización, publicada el 11/07/2015, en vigor a partir del 12/07/2015.
+Texto original, publicado el 31/03/2007, en vigor a partir del 01/04/2007.
+Subir
+
 Artículo 26. Reducciones aplicables a determinados rendimientos de actividades económicas.
 1. Para la aplicación de la reducción prevista en el artículo 32.2.1.º de la Ley del Impuesto, será necesario el cumplimiento de los requisitos señalados en el 32.2.2.º de la Ley del Impuesto y de las obligaciones formales previstas en el artículo 68 de este Reglamento.
 2. A efectos de la aplicación de la reducción prevista en el artículo 32.2.1.º de la Ley del Impuesto, cuando el contribuyente opte por la tributación conjunta, tendrá derecho a la misma cuando individualmente cumpla con los requisitos señalados en el artículo 32.2.2.º de la Ley del Impuesto. En este caso, la cuantía de la reducción a computar en la declaración conjunta será única, sin que su importe pueda ser superior al rendimiento neto de las actividades económicas de los miembros de la unidad familiar que cumplan individualmente los citados requisitos, y se calculará, al igual que la reducción prevista en el artículo 32.2.3.º de la Ley del Impuesto, teniendo en cuenta las rentas de la unidad familiar.
 Se modifica por el art. 1.9 del Real Decreto 633/2015, de 10 de julio. Ref. BOE-A-2015-7770.
 Esta modificación resulta aplicable a los periodos impositivos que se inicien a partir del 1 de enero de 2015, según establece la disposición final 2.2 del citado Real Decreto.
-Seleccionar redacción:
-Última actualización, publicada el 11/07/2015, en vigor a partir del 12/07/2015.
+Seleccionar redacción: Última actualización, publicada el 11/07/2015, en vigor a partir del 12/07/2015.
 Texto original, publicado el 31/03/2007, en vigor a partir del 01/04/2007.
+Subir
 
 Artículo 28. Ámbito de aplicación del método de estimación directa simplificada.
 1. Los contribuyentes que ejerzan actividades económicas determinarán el rendimiento neto de todas sus actividades por la modalidad simplificada del método de estimación directa, siempre que:
@@ -20,6 +32,7 @@ Cuando en el año inmediato anterior no se hubiese ejercido actividad alguna, se
 Cuando en el año inmediato anterior se hubiese iniciado una actividad, el importe neto de la cifra de negocios se elevará al año.
 3. Los contribuyentes que determinen el rendimiento neto de alguna de sus actividades económicas por la modalidad normal del método de estimación directa, determinarán el rendimiento neto de todas sus actividades por la modalidad normal.
 No obstante, cuando se inicie durante el año alguna actividad económica por la que se renuncie a esta modalidad, la incompatibilidad a que se refiere el párrafo anterior no surtirá efectos para ese año respecto a las actividades que se venían realizando con anterioridad.
+Subir
 
 Artículo 30. Determinación del rendimiento neto en el método de estimación directa simplificada.
 El rendimiento neto de las actividades económicas, a las que sea de aplicación la modalidad simplificada del método de estimación directa, se determinará según las normas contenidas en los artículos 28 y 30 de la Ley del Impuesto, con las especialidades siguientes:
@@ -27,9 +40,9 @@ El rendimiento neto de las actividades económicas, a las que sea de aplicación
 2.ª El conjunto de las provisiones deducibles y los gastos de difícil justificación se cuantificará aplicando el porcentaje del 5 por ciento sobre el rendimiento neto, excluido este concepto, sin que la cuantía resultante pueda superar 2.000 euros anuales. No obstante, no resultará de aplicación dicho porcentaje de deducción cuando el contribuyente opte por la aplicación de la reducción prevista en el artículo 26.1 de este Reglamento.
 Se modifica por el art. 1.10 del Real Decreto 633/2015, de 10 de julio. Ref. BOE-A-2015-7770.
 Esta modificación resulta aplicable a los periodos impositivos que se inicien a partir del 1 de enero de 2015, según establece la disposición final 2.2 del citado Real Decreto.
-Seleccionar redacción:
-Última actualización, publicada el 11/07/2015, en vigor a partir del 12/07/2015.
+Seleccionar redacción: Última actualización, publicada el 11/07/2015, en vigor a partir del 12/07/2015.
 Texto original, publicado el 31/03/2007, en vigor a partir del 01/04/2007.
+Subir
 
 Artículo 95. Importe de las retenciones sobre rendimientos de actividades económicas.
 1. Cuando los rendimientos sean contraprestación de una actividad profesional, se aplicará el tipo de retención del 15 por ciento sobre los ingresos íntegros satisfechos.
@@ -114,12 +127,12 @@ Se modifica el apartado 1 por el art. único.11 del Real Decreto 1461/2018, de 2
 Se modifica el apartado 1 por el art. 1.27 del Real Decreto 633/2015, de 10 de julio. Ref. BOE-A-2015-7770.
 Esta modificación resulta aplicable a los periodos impositivos que se inicien a partir del 1 de enero de 2015, según establece la disposición final 2.2 del citado Real Decreto.
 Se modifica el apartado 1 por el art. único.16 del Real Decreto 1003/2014, de 5 de diciembre. Ref. BOE-A-2014-12730.
-Seleccionar redacción:
-Última actualización, publicada el 25/01/2023, en vigor a partir del 26/01/2023.
+Seleccionar redacción: Última actualización, publicada el 25/01/2023, en vigor a partir del 26/01/2023.
 Modificación publicada el 22/12/2018, en vigor a partir del 23/12/2018.
 Modificación publicada el 11/07/2015, en vigor a partir del 12/07/2015.
 Modificación publicada el 06/12/2014, en vigor a partir del 01/01/2015.
 Texto original, publicado el 31/03/2007, en vigor a partir del 01/04/2007.
+Subir
 
 Artículo 109. Obligados al pago fraccionado.
 1. Los contribuyentes que ejerzan actividades económicas estarán obligados a autoliquidar e ingresar en el Tesoro, en concepto de pago a cuenta del Impuesto sobre la Renta de las Personas Físicas, la cantidad que resulte de lo establecido en los artículos siguientes, sin perjuicio de las excepciones previstas en los apartados siguientes.
@@ -127,6 +140,7 @@ Artículo 109. Obligados al pago fraccionado.
 3. Los contribuyentes que desarrollen actividades agrícolas o ganaderas no estarán obligados a efectuar pago fraccionado en relación con las mismas si, en el año natural anterior, al menos el 70 por ciento de los ingresos procedentes de la explotación, con excepción de las subvenciones corrientes y de capital y de las indemnizaciones, fueron objeto de retención o ingreso a cuenta.
 4. Los contribuyentes que desarrollen actividades forestales no estarán obligados a efectuar pago fraccionado en relación con las mismas si, en el año natural anterior, al menos el 70 por ciento de los ingresos procedentes de la actividad, con excepción de las subvenciones corrientes y de capital y de las indemnizaciones, fueron objeto de retención o ingreso a cuenta.
 5. A efectos de lo dispuesto en los apartados 2, 3 y 4 anteriores, en caso de inicio de la actividad se tendrá en cuenta el porcentaje de ingresos que hayan sido objeto de retención o ingreso a cuenta durante el período a que se refiere el pago fraccionado.
+Subir
 
 Artículo 110. Importe del fraccionamiento.
 1. Los contribuyentes a que se refiere el artículo anterior ingresarán, en cada plazo, las cantidades siguientes:
@@ -179,8 +193,7 @@ Se modifica por el art. 1.12 del Real Decreto 2004/2009, de 23 de diciembre. Ref
 Se modifica por el art. 8.7 del Real Decreto 1975/2008, de 28 de noviembre.Ref. 2008/19437
 Esta modificación tiene efectos desde el 1 de enero de 2009, según establece la disposición final única.2.b).
 Se modifica por el art. único.12 del Real Decreto 861/2008, de 23 de mayo.Ref. 2008/08997
-Seleccionar redacción:
-Última actualización, publicada el 22/12/2018, en vigor a partir del 23/12/2018.
+Seleccionar redacción: Última actualización, publicada el 22/12/2018, en vigor a partir del 23/12/2018.
 Modificación publicada el 06/12/2014, en vigor a partir del 01/01/2015.
 Modificación publicada el 06/12/2013, en vigor a partir del 07/12/2013.
 Modificación publicada el 31/12/2010, en vigor a partir del 01/01/2011.
@@ -188,6 +201,7 @@ Modificación publicada el 29/12/2009, en vigor a partir del 01/01/2010.
 Modificación publicada el 02/12/2008, en vigor a partir del 03/12/2008.
 Modificación publicada el 24/05/2008, en vigor a partir del 01/06/2008.
 Texto original, publicado el 31/03/2007, en vigor a partir del 01/04/2007.
+Subir
 
 Artículo 111. Declaración e ingreso.
 1. Los empresarios y profesionales estarán obligados a declarar e ingresar trimestralmente en el Tesoro Público las cantidades determinadas conforme a lo dispuesto en el artículo anterior en los plazos siguientes:
@@ -197,3 +211,4 @@ Cuando de la aplicación de lo dispuesto en el artículo anterior no resultasen 
 2. El Ministro de Economía y Hacienda podrá prorrogar los plazos a que hace referencia este artículo, así como establecer supuestos de ingreso semestral con las adaptaciones que procedan de los porcentajes determinados en el artículo anterior.
 3. Los contribuyentes presentarán las declaraciones ante el órgano competente de la Administración tributaria e ingresarán su importe en el Tesoro Público.
 La declaración se ajustará a las condiciones y requisitos y el ingreso se efectuará en la forma y lugar que determine el Ministro de Economía y Hacienda.
+Subir

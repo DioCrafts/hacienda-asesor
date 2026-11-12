@@ -37,6 +37,13 @@ class _Grupo(_Model):
     # Caveats the calculators repeat whenever they use this group.
     avisos: list[str] = Field(default_factory=list)
 
+    def cita(self, articulo: str) -> str:
+        """The literal quote stored for ``articulo`` (so that user-facing text never retypes the law)."""
+        for ev in self.evidencia:
+            if ev.articulo == articulo:
+                return ev.cita
+        raise KeyError(articulo)
+
 
 class TiposAno(_Model):
     """Rates for tax periods starting within one calendar year."""
@@ -108,6 +115,15 @@ class CompensacionBasesNegativas(_Grupo):
         return self.limite_porcentaje
 
 
+class ReservaNivelacion(_Grupo):
+    """Art. 105 LIS: deferral of up to a share of the positive base."""
+
+    porcentaje: Decimal  # of the positive taxable base
+    limite: Decimal  # yearly ceiling in euros, pro-rated in short periods
+    anos_adicion: Decimal  # the reduction is added back within these years
+    incremento_incumplimiento: Decimal  # surcharge on the quota if the conditions are breached
+
+
 class PagoFraccionadoIS(_Grupo):
     """Art. 40 LIS (modelo 202)."""
 
@@ -119,6 +135,12 @@ class PagoFraccionadoIS(_Grupo):
     limite_modalidad_base_obligatoria: Decimal
     # Turnover from which additional provision 14 changes the art. 40.3 method (inclusive).
     umbral_especialidades: Decimal
+
+
+class ComparacionIRPF(_Grupo):
+    """IRPF rules the self-employed/company comparison refers to (quotes, and the dividend withholding)."""
+
+    retencion_capital_mobiliario: Decimal  # art. 101.4 LIRPF: payment on account, not a final tax
 
 
 class TributacionMinima(_Grupo):
@@ -136,7 +158,9 @@ class SociedadesParams(_Model):
     tipos_gravamen: TiposGravamen
     reserva_capitalizacion: ReservaCapitalizacion
     compensacion_bases_negativas: CompensacionBasesNegativas
+    reserva_nivelacion: ReservaNivelacion
     pago_fraccionado: PagoFraccionadoIS
+    comparacion_irpf: ComparacionIRPF
     tributacion_minima: TributacionMinima
 
     def grupos(self) -> dict[str, _Grupo]:
@@ -150,9 +174,18 @@ class SociedadesParams(_Model):
                 f"No hay tipos del Impuesto sobre Sociedades cargados para períodos iniciados en {ejercicio}."
             ) from None
 
-    def fuente_texto(self) -> str:
+    @property
+    def ley(self) -> FuentePrincipal:
+        """The Ley 27/2014: the first source of the file."""
+        return next(iter(self.fuentes_principales.values()))
+
+    def fuente_texto(self, *boe_ids: str) -> str:
+        """The Ley 27/2014 plus the other sources named (those a result actually relied on)."""
+        fuentes = [self.ley, *(self.fuentes_principales[boe_id] for boe_id in boe_ids)]
         return "; ".join(
-            f"{fp.norma}, {fp.boe_id}, consolidado a {fp.consolidado_a}" for fp in self.fuentes_principales.values()
+            f"{fp.norma}, {fp.boe_id}, {'consolidado a' if 'consolidado' in fp.norma else 'publicada el'} "
+            f"{fp.consolidado_a}"
+            for fp in fuentes
         )
 
 

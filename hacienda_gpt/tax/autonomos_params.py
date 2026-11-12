@@ -55,6 +55,30 @@ class GastosDificilJustificacion(_Grupo):
     limite_anual: Decimal
 
 
+class GastosDificilJustificacionCeuta(_Grupo):
+    """Temporary higher percentage for activities carried on in Ceuta (a year-specific provision)."""
+
+    porcentaje: Decimal
+    # First quarter whose payment on account (modelo 130) may use it.
+    pagos_fraccionados_desde_trimestre: int = Field(ge=1, le=4)
+
+
+class ReduccionIrregulares(_Grupo):
+    """Art. 32.1 LIRPF: income generated over more than two years or notoriously irregular."""
+
+    porcentaje: Decimal
+    limite_base: Decimal  # net income the percentage applies to, at most
+
+
+class ReduccionInicioActividad(_Grupo):
+    """Art. 32.3 LIRPF: first profitable year of a new activity and the following one."""
+
+    porcentaje: Decimal
+    limite_base: Decimal
+    # Not available when more than this share of the income comes from a former employer.
+    max_ingresos_antiguo_pagador: Decimal
+
+
 class ReduccionDependientes(_Grupo):
     """Art. 32.2.1.º LIRPF: single-client / economically dependent self-employed."""
 
@@ -70,6 +94,10 @@ class ReduccionDependientes(_Grupo):
     max_gastos_sobre_ingresos: Decimal
     min_ingresos_con_retencion: Decimal
     max_prestaciones_trabajo: Decimal
+    # Degree of disability (as a fraction) that makes a "persona con discapacidad" (art. 60.3
+    # LIRPF) and the one that gives the higher amount of letter b).
+    grado_discapacidad: Decimal
+    grado_discapacidad_ampliada: Decimal
 
 
 class ReduccionRentasBajas(_Grupo):
@@ -95,6 +123,8 @@ class PagoFraccionado(_Grupo):
     # Art. 110.3.c): flat amount per quarter by previous year's net income.
     minoracion_limite: Decimal
     minoracion_tramos: list[TramoMinoracion] = Field(min_length=1)
+    # Art. 110.2: cut of the percentage for activities entitled to the art. 68.4 LIRPF deduction.
+    reduccion_ceuta_melilla: Decimal
 
     def minoracion(self, rendimiento_neto_anterior: Decimal) -> Decimal:
         for tramo in self.minoracion_tramos:
@@ -106,6 +136,14 @@ class PagoFraccionado(_Grupo):
 class RetencionProfesionales(_Grupo):
     general: Decimal
     inicio_actividad: Decimal
+    # Art. 95.1, fourth paragraph: collectors, insurance brokers, lottery delegates and letter d).
+    otros_supuestos: Decimal
+    # Letter d): last year's gross income from those activities must be below the limit and
+    # above this share of the gross income from economic activities plus work.
+    supuesto_d_limite_ingresos: Decimal
+    supuesto_d_min_proporcion: Decimal
+    # Last paragraph: cut of these rates for income entitled to the art. 68.4 LIRPF deduction.
+    reduccion_ceuta_melilla: Decimal
 
 
 class IVA(_Grupo):
@@ -123,8 +161,12 @@ class AutonomosParams(_Model):
     no_modelado: list[str] = Field(default_factory=list)
     estimacion_directa_simplificada: EstimacionDirectaSimplificada
     gastos_dificil_justificacion: GastosDificilJustificacion
+    # Only in the years a provision sets it (2026: disposición adicional 64.ª LIRPF).
+    gastos_dificil_justificacion_ceuta: GastosDificilJustificacionCeuta | None = None
+    reduccion_irregulares: ReduccionIrregulares
     reduccion_dependientes: ReduccionDependientes
     reduccion_rentas_bajas: ReduccionRentasBajas
+    reduccion_inicio_actividad: ReduccionInicioActividad
     pago_fraccionado: PagoFraccionado
     retencion_profesionales: RetencionProfesionales
     iva: IVA

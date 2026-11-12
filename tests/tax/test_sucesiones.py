@@ -69,7 +69,7 @@ def test_params_load_with_the_figures_read_from_the_law() -> None:
 def test_every_figure_is_in_its_quote_and_every_quote_is_in_the_law() -> None:
     p = load_isd_params(2026)
     textos = textos_de_directorio(EXTRACTOS)
-    assert set(textos) == set(p.fuentes_principales)
+    assert set(textos) == set(p.fuentes_principales) | set(p.fuentes_complementarias)
     assert comprobar_evidencias(p, textos) == []
 
 
@@ -555,3 +555,374 @@ def test_all_fifteen_communities_compute_and_differ() -> None:
     # Without a community only state law applies, and it is the most expensive of all.
     estatal = calcular_isd(BeneficiarioISD(modo="sucesion", parentesco="hijo", edad=30, valor_recibido=D(400000)))
     assert estatal.cuota_a_ingresar > max(herencias.values())
+
+
+# --- Rules that go beyond "one fixed amount, one allowance" -----------------------
+
+
+def _sin(clave: str, **cambios):
+    """The parameters with one community's lists replaced: what the calculator did before a rule existed."""
+    p = load_isd_params(2026)
+    comunidad = p.comunidades[clave].model_copy(update=cambios)
+    return p.model_copy(update={"comunidades": {**p.comunidades, clave: comunidad}})
+
+
+def test_partner_assimilated_only_for_the_communitys_own_rules_castilla_y_leon() -> None:
+    caso = BeneficiarioISD(
+        modo="sucesion", comunidad="Castilla y León", parentesco="pareja de hecho", edad=50, valor_recibido=600000
+    )
+    r = calcular_isd(caso)
+    # Art. 22.1.a): cónyuge solo para las reducciones y bonificaciones de Castilla y León.
+    # Reducciones: 60.000 (art. 13) + variable hasta completar 400.000 = 340.000 → base liquidable 200.000.
+    # Tarifa estatal: 23.063,25 + 40.365,17 × 21,25 % = 8.577,60 → 31.640,85. El coeficiente es estatal y ve el
+    # parentesco real, grupo IV: × 2 = 63.281,70. Bonificación 99 % (art. 17 bis) = 62.648,88 → 632,82.
+    assert _linea(r, "Reducción por parentesco (Castilla y León)") == D("-60000.00")
+    assert _linea(r, "Reducción variable") == D("-340000.00")
+    assert (r.grupo, r.parentesco, r.coeficiente) == ("IV", "pareja_de_hecho", D("2"))
+    assert r.cuota_tributaria == D("63281.70") and r.cuota_a_ingresar == D("632.82")
+    assert _avisa(r, "SOLO para") and _avisa(r, "Registro de Uniones de Hecho de Castilla y León")
+    # Before the assimilation was encoded: a stranger, no reduction and no allowance.
+    # 80.655,08 + 201.222,46 × 29,75 % = 59.863,68 → 140.518,76; × 2 = 281.037,52.
+    assert calcular_isd(caso, _sin("castilla_y_leon", equiparaciones=[])).cuota_a_ingresar == D("281037.52")
+    # State reductions the community has not touched keep seeing a stranger: no life-insurance reduction.
+    con_seguro = calcular_isd(caso.model_copy(update={"seguro_vida": D(20000)}))
+    assert not any(line.concepto == "Reducción por seguro de vida" for line in con_seguro.lineas)
+    assert _avisa(con_seguro, "Reducción por seguro de vida (art. 20.2.b) Ley 29/1987) no aplicada")
+
+
+def test_partner_assimilated_in_canarias_for_its_reductions_but_not_for_the_state_coefficient() -> None:
+    r = _isd(
+        modo="sucesion",
+        comunidad="canarias",
+        parentesco="pareja_de_hecho",
+        edad=50,
+        valor_recibido=300000,
+        seguro_vida=30000,
+        valor_vivienda_habitual=150000,
+        participacion_vivienda=1,
+    )
+    # Art. 41: como cónyuge en lo dictado por Canarias. Base imponible 330.000. Reducciones canarias: parentesco
+    # 40.400 + seguro 23.150 (tope) + vivienda 99 % × 150.000 = 148.500 → 212.050; base liquidable 117.950.
+    # Tarifa estatal: 9.166,06 + 38.069,48 × 16,15 % = 6.148,22 → 15.314,28; coeficiente estatal del grupo IV
+    # (parentesco real): × 2 = 30.628,56. Bonificación 99,9 % = 30.597,93 → 30,63.
+    assert _linea(r, "Reducción por parentesco (Canarias)") == D("-40400.00")
+    assert _linea(r, "Reducción por seguro de vida") == D("-23150.00")
+    assert _linea(r, "Reducción por vivienda habitual") == D("-148500.00")
+    assert (r.grupo, r.cuota_tributaria, r.cuota_a_ingresar) == ("IV", D("30628.56"), D("30.63"))
+
+
+def test_partner_assimilated_for_allowances_only_castilla_la_mancha_and_for_named_reductions_aragon() -> None:
+    clm = _isd(
+        modo="sucesion", comunidad="castilla_la_mancha", parentesco="pareja_de_hecho", edad=50, valor_recibido=200000
+    )
+    # Art. 18.1: solo «a los efectos de los artículos 17 y 17 bis». Sin reducciones (grupo IV): base 200.000 →
+    # 31.640,85 × 2 = 63.281,70. Tramo de 175.000 a 225.000 de base liquidable: 95 % = 60.117,62 → 3.164,08.
+    assert clm.reducciones == 0 and clm.grupo == "IV"
+    assert (clm.bonificacion, clm.cuota_a_ingresar) == (D("60117.62"), D("3164.08"))
+    aragon = _isd(modo="sucesion", comunidad="aragon", parentesco="pareja_de_hecho", edad=50, valor_recibido=600000)
+    # Disp. adicional 1.ª: como cónyuge en las reducciones que lo nombran (art. 131-5: 500.000) → base 100.000.
+    # 9.166,06 + 20.119,48 × 16,15 % = 3.249,30 → 12.415,36; × 2 (grupo IV) = 24.830,71.
+    assert _linea(aragon, "Reducción aragonesa a favor del cónyuge") == D("-500000.00")
+    assert aragon.cuota_a_ingresar == D("24830.71")
+    donacion = _isd(modo="donacion", comunidad="aragon", parentesco="pareja_de_hecho", edad=50, valor_recibido=150000)
+    # Art. 132-2: 100.000 → base 50.000 → 4.685,10 + 2.069,28 × 12,75 % = 263,83 → 4.948,93; × 2 = 9.897,87.
+    # La bonificación del art. 132-6 se define por el «Grupo II» y no se extiende a la pareja.
+    assert donacion.cuota_a_ingresar == D("9897.87") and donacion.bonificacion == 0
+
+
+def test_reduction_of_the_whole_base_galicia_disability() -> None:
+    caso = BeneficiarioISD(
+        modo="sucesion", comunidad="galicia", parentesco="hijo", edad=40, grado_discapacidad=65, valor_recibido=2000000
+    )
+    r = calcular_isd(caso)
+    # Art. 6.Tres.b): grupos I y II, discapacidad ≥ 65 %, patrimonio preexistente ≤ 3.000.000 €: 100 % de la base.
+    # Tras la reducción por parentesco (1.000.000) queda 1.000.000, que es lo que se aplica.
+    assert _linea(r, "Reducción por discapacidad (Galicia) (100 % de la base imponible)") == D("-1000000.00")
+    assert r.base_liquidable == 0 and r.cuota_a_ingresar == 0
+    # Before: only the state disability reduction. 2.000.000 − 1.000.000 − 150.253,03 = 849.746,97 →
+    # tarifa gallega 78.500 + 49.746,97 × 15 % = 7.462,05 → 85.962,05.
+    viejo = load_isd_params(2026).comunidades["galicia"].reducciones
+    solo_33 = viejo[1].model_copy(update={"tramos": viejo[1].tramos[2:]})
+    assert calcular_isd(caso, _sin("galicia", reducciones=[viejo[0], solo_33])).cuota_a_ingresar == D("85962.05")
+    # Letter c): above 3.000.000 € of previous wealth, 300.000 €. 2.000.000 − 1.300.000 = 700.000 →
+    # 23.500 + 400.000 × 11 % = 67.500 (coeficiente 1 en Galicia para los grupos I y II).
+    rico = calcular_isd(caso.model_copy(update={"patrimonio_preexistente": D(3500000)}))
+    assert _linea(rico, "Reducción por discapacidad (Galicia)") == D("-300000.00")
+    assert rico.cuota_a_ingresar == D("67500.00")
+    hermano = _isd(
+        modo="sucesion",
+        comunidad="galicia",
+        parentesco="hermano",
+        edad=40,
+        grado_discapacidad=65,
+        valor_recibido=500000,
+    )
+    assert _linea(hermano, "Reducción por discapacidad (Galicia)") == D("-300000.00")  # grupo III: letra c)
+
+
+def test_reduction_of_the_whole_base_aragon_minor_children_and_disability() -> None:
+    menor = BeneficiarioISD(modo="sucesion", comunidad="aragon", parentesco="hijo", edad=15, valor_recibido=800000)
+    r = calcular_isd(menor)
+    # Art. 131-1: 100 % de la base para hijos menores de edad (18, art. 12 de la Constitución), máximo 3.000.000.
+    # Reducción estatal de grupo I a los 15 años: 15.956,87 + 3.990,72 × 6 = 39.901,19; el resto, 760.098,81.
+    assert _linea(r, "Reducción por parentesco") == D("-39901.19")
+    assert _linea(r, "Reducción aragonesa para hijos del fallecido menores de edad") == D("-760098.81")
+    assert _linea(r, "Reducción aragonesa a favor del cónyuge") == D("0.00")  # las demás ya superan 500.000
+    assert r.cuota_a_ingresar == 0 and _avisa(r, "art. 12 de la Constitución")
+    # Before (and still at 18): 800.000 − 500.000 = 300.000 → 40.011,04 + 60.610,87 × 25,5 % = 15.455,77 →
+    # 55.466,81; bonificación 99 % del grupo I (art. 131-12) = 54.912,14 → 554,67.
+    sin_131_1 = [
+        x for x in load_isd_params(2026).comunidades["aragon"].reducciones if x.clave != "aragon_hijos_menores"
+    ]
+    assert calcular_isd(menor, _sin("aragon", reducciones=sin_131_1)).cuota_a_ingresar == D("554.67")
+    assert calcular_isd(menor.model_copy(update={"edad": 18})).cuota_a_ingresar == D("554.67")
+    assert calcular_isd(menor.model_copy(update={"edad": 17})).cuota_a_ingresar == 0
+    # The 3.000.000 € ceiling. Child of 10 inheriting 3.500.000: state 47.858,59 + 3.000.000 → base 452.141,41.
+    # 80.655,08 + 53.363,87 × 29,75 % = 15.875,75 → 96.530,83; 99 % = 95.565,52 → 965,31.
+    grande = calcular_isd(menor.model_copy(update={"edad": 10, "valor_recibido": D(3500000)}))
+    assert _linea(grande, "Reducción aragonesa para hijos del fallecido menores de edad") == D("-3000000.00")
+    assert grande.cuota_a_ingresar == D("965.31")
+    # Art. 131-2: disability of 65 % or more, 100 % whatever the relationship (before: 55.466,81, see above).
+    discapacidad = _isd(
+        modo="sucesion", comunidad="aragon", parentesco="sobrino", edad=40, grado_discapacidad=65, valor_recibido=800000
+    )
+    assert discapacidad.base_liquidable == 0 and discapacidad.cuota_a_ingresar == 0
+
+
+def test_a_figure_the_regional_text_does_not_print_needs_a_quote_from_the_norm_that_defines_it() -> None:
+    p = load_isd_params(2026)
+    # Declared apart from the laws of the tax, so that it is not mistaken for one of them.
+    assert "BOE-A-1978-31229" in p.fuentes_complementarias and "BOE-A-1978-31229" not in p.fuentes_principales
+    assert [f.boe_id for f in p.comunidades["aragon"].fuentes_complementarias] == ["BOE-A-1978-31229"]
+    raw = p.model_dump(mode="json")
+    menores = next(x for x in raw["comunidades"]["aragon"]["reducciones"] if x["clave"] == "aragon_hijos_menores")
+    assert menores["tramos"][0]["cuando"]["edad_menor_de"] == 18
+    menores["evidencia"] = [e for e in menores["evidencia"] if e["boe_id"] != "BOE-A-1978-31229"]
+    problemas = comprobar_evidencias(ISDParams.model_validate(raw), textos_de_directorio(EXTRACTOS))
+    assert any("edad_menor_de = 18 no aparece en ninguna cita" in x for x in problemas)
+    del raw["fuentes_complementarias"]["BOE-A-1978-31229"]
+    problemas = comprobar_evidencias(ISDParams.model_validate(raw), textos_de_directorio(EXTRACTOS))
+    assert any("fuente complementaria BOE-A-1978-31229 no figura" in x for x in problemas)
+
+
+def test_extremadura_gift_allowance_by_slices_of_the_taxable_base() -> None:
+    def donacion(valor: int, params=None):
+        caso = BeneficiarioISD(
+            modo="donacion",
+            comunidad="extremadura",
+            parentesco="hijo",
+            edad=30,
+            valor_recibido=valor,
+            escritura_publica=True,
+        )
+        return calcular_isd(caso, params)
+
+    # Art. 30.1: 99 % hasta 300.000 € de base liquidable; 50 % para la parte entre 300.000 y 600.000; nada después.
+    # 300.000: 40.011,04 + 60.610,87 × 25,5 % = 15.455,77 → 55.466,81; 99 % = 54.912,14 → 554,67.
+    assert donacion(300000).cuota_a_ingresar == D("554.67")
+    # 500.000: 80.655,08 + 101.222,46 × 29,75 % = 30.113,68 → 110.768,76.
+    # Media: (300.000 × 99 % + 200.000 × 50 %) / 500.000 = 79,4 % → 87.950,40 → 22.818,36.
+    medio = donacion(500000)
+    assert (medio.cuota_tributaria, medio.bonificacion, medio.cuota_a_ingresar) == (
+        D("110768.76"),
+        D("87950.40"),
+        D("22818.36"),
+    )
+    assert _avisa(medio, "admite una lectura más estricta") and _avisa(medio, "450.000 € y 750.000 €")
+    # 800.000: 199.291,40 + 2.444,92 × 34 % = 831,27 → 200.122,67.
+    # Media: (297.000 + 150.000 + 0) / 800.000 = 55,875 % → 111.818,54 → 88.304,13.
+    assert donacion(800000).cuota_a_ingresar == D("88304.13")
+    # Before: nothing was computed above 300.000 €.
+    reglas = load_isd_params(2026).comunidades["extremadura"].bonificaciones
+    plana = reglas[2].model_copy(
+        update={
+            "porcentaje": D("0.99"),
+            "tramos": [],
+            "cuando": reglas[2].cuando.model_copy(update={"base_liquidable_hasta": D(300000)}),
+        }
+    )
+    antes = _sin("extremadura", bonificaciones=[*reglas[:2], plana])
+    assert donacion(500000, antes).cuota_a_ingresar == D("110768.76")
+    assert donacion(300000, antes).cuota_a_ingresar == D("554.67")
+
+
+def test_a_second_allowance_on_what_the_first_one_leaves_castilla_la_mancha() -> None:
+    caso = BeneficiarioISD(
+        modo="sucesion",
+        comunidad="castilla_la_mancha",
+        parentesco="hijo",
+        edad=30,
+        grado_discapacidad=65,
+        valor_recibido=600000,
+    )
+    r = calcular_isd(caso)
+    # 600.000 − 15.956,87 − 225.000 (art. 15) = 359.043,13 → 40.011,04 + 119.654,00 × 25,5 % = 30.511,77 →
+    # 70.522,81. Art. 17.1.e): base liquidable ≥ 300.000 → 80 % = 56.418,25; quedan 14.104,56.
+    # Art. 17.2: 95 % «con posterioridad» = 13.399,33 → 705,23.
+    assert r.cuota_tributaria == D("70522.81")
+    assert _linea(r, "Bonificación de Castilla-La Mancha en herencias, grupos I y II") == D("-56418.25")
+    assert _linea(r, "Bonificación de Castilla-La Mancha por discapacidad") == D("-13399.33")
+    assert (r.bonificacion, r.cuota_a_ingresar) == (D("69817.58"), D("705.23"))
+    # Before, only one of the two could be applied (the 95 %): 70.522,81 × 5 % = 3.526,14.
+    clm = load_isd_params(2026).comunidades["castilla_la_mancha"]
+    una_sola = _sin(
+        "castilla_la_mancha",
+        bonificaciones=[clm.bonificaciones[0], *clm.bonificaciones_sucesivas, *clm.bonificaciones[1:]],
+        bonificaciones_sucesivas=[],
+    )
+    assert calcular_isd(caso, una_sola).cuota_a_ingresar == D("3526.14")
+    # Outside groups I and II the disability allowance stands alone: sibling, 200.000 − 7.993,46 − 225.000 < 0.
+    regalo = _isd(
+        modo="donacion",
+        comunidad="castilla_la_mancha",
+        parentesco="hijo",
+        edad=30,
+        grado_discapacidad=65,
+        valor_recibido=300000,
+        escritura_publica=True,
+    )
+    # 55.466,81; art. 17 bis.1.c) ≥ 240.000 → 85 % = 47.146,79; quedan 8.320,02 × 95 % = 7.904,02 → 416,00.
+    assert regalo.cuota_a_ingresar == D("416.00")
+    sobrino = _isd(
+        modo="sucesion",
+        comunidad="castilla_la_mancha",
+        parentesco="sobrino",
+        edad=30,
+        grado_discapacidad=65,
+        valor_recibido=400000,
+    )
+    # 400.000 − 7.993,46 − 225.000 = 167.006,54 → 23.063,25 + 7.371,71 × 21,25 % = 1.566,49 → 24.629,74;
+    # × 1,5882 = 39.116,95. Solo el 95 % del art. 17.2 = 37.161,10 → 1.955,85.
+    assert (sobrino.cuota_tributaria, sobrino.cuota_a_ingresar) == (D("39116.95"), D("1955.85"))
+
+
+def test_the_more_favourable_of_the_state_and_the_regional_reduction_canarias() -> None:
+    caso = BeneficiarioISD(
+        modo="sucesion",
+        comunidad="canarias",
+        parentesco="hijo",
+        edad=30,
+        valor_recibido=200000,
+        valor_vivienda_habitual=100000,
+        participacion_vivienda="0.25",
+    )
+    r = calcular_isd(caso)
+    # A quarter of a 400.000 € home. Canarias (art. 22 ter): 99 % × 100.000 = 99.000, pero el límite conjunto de
+    # 200.000 se prorratea: 50.000. Estado: 95 % × 100.000 = 95.000 (límite 122.606,47 por heredero). Art. 19.5:
+    # se aplica la estatal. 200.000 − 23.125 − 95.000 = 81.875 → 9.166,06 + 1.994,48 × 16,15 % = 322,11 →
+    # 9.488,17; 99,9 % = 9.478,68 → 9,49.
+    linea = next(line for line in r.lineas if line.concepto.startswith("Reducción por vivienda habitual"))
+    assert (linea.importe, linea.referencia) == (D("-95000.00"), "art. 20.2.c) Ley 29/1987")
+    assert _avisa(r, "se ha aplicado la estatal (art. 20.2.c) Ley 29/1987): 95.000,00 € frente a 50.000,00 €")
+    assert _avisa(r, "durante 10 años")
+    assert r.cuota_a_ingresar == D("9.49")
+    # Before, the Canarian rule was applied without comparing: base 126.875 → 15.606,22 + 7.117,33 × 18,7 % =
+    # 1.330,94 → 16.937,16 → 16,94.
+    canarias = load_isd_params(2026).comunidades["canarias"]
+    sin_comparar = [v.model_copy(update={"estatal_si_mas_favorable": False}) for v in canarias.vivienda_habitual]
+    assert calcular_isd(caso, _sin("canarias", vivienda_habitual=sin_comparar)).cuota_a_ingresar == D("16.94")
+    # With the whole home the Canarian one wins (148.500 against 122.606,47) and the trace says so.
+    entera = calcular_isd(
+        caso.model_copy(update={"valor_vivienda_habitual": D(150000), "participacion_vivienda": D(1)})
+    )
+    linea = next(line for line in entera.lineas if line.concepto.startswith("Reducción por vivienda habitual"))
+    assert (linea.importe, linea.referencia) == (D("-148500.00"), "art. 22 ter DLeg 1/2009 (Canarias)")
+    assert _avisa(entera, "se ha aplicado la autonómica (art. 22 ter DLeg 1/2009 (Canarias))")
+
+
+def test_topping_up_reduction_leaves_life_insurance_out_and_shows_what_is_applied_aragon() -> None:
+    caso = BeneficiarioISD(
+        modo="sucesion", comunidad="aragon", parentesco="cónyuge", edad=60, valor_recibido=700000, seguro_vida=100000
+    )
+    r = calcular_isd(caso)
+    # Art. 131-5.1.b): el límite de 500.000 cuenta las demás reducciones «excluida la relativa a los beneficiarios
+    # de pólizas de seguros de vida». Base imponible 800.000. Parentesco 15.956,87; seguro 9.195,49 (no cuenta);
+    # art. 131-5: 500.000 − 15.956,87 = 484.043,13. Total 509.195,49 → base liquidable 290.804,51.
+    # 40.011,04 + 51.415,38 × 25,5 % = 13.110,92 → 53.121,96.
+    assert _linea(r, "Reducción aragonesa a favor del cónyuge") == D("-484043.13")
+    assert (r.reducciones, r.cuota_a_ingresar) == (D("509195.49"), D("53121.96"))
+    # Before, the insurance reduction ate into the 500.000: base 300.000 → 55.466,81.
+    aragon = load_isd_params(2026).comunidades["aragon"]
+    contando = [
+        x.model_copy(update={"tramos": [t.model_copy(update={"hasta_completar_excluye": []}) for t in x.tramos]})
+        for x in aragon.reducciones
+    ]
+    assert calcular_isd(caso, _sin("aragon", reducciones=contando)).cuota_a_ingresar == D("55466.81")
+    # The line shows what is really applied, never more than what is left of the base:
+    # 300.000 − 15.956,87 = 284.043,13 (not the 484.043,13 that would complete 500.000).
+    pequena = _isd(modo="sucesion", comunidad="aragon", parentesco="hijo", edad=30, valor_recibido=300000)
+    assert _linea(pequena, "Reducción aragonesa a favor del cónyuge") == D("-284043.13")
+    assert pequena.reducciones == D("300000.00") and not _avisa(pequena, "Las reducciones superan")
+
+
+def test_main_home_percentage_by_the_value_of_the_property_asturias_and_galicia() -> None:
+    caso = BeneficiarioISD(
+        modo="sucesion",
+        comunidad="asturias",
+        parentesco="hijo",
+        edad=30,
+        valor_recibido=500000,
+        valor_vivienda_habitual=100000,
+        valor_total_vivienda=100000,
+    )
+    r = calcular_isd(caso)
+    # Art. 17 bis: inmueble de 90.000,01 a 120.000 € → 98 %: 98.000 (bajo el límite estatal, que se mantiene).
+    # 500.000 − 300.000 − 98.000 = 102.000 → tarifa asturiana de los grupos I y II: 11.900 + 46.000 × 25,5 % =
+    # 11.730 → 23.630.
+    assert _linea(r, "Reducción por vivienda habitual del causante (98 %)") == D("-98000.00")
+    assert r.cuota_a_ingresar == D("23630.00") and _avisa(r, "durante 3 años")
+    # Before (state rule, 95 %): base 105.000 → 11.900 + 49.000 × 25,5 % = 12.495 → 24.395.
+    assert calcular_isd(caso, _sin("asturias", vivienda_habitual=[])).cuota_a_ingresar == D("24395.00")
+    # Without the value of the whole property, the lowest percentage of the scale, with a warning...
+    sin_valor = calcular_isd(caso.model_copy(update={"valor_total_vivienda": None}))
+    assert sin_valor.cuota_a_ingresar == D("24395.00") and _avisa(sin_valor, "el más bajo de la escala (95 %)")
+    # ...unless the share lets it be estimated: half of a 200.000 € home → 96 %.
+    mitad = calcular_isd(caso.model_copy(update={"valor_total_vivienda": None, "participacion_vivienda": D("0.5")}))
+    assert _linea(mitad, "Reducción por vivienda habitual del causante (96 %)") == D("-96000.00")
+    # A big share of an expensive home: 95 % × 300.000 = 285.000, capped at the state's 122.606,47.
+    cara = calcular_isd(
+        caso.model_copy(update={"valor_vivienda_habitual": D(300000), "valor_total_vivienda": D(300000)})
+    )
+    assert _linea(cara, "Reducción por vivienda habitual") == D("-122606.47")
+    assert _avisa(cara, "mantiene los demás límites estatales") and not _avisa(cara, "Confírmalo")
+
+    galicia = BeneficiarioISD(
+        modo="sucesion",
+        comunidad="galicia",
+        parentesco="hijo",
+        edad=30,
+        valor_recibido=1400000,
+        valor_vivienda_habitual=200000,
+        valor_total_vivienda=200000,
+    )
+    g = calcular_isd(galicia)
+    # Art. 7.Tres: inmueble de 150.000,01 a 300.000 € → 97 %: 194.000 (límite 600.000).
+    # 1.400.000 − 1.000.000 − 194.000 = 206.000 → 7.750 + 81.000 × 9 % = 7.290 → 15.040.
+    assert _linea(g, "Reducción por vivienda habitual del causante (97 %)") == D("-194000.00")
+    assert g.cuota_a_ingresar == D("15040.00")
+    # Before, descendants got the state rule (122.606,47): base 277.393,53 → 7.750 + 152.393,53 × 9 % → 21.465,42.
+    solo_conyuge = load_isd_params(2026).comunidades["galicia"].vivienda_habitual[:1]
+    assert calcular_isd(galicia, _sin("galicia", vivienda_habitual=solo_conyuge)).cuota_a_ingresar == D("21465.42")
+    viuda = calcular_isd(galicia.model_copy(update={"parentesco": "conyuge"}))
+    assert _linea(viuda, "Reducción por vivienda habitual del causante (100 %)") == D("-200000.00")
+    with pytest.raises(ValidationError, match="valor_total_vivienda no puede ser menor"):
+        BeneficiarioISD(
+            modo="sucesion", parentesco="hijo", valor_recibido=10, valor_vivienda_habitual=10, valor_total_vivienda=5
+        )
+
+
+def test_the_new_schema_fields_reject_incoherent_data() -> None:
+    from hacienda_gpt.tax.sucesiones_params import Equiparacion, ReduccionVivienda, TramoReduccion
+
+    with pytest.raises(ValidationError, match="importe o porcentaje_base"):
+        TramoReduccion()
+    with pytest.raises(ValidationError, match="importe o porcentaje_base"):
+        TramoReduccion(importe=D(1), porcentaje_base=D(1))
+    with pytest.raises(ValidationError, match="hasta_completar_excluye exige hasta_completar"):
+        TramoReduccion(importe=D(1), hasta_completar_excluye=["seguro_vida"])
+    cita = [{"boe_id": "X", "articulo": "a", "cita": "c"}]
+    comun = {"articulo": "a", "resumen": "r", "en_vigor_desde": "2026-01-01", "evidencia": cita}
+    with pytest.raises(ValidationError, match="solo_en exige alcance"):
+        Equiparacion(parentesco="pareja_de_hecho", equivale_a="conyuge", solo_en=["bonificaciones"], **comun)
+    with pytest.raises(ValidationError, match="porcentaje o tramos_valor"):
+        ReduccionVivienda(anos_mantenimiento=5, **comun)

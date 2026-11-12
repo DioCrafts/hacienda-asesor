@@ -2,9 +2,10 @@
 
 Income minus the expenses the taxpayer reports minus the flat allowance for
 "provisiones deducibles y gastos de difícil justificación" (art. 30 RIRPF),
-then the reductions of art. 32.2 LIRPF. The figure it returns in
-``rendimiento_actividad_neto`` is what ``IRPFInput.rendimiento_actividad_neto``
-expects.
+then the reductions of art. 32 LIRPF in the order the Act gives them: 32.1
+(irregular income), 32.2 (dependent self-employed or low income) and 32.3
+(new activity). The figure it returns in ``rendimiento_actividad_neto`` is
+what ``IRPFInput.rendimiento_actividad_neto`` expects.
 
 Limits, all repeated as ``avisos`` on the result: one taxpayer, the whole of
 their activities given as one set of totals, individual filing; expenses are
@@ -15,8 +16,9 @@ estimación objetiva and estimación directa normal are not computed.
 from __future__ import annotations
 
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from hacienda_gpt.tax.autonomos_params import AutonomosParams, load_autonomos_params
 from hacienda_gpt.tax.irpf import Linea
@@ -58,6 +60,12 @@ class Traza:
             self.aviso(f"Parámetro no contrastado con la fuente en la última revisión: {nombre}.")
 
 
+CeutaMelilla = Literal["ceuta", "melilla"]
+SupuestoRetencion = Literal[
+    "recaudador_municipal", "mediador_seguros", "delegado_loterias", "actividad_ingresos_reducidos"
+]
+
+
 class ActividadInput(BaseModel):
     """One year of activity. Amounts in euros, without VAT; absent means zero."""
 
@@ -89,6 +97,27 @@ class ActividadInput(BaseModel):
     # Art. 20 LIRPF reduction the taxpayer applies to work income (joint cap of art. 32.2.3.º).
     reduccion_rendimientos_trabajo: Decimal = Field(default=ZERO, ge=0)
 
+    # Art. 32.1: the part of the net income generated over more than two years, or of the kinds
+    # art. 25 RIRPF lists as notoriously irregular, imputed to this single year. The taxpayer
+    # states it qualifies; the calculator only applies the percentage and its cap.
+    rendimientos_irregulares: Decimal = Field(default=ZERO, ge=0)
+    # Art. 32.3: the taxpayer states that the activity is new in the sense of that paragraph, that
+    # this is the first year with a positive net income or the following one, and that no more
+    # than half of the income comes from a former employer.
+    reduccion_inicio_actividad: bool = False
+    # The activity is carried on in Ceuta or Melilla and its income is entitled to the deduction
+    # of art. 68.4 LIRPF (which is a deduction of the IRPF itself: not computed here).
+    ceuta_melilla: CeutaMelilla | None = None
+
+    @model_validator(mode="after")
+    def _coherencia(self) -> ActividadInput:
+        if self.rendimientos_irregulares > self.ingresos_integros:
+            raise ValueError(
+                "Los rendimientos irregulares (art. 32.1 LIRPF) son una parte del rendimiento de la actividad: no "
+                "pueden superar los ingresos íntegros."
+            )
+        return self
+
 
 class ResultadoActividad(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -100,6 +129,9 @@ class ResultadoActividad(BaseModel):
     rendimiento_neto_previo: Decimal
     gastos_dificil_justificacion: Decimal
     rendimiento_neto: Decimal
+    # Art. 32.1 (irregular income) and art. 32.3 (new activity); zero when not asked for.
+    reduccion_art_32_1: Decimal = ZERO
+    reduccion_art_32_3: Decimal = ZERO
     reduccion_art_32_2: Decimal
     # Which reduction of art. 32.2 was applied, if any.
     reduccion_aplicada: str | None = None
@@ -112,18 +144,92 @@ class ResultadoActividad(BaseModel):
     fuente: str
 
 
-def gastos_dificil_justificacion(rendimiento_previo: Decimal, p: AutonomosParams) -> Decimal:
+def porcentaje_dificil_justificacion(
+    p: AutonomosParams, ceuta_melilla: CeutaMelilla | None = None, trimestre: int | None = None
+) -> tuple[Decimal, Fuente]:
+    """Percentage of the flat allowance and where it comes from.
+
+    The general one, or the year's special one for Ceuta when the parameters
+    have it. ``trimestre`` is for the payments on account: the special
+    percentage only counts from the quarter the provision allows.
+    """
+    ceuta = p.gastos_dificil_justificacion_ceuta
+    if (
+        ceuta_melilla == "ceuta"
+        and ceuta is not None
+        and (trimestre is None or trimestre >= ceuta.pagos_fraccionados_desde_trimestre)
+    ):
+        return ceuta.porcentaje, ceuta.fuente
+    return p.gastos_dificil_justificacion.porcentaje, p.gastos_dificil_justificacion.fuente
+
+
+def gastos_dificil_justificacion(
+    rendimiento_previo: Decimal, p: AutonomosParams, porcentaje: Decimal | None = None
+) -> Decimal:
     """Flat allowance of art. 30.2.ª RIRPF: a percentage of the positive net income, capped per year."""
     g = p.gastos_dificil_justificacion
     if rendimiento_previo <= 0:
         return ZERO
-    return min(_round(rendimiento_previo * g.porcentaje), g.limite_anual)
+    return min(_round(rendimiento_previo * (g.porcentaje if porcentaje is None else porcentaje)), g.limite_anual)
 
 
-def tipo_retencion_profesional(p: AutonomosParams, inicio_actividad: bool = False) -> Decimal:
-    """Withholding rate a professional puts on invoices to businesses (art. 95.1 RIRPF)."""
+def avisos_ceuta_melilla(p: AutonomosParams, ceuta_melilla: CeutaMelilla | None, t: Traza) -> None:
+    """What the Ceuta/Melilla flag did and did not do, for the three places that use it."""
+    ceuta = p.gastos_dificil_justificacion_ceuta
+    if ceuta_melilla is None:
+        if ceuta is not None:
+            t.aviso(
+                f"Gastos de difícil justificación al porcentaje general. Si la actividad se desarrolla en Ceuta con "
+                f"derecho a la deducción del art. 68.4 LIRPF, indícalo: en {p.ejercicio} su porcentaje es el "
+                f"{ceuta.porcentaje * 100:.0f} % ({ceuta.fuente.referencia})."
+            )
+        return
+    ciudad = "Ceuta" if ceuta_melilla == "ceuta" else "Melilla"
+    t.aviso(
+        f"Has indicado que la actividad se desarrolla en {ciudad} y que sus rendimientos tienen derecho a la deducción "
+        "del art. 68.4 LIRPF; el cálculo no comprueba ese derecho y trata toda la actividad como desarrollada allí. "
+        "Esa deducción (el 60 % de la parte de la cuota que corresponde a esas rentas) es de la cuota del IRPF: ni este "
+        "cálculo ni el simulador de IRPF la aplican, así que el IRPF anual estimado saldrá más alto que el real."
+    )
+    if ceuta_melilla == "melilla" and ceuta is not None:
+        t.aviso(
+            f"El porcentaje del {ceuta.porcentaje * 100:.0f} % de gastos de difícil justificación de {p.ejercicio} es "
+            f"solo para Ceuta ({ceuta.fuente.referencia}): en Melilla se aplica el general."
+        )
+
+
+def tipo_retencion_profesional(
+    p: AutonomosParams,
+    inicio_actividad: bool = False,
+    *,
+    supuesto: SupuestoRetencion | None = None,
+    ceuta_melilla: bool = False,
+) -> Decimal:
+    """Withholding rate a professional puts on invoices to businesses (art. 95.1 RIRPF).
+
+    ``supuesto`` is one of the cases of the fourth paragraph (collectors,
+    insurance brokers using external assistants, lottery delegates, and the
+    low-income activities of letter d), whose conditions are checked with
+    :func:`cumple_supuesto_d_retencion`). ``ceuta_melilla``: the income is
+    entitled to the art. 68.4 LIRPF deduction, which cuts the rate.
+    """
     r = p.retencion_profesionales
-    return r.inicio_actividad if inicio_actividad else r.general
+    tipo = r.otros_supuestos if supuesto is not None else r.inicio_actividad if inicio_actividad else r.general
+    return tipo * (1 - r.reduccion_ceuta_melilla) if ceuta_melilla else tipo
+
+
+def cumple_supuesto_d_retencion(
+    p: AutonomosParams, integros_actividades_letra_d: Decimal, integros_actividades_y_trabajo: Decimal
+) -> bool:
+    """Figures of art. 95.1 d) RIRPF, both of the previous year: gross income of the activities
+    of that letter below the limit and above the required share of the gross income from
+    economic activities plus work. Whether the activity is one of the IAE groups (or an artist's
+    service) and the notice to the payer are not checked."""
+    r = p.retencion_profesionales
+    return (
+        integros_actividades_letra_d < r.supuesto_d_limite_ingresos
+        and integros_actividades_letra_d > r.supuesto_d_min_proporcion * integros_actividades_y_trabajo
+    )
 
 
 def _reduccion_dependiente(inp: ActividadInput, neto: Decimal, p: AutonomosParams, t: Traza) -> Decimal:
@@ -225,17 +331,41 @@ def calcular_rendimiento_actividad(inp: ActividadInput, params: AutonomosParams 
         )
 
     g = p.gastos_dificil_justificacion
-    dificil = ZERO if dependiente else gastos_dificil_justificacion(previo, p)
+    porcentaje, fuente_porcentaje = porcentaje_dificil_justificacion(p, inp.ceuta_melilla)
+    dificil = ZERO if dependiente else gastos_dificil_justificacion(previo, p, porcentaje)
     if dificil:
         t.linea(
-            f"Provisiones deducibles y gastos de difícil justificación ({g.porcentaje * 100:.0f} %, "
+            f"Provisiones deducibles y gastos de difícil justificación ({porcentaje * 100:.0f} %, "
             f"máximo {g.limite_anual} €)",
             -dificil,
             g.fuente,
         )
+        t.usa(fuente_porcentaje)
     neto = previo - dificil
     t.linea("Rendimiento neto", neto, "art. 30 RIRPF")
 
+    # Art. 32.1: 30 % of the irregular part of the net income, on a capped base.
+    irr = p.reduccion_irregulares
+    reduccion_1 = ZERO
+    if inp.rendimientos_irregulares:
+        base_1 = min(inp.rendimientos_irregulares, irr.limite_base)
+        reduccion_1 = _round(base_1 * irr.porcentaje)
+        t.linea(
+            f"Reducción del {irr.porcentaje * 100:.0f} % por rendimientos irregulares (sobre {_round(base_1)} €)",
+            -reduccion_1,
+            irr.fuente,
+        )
+        t.aviso(
+            f"La reducción del art. 32.1 LIRPF se aplica al importe que has indicado como rendimiento neto irregular, "
+            f"con el máximo de {irr.limite_base} € de base. Solo valen los rendimientos generados en más de dos años o "
+            "los que el art. 25 RIRPF enumera (subvenciones de capital para inmovilizado no amortizable, "
+            "indemnizaciones y ayudas por cese de actividad, premios literarios, artísticos o científicos no exentos, "
+            "indemnizaciones que sustituyen derechos económicos de duración indefinida), imputados en un único "
+            "ejercicio; no vale si la actividad obtiene ese tipo de rendimientos de forma regular o habitual. El "
+            "cálculo no lo comprueba."
+        )
+
+    # Art. 32.2. Its thresholds are stated on the "rendimientos netos", i.e. before any reduction.
     reduccion = ZERO
     reduccion_aplicada: str | None = None
     if dependiente:
@@ -246,12 +376,38 @@ def calcular_rendimiento_actividad(inp: ActividadInput, params: AutonomosParams 
         if reduccion:
             reduccion_aplicada = "art. 32.2.3.º LIRPF"
     # Art. 32.2.4.º: the reductions cannot turn the net income negative.
-    reduccion = _round(min(reduccion, max(ZERO, neto)))
-    reducido = _round(neto) - reduccion
+    reduccion = _round(min(reduccion, max(ZERO, neto - reduccion_1)))
     if reduccion:
         t.linea(
             "Total reducciones del art. 32.2 LIRPF (el saldo no puede ser negativo)", -reduccion, "art. 32.2.4.º LIRPF"
         )
+    if reduccion and reduccion_1:
+        t.aviso(
+            "Los umbrales del art. 32.2 LIRPF se han medido con el rendimiento neto antes de la reducción del "
+            "art. 32.1, que es como la ley los enuncia («rendimientos netos»)."
+        )
+
+    # Art. 32.3: 20 % of the positive net income left after 32.1 and 32.2, on a capped base.
+    ini = p.reduccion_inicio_actividad
+    reduccion_3 = ZERO
+    if inp.reduccion_inicio_actividad:
+        base_3 = min(max(ZERO, neto - reduccion_1 - reduccion), ini.limite_base)
+        reduccion_3 = _round(base_3 * ini.porcentaje)
+        if reduccion_3:
+            t.linea(
+                f"Reducción del {ini.porcentaje * 100:.0f} % por inicio de actividad (sobre {_round(base_3)} €)",
+                -reduccion_3,
+                ini.fuente,
+            )
+        t.aviso(
+            f"La reducción del art. 32.3 LIRPF se aplica porque has declarado que te corresponde: no ejerciste ninguna "
+            "actividad económica en el año anterior al inicio, este es el primer ejercicio con rendimiento neto "
+            "positivo o el siguiente, y no más del "
+            f"{ini.max_ingresos_antiguo_pagador * 100:.0f} % de los ingresos procede de quien te pagó rendimientos del "
+            f"trabajo en el año anterior al inicio. Se calcula sobre el rendimiento ya minorado por las reducciones "
+            f"de los apartados 1 y 2, con un máximo de {ini.limite_base} € de base."
+        )
+    reducido = _round(neto) - reduccion_1 - reduccion - reduccion_3
     t.linea("Rendimiento neto reducido de la actividad", reducido, "art. 32 LIRPF")
 
     t.aviso(
@@ -277,10 +433,31 @@ def calcular_rendimiento_actividad(inp: ActividadInput, params: AutonomosParams 
         )
     for aviso in g.avisos:
         t.aviso(aviso)
-    t.aviso(
-        "No se aplican la reducción del 30 % por rendimientos irregulares (art. 32.1 LIRPF) ni la del 20 % por inicio "
-        "de actividad (art. 32.3 LIRPF); si te corresponden, réstalas del rendimiento antes de llevarlo al IRPF."
-    )
+    avisos_ceuta_melilla(p, inp.ceuta_melilla, t)
+    if inp.ceuta_melilla is not None and dependiente:
+        t.aviso(
+            "Con la reducción del art. 32.2.1.º no se restan gastos de difícil justificación, tampoco los del "
+            "porcentaje especial de Ceuta."
+        )
+    pendientes = [
+        texto
+        for aplicada, texto in (
+            (
+                bool(inp.rendimientos_irregulares),
+                f"la del {irr.porcentaje * 100:.0f} % por rendimientos irregulares (art. 32.1 LIRPF)",
+            ),
+            (
+                inp.reduccion_inicio_actividad,
+                f"la del {ini.porcentaje * 100:.0f} % por inicio de actividad (art. 32.3 LIRPF)",
+            ),
+        )
+        if not aplicada
+    ]
+    if pendientes:
+        t.aviso(
+            f"No se ha aplicado {' ni '.join(pendientes)} porque no se ha indicado que corresponda; si es tu caso, "
+            "indícalo para que se calcule."
+        )
     t.cerrar()
 
     return ResultadoActividad(
@@ -290,6 +467,8 @@ def calcular_rendimiento_actividad(inp: ActividadInput, params: AutonomosParams 
         rendimiento_neto_previo=_round(previo),
         gastos_dificil_justificacion=dificil,
         rendimiento_neto=_round(neto),
+        reduccion_art_32_1=reduccion_1,
+        reduccion_art_32_3=reduccion_3,
         reduccion_art_32_2=reduccion,
         reduccion_aplicada=reduccion_aplicada,
         rendimiento_neto_reducido=reducido,

@@ -330,7 +330,9 @@ class ReglaCoeficientes(_Regla):
 
 
 class TramoBonificacion(_Model):
-    hasta: Decimal | None  # None = "en adelante"
+    # None = "en adelante". When the LAST bracket is closed, nothing is earned beyond it
+    # ("con el límite de 600.000 euros"): the data need not invent a 0 % the law does not print.
+    hasta: Decimal | None
     porcentaje: Decimal
 
 
@@ -360,8 +362,8 @@ class ReglaBonificacion(_Regla):
         porcentajes = [t.porcentaje for t in self.tramos] + ([self.porcentaje] if self.porcentaje is not None else [])
         if any(not 0 <= p <= 1 for p in porcentajes):
             raise ValueError("porcentaje fuera de rango (0-1)")
-        if self.tramos and (self.tramos[-1].hasta is not None or any(t.hasta is None for t in self.tramos[:-1])):
-            raise ValueError("solo el último tramo queda abierto (hasta: null)")
+        if any(t.hasta is None for t in self.tramos[:-1]):
+            raise ValueError("solo el último tramo puede quedar abierto (hasta: null)")
         return self
 
 
@@ -469,6 +471,9 @@ class EstatalISD(NormativaISD):
 class ISDParams(_Model):
     ejercicio: int
     fuentes_principales: dict[str, FuentePrincipal]
+    # Norms quoted only to supply a figure a community's text names without printing it (see
+    # NormativaAutonomicaISD.fuentes_complementarias). Kept apart: no rule of the tax lives in them.
+    fuentes_complementarias: dict[str, FuentePrincipal] = Field(default_factory=dict)
     no_modelado: list[str] = Field(default_factory=list)
     estatal: EstatalISD
     comunidades: dict[str, NormativaAutonomicaISD] = Field(default_factory=dict)
@@ -624,7 +629,7 @@ def comprobar_normativa(
         citas = [texto_plano(c.cita) for c in regla.evidencia]
         for cita, origen in zip(citas, regla.evidencia, strict=True):
             if fuentes is not None and origen.boe_id not in fuentes:
-                problemas.append(f"{donde}: {origen.boe_id} no figura en fuentes_principales")
+                problemas.append(f"{donde}: {origen.boe_id} no figura en las fuentes declaradas")
             if len(cita) < 20:
                 problemas.append(f"{donde}: cita demasiado corta para ser evidencia")
             if textos is not None:
@@ -676,16 +681,16 @@ def comprobar_evidencias(params: ISDParams, textos: dict[str, str] | None = None
     whitespace and markup aside. An empty list means the data says what the
     text says.
     """
-    fuentes = set(params.fuentes_principales)
+    fuentes = set(params.fuentes_principales) | set(params.fuentes_complementarias)
     problemas: list[str] = []
     for nombre, normativa in params.normativas().items():
         if normativa.fuente_principal.boe_id not in fuentes:
             problemas.append(f"{nombre}: su fuente_principal no figura en fuentes_principales")
         if isinstance(normativa, NormativaAutonomicaISD):
             problemas.extend(
-                f"{nombre}: la fuente complementaria {f.boe_id} no figura en fuentes_principales"
+                f"{nombre}: la fuente complementaria {f.boe_id} no figura en fuentes_complementarias"
                 for f in normativa.fuentes_complementarias
-                if f.boe_id not in fuentes
+                if f.boe_id not in params.fuentes_complementarias
             )
         problemas.extend(comprobar_normativa(nombre, normativa, textos, fuentes))
     return problemas

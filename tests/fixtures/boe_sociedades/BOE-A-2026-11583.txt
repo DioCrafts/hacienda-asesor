@@ -1,0 +1,49 @@
+# Extracto literal de la Orden HAC/529/2026, de 7 de mayo (BOE-A-2026-11583, BOE de 29-5-2026), descargada el 2026-11-12.
+# Tres párrafos del preámbulo (https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-11583) y la parte «Base imponible» de la página 14 del modelo 200 tal como la da `pdftotext -layout` sobre el PDF oficial, con los espacios colapsados; generado, no editar a mano.
+
+En segundo lugar, para periodos impositivos que se inicien a partir del 1 de enero de 2025, el apartado tres de la disposición final octava de la Ley 7/2024, de 20 de diciembre, modifica los apartados primero y segundo del artículo 29 de la Ley 27/2014, de 27 de noviembre. En concreto, en el apartado primero se regulan cambios en el tipo de gravamen general, destacando una escala de tipo impositivo en función del importe de la base imponible para las entidades cuyo importe neto de la cifra de negocios del período impositivo inmediato anterior sea inferior a 1 millón de euros (microempresas), salvo que les sea aplicable un tipo distinto del general, y un nuevo tipo de gravamen para las entidades de reducida dimensión, aplicable salvo que, de acuerdo con lo previsto en el artículo 29 de la Ley 27/2014, de 27 de noviembre, deban tributar a un tipo inferior. En el apartado segundo, se introducen cambios en los tipos de gravamen aplicables a las cooperativas.
+No obstante, la aplicabilidad de estos tipos de gravamen se ve afectada por el apartado octavo de la citada disposición final que introduce en la Ley 27/2014, de 27 de noviembre, la disposición transitoria cuadragésimo cuarta encargada de regular un régimen transitorio del tipo de gravamen general para microempresas y entidades de reducida dimensión.
+En tercer lugar, el apartado cuarto de la disposición final octava de la Ley 7/2024, de 20 de diciembre, con efectos para los períodos impositivos que se inicien a partir de 1 de enero de 2025, modifica el apartado primero del artículo 30 bis de la Ley 27/2014, de 27 de noviembre, con la finalidad de adecuar la determinación de la cuota líquida mínima a los nuevos tipos gravamen regulados en la norma, así en el caso de microempresas y entidades de reducida dimensión, a los efectos de determinar la cuota líquida mínima, el porcentaje señalado será el resultado de multiplicar el tipo de gravamen previsto en el apartado primero del artículo 29 de la Ley 27/2014, de 27 de noviembre, por quince veinticincoavos, redondeando por exceso.
+
+Otras correcciones al resultado de la cuenta de pérdidas y ganancias ........................................................................ 00413 00414
+Total correcciones al resultado de la cuenta de pérdidas y ganancias (excluidas las correcciones por IS y por IC) 00417 00418
+(desglose en página 20 bis y en páginas 26 bis a 26 septies) .....................................................................................................
+Entidades navieras en régimen de tributación en función del tonelaje
+Verificable en https://www.boe.es
+Base imponible de actividades o rentas que tributen en régimen general .............................................................................. 00578
+Base imponible derivada de la aplicación del régimen especial ........................................................................................... 00579
+Entidades que forman parte de grupos de consolidación fiscal
+cve: BOE-A-2026-11583
+Base imponible individual a integrar por las entidades que forman parte del grupo .............................................................. 01029
+Eliminaciones e incorporaciones correspondientes a la entidad .......................................................................................... 01030
+Integración individual de las dotaciones del art. 11.12 LIS ................................................................................................. 01031
+BOLETÍN OFICIAL DEL ESTADO
+Núm. 131 Viernes 29 de mayo de 2026 Sec. I. Pág. 73151
+Modelo
+NIF Apellidos y nombre o razón social 2025
+200 Página 14
+Liquidación (III)
+Base imponible
+Base imponible antes de la aplicación de la reserva de capitalización y compensación de bases imponibles negativas .................................. 00550
+Reserva de capitalización (desglose en página 20 bis) .............................................................................................................................. 01032
+Régimen especial de buques y empresas navieras en Canarias
+Parte de la base imponible que proceda de la realización de actividades a las que se aplica el régimen especial .................... 00541
+Parte de la base imponible que proceda de la realización del resto de actividades ................................................................ 00564
+Compensación de bases imponibles negativas períodos anteriores (desglose en página 15) ....................................................................... 00547
+Régimen especial de buques y empresas navieras en Canarias
+Compensación de bases imponibles negativas períodos anteriores de la parte de base imponible régimen especial ............... 01887
+Compensación de bases imponibles negativas períodos anteriores de la parte de base imponible resto de actividades ........... 01890
+Base imponible .................................................................................................................................................................................................. 00552
+Sólo entidades de reducida dimensión Aumentos Disminuciones
+Reserva de nivelación (desglose en página 20 bis) ................................................................ 01033 01034
+Base imponible después de la reserva de nivelación ................................................................................................................................... 01330
+Resultados cooperativos .................................................................................... 00553
+Sólo sociedades cooperativas
+Resultados extracooperativos ............................................................................ 00554
+Sólo agrupaciones españolas Socios residentes y no residentes con EP ........................................................... 00555
+de interés económico y UTES Socios no residentes ........................................................................................ 00556
+Sólo entidades ZEC Base imponible a tipo de gravamen especial ....................................................... 00559
+Parte de la base imponible del período impositivo que tributa al tipo general ......... 00520
+Sólo SOCIMIS
+Parte de la base imponible del período impositivo que tributa al tipo del 0%........... 00521
+Rentas correspondientes a quitas por acuerdo con acreedores (art. 26.1 LIS) ....... 00545

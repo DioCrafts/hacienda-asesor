@@ -8,9 +8,9 @@ of art. 110.3.c) for low incomes. Also says whether a professional is excused
 from the payment because most of the income bore withholding (art. 109.2).
 
 Not modelled, and said so in ``avisos``: estimación objetiva and farming
-(modelo 131 / art. 110.1.b and c), the Ceuta and Melilla reduction of
-art. 110.2, the housing deduction of art. 110.3.d) and voluntary higher
-percentages (art. 110.4).
+(modelo 131 / art. 110.1.b and c), the housing deduction of art. 110.3.d)
+(the regulation does not fix its order with the letter c) reduction) and
+voluntary higher percentages (art. 110.4).
 """
 
 from __future__ import annotations
@@ -19,7 +19,15 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from hacienda_gpt.tax.actividad import ZERO, Traza, _round, gastos_dificil_justificacion
+from hacienda_gpt.tax.actividad import (
+    ZERO,
+    CeutaMelilla,
+    Traza,
+    _round,
+    avisos_ceuta_melilla,
+    gastos_dificil_justificacion,
+    porcentaje_dificil_justificacion,
+)
 from hacienda_gpt.tax.autonomos_params import AutonomosParams, load_autonomos_params
 from hacienda_gpt.tax.irpf import Linea
 
@@ -53,6 +61,10 @@ class Modelo130Input(BaseModel):
     ingresos_con_retencion_ano_anterior: Decimal | None = Field(default=None, ge=0)
     inicio_actividad: bool = False  # the activity started this year
     ingresos_con_retencion_acumulados: Decimal | None = Field(default=None, ge=0)
+
+    # The activity is carried on in Ceuta or Melilla with the right to the art. 68.4 LIRPF
+    # deduction: art. 110.2 cuts the percentage of the payment.
+    ceuta_melilla: CeutaMelilla | None = None
 
     @model_validator(mode="after")
     def _coherencia(self) -> Modelo130Input:
@@ -155,22 +167,58 @@ def calcular_modelo_130(inp: Modelo130Input, params: AutonomosParams | None = No
     t.linea("Ingresos íntegros desde el 1 de enero", inp.ingresos_acumulados, "art. 110.1.a) RIRPF")
     t.linea("Gastos deducibles desde el 1 de enero", -inp.gastos_acumulados, "art. 110.1.a) RIRPF")
     previo = inp.ingresos_acumulados - inp.gastos_acumulados
-    dificil = gastos_dificil_justificacion(previo, p) if inp.aplicar_gastos_dificil_justificacion else ZERO
+    g = p.gastos_dificil_justificacion
+    porcentaje_gdj, fuente_gdj = porcentaje_dificil_justificacion(p, inp.ceuta_melilla, inp.trimestre)
+    dificil = (
+        gastos_dificil_justificacion(previo, p, porcentaje_gdj) if inp.aplicar_gastos_dificil_justificacion else ZERO
+    )
     if dificil:
-        g = p.gastos_dificil_justificacion
         t.linea(
-            f"Provisiones deducibles y gastos de difícil justificación ({g.porcentaje * 100:.0f} %, "
+            f"Provisiones deducibles y gastos de difícil justificación ({porcentaje_gdj * 100:.0f} %, "
             f"máximo {g.limite_anual} €)",
             -dificil,
             g.fuente,
         )
+        t.usa(fuente_gdj)
         for aviso in g.avisos:
             t.aviso(aviso)
+        if dificil == g.limite_anual and inp.trimestre < 4:
+            t.aviso(
+                f"Los gastos de difícil justificación han llegado a su máximo de {g.limite_anual} €. Ese límite es "
+                "anual (art. 30.2.ª RIRPF: «2.000 euros anuales») y el reglamento no lo reparte por trimestres: como "
+                "el pago fraccionado se calcula sobre el rendimiento acumulado desde el 1 de enero (art. 110.1.a "
+                "RIRPF), se ha aplicado entero, sin prorratear."
+            )
+    ceuta = p.gastos_dificil_justificacion_ceuta
+    if (
+        inp.ceuta_melilla == "ceuta"
+        and ceuta is not None
+        and inp.aplicar_gastos_dificil_justificacion
+        and inp.trimestre < ceuta.pagos_fraccionados_desde_trimestre
+    ):
+        t.aviso(
+            f"El {ceuta.porcentaje * 100:.0f} % de gastos de difícil justificación de Ceuta para {p.ejercicio} solo "
+            f"cuenta en los pagos fraccionados desde el trimestre {ceuta.pagos_fraccionados_desde_trimestre} "
+            f"({ceuta.fuente.referencia}, apartado 3: plazos de presentación iniciados un mes después de su entrada "
+            "en vigor); en este trimestre se ha usado el porcentaje general."
+        )
     neto = previo - dificil
     t.linea("Rendimiento neto acumulado", neto, "art. 110.1.a) RIRPF")
 
-    sobre_rendimiento = _round(max(ZERO, neto) * pf.porcentaje)
-    t.linea(f"{pf.porcentaje * 100:.0f} % del rendimiento neto acumulado", sobre_rendimiento, pf.fuente)
+    porcentaje = pf.porcentaje
+    if inp.ceuta_melilla is not None:
+        porcentaje = pf.porcentaje * (1 - pf.reduccion_ceuta_melilla)
+    sobre_rendimiento = _round(max(ZERO, neto) * porcentaje)
+    t.linea(
+        f"{porcentaje * 100:.0f} % del rendimiento neto acumulado"
+        + (
+            f" ({pf.porcentaje * 100:.0f} % reducido en un {pf.reduccion_ceuta_melilla * 100:.0f} %, art. 110.2 RIRPF)"
+            if inp.ceuta_melilla is not None
+            else ""
+        ),
+        sobre_rendimiento,
+        pf.fuente,
+    )
     restante = sobre_rendimiento
     if inp.pagos_trimestres_anteriores:
         t.linea(
@@ -211,6 +259,13 @@ def calcular_modelo_130(inp: Modelo130Input, params: AutonomosParams | None = No
         )
     else:
         disponible += pf.minoracion(inp.rendimiento_neto_ejercicio_anterior)
+        if inp.rendimiento_neto_ejercicio_anterior <= 0:
+            t.aviso(
+                "El rendimiento neto del ejercicio anterior que has indicado es nulo o negativo: por el tenor literal "
+                f"del art. 110.3.c) RIRPF («Igual o inferior a {pf.minoracion_tramos[0].hasta}») le corresponde la "
+                f"minoración de {pf.minoracion_tramos[0].importe} € por trimestre. Si es cero porque el año anterior "
+                "no ejerciste la actividad, ten en cuenta que el reglamento no regula expresamente ese caso."
+            )
     minoracion = min(disponible, previo_minoracion)
     pendiente = disponible - minoracion
     if minoracion:
@@ -238,10 +293,17 @@ def calcular_modelo_130(inp: Modelo130Input, params: AutonomosParams | None = No
     )
     t.aviso(
         "Cálculo para actividades en estimación directa (art. 110.1.a RIRPF). No cubre la estimación objetiva ni las "
-        "actividades agrícolas, ganaderas, forestales o pesqueras (modelo 131 y art. 110.1.b y c), la reducción del "
-        "60 % para Ceuta y Melilla (art. 110.2), la deducción por financiación de vivienda habitual (art. 110.3.d) ni "
-        "porcentajes voluntarios superiores (art. 110.4)."
+        "actividades agrícolas, ganaderas, forestales o pesqueras (modelo 131 y art. 110.1.b y c), la deducción por "
+        "financiación de vivienda habitual (art. 110.3.d) ni porcentajes voluntarios superiores (art. 110.4)."
+        + (
+            ""
+            if inp.ceuta_melilla is not None
+            else f" Si la actividad se desarrolla en Ceuta o Melilla con derecho a la deducción del art. 68.4 LIRPF, "
+            f"indícalo: el porcentaje se reduce en un {pf.reduccion_ceuta_melilla * 100:.0f} % (art. 110.2)."
+        )
     )
+    if inp.ceuta_melilla is not None:
+        avisos_ceuta_melilla(p, inp.ceuta_melilla, t)
     t.cerrar()
 
     return ResultadoModelo130(
