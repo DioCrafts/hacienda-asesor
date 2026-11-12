@@ -106,3 +106,75 @@ def test_separate_filing_wins_with_two_similar_salaries() -> None:
     assert c.mejor == "individual" and c.ahorro > D(1000)
     # The joint return adds both incomes.
     assert c.conjunta.base_imponible_general > c.individual_a.base_imponible_general
+
+
+def test_joint_comparison_is_available_to_the_agent() -> None:
+    from hacienda_gpt.agent.evidence import EvidenceLedger
+    from hacienda_gpt.agent.providers.base import ToolCall
+    from hacienda_gpt.agent.tools import Toolbox
+    from tests.agent.fakes import FakeSearcher
+
+    ledger = EvidenceLedger()
+    toolbox = Toolbox(searcher=FakeSearcher([]), ledger=ledger)
+    assert "comparar_declaracion_conjunta" in {spec.name for spec in toolbox.specs()}
+    outcome = toolbox.execute(
+        ToolCall(
+            id="1",
+            name="comparar_declaracion_conjunta",
+            arguments={
+                "ejercicio": 2026,
+                "conyuge_a": {
+                    "rendimiento_trabajo_bruto": 38000,
+                    "cotizaciones_seguridad_social": 2400,
+                    "num_descendientes": 2,
+                },
+                "conyuge_b": {},
+            },
+        )
+    )
+    assert not outcome.is_error and "Sale mejor la declaración conjunta" in outcome.content
+    assert len(ledger) == 4  # the verdict and the three returns are all citable
+    assert toolbox.execute(ToolCall(id="2", name="comparar_declaracion_conjunta", arguments={})).is_error
+
+
+def test_self_employed_calculators_are_available_to_the_agent() -> None:
+    from hacienda_gpt.agent.evidence import EvidenceLedger
+    from hacienda_gpt.agent.providers.base import ToolCall
+    from hacienda_gpt.agent.tools import Toolbox
+    from tests.agent.fakes import FakeSearcher
+
+    ledger = EvidenceLedger()
+    toolbox = Toolbox(searcher=FakeSearcher([]), ledger=ledger)
+    # 40.000 − 10.000 = 30.000; difficult-to-justify expenses: 5 % = 1.500 → net 28.500.
+    actividad = toolbox.execute(
+        ToolCall(
+            id="1", name="calcular_rendimiento_actividad", arguments={"ingresos_integros": 40000, "otros_gastos": 10000}
+        )
+    )
+    assert not actividad.is_error and "rendimiento_actividad_neto = 28500" in actividad.content
+    # First quarter: 20 % of (10.000 − 2.000 − 5 %) = 1.520, less 600 of withholdings.
+    pago = toolbox.execute(
+        ToolCall(
+            id="2",
+            name="calcular_modelo_130",
+            arguments={
+                "trimestre": 1,
+                "ingresos_acumulados": 10000,
+                "gastos_acumulados": 2000,
+                "retenciones_acumuladas": 600,
+            },
+        )
+    )
+    assert not pago.is_error and "Modelo 130" in pago.content
+    # 21 % of 10.000 = 2.100, less 500 of input VAT.
+    iva = toolbox.execute(
+        ToolCall(
+            id="3",
+            name="calcular_modelo_303",
+            arguments={"trimestre": 1, "base_tipo_general": 10000, "cuotas_soportadas_deducibles": 500},
+        )
+    )
+    assert not iva.is_error and "resultado = 1600" in iva.content
+    assert len(ledger) == 3
+    mal = toolbox.execute(ToolCall(id="4", name="calcular_modelo_303", arguments={"trimestre": 9}))
+    assert mal.is_error and "trimestre" in mal.content

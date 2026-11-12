@@ -14,6 +14,8 @@ import json
 import logging
 from typing import Any
 
+from pydantic import ValidationError
+
 from hacienda_gpt.agent.evidence import SOURCE_TYPES, EvidenceLedger, Fragment
 from hacienda_gpt.agent.providers.base import ToolCall, ToolSpec
 from hacienda_gpt.agent.search import CorpusSearcher, SearchFilters, normalize_date
@@ -23,9 +25,14 @@ from hacienda_gpt.decision.rules_engine import evaluate_rules
 from hacienda_gpt.decision.schemas import CaseState, Fact, parse_fiscal_year
 from hacienda_gpt.doctrine.citas import extract_citations, identify_document
 from hacienda_gpt.doctrine.grafo import DoctrineGraph
+from hacienda_gpt.tax.actividad import ActividadInput, calcular_rendimiento_actividad
+from hacienda_gpt.tax.autonomos_params import ejercicios_autonomos_disponibles
 from hacienda_gpt.tax.beneficios import evaluar_beneficios
 from hacienda_gpt.tax.calendario import aviso_festivos, proximos_vencimientos
+from hacienda_gpt.tax.conjunta import comparar_tributacion
 from hacienda_gpt.tax.irpf import IRPFInput, IRPFResult
+from hacienda_gpt.tax.iva import Modelo303Input, calcular_modelo_303
+from hacienda_gpt.tax.pagos_fraccionados import Modelo130Input, calcular_modelo_130
 from hacienda_gpt.tax.params import EjercicioNoDisponibleError, ejercicios_disponibles, load_params
 from hacienda_gpt.tax.profile import DatosInvalidosError, build_input
 from hacienda_gpt.tax.simulador import simular
@@ -197,6 +204,120 @@ CALCULATE_TOOL = ToolSpec(
     },
 )
 
+JOINT_TOOL = ToolSpec(
+    name="comparar_declaracion_conjunta",
+    description=(
+        "Compara, para un matrimonio, presentar dos declaraciones individuales o una conjunta, calculando las tres con "
+        "la calculadora determinista, y dice cuál sale más barata y por cuánto. Úsala cuando el usuario esté casado y "
+        "pregunte cómo le conviene declarar, o cuando uno de los cónyuges tenga pocos ingresos. `conyuge_a` parte de "
+        "los datos del expediente (el usuario); `conyuge_b` son los datos del otro cónyuge. Los hijos se toman como "
+        f"comunes. Importes anuales en euros. Campos admitidos en ambos: {_INPUT_FIELDS_DOC}. Devuelve fragmentos "
+        "citables [F#] y los supuestos que ha hecho: trasládalos al usuario."
+    ),
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "ejercicio": {"type": "integer", "description": "Año fiscal. Por defecto, el del expediente."},
+            "conyuge_a": {
+                "type": "object",
+                "description": "Cifras del usuario que añadir o corregir sobre su expediente.",
+            },
+            "conyuge_b": {
+                "type": "object",
+                "description": "Cifras del otro cónyuge (salario, cotizaciones, retenciones…).",
+            },
+        },
+        "required": ["conyuge_b"],
+    },
+)
+
+_NUM: dict[str, Any] = {"type": "number", "minimum": 0}
+_BOOL: dict[str, Any] = {"type": "boolean"}
+
+ACTIVITY_TOOL = ToolSpec(
+    name="calcular_rendimiento_actividad",
+    description=(
+        "Calcula el rendimiento neto anual de una actividad económica de un autónomo en estimación directa "
+        "simplificada: ingresos íntegros menos los gastos que indique el usuario por categoría, menos el porcentaje de "
+        "gastos de difícil justificación (art. 30 RIRPF) y, si proceden, las reducciones del art. 32.2 LIRPF. No valora "
+        "si un gasto es deducible. No sirve para módulos ni para estimación directa normal. El campo "
+        "`rendimiento_actividad_neto` del resultado es el que debe pasarse a calcular_irpf. Importes anuales sin IVA. "
+        "Traslada los avisos al usuario."
+    ),
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "ejercicio": {"type": "integer"},
+            **{k: _NUM for k in ("ingresos_integros", "seguridad_social_autonomo", "suministros", "alquileres",
+                                 "servicios_profesionales", "otros_gastos", "amortizaciones", "cifra_negocios_ano_anterior",
+                                 "reduccion_rendimientos_trabajo")},
+            "otras_rentas_no_exentas": {"type": "number", "description": "Rentas distintas de la actividad; omítelo si no se conocen."},
+            "cumple_requisitos_reduccion_dependiente": {
+                "type": "boolean",
+                "description": "Solo si el usuario confirma TODOS los requisitos del art. 32.2.2.º LIRPF (cliente único, etc.).",
+            },
+            "discapacidad": _BOOL,
+            "discapacidad_ampliada": _BOOL,
+        },
+        "required": ["ingresos_integros"],
+    },
+)  # fmt: skip
+
+MODELO_130_TOOL = ToolSpec(
+    name="calcular_modelo_130",
+    description=(
+        "Calcula el pago fraccionado trimestral del IRPF (modelo 130) de una actividad en estimación directa: el 20 % "
+        "del rendimiento neto acumulado desde el 1 de enero, menos los pagos de trimestres anteriores, las retenciones "
+        "soportadas (profesionales) y la minoración del art. 110.3.c) RIRPF. El resultado nunca es negativo. Indica "
+        "además si un profesional está exonerado por tener retención en al menos el 70 % de sus ingresos del año "
+        "anterior (art. 109.2 RIRPF). Todos los importes son ACUMULADOS desde el 1 de enero. Para el trimestre "
+        "siguiente, pasa en `pagos_trimestres_anteriores` la suma de los `pago_previo_a_minoracion` anteriores y en "
+        "`minoracion_pendiente_trimestres_anteriores` la `minoracion_pendiente`."
+    ),
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "ejercicio": {"type": "integer"},
+            "trimestre": {"type": "integer", "minimum": 1, "maximum": 4},
+            **{k: _NUM for k in ("ingresos_acumulados", "gastos_acumulados", "retenciones_acumuladas",
+                                 "pagos_trimestres_anteriores", "minoracion_pendiente_trimestres_anteriores",
+                                 "ingresos_ano_anterior", "ingresos_con_retencion_ano_anterior",
+                                 "ingresos_con_retencion_acumulados")},
+            "rendimiento_neto_ejercicio_anterior": {"type": "number"},
+            "aplicar_gastos_dificil_justificacion": _BOOL,
+            "actividad_profesional": _BOOL,
+            "inicio_actividad": _BOOL,
+        },
+        "required": ["trimestre", "ingresos_acumulados"],
+    },
+)  # fmt: skip
+
+MODELO_303_TOOL = ToolSpec(
+    name="calcular_modelo_303",
+    description=(
+        "Calcula la autoliquidación trimestral del IVA (modelo 303) en régimen general con operaciones interiores: IVA "
+        "devengado por tipo (general, reducido, superreducido) a partir de las bases imponibles, menos el IVA soportado "
+        "deducible que indique el usuario y las cuotas a compensar de períodos anteriores. Devuelve el resultado a "
+        "ingresar o a compensar. No decide qué tipo corresponde a cada producto ni si una cuota es deducible. No cubre "
+        "prorrata, recargo de equivalencia, régimen simplificado, criterio de caja ni operaciones intracomunitarias."
+    ),
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "ejercicio": {"type": "integer"},
+            "trimestre": {"type": "integer", "minimum": 1, "maximum": 4},
+            **{k: _NUM for k in ("base_tipo_general", "base_tipo_reducido", "base_tipo_superreducido",
+                                 "cuotas_soportadas_deducibles", "cuotas_soportadas_bienes_inversion",
+                                 "cuotas_a_compensar_periodos_anteriores")},
+        },
+        "required": ["trimestre"],
+    },
+)  # fmt: skip
+
 BENEFITS_TOOL = ToolSpec(
     name="listar_beneficios_fiscales",
     description=(
@@ -326,7 +447,16 @@ class Toolbox:
         self._default_k = default_k
 
     def specs(self) -> list[ToolSpec]:
-        specs = [SEARCH_TOOL, CALCULATE_TOOL, BENEFITS_TOOL, CALENDAR_TOOL]
+        specs = [
+            SEARCH_TOOL,
+            CALCULATE_TOOL,
+            JOINT_TOOL,
+            ACTIVITY_TOOL,
+            MODELO_130_TOOL,
+            MODELO_303_TOOL,
+            BENEFITS_TOOL,
+            CALENDAR_TOOL,
+        ]
         if self._graph is not None:
             specs.append(VALIDITY_TOOL)
         if self.case is not None:
@@ -341,6 +471,12 @@ class Toolbox:
         handlers = {
             SEARCH_TOOL.name: self._search,
             CALCULATE_TOOL.name: self._calculate,
+            JOINT_TOOL.name: self._joint,
+            ACTIVITY_TOOL.name: lambda a: self._autonomo(
+                a, ActividadInput, calcular_rendimiento_actividad, "Rendimiento de la actividad"
+            ),
+            MODELO_130_TOOL.name: lambda a: self._autonomo(a, Modelo130Input, calcular_modelo_130, "Modelo 130"),
+            MODELO_303_TOOL.name: lambda a: self._autonomo(a, Modelo303Input, calcular_modelo_303, "Modelo 303"),
             BENEFITS_TOOL.name: self._benefits,
             CALENDAR_TOOL.name: self._calendar,
             VALIDITY_TOOL.name: self._validity,
@@ -473,6 +609,107 @@ class Toolbox:
         return ToolOutcome(
             content="\n\n".join(blocks),
             summary=f"{len(simulacion.escenarios)} cálculo(s): {', '.join(fragment_ids)}",
+        )
+
+    def _autonomo(self, arguments: dict[str, Any], modelo: Any, calcular: Any, titulo: str) -> ToolOutcome:
+        """Shared handler of the self-employed calculators: validate, compute, register as evidence."""
+        datos = dict(arguments)
+        if not isinstance(datos.get("ejercicio"), int) or isinstance(datos.get("ejercicio"), bool):
+            case_year = parse_fiscal_year(self.case.tax_period) if self.case is not None else None
+            datos["ejercicio"] = (
+                case_year
+                if case_year in ejercicios_autonomos_disponibles()
+                else max(ejercicios_autonomos_disponibles())
+            )
+        try:
+            result = calcular(modelo(**datos))
+        except ValidationError as exc:
+            problems = "; ".join(f"{'.'.join(str(p) for p in e['loc'])}: {e['msg']}" for e in exc.errors())
+            return _error(f"Datos no válidos: {problems}")
+        except EjercicioNoDisponibleError as exc:
+            return _error(str(exc))
+        lines = [f"{titulo} — ejercicio {datos['ejercicio']}"]
+        for linea in result.lineas:
+            ref = f" ({linea.referencia})" if linea.referencia else ""
+            lines.append(f"  {linea.concepto}: {_money(linea.importe)}{ref}")
+        resumen = {
+            k: v
+            for k, v in result.model_dump(mode="json").items()
+            if k not in ("lineas", "avisos", "parametros_no_verificados", "fuente") and v is not None
+        }
+        lines.append("Resultado: " + "; ".join(f"{k} = {v}" for k, v in resumen.items()))
+        if result.avisos:
+            lines.append("Avisos (lo que este cálculo no cubre o da por supuesto):")
+            lines.extend(f"  * {aviso}" for aviso in result.avisos)
+        lines.append(f"Parámetros: {result.fuente}.")
+        fragment = self.ledger.register(
+            text="\n".join(lines),
+            metadata={
+                "title": f"{titulo} {datos['ejercicio']}",
+                "source": f"calculadora://autonomos/{datos['ejercicio']}/{len(self.ledger) + 1}",
+                "source_authority": "CALCULADORA",
+                "section": "Cálculo determinista",
+            },
+        )
+        return ToolOutcome(
+            content=f"[{fragment.fragment_id}] " + "\n".join(lines), summary=f"{titulo}: {fragment.fragment_id}"
+        )
+
+    def _joint(self, arguments: dict[str, Any]) -> ToolOutcome:
+        otro = arguments.get("conyuge_b")
+        if not isinstance(otro, dict):
+            return _error(
+                "Falta 'conyuge_b' (objeto con los datos del otro cónyuge; puede ir vacío si no tiene ingresos)."
+            )
+        try:
+            year, facts, datos = self._scenario_base(
+                {"ejercicio": arguments.get("ejercicio"), "datos": arguments.get("conyuge_a")}
+            )
+            a = build_input(ejercicio=year, facts=facts, datos=datos)
+            b = build_input(ejercicio=year, datos={"comunidad_autonoma": a.comunidad_autonoma, **otro})
+            comparacion = comparar_tributacion(a, b)
+        except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
+            return _error(str(exc))
+
+        blocks: list[str] = []
+        ids: list[str] = []
+        for nombre, result in (
+            ("Individual del cónyuge A", comparacion.individual_a),
+            ("Individual del cónyuge B", comparacion.individual_b),
+            ("Conjunta", comparacion.conjunta),
+        ):
+            fragment = self.ledger.register(
+                text=_render_result(nombre, result),
+                metadata={
+                    "title": f"Cálculo IRPF {result.ejercicio} — {nombre}",
+                    "source": f"calculadora://irpf/{result.ejercicio}/{len(self.ledger) + 1}",
+                    "source_authority": "CALCULADORA",
+                    "section": "Comparación de tributación individual y conjunta",
+                },
+            )
+            ids.append(fragment.fragment_id)
+            blocks.append(f"[{fragment.fragment_id}] " + _render_result(nombre, result))
+        veredicto = (
+            "Las dos opciones dan el mismo resultado."
+            if comparacion.mejor == "indiferente"
+            else f"Sale mejor la declaración {comparacion.mejor}: ahorra {_money(comparacion.ahorro)} "
+            f"(individuales: {_money(comparacion.total_individual)}; conjunta: {_money(comparacion.total_conjunta)}; "
+            "positivo = a pagar, negativo = a devolver)."
+        )
+        resumen = self.ledger.register(
+            text=veredicto + "\nSupuestos: " + " ".join(comparacion.avisos),
+            metadata={
+                "title": f"Comparación individual / conjunta {year}",
+                "source": f"calculadora://irpf/{year}/{len(self.ledger) + 1}",
+                "source_authority": "CALCULADORA",
+                "section": "Comparación de tributación individual y conjunta",
+            },
+        )
+        blocks.insert(
+            0, f"[{resumen.fragment_id}] {veredicto}\nSupuestos:\n" + "\n".join(f"  * {a}" for a in comparacion.avisos)
+        )
+        return ToolOutcome(
+            content="\n\n".join(blocks), summary=f"mejor {comparacion.mejor}: {resumen.fragment_id}, {', '.join(ids)}"
         )
 
     def _calendar(self, arguments: dict[str, Any]) -> ToolOutcome:

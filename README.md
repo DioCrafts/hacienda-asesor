@@ -690,6 +690,52 @@ calculadora con los datos del expediente, y los plazos no tienen en cuenta
 festivos. Los avisos solo se guardan en la base de datos: todavía no se envían
 por correo ni al móvil.
 
+### Mantenimiento: que los parámetros no caduquen en silencio
+
+Cada cifra de la calculadora se leyó de una ley. Esa procedencia es ahora una
+prueba que se puede repetir (todo sin LLM; cron y detalles en
+[`docs/operacion.md`](docs/operacion.md)):
+
+| Comando (`python -m hacienda_gpt.cli.proactive …`) | Qué responde |
+|---|---|
+| `params-check` | ¿Ha actualizado el BOE alguna de las leyes de las que salen los parámetros? |
+| `params-verify` | ¿Qué parámetros concretos ya no coinciden con el texto vigente? Busca la cita literal de cada deducción autonómica, la tabla de cada escala y las cifras del resto. |
+| `params-rollover 2027` | Crea el ejercicio nuevo copiando el último y reverificando todo: lo que sigue coincidiendo queda verificado; lo demás se marca (`verificado: false`, que la calculadora repite en cada resultado) o se retira. |
+| `normas-check` | ¿Se ha convalidado o derogado un real decreto-ley del que dependen parámetros? Si se deroga, la calculadora deja de aplicar lo que introdujo. |
+| `boe-novedades` | ¿Qué normas nuevas tocan impuestos? |
+
+Un parámetro que existe solo por un decreto-ley pendiente de convalidación lo
+declara en `fuente.condicionada_a`. `python -m hacienda_gpt.cli.ops` entrega los
+avisos por correo o webhook (`deliver`), ejecuta cada tarea bajo vigilancia
+(`run`) y avisa si alguna falló o no llegó a ejecutarse (`doctor`). El flujo
+`.github/workflows/vigilancia.yml` repite `params-check` y `params-verify` cada
+semana.
+
+Límites: una comprobación que pasa no demuestra que el parámetro sea correcto,
+sino que el texto del que se leyó sigue ahí; las cifras redondas se comprueban
+débilmente; y las prórrogas anuales («durante 2026…») hay que revisarlas a mano.
+
+### Autónomos, pérdidas y declaración conjunta
+
+- **Autónomos en estimación directa simplificada** — `calcular_rendimiento_actividad`
+  (ingresos menos gastos por categoría, 5 % de difícil justificación con tope y
+  reducciones del art. 32.2), `calcular_modelo_130` (pago fraccionado trimestral,
+  con la minoración del art. 110.3.c y la exoneración del 70 %) y
+  `calcular_modelo_303` (IVA trimestral en régimen general). Parámetros en
+  `autonomos_2026.json`, cada uno con su cita. No cubren módulos, estimación
+  directa normal, prorrata ni regímenes especiales de IVA, y no deciden si un
+  gasto es deducible.
+- **Compensación de pérdidas del ahorro (art. 49 LIRPF)** — un saldo negativo de
+  rendimientos o de ganancias se compensa con el otro hasta el 25 %; se aplican
+  los saldos negativos de años anteriores (`perdidas_patrimoniales_pendientes`,
+  `rendimientos_negativos_pendientes`) y el resultado dice cuánto queda para los
+  siguientes.
+- **Conjunta o individual** — `comparar_declaracion_conjunta` calcula las dos
+  declaraciones individuales y la conjunta de un matrimonio y dice cuál sale
+  mejor y por cuánto.
+
+No hay calculadora de Patrimonio, Sucesiones y Donaciones ni Sociedades.
+
 ### Evaluación del agente con consultas de la DGT
 
 Cada consulta vinculante de la DGT es un caso de prueba ya resuelto por un

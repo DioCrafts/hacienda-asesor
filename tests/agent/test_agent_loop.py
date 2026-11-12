@@ -46,6 +46,10 @@ def test_search_then_answer_verified() -> None:
         "calcular_irpf",
         "listar_beneficios_fiscales",
         "calendario_fiscal",
+        "comparar_declaracion_conjunta",
+        "calcular_rendimiento_actividad",
+        "calcular_modelo_130",
+        "calcular_modelo_303",
     }
 
     # The verifier got only the CITED fragments, not everything retrieved.

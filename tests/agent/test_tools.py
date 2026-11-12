@@ -62,7 +62,16 @@ def test_malformed_call_unknown_tool_and_searcher_crash_become_error_results() -
 
 def test_case_tools_only_offered_with_a_case() -> None:
     without = Toolbox(searcher=FakeSearcher([]), ledger=EvidenceLedger())
-    stateless = {"buscar_fuentes", "calcular_irpf", "listar_beneficios_fiscales", "calendario_fiscal"}
+    stateless = {
+        "buscar_fuentes",
+        "calcular_irpf",
+        "listar_beneficios_fiscales",
+        "calendario_fiscal",
+        "comparar_declaracion_conjunta",
+        "calcular_rendimiento_actividad",
+        "calcular_modelo_130",
+        "calcular_modelo_303",
+    }
     assert {spec.name for spec in without.specs()} == stateless
     assert without.execute(_call("consultar_expediente")).is_error
 
