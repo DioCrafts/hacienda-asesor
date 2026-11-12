@@ -728,7 +728,9 @@ débilmente; y las prórrogas anuales («durante 2026…») hay que revisarlas a
 
 Cuando `params-verify` dice que un grupo de parámetros ya no coincide con su
 ley, hasta ahora alguien tenía que pedir que se releyera. `params-recode` lo
-hace solo, **sin que la calculadora deje de ser determinista**: la calculadora
+hace solo —y `params-autopilot` lo lanza sin que nadie lo pida, desde la norma
+publicada en el BOE hasta el dato—, **sin que la calculadora deje de ser
+determinista**: la calculadora
 sigue leyendo datos; el modelo solo *propone* datos, y lo que propone no llega
 a ningún fichero sin pasar controles que no dependen de él
 (`hacienda_gpt/tax/recodificacion/`).
@@ -776,11 +778,94 @@ si la redacción vigente no alcanza a un ejercicio, lo deja como está, lo dice,
 y ese ejercicio sigue fallando en `params-verify` hasta que alguien indique la
 versión aplicable (`--version AAAAMMDD`).
 
-**Qué mantiene.** El núcleo es genérico: un «grupo de parámetros» es una ruta
-en un fichero de parámetros, su modelo, sus citas y la norma de la que sale.
-Hoy hay dos adaptadores: las deducciones autonómicas calculables y las escalas
-(autonómicas y estatales). Los grupos que fallan y aún no tienen adaptador
-(mínimos, reducciones, deducciones de Madrid…) se listan en `sin_adaptador`.
+**Qué mantiene: todo.** El núcleo es genérico: un «grupo de parámetros» es
+una ruta en un fichero de parámetros, su modelo, sus citas y la norma de la
+que sale. Ningún grupo de cifras legales queda sin adaptador:
+
+- **IRPF** (`irpf_<año>.json`): las deducciones autonómicas calculables
+  (`deduccion_autonomica`), las escalas (`escala`) y **todos los demás grupos**
+  con una sola clase guiada por el modelo pydantic de cada uno (`cifras:<grupo>`):
+  gastos y reducción del trabajo, tributación conjunta, previsión social,
+  mínimos estatales y autonómicos, deducción por rendimientos del trabajo,
+  donativos, maternidad, alquiler estatal, obligación de declarar, compensación
+  del ahorro, reparto de deducciones, los regímenes de la reducción por
+  arrendamiento y las seis deducciones de Madrid que la calculadora calcula con
+  fórmula propia. Un test recorre el modelo y falla si mañana se añade un campo
+  sin adaptador.
+- **Autónomos, Sociedades, Patrimonio/ITSGF e ISD** (`autonomos_`, `sociedades_`,
+  `patrimonio_`, `isd_<año>.json`): un adaptador por familia y modelo
+  (`<familia>:<Modelo>`, en `adaptadores_otros.py`), con las citas dentro del
+  propio grupo.
+
+Los casos límite del revisor pasan por la calculadora real: para un grupo de
+cifras del IRPF, el caso es un contribuyente y **una línea del resultado de
+`calcular_irpf`** («Reducción por tributación conjunta», «Mínimo por
+descendientes»…), y se compara su importe. Donde ninguna línea aísla el grupo
+(obligación de declarar, reparto de deducciones) no hay casos: el grupo pasa el
+control de cifras y la lectura del revisor y **siempre queda para confirmación
+humana**, igual que un grupo con cifras que imprime otra ley (el límite del
+10 % de los donativos) o un mínimo autonómico que deja importes al Estado.
+Si la nueva redacción cambia la *estructura* de la regla (otro tramo, otra
+fórmula), el lector debe responder «no calculable»: eso exige cambiar la
+calculadora y lo decide una persona. Lo que procede de un real decreto-ley
+pendiente de convalidación conserva su `condicionada_a`.
+
+Lo que el bucle no asume por su cuenta, y lo dice (`fuera_de_alcance`): grupos
+leídos de una redacción ya no vigente (régimen transitorio de vivienda,
+regímenes de arrendamiento de contratos antiguos: solo con `--version`) e
+importes calculados a partir de otros (mínimos de Baleares).
+
+**Artículos enormes.** Cinco leyes meten todas sus deducciones en un artículo
+(Galicia art. 5, Valencia art. 4, Murcia art. 1, La Rioja art. 32, Cantabria
+art. 2: de 45.000 a 78.000 caracteres). Al modelo se le envía solo el apartado
+de la deducción («art. 5.Dos»), con el encabezado, las notas del BOE que
+fechan la redacción y un índice de los demás apartados, que puede pedir (las
+normas comunes suelen estar en otro). Si la numeración no permite aislar el
+apartado sin dudas, se envía el artículo entero.
+
+**Deducciones nuevas.** `params-recode --comunidad X --articulo "art. N"
+--desglosar` hace que el lector *liste* las deducciones que contiene un
+artículo (cada una con su cita literal, que el programa comprueba) y lanza el
+bucle normal para cada una que aún no esté codificada.
+
+**Sin que nadie lo pida: `params-autopilot`.** Un único punto de entrada,
+pensado para cron diario, encadena todo:
+
+1. **Detecta**: lee el BOE de los días pendientes (lo mismo que
+   `boe-novedades`) y se queda con las normas cuyo análisis jurídico dice que
+   modifican una ley de la que salen parámetros.
+2. **Localiza**: de los artículos que nombra ese análisis («MODIFICA los
+   arts. 5 y 9…») saca los grupos afectados, en cualquier fichero. Si la norma
+   *añade* un artículo a la ley de una comunidad, lo desglosa en deducciones
+   nuevas.
+3. **Lee de donde puede**: si el BOE ya ha consolidado la norma, del texto
+   consolidado, con el análisis como anotación (suele llevar la cláusula de
+   efectos). Si aún no —el BOE tarda días—, **del texto de la propia norma
+   modificadora**; esa propuesta nunca se auto-aplica y, cuando llega la
+   consolidación, el grupo se vuelve a comprobar: si lo aplicado coincide con
+   el consolidado queda respaldado sin gastar nada, y si no, se relee.
+4. **Verifica** todos los ficheros contra el texto vigente (sin modelo): lo
+   que no coincide entra también, lo haya anunciado una norma o no.
+5. **Recodifica** con el bucle, bajo `RECODE_MAX_PER_RUN` y el presupuesto
+   diario, y aplica lo que no necesita a nadie si `RECODE_AUTO_APPLY=true`.
+6. **Avisa** al operador con un parte (y solo cuando algo ha cambiado).
+
+Es idempotente (no paga dos veces por el mismo grupo y el mismo texto, ni
+repite un parte) y **seguro sin clave de LLM**: los pasos 1, 2 y 4 se ejecutan
+igual y el parte dice qué grupos esperan. `boe-novedades --autopilot` (o
+`RECODE_AUTOPILOT=true`) lo lanza al terminar la revisión del día.
+
+**Antes de fiarte: `params-eval`.** Toma N codificaciones publicadas, **se las
+oculta al lector**, hace que el bucle las recodifique desde la ley y compara
+campo a campo con la codificación humana, con el consumo. Es la medida, con tu
+modelo real, de cuánto acierta el bucle solo; úsala antes de activar la
+auto-aplicación. `params-gate` pasa todas las deducciones publicadas por el
+mismo control que una propuesta.
+
+**Nada de esto se ha ejecutado contra un modelo real**: las pruebas usan un
+proveedor guionizado y leyes sintéticas; contra las leyes reales solo se han
+ejercitado las partes deterministas (localización de artículos, recorte de
+apartados, control de cifras, verificación).
 
 **Garantías, con cualquier modelo:** nada se escribe sin pasar el control;
 toda cifra escrita está impresa en una cita literal del texto leído; el texto
@@ -788,8 +873,9 @@ con el que se aplica es el mismo con el que se propuso; la marca de
 procedencia no se quita sola. **Lo que no garantiza:** que la cita sea la
 pertinente (una cifra puede estar en la ley y significar otra cosa), que no se
 haya omitido una condición que ni el lector ni el revisor vieron, ni que la
-cláusula de efectos citada sea la que rige. Por eso existe la revisión humana
-y por eso la calculadora avisa mientras no se ha hecho. Detalle y pasos en
+cláusula de efectos citada sea la que rige; ni, en un grupo de cifras, que la
+regla siga teniendo la forma que la calculadora supone. Por eso existe la
+revisión humana y por eso la calculadora avisa mientras no se ha hecho. Detalle y pasos en
 [`docs/operacion.md`](docs/operacion.md#5-recodificación-automática-de-parámetros).
 
 ### Deriva de formatos: que una fuente cambie de forma sin que nadie se entere

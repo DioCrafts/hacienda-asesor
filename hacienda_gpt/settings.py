@@ -266,6 +266,9 @@ RECODE_MAX_PER_RUN = int(os.environ.get("RECODE_MAX_PER_RUN", "10"))
 # A different reviewer model makes the review more independent.
 RECODE_MODEL = os.environ.get("RECODE_MODEL", "")
 RECODE_REVIEWER_MODEL = os.environ.get("RECODE_REVIEWER_MODEL", "")
+# true: ``boe-novedades`` runs the autopilot (detect -> verify -> re-encode -> notify)
+# when it finishes, as ``--autopilot`` does. Off by default.
+RECODE_AUTOPILOT = _env_bool("RECODE_AUTOPILOT", default=False)
 
 # --- Scheduled-job watchdog (hacienda_gpt/ops/vigia.py) ---------------------
 # JSON file with the last run / last success / last error of every scheduled job.

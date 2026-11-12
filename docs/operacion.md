@@ -36,6 +36,12 @@ SHELL=/bin/bash
 # Normas nuevas con contenido tributario en el BOE de cada día.
 50 6 * * *  cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.ops run boe-novedades -- uv run python -m hacienda_gpt.cli.proactive boe-novedades >> logs/proactive.log 2>&1
 
+# Piloto de parámetros: normas que modifican leyes de las que salen parámetros → grupos
+# afectados → verificación de todos los ficheros → recodificación (si hay clave de LLM) →
+# parte al operador. --no-detect porque la línea anterior ya ha leído el BOE del día; sin
+# ella, quita la opción y el piloto lo lee él mismo. Ver el apartado 5.
+55 6 * * *  cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.ops run params-autopilot -- uv run python -m hacienda_gpt.cli.proactive params-autopilot --no-detect >> logs/proactive.log 2>&1
+
 # Recordatorios de plazos y plan de fin de ejercicio.
 0 7 * * *   cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.ops run run-daily -- uv run python -m hacienda_gpt.cli.proactive run-daily >> logs/proactive.log 2>&1
 
@@ -227,6 +233,10 @@ rojo significa que el BOE ha actualizado alguna de las normas de las que salen l
 de la calculadora (hay que releerla; no implica que las cifras hayan cambiado), o que no se
 pudo consultar el BOE. Solo necesita acceso a `www.boe.es`.
 
+Después ejecuta `params-verify --fail-on-mismatch` (todos los ficheros de parámetros: IRPF,
+autónomos, sociedades, patrimonio e ISD) y, siempre, `params-autopilot` (apartado 5): sin el
+secreto `ANTHROPIC_API_KEY` solo hace su parte determinista y dice qué grupos esperan.
+
 ## 5. Recodificación automática de parámetros
 
 Cuando un grupo de parámetros deja de coincidir con su ley (`params-verify`),
@@ -234,6 +244,70 @@ Cuando un grupo de parámetros deja de coincidir con su ley (`params-verify`),
 nuevos. Nada llega a `hacienda_gpt/tax/data/` sin pasar un control determinista
 y, salvo que actives la auto-aplicación, sin que tú lo apliques. Explicación y
 garantías en el README («Recodificación automática»).
+
+**Nada de esto se ha probado contra un modelo real**: las pruebas usan un
+proveedor guionizado. Antes de activar la auto-aplicación, mide el bucle con tu
+modelo (`params-eval`, más abajo).
+
+### El piloto: de la norma publicada al dato, sin que nadie lo pida
+
+`params-autopilot` es el punto de entrada único para cron (línea en el
+apartado 1). Cada ejecución:
+
+1. **Detecta** (salvo `--no-detect`): lee el BOE de los días pendientes, como
+   `boe-novedades`, y actualiza su registro (`_boe_novedades.json`).
+2. **Normas → grupos.** Para cada norma del registro cuyo análisis del BOE
+   dice que modifica una ley de la que salen parámetros, toma los artículos
+   que nombra («MODIFICA los arts. 5 y 9 bis…») y busca los grupos que se leen
+   de ellos, en cualquier fichero.
+   - Si el identificador de la norma ya aparece en el texto consolidado de la
+     ley, los relee del consolidado, con el análisis como anotación.
+   - Si aún no (el BOE consolida días después), los relee **del texto de la
+     propia norma** (`diario_boe/txt.php`). Esa propuesta lleva siempre una
+     nota en `control.revisar` y **nunca se auto-aplica**. Cuando llega la
+     consolidación: si la aplicaste y sus citas están ya en el consolidado,
+     queda respaldada sin llamar al modelo; si no, el grupo se relee del
+     consolidado.
+   - Si la norma **añade** un artículo a la ley de una comunidad y nada lo
+     codifica, el lector lista las deducciones que contiene (una llamada) y
+     cada una entra en el bucle como deducción nueva.
+   - Una norma anterior al texto del que se leyeron los parámetros
+     (`fuente_principal.consolidado_a`) ya está en los datos y no se relee: al
+     activar el piloto sobre un registro antiguo no se paga por el pasado. Una
+     norma que a los 90 días sigue sin aparecer en el consolidado se cierra con
+     aviso.
+3. **Verifica** todos los ficheros de parámetros contra el texto vigente (sin
+   modelo). Lo que no coincide entra como objetivo, lo anuncie una norma o no.
+4. **Recodifica** con el bucle, con los topes de `RECODE_MAX_PER_RUN` y del
+   presupuesto diario; lo que no cabe queda para la siguiente ejecución. Con
+   `RECODE_AUTO_APPLY=true` aplica lo que no necesita a nadie.
+5. **Parte** al operador por los canales `NOTIFY_*` (asunto «parte del piloto
+   de parámetros»): normas nuevas, estado de cada una, grupos que no
+   coinciden, lo que el bucle no puede releer, propuestas de la ejecución. No
+   se repite mientras la situación no cambie.
+
+Su estado está en `<output-dir>/_params_autopilot.json` (una entrada por norma
+y ley: `sin_consolidar` → `consolidada` → `cerrada`). Bórralo solo si quieres
+que vuelva a tratar las normas del registro.
+
+Sin credenciales de LLM (o con `--no-llm`) hace los pasos 1 a 3 y el parte, y
+dice en `omitido` cuántos grupos esperan. Termina con código 0 salvo con
+`--fail-on-error` (errores o presupuesto agotado → 1). `boe-novedades
+--autopilot`, o la variable `RECODE_AUTOPILOT=true`, lanza el piloto al
+terminar la revisión del día, si prefieres una sola línea de cron.
+
+Qué sigue necesitando a una persona, aunque actives la auto-aplicación:
+
+- propuestas con algo en `control.revisar`: leídas de una norma sin
+  consolidar, de una versión histórica, de un grupo sin casos de prueba
+  ejecutables o con cifras que imprime otra ley, o con la cláusula de efectos
+  dudosa;
+- retiradas y `sin_converger` (entre ellas, un cambio de *estructura* en un
+  grupo de cifras: hay que cambiar la calculadora);
+- lo listado en `fuera_de_alcance` y `sin_adaptador`;
+- `params-confirm` de lo aplicado, y la fecha `consultado_el` de cada ley en
+  los ficheros (el piloto no la toca: `params-check` seguirá diciendo que la
+  ley ha cambiado hasta que alguien la actualice).
 
 ### Ajustes
 
@@ -244,6 +318,7 @@ garantías en el README («Recodificación automática»).
 | `RECODE_MAX_ITER` | `3` | Pasadas del lector por grupo antes de `sin_converger`. |
 | `RECODE_MAX_PER_RUN` | `10` | Grupos por ejecución; el resto espera a la siguiente. |
 | `RECODE_MODEL` / `RECODE_REVIEWER_MODEL` | (modelo del proveedor) | Modelo del lector y del revisor. Un revisor distinto hace la revisión más independiente. |
+| `RECODE_AUTOPILOT` | `false` | `true`: `boe-novedades` lanza el piloto al terminar (equivale a `--autopilot`). |
 
 Usa el proveedor de `LLM_PROVIDER` y cuenta contra `LLM_DAILY_BUDGET_USD`
 (propósitos `recodificacion` y `recodificacion-revisor` en `ops consumo`). Si
@@ -298,9 +373,39 @@ artículo ha cambiado desde la propuesta, si el fichero ya no contiene lo que
 iba a sustituir, o si la propuesta no supera hoy el control. Al aplicar añade
 una línea a `revisiones` del fichero y actualiza las citas:
 `evidencia_deducciones.json` para las deducciones, `evidencia_parametros.json`
-para las escalas. Las escalas recodificadas quedan con `fuente.verificado:
-false` (la calculadora ya las lista en `parametros_no_verificados`) hasta
-`params-confirm`.
+para las escalas y los grupos de cifras del IRPF (los demás ficheros llevan las
+citas dentro del grupo). Las escalas y los grupos de cifras recodificados
+quedan con `fuente.verificado: false` (la calculadora ya los lista en
+`parametros_no_verificados`) hasta `params-confirm`.
+
+Desde ese momento `params-verify` comprueba el grupo **por esas citas**, contra
+la ley y la versión de las que se leyeron, mientras el grupo conserve las
+cifras para las que se leyeron (`sha256_valor`): si alguien edita el grupo a
+mano, las citas dejan de valer y vuelve la comprobación por cifras.
+
+### Qué grupos hay y cómo se nombran
+
+| Fichero | `--tipo` | `--ruta` |
+|---|---|---|
+| `irpf_<año>.json` | `deduccion_autonomica`, `escala`, `cifras` (todos los grupos de cifras) o `cifras:<grupo>` (`cifras:minimos`, `cifras:trabajo`, `cifras:madrid_alquiler`…) | `minimos`, `trabajo`, `reduccion_arrendamiento/regimen_2026`, `comunidades/galicia/escala_general`, `comunidades/madrid/deducciones_madrid/alquiler`… |
+| `autonomos_`, `sociedades_`, `patrimonio_`, `isd_<año>.json` | `<familia>:<Modelo>` (`sociedades:TiposGravamen`) | `<familia>:<ruta>` (`sociedades:tipos_gravamen`, `isd:comunidades/madrid/…`) |
+
+`params-recode --dry-run` lista tipo y ruta de cada grupo que revisaría;
+`fuera_de_alcance` dice qué grupos no asume el bucle y por qué. Para los cuatro
+ficheros que no son del IRPF hay además una comprobación sin modelo de lo
+publicado, grupo a grupo, con sus propias citas:
+
+```bash
+python -m hacienda_gpt.tax.recodificacion.adaptadores_otros <autonomos|sociedades|patrimonio|isd> <ejercicio> <carpeta con <ID>.html>
+```
+
+y para las deducciones autonómicas del IRPF, el mismo control que debe superar
+una propuesta (termina con código 1 si alguna falla):
+
+```bash
+python -m hacienda_gpt.cli.proactive params-gate              # lee las leyes del BOE
+python -m hacienda_gpt.cli.proactive params-gate --offline    # solo modelo y cifras dentro de las citas
+```
 
 ### Casos que no son el habitual
 
@@ -308,9 +413,16 @@ false` (la calculadora ya las lista en `parametros_no_verificados`) hasta
 # Releer un artículo aunque su comprobación pase, o codificar uno nuevo.
 params-recode --comunidad galicia --articulo "art. 5"
 
-# Un grupo concreto por su ruta (escalas).
+# Un artículo que crea deducciones: el lector las lista y cada una que no esté codificada se propone.
+params-recode --comunidad galicia --articulo "art. 5" --desglosar
+
+# Un grupo concreto por su ruta (cualquier fichero).
 params-recode --ruta comunidades/galicia/escala_general
-params-recode --ruta escala_general_estatal
+params-recode --ruta minimos
+params-recode --ruta sociedades:tipos_gravamen
+
+# Una norma que el BOE aún no ha consolidado: leer la nueva redacción de su propio texto.
+params-recode --comunidad galicia --articulo "art. 5" --norma BOE-A-2026-12345 --sin-consolidar
 
 # Dar a leer el análisis del BOE de la norma modificadora («MODIFICA…, con efectos de…»).
 params-recode --comunidad galicia --norma BOE-A-2026-12345
@@ -325,28 +437,86 @@ params-rollover 2027 --recode
 Con `--version` la propuesta siempre lleva una nota en `control.revisar` y no
 se auto-aplica: que una redacción estuviera vigente el 31 de diciembre no
 prueba que sea la aplicable a ese ejercicio (una ley posterior puede haberla
-cambiado con efectos retroactivos). Compruébalo antes de aplicar.
+cambiado con efectos retroactivos). Compruébalo antes de aplicar. Lo mismo
+vale para `--sin-consolidar`: compárala con el texto consolidado cuando salga
+(el piloto lo hace solo).
+
+En las leyes que meten todas sus deducciones en un artículo (Galicia art. 5,
+Valencia art. 4, Murcia art. 1, La Rioja art. 32, Cantabria art. 2) el modelo
+recibe solo el apartado de la deducción: `articulos_ley` de la propuesta lo
+dice («5.dos», «4.uno.n», «32.12»). Si ahí figura el artículo entero («5») es
+que la numeración no permitió aislar el apartado sin dudas.
+
+### Medir el bucle antes de fiarte (`params-eval`)
+
+```bash
+# Qué grupos se evaluarían y cuánto texto se enviaría. Sin modelo.
+python -m hacienda_gpt.cli.proactive params-eval -n 20 --semilla 1 --dry-run
+
+# 20 deducciones autonómicas publicadas, sorteadas con esa semilla.
+python -m hacienda_gpt.cli.proactive params-eval -n 20 --semilla 1 --usd-por-millon 3
+
+# Otros tipos, una comunidad, o grupos concretos.
+python -m hacienda_gpt.cli.proactive params-eval -n 10 --tipo escala --tipo cifras
+python -m hacienda_gpt.cli.proactive params-eval --ruta comunidades/galicia/deducciones_calculables/articulo="art. 5.Siete"
+```
+
+Oculta al lector la codificación publicada y sus citas, lanza el bucle normal
+y compara. No escribe en los parámetros ni guarda propuestas. Qué mirar:
+
+- `convergieron` / `evaluados`: cuántas veces lector y revisor llegan a una
+  propuesta. `identicos`: de esas, cuántas igualan a la humana en todos los
+  campos comparados.
+- **`aplicables_sin_persona_con_diferencias`**: propuestas que se habrían
+  auto-aplicado y difieren de la codificación humana. Es la cifra que decide
+  si activar `RECODE_AUTO_APPLY`: lee cada una en `grupos[].campos_distintos`
+  (`humano` frente a `bucle`); a veces quien se equivoca es la codificación
+  publicada.
+- `acuerdo` por grupo y `acuerdo_medio`: proporción de campos iguales. Los
+  textos (título, resumen, requisitos no comprobados) se listan aparte y no
+  cuentan.
+- `llamadas_llm`, `tokens_entrada_aprox` y, con `--usd-por-millon`, el coste
+  de entrada estimado; el coste real con salida está en `ops consumo`.
+
+Cuenta contra el presupuesto diario como cualquier otra ejecución.
 
 ### En GitHub Actions
 
-`vigilancia.yml` ejecuta `params-recode` después de `params-verify` solo si el
-repositorio tiene el secreto `ANTHROPIC_API_KEY`; sin él, el paso se omite. No
-escribe en el repositorio: sube las propuestas como artefacto
-(`recode-proposals`) y, si existe el secreto `NOTIFY_WEBHOOK_URL`, avisa por
-ese canal. Para aplicarlas, descarga el artefacto en la carpeta de
+`vigilancia.yml` ejecuta `params-autopilot` después de `params-verify`, siempre:
+sin el secreto `ANTHROPIC_API_KEY` hace solo su parte determinista. No escribe
+en el repositorio (`RECODE_AUTO_APPLY` va a `false`): sube las propuestas, el
+registro de novedades y el estado del piloto como artefacto
+(`recode-proposals`, que además se conserva en caché de una semana a otra) y,
+si existe el secreto `NOTIFY_WEBHOOK_URL`, envía el parte por ese canal. Para
+aplicar una propuesta, descarga el artefacto en la carpeta de
 `RECODE_PROPOSALS_PATH` de tu copia de trabajo y usa `params-apply`. El gasto
 de cada ejecución está acotado por la variable de repositorio
-`RECODE_BUDGET_USD` (10 por defecto) y por `RECODE_MAX_PER_RUN`.
+`RECODE_BUDGET_USD` (10 por defecto) y por `RECODE_MAX_PER_RUN`. Al ser
+semanal, una norma puede tardar hasta siete días en verse ahí: el cron diario
+del servidor es el camino normal.
 
 ### Límites
 
-- Dos adaptadores: deducciones autonómicas calculables y escalas. El resto de
-  grupos que fallen aparecen en `sin_adaptador` y siguen siendo trabajo manual.
-- El modelo solo lee los artículos que se le muestran (el del grupo, aquellos
-  donde estaban las citas anteriores y los que pida). Una regla en otra norma
-  no la ve.
+- El modelo solo lee los artículos que se le muestran (el del grupo —o su
+  apartado—, aquellos donde estaban las citas anteriores y los que pida). Una
+  regla en otra norma no la ve.
 - El control comprueba que las cifras están en las citas, no que signifiquen lo
   que la codificación dice. Para eso están el revisor, sus casos y tú.
+- Un grupo de cifras tiene la forma que su modelo y la calculadora le dan. Si
+  la ley cambia la forma de la regla, el bucle debe rendirse («no calculable»);
+  no puede cambiar la calculadora.
+- De una norma sin consolidar solo se lee lo que su texto dice del artículo.
+  Si no imprime la fecha de efectos («entrará en vigor el día siguiente al de
+  su publicación») la propuesta no supera el control y hay que esperar al
+  texto consolidado, que sí la imprime.
+- El piloto empareja normas y grupos por los artículos que nombra el análisis
+  del BOE. Si el análisis dice «determinados preceptos», o tarda en
+  publicarse, solo queda la verificación, que ve cifras y citas que cambian
+  pero no una condición nueva en un grupo de cifras.
+- Los artículos que una norma añade solo se desglosan en deducciones nuevas en
+  las leyes autonómicas del IRPF; un grupo estatal nuevo exige código.
+- Grupos leídos de una redacción ya no vigente, o con importes calculados:
+  fuera del alcance del bucle (`fuera_de_alcance`).
 
 ## 6. Deriva de formatos: saber que una fuente ha dejado de entenderse
 

@@ -19,6 +19,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal, InvalidOperation
+from functools import lru_cache
 import hashlib
 from html.parser import HTMLParser
 import re
@@ -219,6 +220,12 @@ def clave_de_disposicion(linea: str) -> str | None:
 
 def _bloques(pagina: str) -> list[tuple[str, list[str]]]:
     """(key, lines) for every "Artículo N." block and every provision ("da 61") of the page, in order."""
+    return [(clave, list(lineas)) for clave, lineas in _bloques_de(pagina)]
+
+
+@lru_cache(maxsize=8)
+def _bloques_de(pagina: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """The same, parsed once per page: a law is a megabyte of HTML and one run asks for its blocks many times."""
     bloques: list[tuple[str, list[str]]] = []
     actual: list[str] | None = None
     for linea in lineas_de(pagina):
@@ -235,7 +242,7 @@ def _bloques(pagina: str) -> list[tuple[str, list[str]]]:
                 bloques.append((disposicion, actual))
         elif actual is not None and not _UI_RE.match(linea):
             actual.append(linea)
-    return bloques
+    return tuple((clave, tuple(lineas)) for clave, lineas in bloques)
 
 
 # --------------------------------------------------------------------------- #

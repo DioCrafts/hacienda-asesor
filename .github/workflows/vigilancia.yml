@@ -34,6 +34,8 @@ jobs:
           python-version: "3.13"
           enable-cache: true
       - run: uv sync
+      # pdftotext reads the forms annexed to the orders some parameters quote, in the layout their quotes were taken from.
+      - run: sudo apt-get install -y --no-install-recommends poppler-utils
       - name: Source laws of the calculator parameters
         shell: bash # explicit, so `pipefail` is on and the exit code survives `tee`
         run: |

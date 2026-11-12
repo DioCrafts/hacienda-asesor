@@ -54,6 +54,8 @@ from hacienda_gpt.tax.recodificacion.nucleo import (
 from hacienda_gpt.tax.verificacion import TextoDe
 
 Etapa = Literal["sin_consolidar", "consolidada", "cerrada"]
+# Days a norm may stay unconsolidated before the autopilot stops waiting for it and says so.
+DIAS_ESPERA_CONSOLIDACION = 90
 ASUNTO_PARTE = "HaciendaGPT: parte del piloto de parámetros"
 _ANADE = re.compile(r"\bA[NÑ]ADE\b")
 _NUMERO_DE_LEY = re.compile(r"\b\d+/\d{4}\b")
@@ -83,6 +85,8 @@ class NormaModificadora(_Registro):
     desglosados: list[str] = Field(default_factory=list)
     vista_el: str = ""
     consolidada_el: str = ""
+    # Why it was closed without re-reading anything, when that is the case.
+    cerrada_por: str = ""
 
 
 class EstadoPiloto(_Registro):
@@ -115,6 +119,8 @@ def guardar_estado(path: Path, estado: EstadoPiloto) -> None:
 class InformePiloto(_Registro):
     # Norms seen for the first time in this run, and every norm still open.
     normas_nuevas: list[str] = Field(default_factory=list)
+    # Norms closed without re-reading: older than the text the parameters were read from, or never consolidated.
+    normas_descartadas: list[str] = Field(default_factory=list)
     normas: list[dict[str, Any]] = Field(default_factory=list)
     # Groups whose check against the law fails today, by any cause.
     no_coinciden: list[str] = Field(default_factory=list)
@@ -135,6 +141,7 @@ class InformePiloto(_Registro):
     def hay_algo(self) -> bool:
         return bool(
             self.normas_nuevas
+            or self.normas_descartadas
             or self.no_coinciden
             or self.propuestas
             or self.errores
@@ -216,19 +223,24 @@ def pilotar(
     max_grupos: int | None = None,
     auto_aplicar: bool = False,
     hoy: date | None = None,
+    leidas: Mapping[str, str] | None = None,
     motivo_sin_modelo: str = "No hay credenciales del proveedor de LLM configurado: no se ha recodificado nada.",
 ) -> tuple[InformePiloto, list[Propuesta]]:
     """One run of the autopilot (see the module's docstring). Returns the report and the proposals made in it.
 
     ``leyes``: BOE id → name of every source law of the parameters. ``comunidades``: BOE id of a community's IRPF
-    law → the community's key (only there can a new article be split into new deductions). ``lector`` and
-    ``revisor`` are LLM providers, or None to run the deterministic steps alone.
+    law → the community's key (only there can a new article be split into new deductions). ``leidas``: BOE id →
+    date (AAAA-MM-DD) of the consolidated text the parameters were read from; a norm published on or before it is
+    already in the data and is not re-read (activating the autopilot on an old registry must not re-pay for the
+    past). ``lector`` and ``revisor`` are LLM providers, or None to run the deterministic steps alone.
     """
     hoy = hoy or date.today()
     estado = leer_estado(estado_path)
     informe = InformePiloto()
     objetivos: dict[str, Objetivo] = {}
     en_espera: set[str] = set()
+    # Norms with something this run could not do (an article waiting to be split): they stay open.
+    con_trabajo_pendiente: set[str] = set()
     llamadas_de_desglose = 0
 
     # ---- 1. Everything, against the law as it reads today ------------------
@@ -242,19 +254,33 @@ def pilotar(
         norma = estado.normas.get(clave)
         if norma is None:
             norma = estado.normas[clave] = vista.model_copy(update={"vista_el": hoy.isoformat()})
+            leida = (leidas or {}).get(vista.ley, "")
+            if vista.fecha and leida and vista.fecha[:10] <= leida[:10]:
+                norma.etapa = "cerrada"
+                norma.cerrada_por = f"publicada el {vista.fecha[:10]}: anterior al texto del que se leyeron los parámetros ({leida[:10]})"
+                informe.normas_descartadas.append(f"{vista.norma} → {vista.ley}: {norma.cerrada_por}")
+                continue
             informe.normas_nuevas.append(f"{vista.norma} modifica {vista.ley} ({leyes[vista.ley][:80]})")
         elif vista.anotaciones != norma.anotaciones:
             # The BOE publishes or completes its analysis days after the norm.
             norma.anotaciones, norma.preceptos, norma.anadidos = vista.anotaciones, vista.preceptos, vista.anadidos
-    for norma in estado.normas.values():
+    for clave, norma in estado.normas.items():
         if norma.etapa == "cerrada":
             continue
         pagina = texto_de(norma.ley, None)
         if not pagina:
             informe.errores.append(f"{norma.norma}: no se pudo leer {norma.ley} para saber si ya está consolidada")
+            con_trabajo_pendiente.add(clave)
             continue
         if norma.etapa == "sin_consolidar" and norma.norma in pagina:
             norma.etapa, norma.consolidada_el = "consolidada", hoy.isoformat()
+        vista_el = date.fromisoformat(norma.vista_el) if norma.vista_el else hoy
+        if norma.etapa == "sin_consolidar" and (hoy - vista_el).days > DIAS_ESPERA_CONSOLIDACION:
+            # The consolidated text never named it (a correction, a norm the BOE cites otherwise): stop waiting.
+            norma.etapa = "cerrada"
+            norma.cerrada_por = f"sin aparecer en el texto consolidado tras {DIAS_ESPERA_CONSOLIDACION} días"
+            informe.normas_descartadas.append(f"{norma.norma} → {norma.ley}: {norma.cerrada_por}; revísala a mano")
+            continue
         consolidada = norma.etapa == "consolidada"
         suyos = todos_los_objetivos(data_dir=data_dir, boe_id=norma.ley)
         afectados = [o for o in suyos.objetivos if _bases(o) & set(norma.preceptos)]
@@ -262,17 +288,22 @@ def pilotar(
         anotaciones = "\n".join(norma.anotaciones)
         for objetivo in afectados:
             ident = _id_de(objetivo)
-            if consolidada and ident not in fallan and ident not in hechos:
-                de_la_norma = [
-                    p
-                    for p in aplicadas
-                    if p.norma_texto == norma.norma and p.fichero == objetivo.fichero and p.ruta == objetivo.ruta
-                ]
-                if de_la_norma:
-                    # Applied from the norm's own text, and its quotes are now in the consolidated law: borne out.
+            de_la_norma = [
+                p
+                for p in aplicadas
+                if p.norma_texto == norma.norma and p.fichero == objetivo.fichero and p.ruta == objetivo.ruta
+            ]
+            if de_la_norma and not consolidada:
+                # Already applied from the norm's own text: nothing more to read until the consolidated text arrives
+                # (and until then its check against the old consolidated text says nothing).
+                en_espera.add(ident)
+                continue
+            if de_la_norma and ident not in fallan:
+                # Applied from the norm's own text, and its quotes are now in the consolidated law: borne out.
+                if ident not in hechos:
                     hechos.append(ident)
                     informe.confirmadas_por_el_consolidado.append(objetivo.etiqueta)
-                    continue
+                continue
             objetivo.origen = "norma"
             objetivo.anotaciones = anotaciones
             objetivo.motivo = [f"{norma.norma} modifica {', '.join(sorted(_bases(objetivo) & set(norma.preceptos)))}"]
@@ -291,6 +322,7 @@ def pilotar(
                 continue
             if lector is None:
                 informe.desgloses.append({"norma": norma.norma, "articulo": precepto, "pendiente": motivo_sin_modelo})
+                con_trabajo_pendiente.add(clave)
                 continue
             try:
                 hallazgo, desglose = objetivos_de_desglose(
@@ -306,6 +338,7 @@ def pilotar(
                 )
             except (ProviderError, RecodificacionError) as exc:
                 informe.errores.append(f"{norma.norma}, art. {precepto}: no se pudo desglosar: {str(exc)[:200]}")
+                con_trabajo_pendiente.add(clave)
                 if type(exc).__name__ == "PresupuestoAgotadoError":
                     break
                 continue
@@ -350,6 +383,7 @@ def pilotar(
 
     # ---- 3. The loop --------------------------------------------------------
     nuevas: list[Propuesta] = []
+    resultado: Informe | None = None
     if objetivos and lector is None:
         informe.omitido = motivo_sin_modelo
     elif objetivos:
@@ -369,37 +403,45 @@ def pilotar(
         informe.recodificacion = resultado.model_dump(exclude={"propuestas"})
         informe.errores += resultado.errores
         informe.propuestas = [resumen_de(p) for p in nuevas]
-        _anotar_progreso(estado, objetivos, resultado, hoy)
-    else:
-        _anotar_progreso(estado, objetivos, Informe(), hoy)
+    _anotar_progreso(estado, objetivos, resultado, con_trabajo_pendiente)
     estado.actualizado_el = datetime.now().isoformat(timespec="seconds")
     guardar_estado(estado_path, estado)
     return informe, nuevas
 
 
-def _anotar_progreso(estado: EstadoPiloto, objetivos: Mapping[str, Objetivo], resultado: Informe, hoy: date) -> None:
-    """Record which groups of each norm now have a proposal for the text of its stage; close what is finished."""
-    tratados = {
-        ident
-        for ident, objetivo in objetivos.items()
-        if objetivo.origen == "norma"
-        and objetivo.etiqueta not in resultado.sin_procesar
-        and not any(error.startswith(objetivo.etiqueta + ":") for error in resultado.errores)
-    }
-    for norma in estado.normas.values():
+def _anotar_progreso(
+    estado: EstadoPiloto, objetivos: Mapping[str, Objetivo], resultado: Informe | None, pendientes: set[str]
+) -> None:
+    """Record which groups of each norm now have a proposal for the text of its stage; close what is finished.
+
+    ``resultado`` is None when the loop did not run. A norm is closed once the BOE has consolidated it and every
+    group it names has been re-read from the consolidated text (or borne out by it): from there on the daily
+    verification is what watches those groups.
+    """
+    de_normas = {ident: o for ident, o in objetivos.items() if o.origen == "norma"}
+    tratados = (
+        set()
+        if resultado is None
+        else {
+            ident
+            for ident, objetivo in de_normas.items()
+            if objetivo.etiqueta not in resultado.sin_procesar
+            and not any(error.startswith(objetivo.etiqueta + ":") for error in resultado.errores)
+        }
+    )
+    agotado = resultado is not None and resultado.presupuesto_agotado is not None
+    for clave, norma in estado.normas.items():
         if norma.etapa == "cerrada":
             continue
         consolidada = norma.etapa == "consolidada"
         hechos = norma.grupos_consolidada if consolidada else norma.grupos_sin_consolidar
         suyos = [
             ident
-            for ident, o in objetivos.items()
-            if o.origen == "norma" and o.boe_id == norma.ley and (o.norma_texto == norma.norma) != consolidada
+            for ident, o in de_normas.items()
+            if o.boe_id == norma.ley and (o.norma_texto == norma.norma) != consolidada
         ]
         hechos += [ident for ident in suyos if ident in tratados and ident not in hechos]
-        if consolidada and all(ident in hechos for ident in suyos) and resultado.presupuesto_agotado is None:
-            # Every group named by the norm has been re-read from the consolidated text (or there was none): from
-            # here on the daily verification is what watches them.
+        if consolidada and clave not in pendientes and not agotado and all(ident in hechos for ident in suyos):
             norma.etapa = "cerrada"
 
 
@@ -409,6 +451,8 @@ def texto_del_parte(informe: InformePiloto, nuevas: Sequence[Propuesta]) -> str:
     if informe.normas_nuevas:
         lineas += ["Normas nuevas que modifican leyes de las que salen parámetros:"]
         lineas += [f"- {n}" for n in informe.normas_nuevas]
+    if informe.normas_descartadas:
+        lineas += ["", "Normas que no se releen:"] + [f"- {n}" for n in informe.normas_descartadas]
     abiertas = [n for n in informe.normas if n["etapa"] != "cerrada"]
     for norma in abiertas:
         estado = (
@@ -464,6 +508,7 @@ def huella_del_parte(informe: InformePiloto) -> str:
             informe.omitido,
             sorted(str(d) for d in informe.desgloses),
             sorted(informe.confirmadas_por_el_consolidado),
+            sorted(informe.normas_descartadas),
         ],
         ensure_ascii=False,
     )

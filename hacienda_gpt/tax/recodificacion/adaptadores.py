@@ -10,7 +10,7 @@
   :class:`Cifras` entry says which model, which lines of the calculator a test
   case may compare and which fields the group's law does not print.
 
-Nothing in an IRPF file is left without an adapter (``test_recodificacion_grupos``
+Nothing in an IRPF file is left without an adapter (``tests/tax/test_recodificacion_irpf.py``
 checks it against the model). The adapters of the other parameter files live in
 ``adaptadores_otros``. Adding a kind means writing an
 :class:`~hacienda_gpt.tax.recodificacion.nucleo.Adaptador` and registering it;

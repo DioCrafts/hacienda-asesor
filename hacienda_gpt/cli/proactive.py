@@ -21,9 +21,11 @@ state file next to the changes log.
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, timedelta
+import html
 import json
 import logging
 from pathlib import Path
+import re
 import time
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -311,8 +313,42 @@ def _vigiladas() -> frozenset[str]:
     return frozenset(ids | {norma.boe_id for norma in normas_de_parametros()})
 
 
+def _texto_pdf(data: bytes) -> str:
+    """Text of a PDF in reading layout: ``pdftotext -layout`` when installed (it is how the quotes of the forms were
+    taken), else pypdfium2, whose order of table cells can differ."""
+    import shutil
+    import subprocess
+
+    if shutil.which("pdftotext"):
+        hecho = subprocess.run(["pdftotext", "-layout", "-", "-"], input=data, capture_output=True, timeout=120)
+        if hecho.returncode == 0:
+            return hecho.stdout.decode("utf-8", errors="replace")
+    import pypdfium2
+
+    pdf = pypdfium2.PdfDocument(data)
+    return "\n".join(pdf[i].get_textpage().get_text_range() for i in range(len(pdf)))
+
+
+def _con_su_pdf(boe_id: str, pagina: str) -> str:
+    """A norm that is not a consolidated text (an order approving tax forms, an amending law) prints part of what
+    the parameters quote only in its PDF — the annexes with the forms. Its text is appended to the page so that
+    those quotes are checked too; a consolidated law is left as it is."""
+    if "Texto consolidado" in pagina:
+        return pagina
+    enlace = re.search(r'href="(/boe/dias/[^"]+/pdfs/' + re.escape(boe_id) + r'\.pdf)"', pagina)
+    if enlace is None:
+        return pagina
+    try:
+        data = _get("https://www.boe.es" + enlace.group(1), accept="application/pdf")
+        texto = _texto_pdf(data) if data else ""
+    except Exception as exc:  # the page alone is still checked
+        logger.warning("Could not read the PDF of %s: %s", boe_id, exc)
+        return pagina
+    return pagina + "\n<pre>" + html.escape(texto) + "</pre>\n"
+
+
 def _texto_del_boe() -> Any:
-    """A ``texto_de`` that downloads each law's consolidated page once."""
+    """A ``texto_de`` that downloads each law's page once (and, for a norm that is not consolidated, its PDF)."""
     cache: dict[tuple[str, str | None], str | None] = {}
 
     def texto_de(boe_id: str, version: str | None = None) -> str | None:
@@ -323,7 +359,8 @@ def _texto_del_boe() -> Any:
             except Exception as exc:
                 logger.warning("Could not download %s: %s", boe_id, exc)
                 raw = None
-            cache[clave] = raw.decode("utf-8", errors="replace") if raw else None
+            pagina = raw.decode("utf-8", errors="replace") if raw else None
+            cache[clave] = _con_su_pdf(boe_id, pagina) if pagina and version is None else pagina
             time.sleep(0.5)
         return cache[clave]
 
@@ -559,15 +596,9 @@ def boe_novedades(
     parámetros, que sí puede usar el LLM.
     """
     salida = _revisar_novedades(desde, hasta, output_dir, notify=notify, db_path=db_path)
-    if _env_bool("RECODE_AUTOPILOT") if autopilot is None else autopilot:
+    if settings.RECODE_AUTOPILOT if autopilot is None else autopilot:
         salida["piloto"] = _pilotar(output_dir)
     click.echo(json.dumps(salida, ensure_ascii=False, indent=2, default=str))
-
-
-def _env_bool(nombre: str) -> bool:
-    import os
-
-    return os.environ.get(nombre, "").strip().lower() in ("1", "true", "yes", "si", "sí", "on")
 
 
 def _revisar_novedades(
@@ -925,14 +956,12 @@ def params_recode(
     except RecodificacionError as exc:
         raise click.ClickException(str(exc)) from exc
     if norma is not None:
-        from hacienda_gpt.tax.fuentes import norma_de_parametros
-
+        fuentes = _leyes_de_los_parametros(data_dir) if sin_consolidar else {}
         for objetivo in hallazgo.objetivos:
             objetivo.anotaciones = _anotaciones_de(norma, objetivo.boe_id)
             if sin_consolidar:
-                fuente = norma_de_parametros(objetivo.boe_id)
                 objetivo.norma_texto = norma
-                objetivo.ley_citada = _numero_de_ley(fuente.norma) if fuente is not None else ""
+                objetivo.ley_citada = _numero_de_ley(fuentes.get(objetivo.boe_id, {}).get("norma", ""))
     salida = _recodificar(
         hallazgo,
         texto_de=texto_de,
@@ -960,20 +989,49 @@ def _numero_de_ley(nombre: str) -> str:
     return match.group(0) if match else ""
 
 
-def _ley_citada_de(comunidad: str, data_dir: Path) -> str:
-    return _numero_de_ley(next((nombre for clave, _, nombre in _leyes_del_irpf(data_dir) if clave == comunidad), ""))
+def _leyes_de_los_parametros(data_dir: Path) -> dict[str, dict[str, Any]]:
+    """Every source law named by a parameter file under ``data_dir``: BOE id → its name, the community it belongs to
+    (IRPF laws of a community only) and the date of the consolidated text the parameters were read from."""
+    leyes: dict[str, dict[str, Any]] = {}
 
+    def recorrer(nodo: Any, comunidad: str | None) -> None:
+        if isinstance(nodo, dict):
+            if isinstance(nodo.get("boe_id"), str) and "consolidado_a" in nodo:
+                previa = leyes.get(nodo["boe_id"], {})
+                fechas = [f for f in (previa.get("leida"), str(nodo.get("consolidado_a") or "")) if f]
+                leyes[nodo["boe_id"]] = {
+                    "norma": previa.get("norma") or str(nodo.get("norma") or nodo["boe_id"]),
+                    "comunidad": previa.get("comunidad") or comunidad,
+                    # The oldest reading: a norm must be older than every reading to be taken as already in the data.
+                    "leida": min(fechas) if fechas else "",
+                }
+                return
+            for clave, hijo in nodo.items():
+                recorrer(hijo, comunidad)
+        elif isinstance(nodo, list):
+            for hijo in nodo:
+                recorrer(hijo, comunidad)
 
-def _leyes_del_irpf(data_dir: Path) -> list[tuple[str | None, str, str]]:
-    """(community key or None, BOE id, name) of every source law of the IRPF files under ``data_dir``."""
-    out: dict[str, tuple[str | None, str, str]] = {}
-    for path in sorted(data_dir.glob("irpf_*.json")):
+    # The IRPF files first: they name each law in full.
+    for path in sorted(
+        data_dir.glob("*_[0-9][0-9][0-9][0-9].json"), key=lambda p: (not p.name.startswith("irpf_"), p.name)
+    ):
         raw = json.loads(path.read_text(encoding="utf-8"))
-        fuentes = [(None, raw["fuente_principal"])]
-        fuentes += [(clave, c["fuente_principal"]) for clave, c in raw.get("comunidades", {}).items()]
-        for clave, fuente in fuentes:
-            out[fuente["boe_id"]] = (clave, fuente["boe_id"], fuente.get("norma", ""))
-    return list(out.values())
+        if not isinstance(raw, dict):
+            continue
+        es_irpf = path.name.startswith("irpf_")
+        for clave, hijo in raw.items():
+            if clave == "comunidades" and isinstance(hijo, dict):
+                for comunidad, datos in hijo.items():
+                    recorrer(datos, comunidad if es_irpf else None)
+            else:
+                recorrer(hijo, None)
+    return leyes
+
+
+def _ley_citada_de(comunidad: str, data_dir: Path) -> str:
+    leyes = _leyes_de_los_parametros(data_dir)
+    return _numero_de_ley(next((ley["norma"] for ley in leyes.values() if ley["comunidad"] == comunidad), ""))
 
 
 def _pilotar(
@@ -994,10 +1052,9 @@ def _pilotar(
     data_dir = data_dir or DATA_DIR
     registro_path = output_dir / REGISTRO_NOVEDADES
     registro = json.loads(registro_path.read_text(encoding="utf-8")) if registro_path.exists() else {}
-    del_irpf = _leyes_del_irpf(data_dir)
-    leyes = {norma.boe_id: norma.norma for norma in normas_de_parametros()} if data_dir == DATA_DIR else {}
-    leyes.update({boe_id: nombre for _, boe_id, nombre in del_irpf})
-    comunidades = {boe_id: clave for clave, boe_id, _ in del_irpf if clave is not None}
+    fuentes = _leyes_de_los_parametros(data_dir)
+    leyes = {boe_id: ley["norma"] for boe_id, ley in fuentes.items()}
+    comunidades = {boe_id: ley["comunidad"] for boe_id, ley in fuentes.items() if ley["comunidad"]}
     lector = revisor = None
     motivo = "No hay credenciales del proveedor de LLM configurado: no se ha recodificado nada."
     if not usar_llm:
@@ -1021,6 +1078,7 @@ def _pilotar(
             max_grupos=max_grupos or settings.RECODE_MAX_PER_RUN,
             auto_aplicar=settings.RECODE_AUTO_APPLY if auto_aplicar is None else auto_aplicar,
             hoy=hoy_en_espana(),
+            leidas={boe_id: ley["leida"] for boe_id, ley in fuentes.items() if ley["leida"]},
             motivo_sin_modelo=motivo,
         )
     except RecodificacionError as exc:

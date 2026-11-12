@@ -1212,28 +1212,12 @@ class GrupoConEvidencia(Adaptador):
         )
         if control.fallos:
             raise RecodificacionError(f"No se puede escribir {propuesta.etiqueta}: " + "; ".join(control.fallos[:4]))
-        self._recien_compuesto = (list(propuesta.ruta), grupo)
         return grupo
 
-    # The last group handed to the loop for writing (see ``_recolocar``).
-    _recien_compuesto: tuple[list[str], Any] | None = None
-
-    def _recolocar(self, raw: dict[str, Any]) -> None:
-        """Put a rule the loop has just APPENDED to its list back at the index its path names.
-
-        ``nucleo.escribir_ruta`` only knows list items by "campo=valor"; the rules of the ISD file have no field
-        that is unique in their list, so their paths end in an index, which it takes for a missing item and
-        appends. Inert as soon as ``escribir_ruta`` writes at an index itself.
-        """
-        if self._recien_compuesto is None:
-            return
-        ruta, grupo = self._recien_compuesto
-        lista = leer_ruta(raw, ruta[:-1])
-        if isinstance(lista, list) and ruta[-1].isdigit() and int(ruta[-1]) < len(lista) - 1 and lista[-1] is grupo:
-            lista[int(ruta[-1])] = lista.pop()
+    def limpiar_caches(self) -> None:
+        self.familia.limpiar()
 
     def validar_fichero(self, raw: dict[str, Any]) -> None:
-        self._recolocar(raw)
         params = self.familia.raiz.model_validate(raw)
         self.familia.validar_extra(params)
         problemas = self.familia.comprobar(params, None)

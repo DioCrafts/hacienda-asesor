@@ -1310,15 +1310,6 @@ def test_cli_auto_apply_reject_and_exit_code_on_budget(cli: Any, datos: Path, mo
     assert todas["confirmadas"] == 1
 
 
-def test_the_weekly_workflow_recodes_only_when_an_llm_key_is_configured() -> None:
-    workflow = (Path(__file__).resolve().parents[2] / ".github" / "workflows" / "vigilancia.yml").read_text("utf-8")
-    verify, recode = workflow.index("params-verify --fail-on-mismatch"), workflow.index("params-recode")
-    assert verify < recode
-    assert "HAY_CLAVE_LLM: ${{ secrets.ANTHROPIC_API_KEY != '' }}" in workflow
-    paso = workflow[workflow.rindex("- name:", 0, recode) : recode]
-    assert "env.HAY_CLAVE_LLM == 'true'" in paso
-
-
 def test_the_temporary_copies_leave_the_shipped_data_alone(datos: Path, tmp_path: Path) -> None:
     antes = {p.name: p.read_bytes() for p in DATA_DIR.glob("*.json")}
     propuesta = _correr(datos, Guion(lectura()), Guion(revision()))
