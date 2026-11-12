@@ -7,7 +7,6 @@ from hacienda_gpt.api import api as api_module
 from hacienda_gpt.api.api import app, get_case_store, get_notification_store
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.proactive.store import Notification, NotificationStore
-
 from . import SALARIED, make_case
 
 

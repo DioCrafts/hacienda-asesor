@@ -7,7 +7,6 @@ from hacienda_gpt.cli import proactive as cli_module
 from hacienda_gpt.cli.proactive import cli
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.proactive.store import NotificationStore
-
 from . import SALARIED, make_case
 from .test_impacto import LIRPF_HTML, FakeProvider, _evento, _respuesta
 

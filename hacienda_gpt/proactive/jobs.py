@@ -134,7 +134,7 @@ def recordatorios_de_plazos(case: CaseState, *, hoy: date, store: NotificationSt
                 "Atención: esta fecha no está verificada contra la norma o la orden que la fija para este periodo. "
                 "Confírmala en la sede electrónica de la Agencia Tributaria antes de darla por buena."
             )
-        actions = [f"Presenta o prepara «{v.titulo}» ({v.periodo}) antes del {_fecha(v.fecha)}."]
+        actions = [f"Presenta o prepara «{v.titulo}» ({v.periodo}) como muy tarde el {_fecha(v.fecha)}."]
         if not v.verificado:
             actions.append("Confirma la fecha exacta en el calendario del contribuyente de la Agencia Tributaria.")
         actions.append("Pregunta al asesor si tienes dudas sobre si te corresponde presentarlo o cómo hacerlo.")
