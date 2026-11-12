@@ -1,0 +1,535 @@
+{
+ "andalucia": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Gastos educativos (enseñanza de idiomas e informática)": "120.00",
+   "Deducción autonómica: Nacimiento, adopción de hijos o acogimiento familiar de menores": "200.00"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Donativos con finalidad ecológica": "150.00",
+   "Deducción autonómica: Fomento del ejercicio físico y la práctica deportiva": "100.00",
+   "Deducción autonómica: Inversión en acciones y participaciones de sociedades de nueva o reciente creación": "4000.00"
+  },
+  "joven_alquiler": {
+   "Deducción autonómica: Alquiler de vivienda habitual": "1080.00",
+   "Deducción autonómica: Fomento del ejercicio físico y la práctica deportiva": "90.00"
+  },
+  "joven_rural_vivienda": {
+   "Deducción autonómica: Alquiler de vivienda habitual": "450.00",
+   "Deducción autonómica: Inversión en vivienda habitual por personas jóvenes": "480.00"
+  },
+  "mayor_discapacidad": {
+   "Deducción autonómica: Alquiler de vivienda habitual": "810.00",
+   "Deducción autonómica: Asistencia a personas con discapacidad": "100.00",
+   "Deducción autonómica: Ayuda doméstica (titular del hogar de 75 o más años)": "440.00",
+   "Deducción autonómica: Contribuyentes con discapacidad": "150.00"
+  },
+  "monoparental": {
+   "Deducción autonómica: Madre o padre de familia monoparental": "100.00"
+  },
+  "numerosa_conjunta": {
+   "Deducción autonómica: Donativos con finalidad ecológica": "40.00",
+   "Deducción autonómica: Familia numerosa": "200.00",
+   "Deducción autonómica: Gastos educativos (enseñanza de idiomas e informática)": "180.00"
+  },
+  "numerosa_especial_compartida": {
+   "Deducción autonómica: Nacimiento, adopción de hijos o acogimiento familiar de menores": "200.00"
+  },
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Alquiler de vivienda habitual": "720.00",
+   "Deducción autonómica: Contribuyentes con discapacidad": "150.00"
+  }
+ },
+ "aragon": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Gastos de guardería de hijos menores de 3 años": "250.00"
+  },
+  "inversor_renta_alta": {},
+  "joven_alquiler": {},
+  "joven_rural_vivienda": {},
+  "mayor_discapacidad": {
+   "Deducción autonómica: Cuidado de personas dependientes (ascendientes mayores de 75 años)": "150.00",
+   "Deducción autonómica: Mayores de 70 años": "75.00"
+  },
+  "monoparental": {
+   "Deducción autonómica: Gastos de guardería de hijos menores de 3 años": "250.00"
+  },
+  "numerosa_conjunta": {
+   "Deducción autonómica: Adquisición de libros de texto y material escolar": "450.00"
+  },
+  "numerosa_especial_compartida": {
+   "Deducción autonómica: Gastos de guardería de hijos menores de 3 años": "250.00",
+   "Deducción autonómica: Nacimiento o adopción del tercer hijo o sucesivos": "600.00"
+  },
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Adquisición de libros de texto y material escolar": "100.00"
+  }
+ },
+ "asturias": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Adquisición de libros de texto y material escolar": "25.00",
+   "Deducción autonómica: Cuidado de descendientes o adoptados de hasta 25 años": "1200.00",
+   "Deducción autonómica: Familias numerosas": "1000.00"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Inversión en acciones y participaciones de nuevas entidades o de reciente creación": "6000.00"
+  },
+  "joven_alquiler": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "1500.00",
+   "Deducción autonómica: Gastos vitales de contribuyentes de hasta 35 años (gastos deportivos y culturales)": "600.00"
+  },
+  "joven_rural_vivienda": {
+   "Deducción autonómica: Adquisición o rehabilitación de vivienda habitual para determinados colectivos": "800.00",
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "900.00"
+  },
+  "mayor_discapacidad": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "500.00"
+  },
+  "monoparental": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "1500.00",
+   "Deducción autonómica: Cuidado de descendientes o adoptados de hasta 25 años": "600.00",
+   "Deducción autonómica: Familias monoparentales": "500.00"
+  },
+  "numerosa_conjunta": {
+   "Deducción autonómica: Acogimiento familiar de menores": "500.00",
+   "Deducción autonómica: Adquisición de libros de texto y material escolar": "150.00",
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "1500.00",
+   "Deducción autonómica: Cuidado de descendientes o adoptados de hasta 25 años": "1800.00",
+   "Deducción autonómica: Familias numerosas": "1000.00"
+  },
+  "numerosa_especial_compartida": {
+   "Deducción autonómica: Cuidado de descendientes o adoptados de hasta 25 años": "1500.00",
+   "Deducción autonómica: Familias numerosas": "1000.00"
+  },
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Adquisición de libros de texto y material escolar": "100.00",
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "1440.00",
+   "Deducción autonómica: Cuidado de descendientes o adoptados de hasta 25 años": "1200.00",
+   "Deducción autonómica: Familias numerosas": "1000.00"
+  }
+ },
+ "baleares": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Gastos de adquisición de libros de texto": "220.00",
+   "Deducción autonómica: Gastos de aprendizaje extraescolar de idiomas extranjeros": "110.00",
+   "Deducción autonómica: Nacimiento": "1200.00"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Inversión en acciones o participaciones de nuevas entidades o de reciente creación": "6000.00"
+  },
+  "joven_alquiler": {
+   "Deducción autonómica: Arrendamiento de la vivienda habitual": "650.00"
+  },
+  "joven_rural_vivienda": {
+   "Deducción autonómica: Arrendamiento de la vivienda habitual": "450.00"
+  },
+  "mayor_discapacidad": {
+   "Deducción autonómica: Arrendamiento de la vivienda habitual": "650.00",
+   "Deducción autonómica: Declarantes con discapacidad": "165.00",
+   "Deducción autonómica: Determinados gastos relativos a personas mayores de 65 años o a personas con discapacidad": "660.00"
+  },
+  "monoparental": {},
+  "numerosa_conjunta": {
+   "Deducción autonómica: Gastos de adquisición de libros de texto": "500.00",
+   "Deducción autonómica: Gastos de aprendizaje extraescolar de idiomas extranjeros": "180.00"
+  },
+  "numerosa_especial_compartida": {
+   "Deducción autonómica: Nacimiento": "1800.00"
+  },
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Arrendamiento de la vivienda habitual": "650.00",
+   "Deducción autonómica: Declarantes con discapacidad": "88.00",
+   "Deducción autonómica: Gastos de adquisición de libros de texto": "250.00"
+  }
+ },
+ "canarias": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Cuotas a la Seguridad Social por empleados o empleadas de hogar": "360.00",
+   "Deducción autonómica: Gastos de custodia en guarderías": "432.00",
+   "Deducción autonómica: Nacimiento o adopción de hijos": "265.00"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Inversión en acciones y participaciones de entidades nuevas o de reciente creación": "4000.00"
+  },
+  "joven_alquiler": {
+   "Deducción autonómica: Alquiler de vivienda habitual": "760.00",
+   "Deducción autonómica: Gastos de enfermedad": "108.00"
+  },
+  "joven_rural_vivienda": {
+   "Deducción autonómica: Alquiler de vivienda habitual": "720.00"
+  },
+  "mayor_discapacidad": {
+   "Deducción autonómica: Alquiler de vivienda habitual": "760.00",
+   "Deducción autonómica: Contribuyentes con discapacidad": "400.00",
+   "Deducción autonómica: Contribuyentes mayores de 65 años": "160.00",
+   "Deducción autonómica: Cuotas a la Seguridad Social por empleados o empleadas de hogar": "440.00",
+   "Deducción autonómica: Gastos de enfermedad": "300.00"
+  },
+  "monoparental": {
+   "Deducción autonómica: Alquiler de vivienda habitual": "760.00",
+   "Deducción autonómica: Cuotas a la Seguridad Social por empleados o empleadas de hogar": "300.00",
+   "Deducción autonómica: Familias monoparentales": "133.00",
+   "Deducción autonómica: Gastos de custodia en guarderías": "530.00"
+  },
+  "numerosa_conjunta": {
+   "Deducción autonómica: Alquiler de vivienda habitual": "740.00",
+   "Deducción autonómica: Familia numerosa": "597.00"
+  },
+  "numerosa_especial_compartida": {
+   "Deducción autonómica: Familia numerosa": "398.00",
+   "Deducción autonómica: Gastos de custodia en guarderías": "450.00",
+   "Deducción autonómica: Nacimiento o adopción de hijos": "862.00"
+  },
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Alquiler de vivienda habitual": "760.00",
+   "Deducción autonómica: Contribuyentes con discapacidad": "400.00"
+  }
+ },
+ "cantabria": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Gastos de educación: libros de texto": "200.00",
+   "Deducción autonómica: Gastos de guardería": "300.00",
+   "Deducción autonómica: Nacimiento o adopción de hijos": "1400.00"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Donativos a fundaciones de Cantabria y a asociaciones de apoyo a personas con discapacidad": "450.00",
+   "Deducción autonómica: Inversión en acciones y participaciones de entidades nuevas o de reciente creación": "1000.00",
+   "Deducción autonómica: Obras de mejora en viviendas (eficiencia energética y energías renovables)": "1000.00"
+  },
+  "joven_alquiler": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "300.00",
+   "Deducción autonómica: Ejercicio físico y práctica deportiva": "150.00",
+   "Deducción autonómica: Gastos de enfermedad (honorarios de servicios sanitarios)": "90.00"
+  },
+  "joven_rural_vivienda": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual en municipios en riesgo de despoblamiento": "600.00",
+   "Deducción autonómica: Obras de mejora en viviendas (eficiencia energética y energías renovables)": "750.00"
+  },
+  "mayor_discapacidad": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "300.00",
+   "Deducción autonómica: Ayuda doméstica (cotizaciones de empleado o empleada de hogar)": "300.00",
+   "Deducción autonómica: Gastos de enfermedad (honorarios de servicios sanitarios)": "250.00"
+  },
+  "monoparental": {
+   "Deducción autonómica: Ayuda doméstica (cotizaciones de empleado o empleada de hogar)": "300.00",
+   "Deducción autonómica: Familias monoparentales": "200.00",
+   "Deducción autonómica: Gastos de guardería": "300.00"
+  },
+  "numerosa_conjunta": {
+   "Deducción autonómica: Acogimiento familiar de menores": "240.00",
+   "Deducción autonómica: Donativos a fundaciones de Cantabria y a asociaciones de apoyo a personas con discapacidad": "60.00",
+   "Deducción autonómica: Gastos de educación: libros de texto": "200.00"
+  },
+  "numerosa_especial_compartida": {
+   "Deducción autonómica: Gastos de guardería": "300.00"
+  },
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "300.00",
+   "Deducción autonómica: Gastos de educación: libros de texto": "200.00"
+  }
+ },
+ "castilla_la_mancha": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Gastos de guardería": "500.00",
+   "Deducción autonómica: Nacimiento o adopción de hijos": "100.00"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Donativos para cooperación internacional, lucha contra la pobreza y la exclusión social y ayuda a personas con discapacidad": "450.00",
+   "Deducción autonómica: Inversión en acciones y participaciones por constitución o ampliación de capital de sociedades": "4000.00"
+  },
+  "joven_alquiler": {},
+  "joven_rural_vivienda": {
+   "Deducción autonómica: Adquisición o rehabilitación de la vivienda habitual en zonas rurales": "1200.00"
+  },
+  "mayor_discapacidad": {
+   "Deducción autonómica: Cuidado de ascendientes mayores de 75 años": "150.00",
+   "Deducción autonómica: Discapacidad del contribuyente": "300.00"
+  },
+  "monoparental": {
+   "Deducción autonómica: Familia monoparental": "200.00",
+   "Deducción autonómica: Gastos de guardería": "500.00"
+  },
+  "numerosa_conjunta": {
+   "Deducción autonómica: Donativos para cooperación internacional, lucha contra la pobreza y la exclusión social y ayuda a personas con discapacidad": "60.00",
+   "Deducción autonómica: Familia numerosa": "200.00",
+   "Deducción autonómica: Libros de texto (gastos de educación)": "500.00"
+  },
+  "numerosa_especial_compartida": {
+   "Deducción autonómica: Familia numerosa": "200.00",
+   "Deducción autonómica: Gastos de guardería": "500.00",
+   "Deducción autonómica: Nacimiento o adopción de hijos": "100.00"
+  },
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual por menores de 36 años": "500.00",
+   "Deducción autonómica: Libros de texto (gastos de educación)": "200.00"
+  }
+ },
+ "castilla_y_leon": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Cuotas a la Seguridad Social de empleados de hogar (hijo menor de 4 años)": "270.00",
+   "Deducción autonómica: Nacimiento o adopción": "1475.00"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Fomento del emprendimiento (inversión en acciones o participaciones)": "6000.00"
+  },
+  "joven_alquiler": {
+   "Deducción autonómica: Arrendamiento de la vivienda habitual por jóvenes": "459.00"
+  },
+  "joven_rural_vivienda": {
+   "Deducción autonómica: Adquisición o rehabilitación de la vivienda habitual por jóvenes en el medio rural": "1200.00",
+   "Deducción autonómica: Arrendamiento de la vivienda habitual por jóvenes": "612.00"
+  },
+  "mayor_discapacidad": {
+   "Deducción autonómica: Discapacidad del contribuyente": "656.00"
+  },
+  "monoparental": {
+   "Deducción autonómica: Cuotas a la Seguridad Social de empleados de hogar (hijo menor de 4 años)": "225.00"
+  },
+  "numerosa_conjunta": {
+   "Deducción autonómica: Donaciones para el patrimonio cultural y natural, a fundaciones de Castilla y León y para investigación, desarrollo e innovación": "60.00",
+   "Deducción autonómica: Familia numerosa": "600.00"
+  },
+  "numerosa_especial_compartida": {
+   "Deducción autonómica: Familia numerosa": "1250.00",
+   "Deducción autonómica: Nacimiento o adopción": "2351.00"
+  },
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Arrendamiento de la vivienda habitual por jóvenes": "459.00"
+  }
+ },
+ "cataluna": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Deducción por nacimiento o adopción de un hijo o de una hija o por acogimiento": "150.00"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Deducción en concepto de inversión por un ángel inversor por la adquisición de acciones o participaciones sociales de entidades nuevas o de creación reciente": "12000.00"
+  },
+  "joven_alquiler": {
+   "Deducción autonómica: Deducción por alquiler de la vivienda habitual": "500.00"
+  },
+  "joven_rural_vivienda": {
+   "Deducción autonómica: Deducción por alquiler de la vivienda habitual": "300.00"
+  },
+  "mayor_discapacidad": {
+   "Deducción autonómica: Deducción por alquiler de la vivienda habitual": "500.00"
+  },
+  "monoparental": {
+   "Deducción autonómica: Deducción por alquiler de la vivienda habitual": "600.00"
+  },
+  "numerosa_conjunta": {
+   "Deducción autonómica: Deducción por alquiler de la vivienda habitual": "840.00"
+  },
+  "numerosa_especial_compartida": {
+   "Deducción autonómica: Deducción por nacimiento o adopción de un hijo o de una hija o por acogimiento": "300.00"
+  },
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Deducción por alquiler de la vivienda habitual": "480.00"
+  }
+ },
+ "comunidad_valenciana": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Guardería y centros de primer ciclo de educación infantil (menores de 3 años)": "297.00"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Instalaciones de autoconsumo eléctrico o de energías renovables en la vivienda habitual": "3520.00",
+   "Deducción autonómica: Suscripción de acciones o participaciones en sociedades nuevas o de reciente creación": "6600.00"
+  },
+  "joven_alquiler": {
+   "Deducción autonómica: Arrendamiento o pago por la cesión en uso de la vivienda habitual": "950.00",
+   "Deducción autonómica: Gastos asociados a la práctica del deporte y actividades saludables": "150.00"
+  },
+  "joven_rural_vivienda": {
+   "Deducción autonómica: Arrendamiento o pago por la cesión en uso de la vivienda habitual": "750.00",
+   "Deducción autonómica: Instalaciones de autoconsumo eléctrico o de energías renovables en la vivienda habitual": "2000.00",
+   "Deducción autonómica: Residencia habitual en un municipio en riesgo de despoblamiento": "330.00"
+  },
+  "mayor_discapacidad": {
+   "Deducción autonómica: Arrendamiento o pago por la cesión en uso de la vivienda habitual": "950.00",
+   "Deducción autonómica: Ascendientes mayores de 75 años (o mayores de 65 con discapacidad)": "197.00",
+   "Deducción autonómica: Contribuyentes con discapacidad de edad igual o superior a 65 años": "197.00"
+  },
+  "monoparental": {
+   "Deducción autonómica: Arrendamiento o pago por la cesión en uso de la vivienda habitual": "800.00",
+   "Deducción autonómica: Familia numerosa o monoparental (categoría general)": "330.00",
+   "Deducción autonómica: Guardería y centros de primer ciclo de educación infantil (menores de 3 años)": "297.00"
+  },
+  "numerosa_conjunta": {
+   "Deducción autonómica: Arrendamiento o pago por la cesión en uso de la vivienda habitual": "800.00",
+   "Deducción autonómica: Familia numerosa o monoparental (categoría general)": "330.00"
+  },
+  "numerosa_especial_compartida": {
+   "Deducción autonómica: Familia numerosa de categoría especial": "330.00",
+   "Deducción autonómica: Guardería y centros de primer ciclo de educación infantil (menores de 3 años)": "297.00"
+  },
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Arrendamiento o pago por la cesión en uso de la vivienda habitual": "950.00"
+  }
+ },
+ "extremadura": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Deducción autonómica por la compra de material escolar": "30.00",
+   "Deducción autonómica: Deducción en la cuota íntegra autonómica por nacimiento o adopción de descendientes": "1000.00"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Deducción autonómica por inversión en la adquisición de acciones y participaciones sociales como consecuencia de acuerdos de constitución de sociedades o ampliación de capital en las sociedades mercantiles": "4000.00",
+   "Deducción autonómica: Deducción en la cuota íntegra autonómica por donaciones de dinero a entidades culturales, artísticas y para patrocinio a deportistas": "500.00"
+  },
+  "joven_alquiler": {
+   "Deducción autonómica: Deducción autonómica por arrendamiento de vivienda habitual": "1000.00"
+  },
+  "joven_rural_vivienda": {
+   "Deducción autonómica: Deducción por adquisición o rehabilitación de la vivienda habitual en zonas rurales": "800.00"
+  },
+  "mayor_discapacidad": {
+   "Deducción autonómica: Deducción autonómica para los contribuyentes viudos": "100.00",
+   "Deducción autonómica: Deducción autonómica por arrendamiento de vivienda habitual": "1000.00"
+  },
+  "monoparental": {},
+  "numerosa_conjunta": {
+   "Deducción autonómica: Deducción autonómica por acogimiento de menores": "250.00",
+   "Deducción autonómica: Deducción autonómica por arrendamiento de vivienda habitual": "1000.00",
+   "Deducción autonómica: Deducción autonómica por la compra de material escolar": "90.00",
+   "Deducción autonómica: Deducción en la cuota íntegra autonómica por donaciones de dinero a entidades culturales, artísticas y para patrocinio a deportistas": "80.00"
+  },
+  "numerosa_especial_compartida": {
+   "Deducción autonómica: Deducción autonómica por parto o adopción múltiple": "300.00",
+   "Deducción autonómica: Deducción en la cuota íntegra autonómica por nacimiento o adopción de descendientes": "1200.00"
+  },
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Deducción autonómica por arrendamiento de vivienda habitual": "1000.00",
+   "Deducción autonómica: Deducción autonómica por la compra de material escolar": "60.00"
+  }
+ },
+ "galicia": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Deducción para familias con hijos e hijas": "250.00"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Deducción por inversión en instalaciones de climatización y/o agua caliente sanitaria que empleen energías renovables en la vivienda habitual y destinadas exclusivamente al autoconsumo": "280.00",
+   "Deducción autonómica: Deducción por inversión en la adquisición de acciones o participaciones sociales en entidades nuevas o de reciente creación": "6000.00"
+  },
+  "joven_alquiler": {
+   "Deducción autonómica: Deducción por alquiler de vivienda habitual": "300.00"
+  },
+  "joven_rural_vivienda": {
+   "Deducción autonómica: Deducción por alquiler de vivienda habitual": "300.00",
+   "Deducción autonómica: Deducción por inversión en instalaciones de climatización y/o agua caliente sanitaria que empleen energías renovables en la vivienda habitual y destinadas exclusivamente al autoconsumo": "250.00"
+  },
+  "mayor_discapacidad": {},
+  "monoparental": {},
+  "numerosa_conjunta": {
+   "Deducción autonómica: Deducción por acogimiento": "300.00"
+  },
+  "numerosa_especial_compartida": {},
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Deducción para familias con hijos e hijas": "250.00",
+   "Deducción autonómica: Deducción por alquiler de vivienda habitual": "600.00"
+  }
+ },
+ "la_rioja": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Nacimiento y adopción de hijos": "750.00"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Donaciones irrevocables, puras y simples en materia de mecenazgo": "450.00",
+   "Deducción autonómica: Fomento del ejercicio físico y la práctica deportiva": "300.00"
+  },
+  "joven_alquiler": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual para menores de 36 años": "300.00",
+   "Deducción autonómica: Fomento del ejercicio físico y la práctica deportiva": "180.00"
+  },
+  "joven_rural_vivienda": {
+   "Deducción autonómica: Adquisición, construcción o rehabilitación de vivienda habitual en pequeños municipios": "400.00"
+  },
+  "mayor_discapacidad": {},
+  "monoparental": {
+   "Deducción autonómica: Gastos en escuelas infantiles o centros de educación infantil (hijos de 0 a 3 años)": "600.00"
+  },
+  "numerosa_conjunta": {
+   "Deducción autonómica: Acogimiento familiar de menores o guarda con fines de adopción": "300.00",
+   "Deducción autonómica: Donaciones irrevocables, puras y simples en materia de mecenazgo": "60.00"
+  },
+  "numerosa_especial_compartida": {
+   "Deducción autonómica: Gastos en escuelas infantiles o centros de educación infantil (hijos de 0 a 3 años)": "500.00",
+   "Deducción autonómica: Nacimiento y adopción de hijos": "900.00"
+  },
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual para menores de 36 años": "300.00"
+  }
+ },
+ "madrid": {
+  "familia_nacimiento": {
+   "Deducción autonómica por cuidado de menores o dependientes": "450.00",
+   "Deducción autonómica por gastos educativos": "120.00",
+   "Deducción autonómica por nacimiento o adopción de hijos": "721.70"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Inversión en acciones y participaciones de entidades nuevas o de reciente creación": "9279.00"
+  },
+  "joven_alquiler": {
+   "Deducción autonómica por alquiler de vivienda habitual": "1237.20"
+  },
+  "joven_rural_vivienda": {},
+  "mayor_discapacidad": {
+   "Deducción autonómica por cuidado de menores o dependientes": "463.95",
+   "Deducción autonómica: Cuidado de ascendientes": "515.50"
+  },
+  "monoparental": {
+   "Deducción autonómica por alquiler de vivienda habitual": "1237.20",
+   "Deducción autonómica por cuidado de menores o dependientes": "375.00"
+  },
+  "numerosa_conjunta": {
+   "Deducción autonómica por gastos educativos": "180.00",
+   "Deducción autonómica: Acogimiento familiar de menores": "618.60"
+  },
+  "numerosa_especial_compartida": {},
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica por alquiler de vivienda habitual": "1237.20"
+  }
+ },
+ "murcia": {
+  "familia_nacimiento": {
+   "Deducción autonómica: Conciliación: empleada de hogar para el cuidado de descendientes menores": "360.00",
+   "Deducción autonómica: Gastos de enseñanza de idiomas": "120.00",
+   "Deducción autonómica: Gastos de guardería (primer ciclo de educación infantil)": "480.00",
+   "Deducción autonómica: Nacimiento o adopción": "200.00"
+  },
+  "inversor_renta_alta": {
+   "Deducción autonómica: Donaciones dinerarias (mecenazgo regional e investigación biosanitaria)": "1500.00",
+   "Deducción autonómica: Inversión en acciones o participaciones de entidades nuevas o de reciente creación": "4000.00"
+  },
+  "joven_alquiler": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "300.00",
+   "Deducción autonómica: Gastos asociados a la práctica del deporte y actividades saludables": "150.00"
+  },
+  "joven_rural_vivienda": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "300.00",
+   "Deducción autonómica: Instalaciones de energías renovables para autoconsumo en la vivienda": "2500.00"
+  },
+  "mayor_discapacidad": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "300.00",
+   "Deducción autonómica: Conciliación: empleada de hogar para el cuidado de ascendientes mayores de 65 años": "400.00",
+   "Deducción autonómica: Contribuyentes con discapacidad": "150.00"
+  },
+  "monoparental": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "300.00",
+   "Deducción autonómica: Conciliación: empleada de hogar para el cuidado de descendientes menores": "300.00",
+   "Deducción autonómica: Familia monoparental": "303.00",
+   "Deducción autonómica: Gastos de guardería (primer ciclo de educación infantil)": "600.00"
+  },
+  "numerosa_conjunta": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "300.00",
+   "Deducción autonómica: Donaciones dinerarias (mecenazgo regional e investigación biosanitaria)": "200.00",
+   "Deducción autonómica: Gastos de enseñanza de idiomas": "180.00",
+   "Deducción autonómica: Material escolar y libros de texto": "360.00"
+  },
+  "numerosa_especial_compartida": {
+   "Deducción autonómica: Gastos de guardería (primer ciclo de educación infantil)": "500.00",
+   "Deducción autonómica: Nacimiento o adopción": "300.00"
+  },
+  "renta_baja_dos_hijos": {
+   "Deducción autonómica: Arrendamiento de vivienda habitual": "300.00",
+   "Deducción autonómica: Contribuyentes con discapacidad": "150.00",
+   "Deducción autonómica: Material escolar y libros de texto": "240.00"
+  }
+ }
+}

@@ -1,12 +1,15 @@
 """Data-driven regional deductions: the generic routine, on synthetic deductions."""
 
+import json
+import os
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 
 from hacienda_gpt.tax.autonomicas import Bases, aplicar, evaluar
-from hacienda_gpt.tax.irpf import IRPFInput
-from hacienda_gpt.tax.params import DeduccionCalculable
+from hacienda_gpt.tax.irpf import IRPFInput, calcular_irpf
+from hacienda_gpt.tax.params import DeduccionCalculable, load_params
 
 D = Decimal
 
@@ -238,3 +241,80 @@ def test_savings_base_ceiling_and_phase_out_on_the_cap() -> None:
     assert evaluar(tope, _inp(alquiler_vivienda_habitual=D(1000)), _bases("22000"), conjunta=False).importe == D(150)
     importe = _pct(reduccion_progresiva={"desde_individual": "20000", "hasta_individual": "24000"})
     assert evaluar(importe, renta, _bases("22000"), conjunta=False).importe == D(225)
+
+
+# --------------------------------------------------------------------------- #
+# Regression: the encoded deductions of every community, through the calculator
+# --------------------------------------------------------------------------- #
+
+SNAPSHOT = Path(__file__).with_name("autonomicas_snapshot.json")
+
+# Taxpayers chosen to trigger as many encoded deductions as possible. Only inputs
+# that existed before the schema was extended, so the snapshot pins the old behaviour.
+ESCENARIOS: dict[str, dict[str, object]] = {
+    "joven_alquiler": dict(edad=28, rendimiento_trabajo_bruto=D(19000), cotizaciones_seguridad_social=D(1200),
+                           alquiler_vivienda_habitual=D(7200), gastos_deporte_cultura=D(600), gastos_salud=D(900)),
+    "joven_rural_vivienda": dict(edad=33, rendimiento_trabajo_bruto=D(24000), cotizaciones_seguridad_social=D(1500),
+                                 municipio_rural_o_despoblacion=True, vivienda_en_municipio_rural=True,
+                                 inversion_vivienda_habitual=D(8000), alquiler_vivienda_habitual=D(3000),
+                                 gastos_eficiencia_energetica=D(5000)),
+    "familia_nacimiento": dict(edad=36, rendimiento_trabajo_bruto=D(26000), cotizaciones_seguridad_social=D(1650),
+                               num_descendientes=2, num_descendientes_menores_3=1, hijos_nacidos_en_el_ejercicio=1,
+                               hijos_nacidos_ultimos_3_ejercicios=1, gastos_guarderia=D(2400),
+                               gastos_libros_texto=D(300), gastos_ensenanza_idiomas=D(800),
+                               num_hijos_gastos_educativos=1, cotizaciones_empleada_hogar=D(1800),
+                               gastos_cuidado_familiares=D(2000)),
+    "numerosa_conjunta": dict(edad=45, tributacion="conjunta_biparental", rendimiento_trabajo_bruto=D(34000),
+                              cotizaciones_seguridad_social=D(2150), num_descendientes=3, familia_numerosa=True,
+                              gastos_libros_texto=D(500), gastos_ensenanza_idiomas=D(1200),
+                              num_hijos_gastos_educativos=3, alquiler_vivienda_habitual=D(8400),
+                              donativos_autonomicos=D(400), menores_acogidos=1),
+    "numerosa_especial_compartida": dict(edad=41, rendimiento_trabajo_bruto=D(21000),
+                                         cotizaciones_seguridad_social=D(1330), num_descendientes=5,
+                                         num_descendientes_menores_3=2, hijos_nacidos_en_el_ejercicio=2,
+                                         familia_numerosa=True, familia_numerosa_especial=True,
+                                         descendientes_compartidos=True, gastos_guarderia=D(5000),
+                                         hijos_adoptados_en_el_ejercicio=1),
+    "monoparental": dict(edad=39, rendimiento_trabajo_bruto=D(17500), cotizaciones_seguridad_social=D(1110),
+                         tributacion="conjunta_monoparental", familia_monoparental=True, num_descendientes=1,
+                         num_descendientes_menores_3=1, gastos_guarderia=D(3000), alquiler_vivienda_habitual=D(6000),
+                         cotizaciones_empleada_hogar=D(1500)),
+    "mayor_discapacidad": dict(edad=78, grado_discapacidad=65, rendimiento_trabajo_bruto=D(15000), viudedad=True,
+                               num_ascendientes_mayores_65=1, num_ascendientes_mayores_75=1,
+                               num_familiares_discapacidad_a_cargo=1, gastos_cuidado_familiares=D(4000),
+                               cotizaciones_empleada_hogar=D(2200), gastos_salud=D(2500),
+                               alquiler_vivienda_habitual=D(5400)),
+    "inversor_renta_alta": dict(edad=50, rendimiento_trabajo_bruto=D(70000), cotizaciones_seguridad_social=D(4400),
+                                rendimiento_capital_mobiliario=D(2500), inversion_empresas_nueva_creacion=D(30000),
+                                donativos_autonomicos=D(3000), gastos_eficiencia_energetica=D(12000),
+                                gastos_deporte_cultura=D(1500), inversion_vivienda_habitual=D(15000)),
+    "renta_baja_dos_hijos": dict(edad=30, rendimiento_trabajo_bruto=D(13000), cotizaciones_seguridad_social=D(825),
+                                 num_descendientes=2, gastos_libros_texto=D(250), num_hijos_gastos_educativos=2,
+                                 alquiler_vivienda_habitual=D(4800), grado_discapacidad=33,
+                                 base_imponible_resto_unidad_familiar=D(9000)),
+}  # fmt: skip
+
+
+def _deducciones_autonomicas_de(comunidad: str, datos: dict[str, object]) -> dict[str, str]:
+    r = calcular_irpf(IRPFInput(ejercicio=2026, comunidad_autonoma=comunidad, **datos))
+    return {x.concepto: str(-x.importe) for x in r.lineas if x.concepto.startswith("Deducción autonómica")}
+
+
+def _todas() -> dict[str, dict[str, dict[str, str]]]:
+    return {
+        clave: {nombre: _deducciones_autonomicas_de(c.nombre, datos) for nombre, datos in ESCENARIOS.items()}
+        for clave, c in sorted(load_params(2026).comunidades.items())
+    }
+
+
+def test_encoded_deductions_of_every_community_compute_as_in_the_snapshot() -> None:
+    """Pins what the 131 deductions encoded before the schema extension give for fixed taxpayers.
+
+    After a deliberate change of the DATA, regenerate with
+    ``REGENERAR_SNAPSHOT_AUTONOMICAS=1 uv run pytest tests/tax/test_autonomicas.py -k snapshot`` and review the diff.
+    """
+    actual = _todas()
+    if os.environ.get("REGENERAR_SNAPSHOT_AUTONOMICAS"):
+        SNAPSHOT.write_text(json.dumps(actual, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    esperado = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
+    assert actual == esperado
