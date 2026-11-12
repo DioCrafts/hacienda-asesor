@@ -261,8 +261,12 @@ _ARTICULOS_RE = re.compile(r"\bart(?:iculo)?(s)?\.?\s*(?=\d)", re.IGNORECASE)
 _ITEM_RE = re.compile(rf"({_NUMERO})((?:\.(?:[a-z]\)|\d+\.?[ºª]|\d+|[a-z]+))*\)?)", re.IGNORECASE)
 _SEPARADOR_RE = re.compile(r"\s*(,|\by\b|\ba\b)\s*(?=\d)", re.IGNORECASE)
 _DISPOSICION_REF_RE = re.compile(
-    r"\bdisp(?:osicion|\.)\s+(adicional|transitoria|derogatoria|final)\s+(\d+|unica)", re.IGNORECASE
+    r"\bdisp(?:osicion|\.)\s+(adicional|transitoria|derogatoria|final)\s+(\d+|unica)"
+    # Not a provision of the law itself when it is "de la Ley 12/2023": that names the amending norm.
+    r"(?![\d.ªa]*\s*(?:\.\d+)?\s+(?:de\s+la|del)\s+(?:ley|real\s+decreto|decreto))",
+    re.IGNORECASE,
 )
+_PARENTESIS = re.compile(r"\([^()]*\)")
 
 
 def _rango(desde: str, hasta: str) -> list[str]:
@@ -277,6 +281,48 @@ def _rango(desde: str, hasta: str) -> list[str]:
     return [desde, hasta]
 
 
+_DISPOSICIONES_RE = re.compile(
+    r"\bdisposiciones\s+(adicional|transitoria|derogatoria|final)e?s\s+(\d+(?:\s*(?:,|y)\s*\d+)*)", re.IGNORECASE
+)
+
+
+def preceptos_de_analisis(texto: str) -> list[str]:
+    """Blocks of the amended law that a line of the BOE's analysis names, as keys of :func:`extraer_articulos`.
+
+    "los arts. 9 a 9 quinquies, 13 y la disposición adicional 5 de la Ley 8/2013" → 9, 9 bis…, 13, "da 5". Unlike a
+    source reference, everything named here belongs to the amended law. "determinados preceptos" names nothing.
+    """
+    plana = _sin_acentos(texto)
+    claves = _articulos_en(plana)
+    for match in re.finditer(
+        r"\bdisp(?:osicion|\.)\s+(adicional|transitoria|derogatoria|final)\s+(\d+|unica)", plana, re.IGNORECASE
+    ):
+        ordinal = match.group(2).lower()
+        claves.append(f"{_CLASES_DISPOSICION[match.group(1).lower()]} {int(ordinal) if ordinal.isdigit() else ordinal}")
+    for match in _DISPOSICIONES_RE.finditer(plana):
+        clase = _CLASES_DISPOSICION[match.group(1).lower()]
+        claves += [f"{clase} {int(n)}" for n in re.findall(r"\d+", match.group(2))]
+    return list(dict.fromkeys(claves))
+
+
+def _articulos_en(plana: str) -> list[str]:
+    encontrados: list[str] = []
+    for match in _ARTICULOS_RE.finditer(plana):
+        plural, posicion, anterior = bool(match.group(1)), match.end(), None
+        while True:
+            item = _ITEM_RE.match(plana, posicion)
+            if item is None:
+                break
+            base = " ".join(item.group(1).lower().split())
+            encontrados += _rango(anterior, base)[1:] if anterior is not None else [base]
+            separador = _SEPARADOR_RE.match(plana, item.end())
+            if separador is None or not plural:
+                break
+            anterior = base if separador.group(1).lower() == "a" else None
+            posicion = separador.end()
+    return encontrados
+
+
 def articulos_de_referencia(referencia: str) -> list[str]:
     """Blocks of the law a source reference names, as keys of :func:`extraer_articulos`.
 
@@ -285,28 +331,16 @@ def articulos_de_referencia(referencia: str) -> list[str]:
     adicional 61.ª" → "da 61". Only the part before a parenthesis or "redacción de…" is read: what follows names
     the amending norms, not the law.
     """
-    principal = _CORTE_REFERENCIA.split(_sin_acentos(referencia), maxsplit=1)[0]
+    plana = _sin_acentos(referencia)
+    principal = _CORTE_REFERENCIA.split(plana, maxsplit=1)[0]
     encontrados: list[tuple[int, str]] = []
-    for match in _DISPOSICION_REF_RE.finditer(principal):
+    # Provisions are looked for in the whole reference ("art. 23.2 en la redacción de… y disposición transitoria 38.ª").
+    for match in _DISPOSICION_REF_RE.finditer(_PARENTESIS.sub(lambda m: " " * len(m.group(0)), plana)):
         ordinal = match.group(2).lower()
         clave = f"{_CLASES_DISPOSICION[match.group(1).lower()]} {int(ordinal) if ordinal.isdigit() else ordinal}"
         encontrados.append((match.start(), clave))
-    for match in _ARTICULOS_RE.finditer(principal):
-        plural, posicion, anterior = bool(match.group(1)), match.end(), None
-        while True:
-            item = _ITEM_RE.match(principal, posicion)
-            if item is None:
-                break
-            base = " ".join(item.group(1).lower().split())
-            if anterior is not None:
-                encontrados += [(match.start(), b) for b in _rango(anterior, base)[1:]]
-            else:
-                encontrados.append((match.start(), base))
-            separador = _SEPARADOR_RE.match(principal, item.end())
-            if separador is None or not plural:
-                break
-            anterior = base if separador.group(1).lower() == "a" else None
-            posicion = separador.end()
+    primero = _ARTICULOS_RE.search(principal)
+    encontrados += [(primero.start() if primero else 0, base) for base in _articulos_en(principal)]
     return list(dict.fromkeys(clave for _, clave in sorted(encontrados, key=lambda par: par[0])))
 
 
@@ -447,7 +481,9 @@ def extraer_de_modificadora(pagina: str, bases: Iterable[str], *, ley: str = "")
     )
 
 
-_CON_EFECTOS_O_VIGOR = re.compile(r"entrada\s+en\s+vigor|entrar[aá]\s+en\s+vigor|con\s+efectos|surtir[aá]", re.IGNORECASE)
+_CON_EFECTOS_O_VIGOR = re.compile(
+    r"entrada\s+en\s+vigor|entrar[aá]\s+en\s+vigor|con\s+efectos|surtir[aá]", re.IGNORECASE
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -763,6 +799,7 @@ def hay_entero(ev: str, n: int, *, margen: int = 1) -> bool:
     return any(hay_numero(ev, Decimal(m)) or _hay_palabra(ev, m) for m in candidatos if m >= 0)
 
 
+_UNIDAD_FAMILIAR = re.compile(r"\bmiembros?\s+de\s+(?:la|su)\s+unidad\s+familiar\b", re.IGNORECASE)
 _MAYORIA_DE_EDAD = re.compile(r"\b(?:menor(?:es)?|mayor(?:es)?|mayoria)\s+de\s+edad\b", re.IGNORECASE)
 
 
@@ -839,6 +876,12 @@ def cifras_sin_respaldo(valor: BaseModel, ev: str, reglas: Reglas) -> Control:
                 control.fallos.append(f"{donde} = {n}: el grado no está en ninguna cita")
         elif n in (17, 18) and _MAYORIA_DE_EDAD.search(_sin_acentos(ev)):
             return  # "hijos menores de edad" is the law's way of printing 18
+        elif n in (17, 18) and _UNIDAD_FAMILIAR.search(_sin_acentos(ev)):
+            # The children of a "unidad familiar" are minors by its legal definition (art. 82 LIRPF), which the
+            # quoted law does not repeat: not a failure, but nothing a quote proves either.
+            control.revisar.append(
+                f"{donde} = {n}: la edad sale de la definición legal de unidad familiar, que la cita no reproduce"
+            )
         elif not hay_entero(ev, n):
             control.fallos.append(f"{donde} = {n}: el número no está en ninguna cita (ni en cifras ni en letras)")
 
@@ -924,7 +967,8 @@ def campos_numericos(modelo: type[BaseModel]) -> set[str]:
     return nombres
 
 
-_NUMERO_EN_TEXTO = re.compile(r"(?<![\w.,])\d[\d.]*(?:,\d+)?")
+# "110-2" after "art." is one label, not the figure 2.
+_NUMERO_EN_TEXTO = re.compile(r"(?<![\w.,])(?<!\d-)\d[\d.]*(?:,\d+)?")
 _REFERENCIA = re.compile(r"(?:art(?:ículo|iculo|\.)?|apartado|letra|ley|decreto|n\.º|núm\.|número)\s*$", re.IGNORECASE)
 
 

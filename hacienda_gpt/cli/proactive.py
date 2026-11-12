@@ -51,15 +51,18 @@ from hacienda_gpt.tax.recodificacion import (
     aplicar_propuesta,
     avisar_operador,
     confirmar,
+    control_de_lo_publicado,
     ejecutar,
     objetivo_de_ruta,
     objetivos_de_articulo,
+    objetivos_de_desglose,
     objetivos_de_rollover,
     objetivos_de_verificacion,
     pendientes_de_confirmar,
     rechazar_propuesta,
+    todos_los_objetivos,
 )
-from hacienda_gpt.tax.recodificacion.nucleo import ejercicios_en, leer_texto, resumen_de
+from hacienda_gpt.tax.recodificacion.nucleo import leer_texto, resumen_de
 from hacienda_gpt.tax.rollover import preparar_ejercicio
 from hacienda_gpt.tax.verificacion import cargar_y_verificar, leer_snapshot, url_de
 from hacienda_gpt.tax.vigencia_normas import estado_desde_xml, guardar_estados, leer_estados
@@ -253,6 +256,8 @@ def params_check(fail_on_stale: bool) -> None:
         raise SystemExit(1)
 
 
+REGISTRO_NOVEDADES = "_boe_novedades.json"
+ESTADO_PILOTO = "_params_autopilot.json"
 _SUMARIO_URL = "https://www.boe.es/datosabiertos/api/boe/sumario/{dia}"
 _XML_URL = "https://www.boe.es/diario_boe/xml.php?id={id}"
 _USER_AGENT = "hacienda-asesor/0.1 (novedades tributarias)"
@@ -492,16 +497,43 @@ def _fuentes_condicionadas(node: Any) -> set[str]:
     show_default=True,
     help="Avisar a los usuarios afectados por las de relevancia alta.",
 )
+@click.option(
+    "--autopilot/--no-autopilot",
+    default=None,
+    help="Tras revisar el día, releer los parámetros que toquen las normas detectadas (ver params-autopilot). "
+    "Por defecto, lo que diga RECODE_AUTOPILOT.",
+)
 @_DB_OPTION
-def boe_novedades(desde: date | None, hasta: date | None, output_dir: Path, notify: bool, db_path: str | None) -> None:
+def boe_novedades(
+    desde: date | None, hasta: date | None, output_dir: Path, notify: bool, autopilot: bool | None, db_path: str | None
+) -> None:
     """Busca en el BOE de cada día normas nuevas, estatales o autonómicas, que toquen impuestos.
 
     No usa ningún LLM: se guía por la clasificación por materias del propio BOE
     y por las normas que cada disposición modifica. Pensado para cron diario.
+    Con --autopilot (o RECODE_AUTOPILOT=true), si alguna modifica una ley de la
+    que salen parámetros de la calculadora, lanza a continuación el piloto de
+    parámetros, que sí puede usar el LLM.
     """
+    salida = _revisar_novedades(desde, hasta, output_dir, notify=notify, db_path=db_path)
+    if _env_bool("RECODE_AUTOPILOT") if autopilot is None else autopilot:
+        salida["piloto"] = _pilotar(output_dir)
+    click.echo(json.dumps(salida, ensure_ascii=False, indent=2, default=str))
+
+
+def _env_bool(nombre: str) -> bool:
+    import os
+
+    return os.environ.get(nombre, "").strip().lower() in ("1", "true", "yes", "si", "sí", "on")
+
+
+def _revisar_novedades(
+    desde: date | None, hasta: date | None, output_dir: Path, *, notify: bool, db_path: str | None
+) -> dict[str, Any]:
+    """One pass of the daily watch: read the days not seen yet, keep the registry and tell the users concerned."""
     output_dir.mkdir(parents=True, exist_ok=True)
     state_path = output_dir / "_boe_novedades_state.json"
-    registro_path = output_dir / "_boe_novedades.json"
+    registro_path = output_dir / REGISTRO_NOVEDADES
     state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else {}
     registro: dict[str, Any] = json.loads(registro_path.read_text(encoding="utf-8")) if registro_path.exists() else {}
 
@@ -538,33 +570,28 @@ def boe_novedades(desde: date | None, hasta: date | None, output_dir: Path, noti
     state["pendientes"] = [item.model_dump(mode="json") for item in revision.pendientes]
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
-    click.echo(
-        json.dumps(
+    return {
+        "dias_revisados": len(dias) - len(revision.dias_sin_boletin),
+        "novedades": len(revision.novedades),
+        "nuevas_en_el_registro": nuevas,
+        "pendientes_de_analisis": len(revision.pendientes),
+        "notificaciones": notificaciones,
+        "errores": revision.errores,
+        "modifican_parametros": sorted({n.boe_id for n in revision.novedades if any(m.parametros for m in n.modifica)}),
+        "destacadas": [
             {
-                "dias_revisados": len(dias) - len(revision.dias_sin_boletin),
-                "novedades": len(revision.novedades),
-                "nuevas_en_el_registro": nuevas,
-                "pendientes_de_analisis": len(revision.pendientes),
-                "notificaciones": notificaciones,
-                "errores": revision.errores,
-                "destacadas": [
-                    {
-                        "boe_id": n.boe_id,
-                        "fecha": n.fecha.isoformat(),
-                        "ambito": n.comunidad_nombre or "Estado",
-                        "tributos": n.tributos,
-                        "modifica_vigiladas": [m.boe_id for m in n.modifica],
-                        "en_catalogo": n.en_catalogo,
-                        "titulo": n.titulo[:140],
-                    }
-                    for n in revision.novedades
-                    if n.relevancia == "alta"
-                ],
-            },
-            ensure_ascii=False,
-            indent=2,
-        )
-    )
+                "boe_id": n.boe_id,
+                "fecha": n.fecha.isoformat(),
+                "ambito": n.comunidad_nombre or "Estado",
+                "tributos": n.tributos,
+                "modifica_vigiladas": [m.boe_id for m in n.modifica],
+                "en_catalogo": n.en_catalogo,
+                "titulo": n.titulo[:140],
+            }
+            for n in revision.novedades
+            if n.relevancia == "alta"
+        ],
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -693,6 +720,7 @@ def _recodificar(
     salida: dict[str, Any] = {
         "grupos_a_revisar": len(hallazgo.objetivos),
         "sin_adaptador": hallazgo.sin_adaptador,
+        "fuera_de_alcance": hallazgo.fuera_de_alcance,
         "errores": list(hallazgo.errores),
     }
     if dry_run:
@@ -736,7 +764,25 @@ def _recodificar(
 @click.option(
     "--ruta", default=None, help="Revisar este grupo aunque no falle (p. ej. comunidades/galicia/escala_general)."
 )
-@click.option("--tipo", "tipos", multiple=True, help="Solo grupos de este tipo (deduccion_autonomica, escala).")
+@click.option(
+    "--tipo",
+    "tipos",
+    multiple=True,
+    help="Solo grupos de este tipo: deduccion_autonomica, escala, cifras (todos los grupos de cifras) o uno concreto "
+    "(cifras:minimos). Los de otros ficheros llevan el nombre que les da su adaptador.",
+)
+@click.option(
+    "--desglosar",
+    is_flag=True,
+    help="Con --comunidad y --articulo: el lector lista las deducciones que contiene el artículo y cada una que aún "
+    "no esté codificada se propone como nueva (para artículos que crean deducciones).",
+)
+@click.option(
+    "--sin-consolidar",
+    is_flag=True,
+    help="Con --norma: leer la nueva redacción del texto de la propia norma modificadora, porque el BOE aún no la ha "
+    "consolidado. La propuesta nunca se auto-aplica.",
+)
 @click.option(
     "--version",
     default=None,
@@ -763,6 +809,8 @@ def params_recode(
     articulo: str | None,
     ruta: str | None,
     tipos: tuple[str, ...],
+    desglosar: bool,
+    sin_consolidar: bool,
     version: str | None,
     norma: str | None,
     snapshot_dir: Path | None,
@@ -785,14 +833,43 @@ def params_recode(
     """
     data_dir = data_dir or DATA_DIR
     texto_de = leer_snapshot(snapshot_dir) if snapshot_dir else _texto_del_boe()
-    pedidos = list(ejercicios) or ejercicios_en(data_dir, "irpf_{ejercicio}.json")
+    # None: every year each parameter file has (the files of different taxes do not cover the same years).
+    pedidos = list(ejercicios) or None
     explicito = ruta is not None or (articulo is not None and comunidad not in (None, "estado"))
     if version is not None and not explicito:
         raise click.ClickException("--version solo se admite con --ruta, o con --comunidad y --articulo.")
+    if sin_consolidar and (norma is None or not explicito):
+        raise click.ClickException(
+            "--sin-consolidar necesita --norma y un grupo concreto (--ruta, o --comunidad y --articulo)."
+        )
+    if desglosar and (articulo is None or comunidad in (None, "estado")):
+        raise click.ClickException("--desglosar necesita --comunidad y --articulo.")
+    desglose: dict[str, Any] | None = None
     try:
         if ruta is not None:
             partes = ruta.strip("/").split("/")
             hallazgo = Hallazgo(objetivos=[objetivo_de_ruta(pedidos, partes, data_dir=data_dir, version=version)])
+        elif desglosar:
+            assert comunidad is not None and articulo is not None
+            if dry_run:
+                hallazgo = objetivos_de_articulo(
+                    pedidos, comunidad=comunidad, articulo=articulo, data_dir=data_dir, version=version
+                )
+            elif not hay_credenciales_llm():
+                hallazgo = Hallazgo(errores=["No hay credenciales del proveedor de LLM: no se puede desglosar."])
+            else:
+                hallazgo, hecho = objetivos_de_desglose(
+                    pedidos,
+                    comunidad=comunidad,
+                    articulo=articulo,
+                    lector=_proveedores_de_recodificacion()[0],
+                    texto_de=texto_de,
+                    data_dir=data_dir,
+                    version=version,
+                    norma_texto=norma if sin_consolidar else None,
+                    ley_citada=_ley_citada_de(comunidad, data_dir) if sin_consolidar else "",
+                )
+                desglose = hecho.model_dump() if hecho is not None else None
         elif articulo is not None and comunidad not in (None, "estado"):
             assert comunidad is not None
             hallazgo = objetivos_de_articulo(
@@ -805,8 +882,14 @@ def params_recode(
     except RecodificacionError as exc:
         raise click.ClickException(str(exc)) from exc
     if norma is not None:
+        from hacienda_gpt.tax.fuentes import norma_de_parametros
+
         for objetivo in hallazgo.objetivos:
             objetivo.anotaciones = _anotaciones_de(norma, objetivo.boe_id)
+            if sin_consolidar:
+                fuente = norma_de_parametros(objetivo.boe_id)
+                objetivo.norma_texto = norma
+                objetivo.ley_citada = _numero_de_ley(fuente.norma) if fuente is not None else ""
     salida = _recodificar(
         hallazgo,
         texto_de=texto_de,
@@ -819,8 +902,275 @@ def params_recode(
         notify=notify,
         dry_run=dry_run,
     )
+    if desglose is not None:
+        salida["desglose"] = desglose
     click.echo(json.dumps(salida, ensure_ascii=False, indent=2, default=str))
     if salida.get("presupuesto_agotado") or salida["errores"]:
+        raise SystemExit(1)
+
+
+def _numero_de_ley(nombre: str) -> str:
+    """ "35/2006" for "Ley 35/2006, de 28 de noviembre…": how an amending norm cites the law it amends."""
+    import re
+
+    match = re.search(r"\b\d+/\d{4}\b", nombre)
+    return match.group(0) if match else ""
+
+
+def _ley_citada_de(comunidad: str, data_dir: Path) -> str:
+    return _numero_de_ley(next((nombre for clave, _, nombre in _leyes_del_irpf(data_dir) if clave == comunidad), ""))
+
+
+def _leyes_del_irpf(data_dir: Path) -> list[tuple[str | None, str, str]]:
+    """(community key or None, BOE id, name) of every source law of the IRPF files under ``data_dir``."""
+    out: dict[str, tuple[str | None, str, str]] = {}
+    for path in sorted(data_dir.glob("irpf_*.json")):
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        fuentes = [(None, raw["fuente_principal"])]
+        fuentes += [(clave, c["fuente_principal"]) for clave, c in raw.get("comunidades", {}).items()]
+        for clave, fuente in fuentes:
+            out[fuente["boe_id"]] = (clave, fuente["boe_id"], fuente.get("norma", ""))
+    return list(out.values())
+
+
+def _pilotar(
+    output_dir: Path,
+    *,
+    texto_de: Any = None,
+    data_dir: Path | None = None,
+    proposals_dir: Path | None = None,
+    max_iter: int | None = None,
+    max_grupos: int | None = None,
+    auto_aplicar: bool | None = None,
+    notify: bool = True,
+    usar_llm: bool = True,
+) -> dict[str, Any]:
+    """One run of the parameters autopilot over the novelties registry kept under ``output_dir``."""
+    from hacienda_gpt.tax.recodificacion import piloto
+
+    data_dir = data_dir or DATA_DIR
+    registro_path = output_dir / REGISTRO_NOVEDADES
+    registro = json.loads(registro_path.read_text(encoding="utf-8")) if registro_path.exists() else {}
+    del_irpf = _leyes_del_irpf(data_dir)
+    leyes = {norma.boe_id: norma.norma for norma in normas_de_parametros()} if data_dir == DATA_DIR else {}
+    leyes.update({boe_id: nombre for _, boe_id, nombre in del_irpf})
+    comunidades = {boe_id: clave for clave, boe_id, _ in del_irpf if clave is not None}
+    lector = revisor = None
+    motivo = "No hay credenciales del proveedor de LLM configurado: no se ha recodificado nada."
+    if not usar_llm:
+        motivo = "Ejecución sin modelo (--no-llm): no se ha recodificado nada."
+    elif hay_credenciales_llm():
+        lector, revisor = _proveedores_de_recodificacion()
+    almacen = _almacen(proposals_dir)
+    estado_path = output_dir / ESTADO_PILOTO
+    try:
+        informe, nuevas = piloto.pilotar(
+            registro,
+            leyes=leyes,
+            comunidades=comunidades,
+            texto_de=texto_de or _texto_del_boe(),
+            estado_path=estado_path,
+            almacen=almacen,
+            data_dir=data_dir,
+            lector=lector,
+            revisor=revisor,
+            max_iter=max_iter or settings.RECODE_MAX_ITER,
+            max_grupos=max_grupos or settings.RECODE_MAX_PER_RUN,
+            auto_aplicar=settings.RECODE_AUTO_APPLY if auto_aplicar is None else auto_aplicar,
+            hoy=hoy_en_espana(),
+            motivo_sin_modelo=motivo,
+        )
+    except RecodificacionError as exc:
+        raise click.ClickException(str(exc)) from exc
+    # The same unchanged situation is announced once, not every day.
+    estado = piloto.leer_estado(estado_path)
+    huella = piloto.huella_del_parte(informe)
+    if notify and informe.hay_algo and huella != estado.ultimo_parte:
+        cuerpo = piloto.texto_del_parte(informe, nuevas)
+        for canal in _canales_del_operador():
+            try:
+                canal.enviar(piloto.ASUNTO_PARTE, cuerpo)
+            except Exception as exc:  # the report is in the output and the proposals on disk either way
+                logger.warning(
+                    "Could not send the autopilot report on %s: %s: %s", canal.nombre, type(exc).__name__, exc
+                )
+            else:
+                informe.avisado_por.append(canal.nombre)
+        if informe.avisado_por:
+            for propuesta in nuevas:
+                almacen.guardar(
+                    propuesta.model_copy(update={"avisada_por": sorted({*propuesta.avisada_por, *informe.avisado_por})})
+                )
+            estado.ultimo_parte = huella
+            piloto.guardar_estado(estado_path, estado)
+    return informe.model_dump()
+
+
+@cli.command("params-autopilot")
+@click.option(
+    "--output-dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    default=Path("./data/html"),
+    show_default=True,
+    help="Donde boe-novedades guarda su registro; aquí queda también el estado del piloto.",
+)
+@click.option(
+    "--detect/--no-detect",
+    default=True,
+    show_default=True,
+    help="Revisar antes el BOE de los días pendientes (lo mismo que boe-novedades).",
+)
+@click.option("--llm/--no-llm", "usar_llm", default=True, show_default=True, help="Permitir llamadas al LLM.")
+@click.option("--max-iter", type=int, default=None, help="Pasadas del lector por grupo (por defecto, RECODE_MAX_ITER).")
+@click.option("--max-grupos", type=int, default=None, help="Grupos por ejecución (por defecto, RECODE_MAX_PER_RUN).")
+@click.option("--auto-apply/--no-auto-apply", default=None, help="Aplicar sin esperar lo que no deje nada por revisar.")
+@click.option("--notify/--no-notify", default=True, show_default=True, help="Avisar al operador y a los usuarios.")
+@click.option("--fail-on-error", is_flag=True, help="Terminar con código 1 si hubo errores o se agotó el presupuesto.")
+@_SNAPSHOT_OPTION
+@_PROPOSALS_OPTION
+@_DATA_OPTION
+@_DB_OPTION
+def params_autopilot(
+    output_dir: Path,
+    detect: bool,
+    usar_llm: bool,
+    max_iter: int | None,
+    max_grupos: int | None,
+    auto_apply: bool | None,
+    notify: bool,
+    fail_on_error: bool,
+    snapshot_dir: Path | None,
+    proposals_dir: Path | None,
+    data_dir: Path | None,
+    db_path: str | None,
+) -> None:
+    """Mantiene los parámetros al día sin que nadie lo pida: detectar → verificar → recodificar → avisar.
+
+    1) Lee el BOE de los días pendientes (como boe-novedades). 2) Para cada norma
+    que modifica una ley de la que salen parámetros, localiza los grupos de los
+    artículos que nombra: si el BOE ya la ha consolidado los relee del texto
+    consolidado; si no, del texto de la propia norma (propuesta que nunca se
+    auto-aplica) y los relee otra vez cuando llega la consolidación. 3) Verifica
+    todos los ficheros de parámetros contra el texto vigente. 4) Lanza el bucle
+    de recodificación sobre lo anterior, con los topes de RECODE_MAX_PER_RUN y
+    del presupuesto diario, y aplica lo que no necesita a nadie si
+    RECODE_AUTO_APPLY está activo. 5) Envía un parte al operador.
+
+    Sin credenciales de LLM hace igualmente 1, 2 y 3 y dice qué hay que releer.
+    Se puede repetir sin coste: no vuelve a pagar por un grupo ya propuesto
+    para el mismo texto ni repite un parte que no ha cambiado.
+    """
+    salida: dict[str, Any] = {}
+    if detect:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            salida["novedades"] = _revisar_novedades(None, None, output_dir, notify=notify, db_path=db_path)
+        except Exception as exc:  # the BOE being down must not stop the verification of what is already known
+            salida["novedades"] = {"errores": [f"no se pudo revisar el BOE del día: {type(exc).__name__}: {exc}"]}
+    salida["piloto"] = _pilotar(
+        output_dir,
+        texto_de=leer_snapshot(snapshot_dir) if snapshot_dir else None,
+        data_dir=data_dir,
+        proposals_dir=proposals_dir,
+        max_iter=max_iter,
+        max_grupos=max_grupos,
+        auto_aplicar=auto_apply,
+        notify=notify,
+        usar_llm=usar_llm,
+    )
+    click.echo(json.dumps(salida, ensure_ascii=False, indent=2, default=str))
+    piloto_ = salida["piloto"]
+    agotado = (piloto_.get("recodificacion") or {}).get("presupuesto_agotado")
+    if fail_on_error and (piloto_["errores"] or agotado or salida.get("novedades", {}).get("errores")):
+        raise SystemExit(1)
+
+
+@cli.command("params-gate")
+@click.option("--ejercicio", "ejercicios", type=int, multiple=True, help="Ejercicio a comprobar (por defecto, todos).")
+@_SNAPSHOT_OPTION
+@click.option("--offline", is_flag=True, help="Solo lo que no necesita la ley (modelo y cifras dentro de las citas).")
+@_DATA_OPTION
+def params_gate(ejercicios: tuple[int, ...], snapshot_dir: Path | None, offline: bool, data_dir: Path | None) -> None:
+    """Pasa por el control determinista del bucle todas las deducciones autonómicas publicadas, con sus citas.
+
+    Es el mismo control que debe superar una propuesta: modelo válido, cada cifra
+    dentro de una cita, ningún número en lo que lee el usuario que la ley no
+    imprima y —salvo con --offline— cada cita literal y de una pieza en los
+    artículos que el bucle leería. Sin LLM. Termina con código 1 si alguna falla.
+    """
+    texto_de = None if offline else (leer_snapshot(snapshot_dir) if snapshot_dir else _texto_del_boe())
+    fallidas = control_de_lo_publicado(texto_de, data_dir=data_dir or DATA_DIR, ejercicios=list(ejercicios) or None)
+    click.echo(json.dumps({"fallan": len(fallidas), "deducciones": fallidas}, ensure_ascii=False, indent=2))
+    if fallidas:
+        raise SystemExit(1)
+
+
+@cli.command("params-eval")
+@click.option("-n", "cuantos", type=int, default=10, show_default=True, help="Cuántos grupos publicados evaluar.")
+@click.option(
+    "--semilla", type=int, default=0, show_default=True, help="Semilla del sorteo (misma semilla, mismos grupos)."
+)
+@click.option("--tipo", "tipos", multiple=True, help="Solo grupos de este tipo (por defecto, deduccion_autonomica).")
+@click.option("--comunidad", default=None, help="Solo esta comunidad (su clave) o «estado».")
+@click.option("--ruta", "rutas", multiple=True, help="Evaluar este grupo concreto (repetible) en vez de sortear.")
+@click.option("--max-iter", type=int, default=None, help="Pasadas del lector por grupo (por defecto, RECODE_MAX_ITER).")
+@click.option(
+    "--usd-por-millon", type=float, default=None, help="Precio por millón de tokens de entrada, para estimar el coste."
+)
+@click.option("--dry-run", is_flag=True, help="Decir qué grupos se evaluarían y cuánto texto se enviaría, sin LLM.")
+@_SNAPSHOT_OPTION
+@_DATA_OPTION
+def params_eval(
+    cuantos: int,
+    semilla: int,
+    tipos: tuple[str, ...],
+    comunidad: str | None,
+    rutas: tuple[str, ...],
+    max_iter: int | None,
+    usd_por_millon: float | None,
+    dry_run: bool,
+    snapshot_dir: Path | None,
+    data_dir: Path | None,
+) -> None:
+    """Mide el bucle contra codificaciones ya publicadas: las oculta, las hace releer de la ley y compara.
+
+    Toma N grupos de los ficheros de parámetros (deducciones autonómicas por
+    defecto), oculta al lector su codificación y sus citas, lanza el bucle normal
+    (mismo control, mismo revisor) y compara el resultado campo a campo con la
+    codificación humana. No escribe nada en los parámetros ni guarda propuestas.
+    Sirve para decidir, con tu modelo real, si activar RECODE_AUTO_APPLY.
+    """
+    from hacienda_gpt.tax.recodificacion import evaluacion
+
+    data_dir = data_dir or DATA_DIR
+    texto_de = leer_snapshot(snapshot_dir) if snapshot_dir else _texto_del_boe()
+    try:
+        if rutas:
+            elegidos = [objetivo_de_ruta(None, r.strip("/").split("/"), data_dir=data_dir) for r in rutas]
+        else:
+            todos = todos_los_objetivos(data_dir=data_dir)
+            elegidos = evaluacion.seleccionar(
+                todos.objetivos, cuantos, semilla=semilla, tipos=tipos or ["deduccion_autonomica"], ambito=comunidad
+            )
+    except RecodificacionError as exc:
+        raise click.ClickException(str(exc)) from exc
+    if dry_run:
+        click.echo(json.dumps({"grupos": [_estimacion(o, texto_de) for o in elegidos]}, ensure_ascii=False, indent=2))
+        return
+    if not hay_credenciales_llm():
+        raise click.ClickException("No hay credenciales del proveedor de LLM configurado: no se puede evaluar.")
+    lector, revisor = _proveedores_de_recodificacion()
+    resultado = evaluacion.evaluar(
+        elegidos,
+        lector=lector,
+        revisor=revisor,
+        texto_de=texto_de,
+        data_dir=data_dir,
+        max_iter=max_iter or settings.RECODE_MAX_ITER,
+        usd_por_millon_de_tokens=usd_por_millon,
+    )
+    click.echo(resultado.model_dump_json(indent=2))
+    if resultado.interrumpida:
         raise SystemExit(1)
 
 

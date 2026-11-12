@@ -18,9 +18,9 @@ effects date printed in a quote):
 
 Limits that are stated to the operator instead of hidden:
 
-* the loop reads ARTICLES of ONE law. A group may also rest on quotes of another law, or of a disposition, a preamble
-  or a ministerial order: those quotes are *inherited* untouched, a figure that only they print cannot change, and a
-  proposal for such a group is always left to a person;
+* the loop reads the articles and provisions of ONE law. A group may also rest on quotes of another law, of a
+  preamble or of a ministerial order: those quotes are *inherited* untouched, a figure that only they print cannot
+  change, and a proposal for such a group is always left to a person;
 * a group no calculator turns into an amount has no test cases: it is always left to a person as well.
 """
 
@@ -46,8 +46,14 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 from hacienda_gpt.tax import (
     autonomos_params as autonomos_mod,
+)
+from hacienda_gpt.tax import (
     patrimonio_params as patrimonio_mod,
+)
+from hacienda_gpt.tax import (
     sociedades_params as sociedades_mod,
+)
+from hacienda_gpt.tax import (
     sucesiones_params as isd_mod,
 )
 from hacienda_gpt.tax.params import DATA_DIR
@@ -58,13 +64,15 @@ from hacienda_gpt.tax.recodificacion.control import (
     MIN_CITA,
     Control,
     Reglas,
-    articulo_base,
+    articulos_de_referencia,
     campos_numericos,
     cifras_sin_respaldo,
+    clave_de_disposicion,
     extraer_articulos,
     lineas_de,
     notas_de_cifra_derivada,
     numeros_de_texto_sin_respaldo,
+    ruta_de_etiqueta,
 )
 from hacienda_gpt.tax.recodificacion.nucleo import (
     Adaptador,
@@ -121,7 +129,8 @@ class Familia:
     # Fields whose notation the generic walker does not know (a coefficient "1,0000", a percentage in a table cell
     # with no sign): for them the file's own check, which finds every figure as a whole token, has the last word.
     tolerados: frozenset[str]
-    comprobar: Callable[[Any], list[str]]
+    # The file's own self-check: (validated file, path of the only group of interest or None for all) -> problems.
+    comprobar: Callable[[Any, Sequence[str] | None], list[str]]
     # Prefix the self-check gives to the problems of the group at a path.
     prefijo: Callable[[Sequence[str]], str]
     calculos: dict[str, Calculo]
@@ -198,7 +207,9 @@ def _en_modelo(params: Any, ruta: Sequence[str]) -> Any:
 # --- self-employed --------------------------------------------------------- #
 
 
-def _calculo(modulo: str, entrada: str, funcion: str) -> Callable[[], tuple[type[BaseModel], Callable[[Any, Any], Any]]]:
+def _calculo(
+    modulo: str, entrada: str, funcion: str
+) -> Callable[[], tuple[type[BaseModel], Callable[[Any, Any], Any]]]:
     def cargar() -> tuple[type[BaseModel], Callable[[Any, Any], Any]]:
         import importlib
 
@@ -240,8 +251,8 @@ def _retencion() -> tuple[type[BaseModel], Callable[[Any, Any], Any]]:
     return RetencionInput, calcular
 
 
-def _problemas(comprobar: Callable[..., list[str]]) -> Callable[[Any], list[str]]:
-    return lambda params: comprobar(params, None)
+def _problemas(comprobar: Callable[..., list[str]]) -> Callable[[Any, Sequence[str] | None], list[str]]:
+    return lambda params, ruta: comprobar(params, None)
 
 
 AUTONOMOS = Familia(
@@ -377,7 +388,14 @@ SOCIEDADES = Familia(
             }
         ),
         ignorar=frozenset(
-            {*_PROCEDENCIA, "anos_adicion", "anos_mantenimiento", "anos_pendientes", "base_numerador", "base_denominador"}
+            {
+                *_PROCEDENCIA,
+                "anos_adicion",
+                "anos_mantenimiento",
+                "anos_pendientes",
+                "base_numerador",
+                "base_denominador",
+            }
         ),
     ),
     cuentas=frozenset({"anos_adicion", "anos_mantenimiento", "anos_pendientes", "base_numerador", "base_denominador"}),
@@ -466,6 +484,15 @@ def _isd() -> tuple[type[BaseModel], Callable[[Any, Any], Any]]:
     return BeneficiarioISD, calcular_isd
 
 
+def _problemas_isd(params: Any, ruta: Sequence[str] | None) -> list[str]:
+    """The ISD self-check; for one group, only over the rules of its legislator (the whole file takes far longer)."""
+    if ruta is None:
+        return isd_mod.comprobar_evidencias(params)
+    nombre = "estatal" if ruta[0] == "estatal" else ruta[1]
+    fuentes = set(params.fuentes_principales) | set(params.fuentes_complementarias)
+    return isd_mod.comprobar_normativa(nombre, params.normativas()[nombre], None, fuentes)
+
+
 def _prefijo_isd(ruta: Sequence[str]) -> str:
     resto = ruta[1:] if ruta[0] == "estatal" else ruta[2:]
     return f"{ruta[0] if ruta[0] == 'estatal' else ruta[1]}.{'.'.join(resto)} ("
@@ -529,7 +556,7 @@ ISD = Familia(
             "discapacidad_menor_de",
         }
     ),
-    comprobar=_problemas(isd_mod.comprobar_evidencias),
+    comprobar=_problemas_isd,
     prefijo=_prefijo_isd,
     calculos={
         "isd": Calculo(
@@ -556,17 +583,47 @@ def familia_de(clave: str) -> Familia:
 # Evidence
 # --------------------------------------------------------------------------- #
 
-_NO_ARTICULO = re.compile(r"\s*(?:disposici|anexo|pre[aá]mbulo|modelo|nota)", re.IGNORECASE)
+_NO_ARTICULO = re.compile(r"\s*(?:anexo|pre[aá]mbulo|modelo|nota)", re.IGNORECASE)
 _MILLONES = re.compile(r"(?<![\d.,])(\d{1,3})\s+mill(?:ón|ones)\b")
 
 
+_DISPOSICION_EN_LETRAS = re.compile(
+    r"\s*disp(?:osici[oó]n|\.)\s+(adicional|transitoria|derogatoria|final)\s+([a-záéíóúñ]+(?:\s+[a-záéíóúñ]+)?)",
+    re.IGNORECASE,
+)
+
+
+def bloques_de(etiqueta: str) -> list[str]:
+    """Blocks of its law a quote labelled ``etiqueta`` is read from, as ``control.extraer_articulos`` names them.
+
+    "art. 4.Nueve Ley 19/1991" -> ["4.nueve"] (the apartado matters only in a very long article), "disposición
+    transitoria 44.ª.1 LIS" -> ["dt 44"]; an annex, a preamble or a form -> [] (nothing the loop can re-read).
+    """
+    if _NO_ARTICULO.match(etiqueta):
+        return []
+    claves = articulos_de_referencia(etiqueta)
+    if not claves:
+        # "disp. adicional primera DLeg 1/2005": the ordinal in words, as the BOE heads the provision.
+        en_letras = _DISPOSICION_EN_LETRAS.match(etiqueta)
+        for ordinal in (en_letras.group(2), en_letras.group(2).split()[0]) if en_letras else ():
+            clave = clave_de_disposicion(f"Disposición {en_letras.group(1).lower()} {ordinal}.")  # type: ignore[union-attr]
+            if clave is not None:
+                return [clave]
+    ruta = ruta_de_etiqueta(etiqueta)
+    if len(claves) == 1 and ruta is not None and ruta.split(".")[0] == claves[0]:
+        return [ruta]
+    return claves
+
+
 def es_legible(etiqueta: str) -> bool:
-    """Is a quote labelled ``etiqueta`` read from an ARTICLE (what the loop can re-read)?"""
-    return articulo_base(etiqueta) is not None and not _NO_ARTICULO.match(etiqueta)
+    """Is a quote labelled ``etiqueta`` read from an article or a provision (what the loop can re-read)?"""
+    return bool(bloques_de(etiqueta))
 
 
 _MILES_CON_ESPACIO = re.compile(r"(?<![\d.,])\d{1,3}(?: \d{3})+(?![\d.,])")
-_NORMA_CITADA = re.compile(r"\b\d+/(?:19|20)\d{2}\b")
+_NORMA_CITADA = re.compile(
+    r"\b\d+/(?:19|20)\d{2}\b|\b(?:arts?\.|art[ií]culos?)\s*\d+(?:-\d+)?(?:\s*(?:,|y|a)\s*\d+(?:-\d+)?)*"
+)
 
 
 def _evidencia_normalizada(citas: Iterable[str]) -> str:
@@ -582,7 +639,7 @@ def _evidencia_normalizada(citas: Iterable[str]) -> str:
 
 
 def _sin_normas_citadas(texto: str) -> str:
-    """A user-facing sentence without the numbers that only name a norm ("Ley 22/2009")."""
+    """A user-facing sentence without the numbers that only name a norm or its articles ("Ley 22/2009", "arts. 131-5 y 132-2")."""
     return _NORMA_CITADA.sub("", texto)
 
 
@@ -638,7 +695,8 @@ class GrupoConEvidencia(Adaptador):
     def __init__(self, familia: Familia, modelo: type[BaseModel]) -> None:
         self.familia = familia
         self.modelo = modelo
-        self.tipo = f"{familia.clave}.{modelo.__name__.lstrip('_')}"
+        # "<family>:<model>": ``--tipo sociedades`` asks for the whole family, as with the IRPF's "cifras:…" kinds.
+        self.tipo = f"{familia.clave}:{modelo.__name__.lstrip('_')}"
         self.fichero = familia.fichero
         self.evaluable = modelo.__name__ not in familia.sin_evaluador
         self.min_casos = 2 if self.evaluable else 0
@@ -679,13 +737,13 @@ class GrupoConEvidencia(Adaptador):
             + (" and without the `fuente` of a nested scale" if self._con_fuente_anidada() else "")
             + ": the program writes those. Keep every other field of the previous encoding that the text still "
             "supports; change only what the text changed.",
-            "- Fractions for percentages (15 % -> \"0.15\"; a table cell \"0,21\" of a rate column -> \"0.0021\"), "
+            '- Fractions for percentages (15 % -> "0.15"; a table cell "0,21" of a rate column -> "0.0021"), '
             "amounts in euros as the law prints them, without rounding.",
             "- Quotes: repeat VERBATIM every passage the previous encoding relied on that is still in the text and "
             "still supports the group (they are listed under «Citas en las que se apoyaba»), including those that "
             "carry no figure; a previous quote of this law you do not repeat is dropped. Add the passages that print "
             "any figure you change. A table is quoted row by row or as one passage, cells in reading order.",
-            "- The previous encoding may also rest on quotes of OTHER laws or of dispositions that are not shown to "
+            "- The previous encoding may also rest on quotes of OTHER laws or of annexes that are not shown to "
             "you: they are kept as they are, and a figure that only they support must keep its value.",
         ]
         if "tramos" in self.modelo.model_fields or self._con_fuente_anidada():
@@ -704,7 +762,7 @@ class GrupoConEvidencia(Adaptador):
             )
         lineas.append(
             "- If the text no longer fits the schema (a new condition with no field, a figure that became a "
-            "formula), answer \"no_calculable\": a person will look at it."
+            'formula), answer "no_calculable": a person will look at it.'
         )
         return "\n".join(lineas) + "\n"
 
@@ -901,19 +959,46 @@ class GrupoConEvidencia(Adaptador):
             except ValidationError as exc:
                 control.fallos += _errores(exc)
                 return grupo, control, nuevas, heredadas
-            control.fallos += [
-                f"{ruta}: ninguna cita imprime la cifra de una forma que el autocontrol del fichero sepa leer"
-                for ruta in self._cifras(modelo, evidencia)
-            ]
+            # A figure left without a spelling is reported by the file's own check, run on the whole candidate.
+            self._cifras(modelo, evidencia)
         return grupo, control, nuevas, heredadas
+
+    # -- what the generic commands ask an adapter about itself ------------- #
+
+    def grupos(self, raw: dict[str, Any]) -> list[list[str]]:
+        rutas = rutas_de_grupos(raw)
+        if not rutas:
+            return []
+        try:
+            params = self.familia.raiz.model_validate(raw)
+        except ValidationError:
+            return []
+        return [ruta for ruta in rutas if type(_en_modelo(params, ruta)) is self.modelo]
+
+    def objetivo(
+        self,
+        ruta: list[str],
+        ficheros: dict[int, dict[str, Any]],
+        *,
+        data_dir: Path,
+        origen: str,
+        motivo: Sequence[str] = (),
+        version: str | None = None,
+        anotaciones: str = "",
+    ) -> Objetivo:
+        return construir_objetivo(
+            self.familia, ruta, ficheros, origen=origen, motivo=motivo, version=version, anotaciones=anotaciones
+        )
 
     # -- gate ------------------------------------------------------------- #
 
     def _fichero_de(self, ejercicio: int, datos: dict[int, Any]) -> dict[str, Any] | None:
-        if ejercicio in datos and isinstance(datos[ejercicio], dict):
-            return datos[ejercicio]
+        propio = datos.get(ejercicio)
+        if isinstance(propio, dict):
+            return propio
         path = DATA_DIR / self.fichero.format(ejercicio=ejercicio)
-        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+        leido: dict[str, Any] | None = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+        return leido
 
     def controlar(
         self, valor: Any, citas: list[str], objetivo: Objetivo, *, efectos_desde: date | None, datos: dict[int, Any]
@@ -1006,7 +1091,9 @@ class GrupoConEvidencia(Adaptador):
             return control, None
 
         # 1. Every figure inside a quote: the type-driven walker, over the quotes re-read now and over all of them.
-        del_fichero = [p for p in familia.comprobar(params) if _es_del_grupo(p, familia.prefijo(objetivo.ruta))]
+        del_fichero = [
+            p for p in familia.comprobar(params, objetivo.ruta) if _es_del_grupo(p, familia.prefijo(objetivo.ruta))
+        ]
         todas = _evidencia_normalizada(e["cita"] for e in [*nuevas, *heredadas])
         solo_nuevas = _evidencia_normalizada(e["cita"] for e in nuevas)
         con_todas = cifras_sin_respaldo(modelo, todas, familia.reglas)
@@ -1028,7 +1115,7 @@ class GrupoConEvidencia(Adaptador):
         if heredadas:
             etiquetas = "; ".join(dict.fromkeys(f"{e['articulo']} [{e['boe_id']}]" for e in heredadas))
             control.revisar.append(
-                f"el grupo se apoya también en {len(heredadas)} cita(s) de otra norma o de una disposición que este "
+                f"el grupo se apoya también en {len(heredadas)} cita(s) de otra norma, de un anexo o de un preámbulo que este "
                 f"bucle no relee ({etiquetas[:400]}): confirme que siguen vigentes"
             )
         # 2. The file's own self-check must accept the group as it would be written.
@@ -1047,7 +1134,8 @@ class GrupoConEvidencia(Adaptador):
                 for numero in numeros_de_texto_sin_respaldo(_sin_normas_citadas(requisito), todas)
             ]
         control.fallos += [
-            f"nota de cifra derivada o aproximada: «{nota}»" for nota in notas_de_cifra_derivada([*visibles, *requisitos])
+            f"nota de cifra derivada o aproximada: «{nota}»"
+            for nota in notas_de_cifra_derivada([*visibles, *requisitos])
         ]
         candidato = Candidato(grupo=modelo, params=params, ejercicio=ejercicio, valor=self._sin_procedencia(grupo))
         return control, candidato
@@ -1123,15 +1211,32 @@ class GrupoConEvidencia(Adaptador):
             hoy=hoy,
         )
         if control.fallos:
-            raise RecodificacionError(
-                f"No se puede escribir {propuesta.etiqueta}: " + "; ".join(control.fallos[:4])
-            )
+            raise RecodificacionError(f"No se puede escribir {propuesta.etiqueta}: " + "; ".join(control.fallos[:4]))
+        self._recien_compuesto = (list(propuesta.ruta), grupo)
         return grupo
 
+    # The last group handed to the loop for writing (see ``_recolocar``).
+    _recien_compuesto: tuple[list[str], Any] | None = None
+
+    def _recolocar(self, raw: dict[str, Any]) -> None:
+        """Put a rule the loop has just APPENDED to its list back at the index its path names.
+
+        ``nucleo.escribir_ruta`` only knows list items by "campo=valor"; the rules of the ISD file have no field
+        that is unique in their list, so their paths end in an index, which it takes for a missing item and
+        appends. Inert as soon as ``escribir_ruta`` writes at an index itself.
+        """
+        if self._recien_compuesto is None:
+            return
+        ruta, grupo = self._recien_compuesto
+        lista = leer_ruta(raw, ruta[:-1])
+        if isinstance(lista, list) and ruta[-1].isdigit() and int(ruta[-1]) < len(lista) - 1 and lista[-1] is grupo:
+            lista[int(ruta[-1])] = lista.pop()
+
     def validar_fichero(self, raw: dict[str, Any]) -> None:
+        self._recolocar(raw)
         params = self.familia.raiz.model_validate(raw)
         self.familia.validar_extra(params)
-        problemas = self.familia.comprobar(params)
+        problemas = self.familia.comprobar(params, None)
         if problemas:
             raise RecodificacionError(
                 f"{self.fichero}: el fichero dejaría de superar su autocontrol: " + "; ".join(problemas[:4])
@@ -1269,9 +1374,7 @@ def _etiqueta(familia: Familia, raw: dict[str, Any], ruta: Sequence[str], modelo
     return f"{familia.titulo}: {nombre}{'/'.join(ruta)} ({modelo.__name__}; {_referencia(grupo)})"
 
 
-def _ficheros(
-    familia: Familia, data_dir: Path, ejercicios: Sequence[int] | None = None
-) -> dict[int, dict[str, Any]]:
+def _ficheros(familia: Familia, data_dir: Path, ejercicios: Sequence[int] | None = None) -> dict[int, dict[str, Any]]:
     disponibles = ejercicios_en(data_dir, familia.fichero)
     return {
         ejercicio: json.loads((data_dir / familia.fichero.format(ejercicio=ejercicio)).read_text(encoding="utf-8"))
@@ -1351,15 +1454,15 @@ def construir_objetivo(
     propias = [e for e in legibles if e["boe_id"] == boe_id]
     if boe_id is None or not propias:
         raise RecodificacionError(
-            f"{familia.titulo}: {'/'.join(ruta)} no tiene ninguna cita de un artículo"
+            f"{familia.titulo}: {'/'.join(ruta)} no tiene ninguna cita de un artículo o disposición"
             + (f" de {boe_id}" if boe_id else "")
-            + " (se apoya en disposiciones, anexos u otras normas): el bucle solo relee artículos; revísalo a mano."
+            + " que el bucle sepa localizar (se apoya en anexos, preámbulos u otras normas): revísalo a mano."
         )
     params = familia.raiz.model_validate(raw)
     adaptador = adaptador_del_grupo(familia, params, ruta)
     if adaptador is None:
         raise RecodificacionError(f"Ningún adaptador de recodificación mantiene «{'/'.join(ruta)}».")
-    articulos = list(dict.fromkeys(a for e in propias if (a := articulo_base(str(e["articulo"]))) is not None))
+    articulos = list(dict.fromkeys(a for e in propias for a in bloques_de(str(e["articulo"]))))
     return Objetivo(
         tipo=adaptador.tipo,
         fichero=familia.fichero,
@@ -1390,8 +1493,8 @@ def objetivos_de_verificacion(
     """Groups of the four files whose quotes are no longer in the law, as targets for the loop.
 
     A group is offered with every year that has it (which years the new wording reaches is decided from its effects
-    date). It is read from the law whose article quote failed; a group whose failing quote is not in an article
-    (a disposition, an annex, a ministerial order) is listed in ``sin_adaptador`` for a person.
+    date). It is read from the law whose quote failed; a group whose failing quote is neither in an article nor in
+    a provision (an annex, a preamble, a ministerial order) is listed in ``sin_adaptador`` for a person.
     """
     hallazgo = Hallazgo()
     for familia in familias:
@@ -1401,7 +1504,9 @@ def objetivos_de_verificacion(
         for ejercicio, raw in ficheros.items():
             for resultado in verificar(comprobaciones_de(familia, raw), texto_de):
                 check = resultado.comprobacion
-                if resultado.ok or (ambito and (check.ruta[1] if check.ruta[0] == "comunidades" else "estado") != ambito):
+                if resultado.ok or (
+                    ambito and (check.ruta[1] if check.ruta[0] == "comunidades" else "estado") != ambito
+                ):
                     continue
                 if resultado.faltan == ["sin texto"]:
                     hallazgo.errores.append(f"{ejercicio} {check.descripcion}: no se pudo leer {check.boe_id}")
@@ -1410,15 +1515,15 @@ def objetivos_de_verificacion(
                 for e in grupo["evidencia"]:
                     if e["boe_id"] != check.boe_id or str(e["cita"])[:120] not in resultado.faltan:
                         continue
-                    nota = f"{ejercicio}: ya no está en {check.boe_id} «{str(e['cita'])[:120]}» ({e['articulo']})"
+                    nota = f"{ejercicio}: ya no está en {check.boe_id} «{str(e['cita'])[:300]}» ({e['articulo']})"
                     if es_legible(str(e.get("articulo", ""))):
                         fallidos.setdefault(tuple(check.ruta), {}).setdefault(check.boe_id, []).append(nota)
                     else:
                         ilegibles.setdefault(tuple(check.ruta), []).append(nota)
         for ruta_t, notas in ilegibles.items():
             hallazgo.sin_adaptador.append(
-                f"{familia.titulo} {'/'.join(ruta_t)}: {'; '.join(notas[:3])} — no es un artículo: el bucle no puede "
-                "releerlo, revísalo a mano"
+                f"{familia.titulo} {'/'.join(ruta_t)}: {'; '.join(notas[:3])} — no es un artículo ni una disposición "
+                "que el bucle sepa localizar: revísalo a mano"
             )
         for ruta_t, por_ley in fallidos.items():
             boe_id, motivo = next(iter(por_ley.items()))
@@ -1429,7 +1534,7 @@ def objetivos_de_verificacion(
             except (RecodificacionError, ValidationError) as exc:
                 hallazgo.errores.append(str(exc)[:400])
                 continue
-            if tipos and objetivo.tipo not in tipos:
+            if tipos and objetivo.tipo not in tipos and familia.clave not in tipos:
                 continue
             hallazgo.objetivos.append(objetivo)
             hallazgo.errores += [
@@ -1480,7 +1585,7 @@ class GrupoRevisado(BaseModel):
     boe_id: str = ""
     # "ok": the loop could re-encode it and apply it without a person if the reviewer agreed; "persona": it passes
     # the gate but a person always confirms it; "falla": its own quotes do not pass the gate; "ilegible": no quote
-    # of an article, the loop cannot read it at all.
+    # of an article or provision of a law, the loop cannot read it at all.
     estado: Literal["ok", "persona", "falla", "ilegible"]
     fallos: list[str] = []
     revisar: list[str] = []
@@ -1560,7 +1665,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[{r.estado}] {'/'.join(r.ruta)} ({r.tipo or 'sin adaptador'})")
             for linea in [*r.fallos, *(f"revisar: {x}" for x in r.revisar)]:
                 print(f"    {linea}")
-    cuenta = {estado: sum(1 for r in revisados if r.estado == estado) for estado in ("ok", "persona", "falla", "ilegible")}
+    cuenta = {
+        estado: sum(1 for r in revisados if r.estado == estado) for estado in ("ok", "persona", "falla", "ilegible")
+    }
     print(json.dumps({"fichero": revisados[0].fichero if revisados else "", "grupos": len(revisados), **cuenta}))
     return 1 if cuenta["falla"] else 0
 
@@ -1580,9 +1687,10 @@ __all__ = [
     "GrupoRevisado",
     "Hallazgo",
     "adaptador_del_grupo",
-    "campos_numericos",
+    "bloques_de",
     "comprobaciones_de",
     "construir_objetivo",
+    "es_legible",
     "familia_de",
     "objetivo_de_ruta",
     "objetivos_de_verificacion",

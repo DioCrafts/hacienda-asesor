@@ -58,7 +58,7 @@ from hacienda_gpt.tax.recodificacion.control import (
     fecha_iso,
     indice_de,
 )
-from hacienda_gpt.tax.verificacion import TextoDe, _comprimido
+from hacienda_gpt.tax.verificacion import VERSION_DIARIO, TextoDe, _comprimido
 
 logger = logging.getLogger(__name__)
 
@@ -643,9 +643,6 @@ def clave_de(objetivo: Objetivo, texto: TextoLegal) -> str:
         default=str,
     )
     return hashlib.sha256(material.encode("utf-8")).hexdigest()
-
-
-from hacienda_gpt.tax.verificacion import VERSION_DIARIO  # noqa: E402
 
 
 def leer_texto(objetivo: Objetivo, texto_de: TextoDe, articulos: Sequence[str] | None = None) -> tuple[str, TextoLegal]:
