@@ -339,7 +339,7 @@ def test_madrid_education_expenses_rates_and_caps() -> None:
 
 
 def test_madrid_education_expenses_child_by_child() -> None:
-    """Art. 11.4: 412,40 € per child, 927,90 € for a child with schooling fees, 1.031 € in the first
+    """Art. 11.4: 412,40 € per child, 927,90 € per child once there are schooling fees, 1.031 € in the first
     cycle of infant education (where only the schooling counts) — each on that child's own expenses."""
     base = dict(rendimiento_trabajo_bruto=D(60000), cotizaciones_seguridad_social=D(3810))
 
@@ -348,12 +348,12 @@ def test_madrid_education_expenses_child_by_child() -> None:
 
     # The audit's case: 8.000 € of schooling of ONE of two children → 927,90 (the old code gave 1.200).
     assert con({"edad": 10, "gastos": {"gastos_escolaridad": 8000}}, {"edad": 7}) == D("927.90")
-    # One child with fees (capped at 927,90) and one with languages only (15 % × 4.000 = 600 → 412,40):
-    # the higher cap is not extended to the child without schooling fees.
+    # One child with fees (capped at 927,90) and one with languages only (15 % × 4.000 = 600): art. 11.4
+    # raises the cap «por cada uno de los hijos» once the taxpayer may deduct schooling fees.
     assert con(
         {"edad": 10, "gastos": {"gastos_escolaridad": 8000}},
         {"edad": 7, "gastos": {"gastos_ensenanza_idiomas": 4000}},
-    ) == D("1340.30")
+    ) == D("1527.90")
     # Below the caps nothing is lost: 15 % × 3.000 + (15 % × 1.000 + 5 % × 400) = 450 + 170.
     assert con(
         {"edad": 10, "gastos": {"gastos_escolaridad": 3000}},

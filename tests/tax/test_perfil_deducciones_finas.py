@@ -197,7 +197,9 @@ def test_contradictions_are_reported_in_spanish_never_as_a_crash() -> None:
 
 def test_a_stored_total_gives_way_to_parts_that_arrive_later() -> None:
     # Parts given for one calculation over an older stored total: the total follows them.
-    assert build_input(ejercicio=2026, facts={"gastos_salud": 500.0}, cambios={"gastos_optica": 800}).gastos_salud == 800
+    assert (
+        build_input(ejercicio=2026, facts={"gastos_salud": 500.0}, cambios={"gastos_optica": 800}).gastos_salud == 800
+    )
     # Stored facts gathered at different times: the parts are the finer datum.
     hechos = {"donativos_autonomicos": 100.0, "donativos_investigacion": 250.0}
     assert build_input(ejercicio=2026, facts=hechos).donativos_autonomicos == 250
@@ -209,7 +211,10 @@ def test_a_stored_total_gives_way_to_parts_that_arrive_later() -> None:
     # A per-child part counts too.
     inp = build_input(
         ejercicio=2026,
-        facts={"gastos_salud": 50.0, DESCENDIENTES: descendientes_a_texto([{"edad": 9, "gastos": {"gastos_optica": 200}}])},
+        facts={
+            "gastos_salud": 50.0,
+            DESCENDIENTES: descendientes_a_texto([{"edad": 9, "gastos": {"gastos_optica": 200}}]),
+        },
     )
     assert inp.gastos_optica == 200 and inp.gastos_salud == 200
     assert all(parte in PROFILE_FACT_TYPES for partes in GASTOS_DESGLOSADOS.values() for parte in partes)
@@ -239,12 +244,11 @@ def test_children_detail_changes_a_regional_result() -> None:
 
 
 def test_tool_schemas_describe_the_new_inputs() -> None:
-    for spec in (CALCULATE_TOOL, JOINT_TOOL, BENEFITS_TOOL):
-        # Every calculator input is named in the tool description the model reads...
-        descripcion = spec.description if spec is not BENEFITS_TOOL else CALCULATE_TOOL.description
-        assert set(IRPFInput.model_fields) - {"ejercicio"} <= {
-            name for name in IRPFInput.model_fields if name in descripcion
-        }
+    # Every calculator input is named in the description the model reads (the benefits tool
+    # refers to the calculator's list).
+    for spec in (CALCULATE_TOOL, JOINT_TOOL):
+        assert [name for name in IRPFInput.model_fields if name != "ejercicio" and name not in spec.description] == []
+    assert "mismos `datos` que calcular_irpf" in BENEFITS_TOOL.description
     hijos = CALCULATE_TOOL.input_schema["properties"]["datos"]["properties"][DESCENDIENTES]
     assert hijos["type"] == "array"
     # ...and the structured one has a schema that mirrors the calculator's model.
@@ -255,7 +259,9 @@ def test_tool_schemas_describe_the_new_inputs() -> None:
     assert escenario["properties"][DESCENDIENTES] is hijos
     assert JOINT_TOOL.input_schema["properties"]["conyuge_a"]["properties"][DESCENDIENTES] is hijos
     assert BENEFITS_TOOL.input_schema["properties"]["datos"]["properties"][DESCENDIENTES] is hijos
-    assert DESCENDIENTES in RECORD_FACTS_TOOL.input_schema["properties"]["hechos"]["items"]["properties"]["nombre"]["enum"]
+    assert (
+        DESCENDIENTES in RECORD_FACTS_TOOL.input_schema["properties"]["hechos"]["items"]["properties"]["nombre"]["enum"]
+    )
     assert "descendientes" in RECORD_FACTS_TOOL.description
 
 

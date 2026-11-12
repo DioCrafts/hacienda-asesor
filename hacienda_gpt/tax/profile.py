@@ -437,7 +437,8 @@ def _irpf_input(ejercicio: int, merged: dict[str, Any]) -> IRPFInput:
             "corrige el detalle."
             if merged.get(DESCENDIENTES)
             and any(
-                e["type"] == "value_error" and ("detalle de descendientes" in e["msg"] or "desglose por hijo" in e["msg"])
+                e["type"] == "value_error"
+                and ("detalle de descendientes" in e["msg"] or "desglose por hijo" in e["msg"])
                 for e in exc.errors()
             )
             else ""

@@ -423,9 +423,11 @@ _GASTOS_EDUCATIVOS_MADRID = ("gastos_escolaridad", "gastos_ensenanza_idiomas", "
 def _gastos_educativos_madrid(inp: IRPFInput, e: _MadridEducacion, hijos: int) -> tuple[Decimal, bool]:
     """Art. 11 DLeg. 1/2010 before sharing between parents: (amount, computed child by child?).
 
-    The cap is per child and on that child's own expenses: the higher one only for a
-    child with schooling fees, and for a child in the first cycle of infant education
-    only the schooling counts. Child by child when ``descendientes`` breaks the three
+    The cap is per child and on that child's own expenses. Art. 11.4 raises it «por cada
+    uno de los hijos» once «el contribuyente tuviese derecho a practicar deducción por
+    gastos de escolaridad», so the higher cap holds for every child as soon as there are
+    schooling fees; for a child in the first cycle of infant education only the schooling
+    counts. Child by child when ``descendientes`` breaks the three
     expenses down; otherwise, with several children, a single cap is granted (the
     lowest any distribution of the expenses could give).
     """
@@ -434,9 +436,10 @@ def _gastos_educativos_madrid(inp: IRPFInput, e: _MadridEducacion, hijos: int) -
         if primer_ciclo:
             return min(escolaridad * e.porcentaje_escolaridad_idiomas, e.maximo_por_hijo_primer_ciclo_infantil)
         bruto = (escolaridad + idiomas) * e.porcentaje_escolaridad_idiomas + vestuario * e.porcentaje_vestuario
-        return min(bruto, e.maximo_por_hijo_con_escolaridad if escolaridad else e.maximo_por_hijo)
+        return min(bruto, e.maximo_por_hijo_con_escolaridad if hay_escolaridad else e.maximo_por_hijo)
 
     totales = [getattr(inp, campo) for campo in _GASTOS_EDUCATIVOS_MADRID]
+    hay_escolaridad = totales[0] > ZERO
     detalle = inp.descendientes or []
     desglosado = [sum((h.gastos.get(campo, ZERO) for h in detalle), ZERO) for campo in _GASTOS_EDUCATIVOS_MADRID]
     if detalle and all(abs(suma - total) <= CENT for suma, total in zip(desglosado, totales, strict=True)):
@@ -568,8 +571,8 @@ def _deducciones_madrid(
             t.aviso(
                 (
                     "En gastos educativos el máximo se ha aplicado hijo a hijo con el desglose que has dado "
-                    f"({e.maximo_por_hijo_con_escolaridad:.2f} € solo para los hijos con gastos de escolaridad, "
-                    f"{e.maximo_por_hijo:.2f} € para los demás). "
+                    f"({e.maximo_por_hijo_con_escolaridad:.2f} € por hijo cuando hay gastos de escolaridad, "
+                    f"{e.maximo_por_hijo:.2f} € si no los hay). "
                     if exacto
                     else (
                         "En gastos educativos la ley fija el máximo por cada hijo y sobre sus propios gastos. Como no "
