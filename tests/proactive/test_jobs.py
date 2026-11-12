@@ -112,11 +112,11 @@ def test_plan_lists_levers_by_saving_and_sums_the_amount(store) -> None:
 
 
 def test_plan_passes_through_the_regional_caveat_and_missing_core_data(store) -> None:
-    case = make_case(rendimiento_trabajo_bruto=45000, rendimiento_actividad_neto=5000, comunidad_autonoma="Galicia")
+    case = make_case(rendimiento_trabajo_bruto=45000, rendimiento_actividad_neto=5000, comunidad_autonoma="Navarra")
     assert plan_fin_de_ejercicio(case, hoy=NOV, store=store) == 1
     body = store.list(case.case_id)[0].body
     limits = body.split("**Límites de esta estimación**")[1]
-    assert limits.strip().startswith("- La normativa autonómica de «Galicia» no está cargada")
+    assert limits.strip().startswith("- La normativa autonómica de «Navarra» no está cargada")
     assert "se ha aproximado" in limits
     assert limits.count("\n- ") <= 3  # at most 3 calculator caveats + the generic one
     assert "No me consta" in body and "las retenciones de IRPF" in body

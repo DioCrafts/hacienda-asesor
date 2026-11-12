@@ -26,7 +26,7 @@ def _linea(result, prefix: str) -> D:
 
 def test_params_load_with_sources_and_scale_matches_the_laws_cumulative_column() -> None:
     assert ejercicios_disponibles() == [2025, 2026]
-    assert list(load_params(2026).comunidades) == ["madrid"]
+    assert "madrid" in load_params(2026).comunidades
     params = load_params(2026)
     assert params.fuente_principal.boe_id == "BOE-A-2006-20764"
     escala = params.escala_general_estatal
@@ -189,7 +189,7 @@ def test_madrid_scale_matches_the_laws_cumulative_column() -> None:
         D("7651.10"),
     ]
     assert load_params(2026).comunidad(" MADRID ") is madrid
-    assert load_params(2026).comunidad("Cataluña") is None and load_params(2026).comunidad(None) is None
+    assert load_params(2026).comunidad("Navarra") is None and load_params(2026).comunidad(None) is None
 
 
 def test_madrid_resident_uses_regional_scale_and_minimums() -> None:
@@ -222,9 +222,9 @@ def test_madrid_resident_uses_regional_scale_and_minimums() -> None:
 
 
 def test_unloaded_community_is_still_approximated_and_flagged() -> None:
-    r = _calc(comunidad_autonoma="Cataluña", rendimiento_trabajo_bruto=D(30000), cotizaciones_seguridad_social=D(1905))
+    r = _calc(comunidad_autonoma="Navarra", rendimiento_trabajo_bruto=D(30000), cotizaciones_seguridad_social=D(1905))
     assert r.comunidad_aplicada is None and r.cuota_integra_autonomica == r.cuota_integra_estatal
-    assert any("«Cataluña» no está cargada" in aviso for aviso in r.avisos)
+    assert any("«Navarra» no está cargada" in aviso for aviso in r.avisos)
 
 
 def test_2025_omits_the_unverifiable_work_deduction_and_says_so() -> None:

@@ -403,6 +403,1423 @@
           }
         }
       }
+    },
+    "andalucia": {
+      "nombre": "Andalucía",
+      "alias": [
+        "andalucia",
+        "junta de andalucia",
+        "comunidad autonoma de andalucia"
+      ],
+      "fuente_principal": {
+        "norma": "Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía (texto consolidado)",
+        "boe_id": "BOE-A-2021-17915",
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2021-17915",
+        "consolidado_a": "2026-01-16",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "9f2dd5e37f2dfb8b4110af9c16284954542124e281ac407271239304c34a6051"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "13000",
+            "tipo": "0.095",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "21100",
+            "tipo": "0.12",
+            "cuota_hasta_inicio": "1235"
+          },
+          {
+            "hasta": "35200",
+            "tipo": "0.15",
+            "cuota_hasta_inicio": "2207"
+          },
+          {
+            "hasta": "60000",
+            "tipo": "0.185",
+            "cuota_hasta_inicio": "4322"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.225",
+            "cuota_hasta_inicio": "8910"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 23 Ley 5/2021 de Andalucía (redacción del Decreto-ley 7/2022)",
+          "en_vigor_desde": "2022-09-22",
+          "verificado": true
+        }
+      },
+      "minimos": {
+        "contribuyente": "5790",
+        "incremento_mayor_65": "1200",
+        "incremento_mayor_75": "1460",
+        "descendientes": [
+          "2510",
+          "2820",
+          "4170",
+          "4700"
+        ],
+        "incremento_descendiente_menor_3": "2920",
+        "ascendiente": "1200",
+        "incremento_ascendiente_mayor_75": "1460",
+        "discapacidad": "3130",
+        "discapacidad_65": "9390",
+        "gastos_asistencia": "3130",
+        "fuente": {
+          "referencia": "art. 23 bis Ley 5/2021 de Andalucía (añadido por el Decreto-ley 7/2022)",
+          "en_vigor_desde": "2022-09-22",
+          "verificado": true
+        }
+      },
+      "otras_deducciones": [
+        "art. 9: por inversión en vivienda habitual que tenga la consideración de protegida y por las personas jóvenes",
+        "art. 10: por cantidades invertidas en el alquiler de vivienda habitual",
+        "art. 11: por nacimiento, adopción de hijos o acogimiento familiar de menores",
+        "art. 12: por adopción de hijos en el ámbito internacional",
+        "art. 13: para madre o padre de familia monoparental y, en su caso, con ascendientes mayores de 75 años",
+        "art. 14: para familia numerosa",
+        "art. 15: por gastos educativos",
+        "art. 16: para contribuyentes con discapacidad",
+        "art. 17: para contribuyentes con cónyuges o parejas de hecho con discapacidad",
+        "art. 18: por asistencia a personas con discapacidad",
+        "art. 19: por ayuda doméstica",
+        "art. 20: por inversión en la adquisición de acciones y participaciones sociales como consecuencia de acuerdos de constitución de sociedades o ampliación de capital en determinadas sociedades mercantiles",
+        "art. 21: por gastos de defensa jurídica de la relación laboral",
+        "art. 22: por donativos con finalidad ecológica",
+        "art. 22 bis: para fomentar el ejercicio físico y la práctica deportiva",
+        "art. 22 ter: por gastos veterinarios derivados de la adquisición de animales de compañía o de la tenencia de perros de asistencia",
+        "art. 22 quater: para familias con enfermedad celíaca diagnosticada"
+      ]
+    },
+    "aragon": {
+      "nombre": "Aragón",
+      "alias": [
+        "aragon",
+        "comunidad autonoma de aragon",
+        "gobierno de aragon"
+      ],
+      "fuente_principal": {
+        "norma": "Decreto Legislativo 1/2005, de 26 de septiembre, del Gobierno de Aragón, por el que se aprueba el texto refundido de las disposiciones dictadas por la Comunidad Autónoma de Aragón en materia de tributos cedidos (texto consolidado)",
+        "boe_id": "BOA-d-2005-90006",
+        "url": "https://www.boe.es/buscar/act.php?id=BOA-d-2005-90006",
+        "consolidado_a": "2025-07-17",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "1a34350a2d0b298f5d60b2c01cab46348a45f35a243ae25439267ea2ce3dec08"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "13072.50",
+            "tipo": "0.095",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "21210",
+            "tipo": "0.12",
+            "cuota_hasta_inicio": "1241.89"
+          },
+          {
+            "hasta": "36960",
+            "tipo": "0.15",
+            "cuota_hasta_inicio": "2218.39"
+          },
+          {
+            "hasta": "52500",
+            "tipo": "0.185",
+            "cuota_hasta_inicio": "4580.89"
+          },
+          {
+            "hasta": "60000",
+            "tipo": "0.205",
+            "cuota_hasta_inicio": "7455.79"
+          },
+          {
+            "hasta": "80000",
+            "tipo": "0.23",
+            "cuota_hasta_inicio": "8993.29"
+          },
+          {
+            "hasta": "90000",
+            "tipo": "0.24",
+            "cuota_hasta_inicio": "13593.29"
+          },
+          {
+            "hasta": "130000",
+            "tipo": "0.25",
+            "cuota_hasta_inicio": "15993.29"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.255",
+            "cuota_hasta_inicio": "25993.29"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 110-1 DLeg. 1/2005 de Aragón (redacción de la Ley 17/2023, efectos 01/01/2023)",
+          "en_vigor_desde": "2023-12-29",
+          "verificado": true
+        }
+      },
+      "otras_deducciones": [
+        "art. 110-2: por nacimiento o adopción del tercer hijo o sucesivos",
+        "art. 110-3: en atención al grado de discapacidad de alguno de los hijos",
+        "art. 110-4: por adopción internacional de niños",
+        "art. 110-5: por el cuidado de personas dependientes",
+        "art. 110-6: por donaciones con finalidad ecológica y en investigación y desarrollo científico y técnico",
+        "art. 110-7: por adquisición de vivienda habitual por víctimas del terrorismo",
+        "art. 110-8: por inversión en acciones de entidades que cotizan en el segmento de empresas en expansión del Mercado Alternativo Bursátil",
+        "art. 110-9: por inversión en la adquisición de acciones o participaciones sociales de nuevas entidades o de reciente creación",
+        "art. 110-10: por adquisición o rehabilitación de vivienda habitual en núcleos rurales o análogos",
+        "art. 110-11: por adquisición de libros de texto y material escolar",
+        "art. 110-12: por arrendamiento de vivienda habitual vinculado a determinadas operaciones de dación en pago",
+        "art. 110-13: por arrendamiento de vivienda social",
+        "art. 110-14: para mayores de 70 años",
+        "art. 110-16: por nacimiento o adopción del primer y/o segundo hijo",
+        "art. 110-17: por gastos de guardería de hijos menores de 3 años",
+        "art. 110-19: por inversión en entidades de la economía social",
+        "art. 110-20: por adquisición de abonos de transporte público",
+        "art. 110-21: por gastos en clases de apoyo o refuerzo",
+        "art. 110-22: por gastos en formación para la autonomía y la vida independiente de menores con discapacidad",
+        "art. 160-2: incremento de varias deducciones (arts. 110-2, 110-3, 110-4, 110-5, 110-10, 110-11...) bajo el régimen de fiscalidad diferenciada (asentamientos rurales)"
+      ],
+      "notas": [
+        "El texto consolidado de la norma aragonesa en el BOE llega al 17-7-2025: no se ha podido descartar un cambio posterior de la escala."
+      ]
+    },
+    "asturias": {
+      "nombre": "Principado de Asturias",
+      "alias": [
+        "asturias",
+        "principado de asturias"
+      ],
+      "fuente_principal": {
+        "norma": "Decreto Legislativo 2/2014, de 22 de octubre, por el que se aprueba el texto refundido de las disposiciones legales del Principado de Asturias en materia de tributos cedidos por el Estado (texto consolidado)",
+        "boe_id": "BOE-A-2015-945",
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-945",
+        "consolidado_a": "2026-02-09",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "c3a56bbe8bba2d95313709053a3e74bb7bd14d45ac92aea306d44ffb36ad3c12"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "12450",
+            "tipo": "0.09",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "17707.20",
+            "tipo": "0.12",
+            "cuota_hasta_inicio": "1120.50"
+          },
+          {
+            "hasta": "33007.20",
+            "tipo": "0.14",
+            "cuota_hasta_inicio": "1751.36"
+          },
+          {
+            "hasta": "53407.20",
+            "tipo": "0.192",
+            "cuota_hasta_inicio": "3893.36"
+          },
+          {
+            "hasta": "70000",
+            "tipo": "0.215",
+            "cuota_hasta_inicio": "7810.16"
+          },
+          {
+            "hasta": "90000",
+            "tipo": "0.225",
+            "cuota_hasta_inicio": "11377.62"
+          },
+          {
+            "hasta": "175000",
+            "tipo": "0.25",
+            "cuota_hasta_inicio": "15877.62"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.26",
+            "cuota_hasta_inicio": "37127.62"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 2 DLeg. 2/2014 del Principado de Asturias (redacción de la Ley 3/2025, de 19 de noviembre)",
+          "en_vigor_desde": "2025-12-03",
+          "verificado": true
+        }
+      },
+      "minimos": {
+        "contribuyente": "6105",
+        "incremento_mayor_65": "1265",
+        "incremento_mayor_75": "1540",
+        "descendientes": [
+          "2640",
+          "2970",
+          "4400",
+          "4950"
+        ],
+        "incremento_descendiente_menor_3": "3080",
+        "ascendiente": "1265",
+        "incremento_ascendiente_mayor_75": "1540",
+        "discapacidad": "3300",
+        "discapacidad_65": "9900",
+        "gastos_asistencia": "3300",
+        "fuente": {
+          "referencia": "arts. 2 bis a 2 quinquies DLeg. 2/2014 del Principado de Asturias (añadidos por la Ley 3/2025)",
+          "en_vigor_desde": "2025-12-03",
+          "verificado": true
+        }
+      },
+      "otras_deducciones": [
+        "art. 3: por acogimiento no remunerado de mayores de 65 años",
+        "art. 4: por adquisición o adecuación de vivienda habitual en el Principado de Asturias para contribuyentes con discapacidad",
+        "art. 5: por adquisición o adecuación de vivienda habitual para contribuyentes con los que convivan sus cónyuges, ascendientes o descendientes con discapacidad",
+        "art. 6: por inversión en vivienda habitual que tenga la consideración de protegida",
+        "art. 7: por arrendamiento de vivienda habitual",
+        "art. 8: por donación de fincas rústicas a favor del Principado de Asturias",
+        "art. 9: por adopción internacional de menores",
+        "art. 10: por partos múltiples",
+        "art. 11: para familias numerosas",
+        "art. 12: para familias monoparentales",
+        "art. 13: por acogimiento familiar de menores",
+        "art. 14: por certificación de la gestión forestal sostenible",
+        "art. 14 bis: por gastos de descendientes en centros de cero a tres años",
+        "art. 14 ter: por adquisición de libros de texto y material escolar",
+        "art. 14 quáter: por nacimiento o adopción de segundo y sucesivos hijos en concejos en riesgo de despoblamiento o en crisis demográfica",
+        "art. 14 quinquies: para contribuyentes que se establezcan como trabajadores por cuenta propia, o autónomos en concejos en riesgo de despoblamiento o en crisis demográfica",
+        "art. 14 sexies: por gastos de transporte público para residentes en concejos en riesgo de despoblamiento o en crisis demográfica",
+        "art. 14 septies: por gastos de formación en que hayan incurrido los contribuyentes que desarrollen trabajos especialmente cualificados, relacionados directa y principalmente con actividades de investigación y desarrollo, científicas o de carácter técnico",
+        "art. 14 octies: para contribuyentes que trasladen su domicilio fiscal al Principado de Asturias por motivos laborales",
+        "art. 14 nonies: por la obtención de subvenciones y/o ayudas para paliar el impacto provocado por la COVID-19 sobre los sectores especialmente afectados por la pandemia",
+        "art. 14 decies: por adquisición o rehabilitación de vivienda habitual para determinados colectivos",
+        "art. 14 undecies: por adquisición de vehículos eléctricos",
+        "art. 14 duodecies: por el cuidado de descendientes o adoptados de hasta 25 años de edad",
+        "art. 14 terdecies: por emancipación de jóvenes de hasta 35 años de edad",
+        "art. 14 quaterdecies: por la obtención de ayudas o subvenciones otorgadas por el Principado de Asturias a enfermos de Esclerosis Lateral Amiotrófica",
+        "art. 14 quindecies: por gastos derivados del arrendamiento de viviendas",
+        "art. 14 sexdecies: por los gastos vitales en que incurran los contribuyentes de hasta 35 años",
+        "art. 14 septendecies: por descendientes en caso de fallecimiento de progenitor como consecuencia de accidentes laborales",
+        "art. 14 octodecies: por inversión en la adquisición de acciones y participaciones sociales de nuevas entidades o de reciente creación",
+        "art. 14 novodecies: por gastos derivados de la enfermedad celíaca diagnosticada"
+      ],
+      "notas": [
+        "La escala y los mínimos asturianos son los de la Ley 3/2025, en vigor desde el 3-12-2025: se aplican a 2025 por estar vigentes en la fecha de devengo, sin cláusula expresa de efectos."
+      ]
+    },
+    "baleares": {
+      "nombre": "Illes Balears",
+      "alias": [
+        "baleares",
+        "illes balears",
+        "islas baleares",
+        "comunidad autonoma de las illes balears"
+      ],
+      "fuente_principal": {
+        "norma": "Decreto Legislativo 1/2014, de 6 de junio, por el que se aprueba el Texto Refundido de las disposiciones legales de la Comunidad Autónoma de las Illes Balears en materia de tributos cedidos por el Estado (texto consolidado)",
+        "boe_id": "BOE-A-2014-6925",
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2014-6925",
+        "consolidado_a": "2026-07-24",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "f7555ca17427061a8d96042fe9f1fbbabfd39852e82156f726df0e341e6d3471"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "10000",
+            "tipo": "0.09",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "18000",
+            "tipo": "0.1125",
+            "cuota_hasta_inicio": "900"
+          },
+          {
+            "hasta": "30000",
+            "tipo": "0.1425",
+            "cuota_hasta_inicio": "1800"
+          },
+          {
+            "hasta": "48000",
+            "tipo": "0.175",
+            "cuota_hasta_inicio": "3510"
+          },
+          {
+            "hasta": "70000",
+            "tipo": "0.19",
+            "cuota_hasta_inicio": "6660"
+          },
+          {
+            "hasta": "90000",
+            "tipo": "0.2175",
+            "cuota_hasta_inicio": "10840"
+          },
+          {
+            "hasta": "120000",
+            "tipo": "0.2275",
+            "cuota_hasta_inicio": "15190"
+          },
+          {
+            "hasta": "175000",
+            "tipo": "0.2375",
+            "cuota_hasta_inicio": "22015"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.2475",
+            "cuota_hasta_inicio": "35077.50"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 1 DLeg. 1/2014 de las Illes Balears (redacción de la Ley 12/2023)",
+          "en_vigor_desde": "2024-01-01",
+          "verificado": true
+        }
+      },
+      "minimos": {
+        "contribuyente": "5550",
+        "incremento_mayor_65": "1265",
+        "incremento_mayor_75": "1540",
+        "descendientes": [
+          "2400",
+          "2970",
+          "4400",
+          "4950"
+        ],
+        "incremento_descendiente_menor_3": "2800",
+        "ascendiente": "1265",
+        "incremento_ascendiente_mayor_75": "1540",
+        "discapacidad": "3300",
+        "discapacidad_65": "9900",
+        "gastos_asistencia": "3300",
+        "fuente": {
+          "referencia": "art. 2 DLeg. 1/2014 de las Illes Balears (redacción de la Ley 11/2023): incremento del 10 % sobre los importes estatales",
+          "en_vigor_desde": "2023-11-26",
+          "verificado": true,
+          "nota": "Importes calculados: mínimos estatales incrementados en un 10 %; la ley no los imprime."
+        }
+      },
+      "otras_deducciones": [
+        "art. 3: por determinadas inversiones de mejora de la sostenibilidad de la vivienda habitual",
+        "art. 3 bis: por el arrendamiento de la vivienda habitual en el territorio de las Illes Balears",
+        "art. 3 ter: por determinadas subvenciones y ayudas otorgadas por razón de una declaración de zona afectada gravemente por una emergencia de protección civil",
+        "art. 3 quater: temporal para compensar el incremento del coste de los préstamos o créditos hipotecarios con tipo de interés variable",
+        "art. 3 quinquies: por obtención de subvenciones o ayudas para paliar el impacto provocado por la guerra en Oriente Medio durante el año 2026",
+        "art. 3 sexties: por las ayudas recibidas por las personas afectadas por la talidomida en España durante el periodo 1950-1985",
+        "art. 4: por gastos de adquisición de libros de texto",
+        "art. 4 bis: por gastos de aprendizaje extraescolar de idiomas extranjeros",
+        "art. 4 ter: para cursar estudios de educación superior fuera de la isla de residencia habitual",
+        "art. 4 quater: para el arrendador de bienes inmuebles destinados a vivienda permanente en el territorio de las Illes Balears",
+        "art. 4 quinquies: por arrendamiento de vivienda en el territorio de las Illes Balears derivado del traslado temporal de residencia por motivos laborales",
+        "art. 4 sexties: para compensar los gastos derivados de una vivienda ocupada ilegalmente o por razón de suspensión del lanzamiento",
+        "art. 5: por donaciones a determinadas entidades destinadas a la investigación, el desarrollo científico o tecnológico, o la innovación",
+        "art. 5 bis: por donaciones, cesiones de uso o contratos de comodato y convenios de colaboración empresarial, relativos al mecenazgo cultural, científico y de desarrollo tecnológico y al consumo cultural",
+        "art. 5 ter: por donaciones, cesiones de uso o contratos de comodato y convenios de colaboración, relativos al mecenazgo deportivo",
+        "art. 5 quater: por donaciones a determinadas entidades que tengan por objeto el fomento de la lengua catalana",
+        "art. 5 quinquies: por donaciones a entidades del tercer sector",
+        "art. 5 sexties: por donaciones para paliar los efectos del conflicto de Ucrania sobre las personas",
+        "art. 6: para los declarantes con discapacidad física, psíquica o sensorial o con descendientes con esta condición",
+        "art. 6 bis: por gastos relativos a los descendientes o acogidos menores de seis años por motivos de conciliación",
+        "art. 6 ter: por nacimiento",
+        "art. 6 quater: por adopción",
+        "art. 6 quinquies: por determinados gastos relativos a personas mayores de 65 años o a personas con discapacidad",
+        "art. 6 sexties: por gastos derivados de la esclerosis lateral amiotrófica (ELA)",
+        "art. 7: en concepto de inversión en la adquisición de acciones o de participaciones sociales o aportaciones sociales de nuevas entidades o de reciente creación",
+        "art. 7 bis: para el fomento de la autoocupación",
+        "art. 7 ter: por ocupación de puestos de trabajo de difícil cobertura en las Illes Balears"
+      ],
+      "notas": [
+        "Los mínimos de las Illes Balears se han calculado como los estatales más un 10 % (art. 2 DLeg. 1/2014), que solo alcanza a los incrementos por edad del contribuyente, a los descendientes segundo y siguientes, a los ascendientes y a la discapacidad; la ley no imprime los importes."
+      ]
+    },
+    "canarias": {
+      "nombre": "Canarias",
+      "alias": [
+        "canarias",
+        "islas canarias",
+        "comunidad autonoma de canarias",
+        "gobierno de canarias"
+      ],
+      "fuente_principal": {
+        "norma": "Decreto-Legislativo 1/2009, de 21 de abril, por el que se aprueba el Texto Refundido de las disposiciones legales vigentes dictadas por la Comunidad Autónoma de Canarias en materia de tributos cedidos (texto consolidado)",
+        "boe_id": "BOC-j-2009-90008",
+        "url": "https://www.boe.es/buscar/act.php?id=BOC-j-2009-90008",
+        "consolidado_a": "2025-12-29",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "d1eba864267f1857b40a6d7a5200bc8dfa2ab8ec0e26901b4f4bc65d328fe76b"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "13748.00",
+            "tipo": "0.09",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "19422.00",
+            "tipo": "0.115",
+            "cuota_hasta_inicio": "1237.32"
+          },
+          {
+            "hasta": "35924.00",
+            "tipo": "0.14",
+            "cuota_hasta_inicio": "1889.83"
+          },
+          {
+            "hasta": "57566.00",
+            "tipo": "0.185",
+            "cuota_hasta_inicio": "4200.11"
+          },
+          {
+            "hasta": "93268.00",
+            "tipo": "0.235",
+            "cuota_hasta_inicio": "8203.88"
+          },
+          {
+            "hasta": "123745.00",
+            "tipo": "0.25",
+            "cuota_hasta_inicio": "16593.85"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.26",
+            "cuota_hasta_inicio": "24213.1"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 18 bis DLeg. 1/2009 de Canarias (redacción de la disp. final 11.17 de la Ley 9/2025, de 23 de diciembre)",
+          "en_vigor_desde": "2026-01-01",
+          "verificado": true
+        }
+      },
+      "minimos": {
+        "contribuyente": "5606",
+        "incremento_mayor_65": "1162",
+        "incremento_mayor_75": "1414",
+        "descendientes": [
+          "2424",
+          "2727",
+          "4040",
+          "4545"
+        ],
+        "incremento_descendiente_menor_3": "2828",
+        "ascendiente": "1162",
+        "incremento_ascendiente_mayor_75": "1414",
+        "discapacidad": "3030",
+        "discapacidad_65": "9090",
+        "gastos_asistencia": "3030",
+        "fuente": {
+          "referencia": "art. 18 quater DLeg. 1/2009 de Canarias (añadido por la disp. final 10.24 de la Ley 5/2024, con efectos desde el 1-1-2024)",
+          "en_vigor_desde": "2025-01-01",
+          "verificado": true
+        }
+      },
+      "otras_deducciones": [
+        "art. 3: donaciones con finalidad ecológica",
+        "art. 4: donaciones para la rehabilitación o conservación del patrimonio histórico de Canarias",
+        "art. 4 bis: donaciones y aportaciones para fines culturales, deportivos, investigación o docencia",
+        "art. 4 ter: donaciones a entidades sin ánimo de lucro",
+        "art. 6: cantidades destinadas a restauración, rehabilitación o reparación",
+        "art. 7: gastos de estudios de educación superior",
+        "art. 7 bis: gastos de estudios no superiores",
+        "art. 8: traslado de residencia",
+        "art. 9: inversión en la adquisición de acciones y participaciones sociales de nuevas entidades o de reciente creación",
+        "art. 10: nacimiento o adopción de hijos",
+        "art. 11: contribuyentes con discapacidad y mayores de 65 años",
+        "art. 11 bis: acogimiento de menores",
+        "art. 11 ter: familias monoparentales",
+        "art. 12: gastos de custodia en guarderías",
+        "art. 13: familia numerosa",
+        "art. 14: inversión en vivienda habitual",
+        "art. 14 bis: obras de rehabilitación energética de la vivienda habitual",
+        "art. 14 ter: obras de adecuación de la vivienda habitual por razón de discapacidad",
+        "art. 15: alquiler de vivienda habitual",
+        "art. 15 bis: arrendamiento de vivienda habitual vinculado a determinadas operaciones de dación en pago",
+        "art. 15 ter: gastos derivados de la adecuación de un inmueble con destino al arrendamiento como vivienda habitual",
+        "art. 15 quater: gastos en primas de seguros de crédito para cubrir impagos de rentas de arrendamientos de vivienda",
+        "art. 16: puesta de viviendas en el mercado de arrendamiento de viviendas habituales",
+        "art. 16 bis: contribuyentes desempleados",
+        "art. 16 ter: gasto de enfermedad",
+        "art. 16 quater: familiares dependientes con discapacidad",
+        "art. 16 quinquies: cuotas satisfechas a la Seguridad Social por la contratación de empleados o empleadas de hogar",
+        "disp. adicional primera: medidas extraordinarias por la erupción volcánica de La Palma (mínimo personal y familiar 2021-2022, desarraigo, cesión de uso de inmuebles, gastos de enfermedad)",
+        "disp. adicional cuarta: medidas extraordinarias por la situación inflacionaria (solo períodos 2022 y 2023)"
+      ],
+      "notas": [
+        "La escala canaria es la de la Ley 9/2025, publicada el 29-12-2025 con efectos desde el 1-1-2025."
+      ]
+    },
+    "cantabria": {
+      "nombre": "Cantabria",
+      "alias": [
+        "cantabria",
+        "comunidad autonoma de cantabria",
+        "gobierno de cantabria"
+      ],
+      "fuente_principal": {
+        "norma": "Decreto Legislativo 62/2008, de 19 de junio, por el que se aprueba el texto refundido de la Ley de Medidas Fiscales en materia de Tributos cedidos por el Estado (texto consolidado)",
+        "boe_id": "BOCT-c-2008-90028",
+        "url": "https://www.boe.es/buscar/act.php?id=BOCT-c-2008-90028",
+        "consolidado_a": "2026-04-30",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "bf3f09f54ad60628a3351b6057eed69f2130aff2414ede603e5090dfc55270dc"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "13000.00",
+            "tipo": "0.085",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "21000.00",
+            "tipo": "0.11",
+            "cuota_hasta_inicio": "1105.00"
+          },
+          {
+            "hasta": "35200.00",
+            "tipo": "0.145",
+            "cuota_hasta_inicio": "1985.00"
+          },
+          {
+            "hasta": "60000.00",
+            "tipo": "0.18",
+            "cuota_hasta_inicio": "4044.00"
+          },
+          {
+            "hasta": "90000.00",
+            "tipo": "0.225",
+            "cuota_hasta_inicio": "8508.00"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.245",
+            "cuota_hasta_inicio": "15258.00"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 1 DLeg. 62/2008 de Cantabria (redacción del art. 3.1 de la Ley 3/2023, de 26 de diciembre)",
+          "en_vigor_desde": "2024-01-01",
+          "verificado": true
+        }
+      },
+      "otras_deducciones": [
+        "art. 2.1: arrendamiento de vivienda habitual",
+        "art. 2.2: cuidado de familiares",
+        "art. 2.3: obras de mejora en viviendas",
+        "art. 2.4: donativos a fundaciones o al Fondo Cantabria Coopera o a asociaciones de apoyo a personas con discapacidad",
+        "art. 2.5: acogimiento familiar de menores",
+        "art. 2.6: inversión en la adquisición de acciones y participaciones sociales de nuevas entidades o de reciente creación",
+        "art. 2.7: gastos de enfermedad",
+        "art. 2.8: gastos de guardería",
+        "art. 2.9: familias monoparentales",
+        "art. 2.10: nacimiento o adopción de hijos",
+        "art. 2.11: contribuyentes con residencia habitual en municipios afectados por riesgo de despoblamiento (11.1 arrendamiento de vivienda, 11.2 gastos de guardería, 11.3 traslado de residencia por motivos laborales, 11.4 gastos de traslado por razón de estudios, 11.5 residencia habitual)",
+        "art. 2.12: inversiones o donaciones a entidades de la Economía Social establecidas en Cantabria",
+        "art. 2.13: mitigación del impacto de la inflación en la adquisición de productos básicos (solo período 2022)",
+        "art. 2.14: ayuda doméstica",
+        "art. 2.15: inversiones de nuevos contribuyentes procedentes del extranjero",
+        "art. 2.16: gastos de desplazamiento y permanencia de nuevos residentes en Cantabria",
+        "art. 2.17: arrendamiento de viviendas vacías",
+        "art. 2.18: fomento del ejercicio físico y la práctica deportiva",
+        "art. 2.19: adquisición o rehabilitación de vivienda habitual para menores de treinta y seis años",
+        "art. 2.20: compromiso medioambiental"
+      ]
+    },
+    "castilla_la_mancha": {
+      "nombre": "Castilla-La Mancha",
+      "alias": [
+        "castilla-la mancha",
+        "castilla la mancha",
+        "clm",
+        "junta de comunidades de castilla-la mancha",
+        "comunidad autonoma de castilla-la mancha"
+      ],
+      "fuente_principal": {
+        "norma": "Ley 8/2013, de 21 de noviembre, de Medidas Tributarias de Castilla-La Mancha (texto consolidado)",
+        "boe_id": "BOE-A-2014-1368",
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2014-1368",
+        "consolidado_a": "2026-03-30",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "3cbc5576ea915cafbf4888b42ae0ffba680e36ad5e0b8fa2df1c07627c54488b"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "12450.00",
+            "tipo": "0.095",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "20200.00",
+            "tipo": "0.12",
+            "cuota_hasta_inicio": "1182.75"
+          },
+          {
+            "hasta": "35200.00",
+            "tipo": "0.15",
+            "cuota_hasta_inicio": "2112.75"
+          },
+          {
+            "hasta": "60000.00",
+            "tipo": "0.185",
+            "cuota_hasta_inicio": "4362.75"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.225",
+            "cuota_hasta_inicio": "8950.75"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 13 bis Ley 8/2013 de Castilla-La Mancha (añadido por el art. 1 de la Ley 9/2014, de 4 de diciembre)",
+          "en_vigor_desde": "2015-01-01",
+          "verificado": true
+        }
+      },
+      "otras_deducciones": [
+        "art. 1: nacimiento o adopción de hijos",
+        "art. 2: familia numerosa",
+        "art. 2 bis: familia monoparental",
+        "art. 3: gastos en la adquisición de libros de texto, enseñanza de idiomas y otros gastos relacionados con la educación",
+        "art. 3 bis: gastos de guardería",
+        "art. 4: discapacidad del contribuyente",
+        "art. 5: discapacidad de ascendientes o descendientes",
+        "art. 6: personas mayores de 75 años",
+        "art. 7: acogimiento familiar no remunerado de menores",
+        "art. 8: acogimiento no remunerado de mayores de 65 años o discapacitados",
+        "art. 9: arrendamiento de vivienda habitual por menores de 36 años",
+        "art. 9 bis: arrendamiento de vivienda habitual vinculado a determinadas operaciones de dación en pago",
+        "art. 9 ter: arrendamiento de vivienda habitual por familias numerosas",
+        "art. 9 quáter: arrendamiento de vivienda habitual por familias monoparentales",
+        "art. 9 quinquies: arrendamiento de vivienda habitual por personas con discapacidad",
+        "art. 10: cantidades donadas para la cooperación internacional al desarrollo y a entidades para la lucha contra la pobreza, la exclusión social y la ayuda a personas con discapacidad",
+        "art. 11: donaciones con finalidad en investigación y desarrollo científico e innovación empresarial",
+        "art. 11 bis: donaciones de bienes culturales y contribuciones para la conservación del patrimonio cultural de Castilla-La Mancha y para fines culturales",
+        "art. 12: intereses por la financiación ajena de la adquisición de primera vivienda habitual por menores de 40 años",
+        "art. 12 bis: residencia habitual en zonas rurales",
+        "art. 12 ter: adquisición o rehabilitación de la vivienda habitual en zonas rurales",
+        "art. 12 quater: traslado de vivienda habitual",
+        "art. 12 quinquies: deducción extraordinaria para compensar los efectos de la inflación (solo período 2022)",
+        "art. 12 sexies: inversión en la adquisición de acciones y participaciones sociales por constitución o ampliación de capital de sociedades mercantiles",
+        "art. 12 septies: inversión en entidades de la economía social",
+        "art. 12 octies: ahorro-inversión en la adquisición o construcción de la primera vivienda habitual",
+        "art. 12 nonies: gastos de controles veterinarios y vacunación por la tenencia de perros de asistencia"
+      ]
+    },
+    "castilla_y_leon": {
+      "nombre": "Castilla y León",
+      "alias": [
+        "castilla y leon",
+        "cyl",
+        "junta de castilla y leon",
+        "comunidad de castilla y leon"
+      ],
+      "fuente_principal": {
+        "norma": "Decreto Legislativo 1/2013, de 12 de septiembre, por el que se aprueba el texto refundido de las disposiciones legales de la Comunidad de Castilla y León en materia de tributos propios y cedidos (texto consolidado)",
+        "boe_id": "BOCL-h-2013-90254",
+        "url": "https://www.boe.es/buscar/act.php?id=BOCL-h-2013-90254",
+        "consolidado_a": "2024-05-14",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "e3698619d8c3fd0770e455c24036d3eb0b8518b4212761262caf98987b598b3e"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "12450.00",
+            "tipo": "0.09",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "20200.00",
+            "tipo": "0.12",
+            "cuota_hasta_inicio": "1120.5"
+          },
+          {
+            "hasta": "35200.00",
+            "tipo": "0.14",
+            "cuota_hasta_inicio": "2050.5"
+          },
+          {
+            "hasta": "53407.20",
+            "tipo": "0.185",
+            "cuota_hasta_inicio": "4150.5"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.215",
+            "cuota_hasta_inicio": "7518.83"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 1 DLeg. 1/2013 de Castilla y León (redacción del art. 1.1 de la Ley 2/2022, de 1 de diciembre, con efectos desde el 1-1-2022)",
+          "en_vigor_desde": "2022-12-13",
+          "verificado": true
+        }
+      },
+      "minimos": {
+        "contribuyente": "5550",
+        "incremento_mayor_65": "1150",
+        "incremento_mayor_75": "1400",
+        "descendientes": [
+          "2400",
+          "2700",
+          "4000",
+          "4500"
+        ],
+        "incremento_descendiente_menor_3": "2800",
+        "ascendiente": "1150",
+        "incremento_ascendiente_mayor_75": "1400",
+        "discapacidad": "3000",
+        "discapacidad_65": "9000",
+        "gastos_asistencia": "3000",
+        "fuente": {
+          "referencia": "art. 1 bis DLeg. 1/2013 de Castilla y León (añadido por el art. 1.2 de la Ley 10/2014, de 22 de diciembre)",
+          "en_vigor_desde": "2015-01-01",
+          "verificado": true
+        }
+      },
+      "otras_deducciones": [
+        "art. 3: familia numerosa",
+        "art. 4.1: nacimiento o adopción",
+        "art. 4.2: nacimiento o adopción en el medio rural",
+        "art. 4.3: nacimiento o adopción con discapacidad",
+        "art. 4.4: partos o adopciones múltiples",
+        "art. 4.5: gastos de adopción",
+        "art. 5: cuidado de hijos menores",
+        "art. 6: discapacidad",
+        "art. 7.1: adquisición o rehabilitación de la vivienda habitual por jóvenes en el medio rural",
+        "art. 7.2: actuaciones de rehabilitación subvencionadas en planes estatales o autonómicos de vivienda (eficiencia energética, sostenibilidad y accesibilidad)",
+        "art. 7.3: rehabilitación de viviendas en el medio rural destinadas a su alquiler",
+        "art. 7.4: arrendamiento de la vivienda habitual por jóvenes",
+        "art. 7.5: arrendamiento de la vivienda habitual por jóvenes en el medio rural",
+        "art. 8: fomento del emprendimiento",
+        "art. 9: recuperación del patrimonio cultural y natural, donaciones a fundaciones, fomento de la investigación, el desarrollo y la innovación y fomento de la movilidad sostenible"
+      ],
+      "notas": [
+        "El texto consolidado de la norma de Castilla y León en el BOE llega al 14-5-2024: no se ha podido descartar un cambio posterior de la escala."
+      ]
+    },
+    "cataluna": {
+      "nombre": "Cataluña",
+      "alias": [
+        "cataluna",
+        "catalunya",
+        "generalitat de catalunya",
+        "generalitat de cataluna"
+      ],
+      "fuente_principal": {
+        "norma": "Decreto Legislativo 1/2024, de 12 de marzo, por el que se aprueba el libro sexto del Código tributario de Catalunya, que integra el texto refundido de los preceptos legales vigentes en Catalunya en materia de tributos cedidos (texto consolidado)",
+        "boe_id": "BOE-A-2024-6951",
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-6951",
+        "consolidado_a": "2026-07-20",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "bc994c0eac637ca386b63d8d3cdcf26be2a0dbcc54f5d92572749a071f52508a"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "12500",
+            "tipo": "0.095",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "22000",
+            "tipo": "0.125",
+            "cuota_hasta_inicio": "1187.50"
+          },
+          {
+            "hasta": "33000",
+            "tipo": "0.16",
+            "cuota_hasta_inicio": "2375"
+          },
+          {
+            "hasta": "53000",
+            "tipo": "0.19",
+            "cuota_hasta_inicio": "4135"
+          },
+          {
+            "hasta": "90000",
+            "tipo": "0.215",
+            "cuota_hasta_inicio": "7935"
+          },
+          {
+            "hasta": "120000",
+            "tipo": "0.235",
+            "cuota_hasta_inicio": "15890"
+          },
+          {
+            "hasta": "175000",
+            "tipo": "0.245",
+            "cuota_hasta_inicio": "22940"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.255",
+            "cuota_hasta_inicio": "36415"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 611-1 libro sexto del Código tributario de Catalunya (DLeg. 1/2024), redacción del art. 3.1 del Decreto-ley 5/2025",
+          "en_vigor_desde": "2025-03-27",
+          "verificado": true
+        }
+      },
+      "minimos": {
+        "contribuyente": "5550",
+        "incremento_mayor_65": "1150",
+        "incremento_mayor_75": "1400",
+        "descendientes": [
+          "2400",
+          "2700",
+          "4000",
+          "4500"
+        ],
+        "incremento_descendiente_menor_3": "2800",
+        "ascendiente": "1150",
+        "incremento_ascendiente_mayor_75": "1400",
+        "discapacidad": "3000",
+        "discapacidad_65": "9000",
+        "gastos_asistencia": "3000",
+        "fuente": {
+          "referencia": "art. 611-2 libro sexto del Código tributario de Catalunya (DLeg. 1/2024)",
+          "en_vigor_desde": "2024-03-15",
+          "verificado": true
+        }
+      },
+      "otras_deducciones": [
+        "art. 612-1: Deducción por nacimiento o adopción de un hijo o de una hija o por acogimiento",
+        "art. 612-2: Deducción para los contribuyentes que queden viudos",
+        "art. 612-3: Deducción por alquiler de la vivienda habitual",
+        "art. 612-4: Deducción por rehabilitación de la vivienda habitual",
+        "art. 612-5: Deducción por el pago de intereses de préstamos para los estudios de máster y de doctorado",
+        "art. 612-6: Deducción por donaciones a entidades que fomentan el uso de la lengua catalana o de la occitana",
+        "art. 612-7: Deducción por donaciones a entidades que fomenten la investigación científica y el desarrollo y la innovación tecnológicos",
+        "art. 612-8: Deducción por donaciones a determinadas entidades en beneficio del medio ambiente, la conservación del patrimonio natural y de custodia del territorio",
+        "art. 612-9: Deducción en concepto de inversión por un ángel inversor por la adquisición de acciones o participaciones sociales de entidades nuevas o de creación reciente",
+        "art. 612-10: Deducción por obligación de presentar la declaración del impuesto sobre la renta de las personas físicas por razón de tener más de un pagador",
+        "art. 612-11: Deducción por alquiler de la vivienda habitual de víctimas de violencia machista",
+        "art. 612-12: Deducción por inversión en sociedades cooperativas agrarias y de vivienda",
+        "art. 613-1: Deducción por inversión en la vivienda habitual"
+      ],
+      "notas": [
+        "El BOE marca como desactualizado el texto consolidado catalán: la Ley 11/2026 añade deducciones (arts. 612-13 a 612-15) que no figuran en la lista; según el análisis del BOE no modifica la escala."
+      ]
+    },
+    "comunidad_valenciana": {
+      "nombre": "Comunitat Valenciana",
+      "alias": [
+        "comunidad valenciana",
+        "comunitat valenciana",
+        "valencia",
+        "generalitat valenciana",
+        "pais valenciano"
+      ],
+      "fuente_principal": {
+        "norma": "Ley 13/1997, de 23 de diciembre, por la que se regula el tramo autonómico del Impuesto sobre la Renta de las Personas Físicas y restantes tributos cedidos (texto consolidado)",
+        "boe_id": "BOE-A-1998-8202",
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1998-8202",
+        "consolidado_a": "2026-09-18",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "b145c2001fe4d41acd29083b8470cab0f7772dd04da54fd4aadf14d31d4fed60"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "12000",
+            "tipo": "0.09",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "22000",
+            "tipo": "0.12",
+            "cuota_hasta_inicio": "1080"
+          },
+          {
+            "hasta": "32000",
+            "tipo": "0.15",
+            "cuota_hasta_inicio": "2280"
+          },
+          {
+            "hasta": "42000",
+            "tipo": "0.175",
+            "cuota_hasta_inicio": "3780"
+          },
+          {
+            "hasta": "52000",
+            "tipo": "0.2",
+            "cuota_hasta_inicio": "5530"
+          },
+          {
+            "hasta": "62000",
+            "tipo": "0.225",
+            "cuota_hasta_inicio": "7530"
+          },
+          {
+            "hasta": "72000",
+            "tipo": "0.25",
+            "cuota_hasta_inicio": "9780"
+          },
+          {
+            "hasta": "100000",
+            "tipo": "0.265",
+            "cuota_hasta_inicio": "12280"
+          },
+          {
+            "hasta": "150000",
+            "tipo": "0.275",
+            "cuota_hasta_inicio": "19700"
+          },
+          {
+            "hasta": "200000",
+            "tipo": "0.285",
+            "cuota_hasta_inicio": "33450"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.295",
+            "cuota_hasta_inicio": "47700"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 2.1 Ley 13/1997 de la Generalitat Valenciana (redacción disp. final 1.1 Ley 9/2022, períodos concluidos desde 01/01/2023; versión histórica p=20221231 del texto consolidado)",
+          "en_vigor_desde": "2023-01-01",
+          "verificado": true
+        }
+      },
+      "minimos": {
+        "contribuyente": "6105",
+        "incremento_mayor_65": "1265",
+        "incremento_mayor_75": "1540",
+        "descendientes": [
+          "2640",
+          "2970",
+          "4400",
+          "4950"
+        ],
+        "incremento_descendiente_menor_3": "3080",
+        "ascendiente": "1265",
+        "incremento_ascendiente_mayor_75": "1540",
+        "discapacidad": "3300",
+        "discapacidad_65": "9900",
+        "gastos_asistencia": "3300",
+        "fuente": {
+          "referencia": "art. 2 bis Ley 13/1997 de la Generalitat Valenciana (añadido por art. 3 Decreto-ley 14/2022)",
+          "en_vigor_desde": "2022-10-28",
+          "verificado": true
+        }
+      },
+      "otras_deducciones": [
+        "art. 4.Uno.a): nacimiento, adopción, delegación de guarda con fines de adopción o acogimiento familiar",
+        "art. 4.Uno.b): nacimiento o adopción múltiples",
+        "art. 4.Uno.c): nacimiento, adopción, acogimiento o delegación de guarda de persona con discapacidad",
+        "art. 4.Uno.d): familia numerosa o monoparental",
+        "art. 4.Uno.e): custodia no ocasional en guarderías y centros de primer ciclo de educación infantil de menores de 3 años",
+        "art. 4.Uno.f): conciliación del trabajo con la vida familiar",
+        "art. 4.Uno.g): contribuyentes con discapacidad (grado igual o superior al 33 %) de edad igual o superior a 65 años",
+        "art. 4.Uno.h): ascendientes mayores de 75 años, o mayores de 65 años con discapacidad",
+        "art. 4.Uno.i): contratación indefinida de personas afiliadas al Sistema Especial de Empleados de Hogar para el cuidado de personas",
+        "art. 4.Uno.j): obtención de rentas derivadas de arrendamientos de vivienda cuya renta no supere el precio de referencia",
+        "art. 4.Uno.k): primera adquisición de vivienda habitual por contribuyentes de edad igual o inferior a 35 años",
+        "art. 4.Uno.l): adquisición de vivienda habitual por personas con discapacidad",
+        "art. 4.Uno.m): cantidades destinadas a la adquisición o rehabilitación de vivienda habitual procedentes de ayudas públicas",
+        "art. 4.Uno.n): arrendamiento o pago por la cesión en uso de la vivienda habitual",
+        "art. 4.Uno.ñ): arrendamiento de una vivienda por realización de una actividad en municipio distinto",
+        "art. 4.Uno.o): inversiones en instalaciones de autoconsumo eléctrico o de energías renovables en la vivienda habitual o en instalaciones colectivas del edificio",
+        "art. 4.Uno.p): donaciones con finalidad ecológica",
+        "art. 4.Uno.q): donaciones relativas al patrimonio cultural valenciano",
+        "art. 4.Uno.r): donaciones destinadas al fomento del valenciano",
+        "art. 4.Uno.s): donaciones o cesiones de uso o comodatos para otros fines de carácter cultural, científico o deportivo no profesional",
+        "art. 4.Uno.t): contribuyentes con dos o más descendientes",
+        "art. 4.Uno.u): incremento de los costes de la financiación ajena en la inversión de la vivienda habitual",
+        "art. 4.Uno.v): cantidades destinadas a la adquisición de material escolar",
+        "art. 4.Uno.w): obras de conservación o mejora de la calidad, sostenibilidad y accesibilidad en la vivienda habitual",
+        "art. 4.Uno.x): cantidades destinadas a abonos culturales",
+        "art. 4.Uno.y): adquisición de vehículos nuevos de las categorías de la Orden 5/2020 (bicicletas y vehículos eléctricos de movilidad personal)",
+        "art. 4.Uno.z): suscripción y desembolso de acciones o participaciones sociales en constitución o ampliación de capital de sociedades",
+        "art. 4.Uno.aa): residir habitualmente en un municipio en riesgo de despoblamiento",
+        "art. 4.Uno.ab): tratamientos de fertilidad de mujeres de entre 40 y 45 años",
+        "art. 4.Uno.ac): gastos de salud (enfermedades crónicas de alta complejidad y raras, daño cerebral adquirido o alzhéimer, salud bucodental, salud mental, lentes graduadas y de contacto)",
+        "art. 4.Uno.ad): gastos asociados a la práctica del deporte y actividades saludables",
+        "art. 4.Uno.ae): gastos vinculados con el fomento y formación musicales",
+        "disp. adicional 17.ª: ayudas públicas concedidas por la Generalitat (Decreto ley 3/2020, COVID-19 y otras), con efectos desde 01/01/2020",
+        "disp. transitoria 1.ª: tramo autonómico de la deducción por inversión en vivienda habitual (régimen transitorio DT 18.ª Ley 35/2006)"
+      ],
+      "notas": [
+        "Para 2025 se aplica la escala valenciana de la Ley 9/2022, anterior a la Ley 5/2026."
+      ]
+    },
+    "extremadura": {
+      "nombre": "Extremadura",
+      "alias": [
+        "extremadura",
+        "junta de extremadura",
+        "comunidad autonoma de extremadura"
+      ],
+      "fuente_principal": {
+        "norma": "Decreto Legislativo 1/2018, de 10 de abril, por el que se aprueba el texto refundido de las disposiciones legales de la Comunidad Autónoma de Extremadura en materia de tributos cedidos por el Estado (texto consolidado)",
+        "boe_id": "BOE-A-2018-8159",
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2018-8159",
+        "consolidado_a": "2026-11-12",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "057c0fd51bf421e69a98a79546e22167e431b093a80a052893c5a41d7da43e47"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "12450",
+            "tipo": "0.08",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "20200",
+            "tipo": "0.1",
+            "cuota_hasta_inicio": "996"
+          },
+          {
+            "hasta": "24200",
+            "tipo": "0.16",
+            "cuota_hasta_inicio": "1771"
+          },
+          {
+            "hasta": "35200",
+            "tipo": "0.175",
+            "cuota_hasta_inicio": "2411"
+          },
+          {
+            "hasta": "60000",
+            "tipo": "0.21",
+            "cuota_hasta_inicio": "4336"
+          },
+          {
+            "hasta": "80200",
+            "tipo": "0.235",
+            "cuota_hasta_inicio": "9544"
+          },
+          {
+            "hasta": "99200",
+            "tipo": "0.24",
+            "cuota_hasta_inicio": "14291"
+          },
+          {
+            "hasta": "120200",
+            "tipo": "0.245",
+            "cuota_hasta_inicio": "18851"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.25",
+            "cuota_hasta_inicio": "23996"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 1 DLeg. 1/2018 de Extremadura, redacción del art. 1.1 del Decreto-ley 4/2023, de 12 de septiembre (efectos desde 2023-01-01)",
+          "en_vigor_desde": "2023-09-15",
+          "verificado": true
+        }
+      },
+      "otras_deducciones": [
+        "art. 2: Deducción autonómica por trabajo dependiente",
+        "art. 3: Deducción autonómica por parto o adopción múltiple",
+        "art. 3 bis: Deducción en la cuota íntegra autonómica por nacimiento o adopción de descendientes",
+        "art. 4: Deducción autonómica por acogimiento de menores",
+        "art. 5: Deducción autonómica por cuidado de familiares con discapacidad",
+        "art. 6: Deducción autonómica por cuidado de hijos menores de hasta 14 años inclusive",
+        "art. 7: Deducción autonómica para los contribuyentes viudos",
+        "art. 8: Deducción autonómica por adquisición de vivienda para jóvenes y para víctimas del terrorismo con residencia en la Comunidad Autónoma de Extremadura",
+        "art. 9: Deducción autonómica por arrendamiento de vivienda habitual",
+        "art. 9 bis: Deducción autonómica para arrendadores de viviendas vacías",
+        "art. 9 ter: Deducción autonómica por inversiones en la rehabilitación de viviendas en zonas rurales para ser destinadas a su alquiler",
+        "art. 10: Deducción autonómica por la compra de material escolar",
+        "art. 11: Deducción autonómica por inversión en la adquisición de acciones y participaciones sociales como consecuencia de acuerdos de constitución de sociedades o ampliación de capital en las sociedades mercantiles",
+        "art. 11 bis: Deducción por adquisición o rehabilitación de la vivienda habitual en zonas rurales",
+        "art. 11 ter: Deducción en la cuota íntegra autonómica para los contribuyentes con residencia habitual en municipios y entidades locales menores de Extremadura con población inferior a 3.000 habitantes",
+        "art. 11 quater: Deducción autonómica por intereses de financiación ajena para la inversión en vivienda habitual para jóvenes",
+        "art. 11 quinquies: Deducción en la cuota íntegra autonómica por donaciones de dinero a entidades culturales, artísticas y para patrocinio a deportistas",
+        "art. 11 sexies: Deducción autonómica para contribuyentes que trasladen su residencia habitual a Extremadura"
+      ],
+      "notas": [
+        "Para 2025 se aplica la escala extremeña anterior a la Ley 2/2026 (redacción del Decreto-ley 4/2023)."
+      ]
+    },
+    "galicia": {
+      "nombre": "Galicia",
+      "alias": [
+        "galicia",
+        "xunta de galicia",
+        "comunidad autonoma de galicia"
+      ],
+      "fuente_principal": {
+        "norma": "Decreto Legislativo 1/2011, de 28 de julio, por el que se aprueba el texto refundido de las disposiciones legales de la Comunidad Autónoma de Galicia en materia de tributos cedidos por el Estado (texto consolidado)",
+        "boe_id": "BOE-A-2011-18161",
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2011-18161",
+        "consolidado_a": "2026-05-04",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "83a2faccfcf16b8ce42233737fc1524ee5760dbefd967376c822dbad4c72a6ea"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "12985.35",
+            "tipo": "0.09",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "21068.60",
+            "tipo": "0.1165",
+            "cuota_hasta_inicio": "1168.68"
+          },
+          {
+            "hasta": "35200",
+            "tipo": "0.149",
+            "cuota_hasta_inicio": "2110.38"
+          },
+          {
+            "hasta": "60000",
+            "tipo": "0.184",
+            "cuota_hasta_inicio": "4215.96"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.225",
+            "cuota_hasta_inicio": "8779.16"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 4 DLeg. 1/2011 de Galicia, redacción del art. 1 de la Ley 7/2022, de 27 de diciembre (efectos desde 2022-01-01)",
+          "en_vigor_desde": "2023-01-01",
+          "verificado": true
+        }
+      },
+      "minimos": {
+        "contribuyente": "5789",
+        "incremento_mayor_65": "1199",
+        "incremento_mayor_75": "1460",
+        "descendientes": [
+          "2503",
+          "2816",
+          "4172",
+          "4694"
+        ],
+        "incremento_descendiente_menor_3": "2920",
+        "ascendiente": "1199",
+        "incremento_ascendiente_mayor_75": "1460",
+        "discapacidad": "3129",
+        "discapacidad_65": "9387",
+        "gastos_asistencia": "3129",
+        "fuente": {
+          "referencia": "art. 4 bis DLeg. 1/2011 de Galicia, añadido por el art. 2 de la Ley 7/2022, de 27 de diciembre (efectos desde 2022-01-01)",
+          "en_vigor_desde": "2023-01-01",
+          "verificado": true
+        }
+      },
+      "otras_deducciones": [
+        "art. 5.Dos: Deducción por nacimiento o adopción de hijos",
+        "art. 5.Tres: Deducción para familias con hijos e hijas",
+        "art. 5.Cuatro: Deducción por acogimiento",
+        "art. 5.Cinco: Deducción por cuidado de hijos menores",
+        "art. 5.Seis: Deducción por sujetos pasivos discapacitados, de edad igual o superior a sesenta y cinco años, que precisen ayuda de terceras personas",
+        "art. 5.Siete: Deducción por alquiler de vivienda habitual",
+        "art. 5.Ocho: Deducción por gastos dirigidos al uso de nuevas tecnologías en los hogares gallegos",
+        "art. 5.Nueve: Deducción por inversión en la adquisición de acciones o participaciones sociales en entidades nuevas o de reciente creación",
+        "art. 5.Diez: Deducción por inversión en la adquisición de acciones o participaciones sociales en entidades nuevas o de reciente creación y su financiación",
+        "art. 5.Once: Deducción por inversión en acciones de entidades que cotizan en el segmento de empresas en expansión del mercado alternativo bolsista",
+        "art. 5.Doce: Deducción por donaciones con finalidad en investigación y desarrollo científico e innovación tecnológica",
+        "art. 5.Trece: Deducción por inversión en instalaciones de climatización y/o agua caliente sanitaria que empleen energías renovables en la vivienda habitual y destinadas exclusivamente al autoconsumo",
+        "art. 5.Catorce: Deducción por rehabilitación de bienes inmuebles situados en centros históricos",
+        "art. 5.Quince: Deducción por inversión en empresas que desarrollen actividades agrarias",
+        "art. 5.Dieciséis: Deducción por las subvenciones y/o ayudas obtenidas como consecuencia de los daños causados por los incendios forestales que provocaron la activación del Peifoga en situación 2 acaecidos en Galicia en 2025",
+        "art. 5.Dieciocho: Deducción en la cuota íntegra autonómica por obras de mejora de eficiencia energética en edificios de viviendas o en viviendas unifamiliares",
+        "art. 5.Diecinueve: Deducción en la cuota íntegra autonómica por las ayudas y subvenciones recibidas por los deportistas de alto nivel de Galicia",
+        "art. 5.Veinte: Deducción por adquisición y rehabilitación de viviendas en los proyectos de aldeas modelo",
+        "art. 5.Veintiuno: Deducción por inversión en la adquisición de acciones o participaciones sociales en entidades que realicen determinados proyectos declarados de especial interés público, social o económico",
+        "art. 5.Veintidós: Deducción por gastos derivados de la adecuación de un inmueble vacío con destino al arrendamiento como vivienda",
+        "art. 5.Veintitrés: Deducción por el arrendamiento de viviendas vacías",
+        "art. 5.Veinticuatro: Deducción por las ayudas y subvenciones recibidas por personas con diagnóstico de esclerosis lateral amiotrófica o con sus fenotipos",
+        "art. 5.Veinticinco: Deducción por la adquisición de libros de texto y material escolar",
+        "art. 5.Veintiséis: Deducción por las ayudas recibidas por las personas afectadas por la talidomida en España durante el periodo 1950-1985"
+      ]
+    },
+    "la_rioja": {
+      "nombre": "La Rioja",
+      "alias": [
+        "la rioja",
+        "rioja",
+        "comunidad autonoma de la rioja"
+      ],
+      "fuente_principal": {
+        "norma": "Ley 10/2017, de 27 de octubre, por la que se consolidan las disposiciones legales de la Comunidad Autónoma de La Rioja en materia de impuestos propios y tributos cedidos (texto consolidado)",
+        "boe_id": "BOE-A-2017-13750",
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2017-13750",
+        "consolidado_a": "2026-10-29",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "d5b5280e824c45cc2cae5f40871fadffde3d7191e06794d8b7198989450e4f81"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "12450",
+            "tipo": "0.08",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "20200",
+            "tipo": "0.106",
+            "cuota_hasta_inicio": "996"
+          },
+          {
+            "hasta": "35200",
+            "tipo": "0.136",
+            "cuota_hasta_inicio": "1817.50"
+          },
+          {
+            "hasta": "40000",
+            "tipo": "0.178",
+            "cuota_hasta_inicio": "3857.50"
+          },
+          {
+            "hasta": "50000",
+            "tipo": "0.183",
+            "cuota_hasta_inicio": "4711.90"
+          },
+          {
+            "hasta": "60000",
+            "tipo": "0.19",
+            "cuota_hasta_inicio": "6541.90"
+          },
+          {
+            "hasta": "120000",
+            "tipo": "0.245",
+            "cuota_hasta_inicio": "8441.90"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.27",
+            "cuota_hasta_inicio": "23141.90"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 31 Ley 10/2017 de La Rioja (redacción Ley 13/2023)",
+          "en_vigor_desde": "2024-01-01",
+          "verificado": true
+        }
+      },
+      "otras_deducciones": [
+        "art. 32.1: nacimiento y adopción de hijos",
+        "art. 32.2: adquisición, construcción o rehabilitación de vivienda habitual en pequeños municipios",
+        "art. 32.3: gastos en escuelas infantiles, centros de educación infantil o personal contratado para el cuidado de hijos de 0 a 3 años (residentes en pequeños municipios)",
+        "art. 32.4: menores en acogimiento familiar de urgencia, temporal o permanente, o guarda con fines de adopción",
+        "art. 32.5: 100 euros mensuales por cada hijo de 0 a 3 años para residentes en pequeños municipios",
+        "art. 32.6: gastos en escuelas infantiles o centros de educación infantil de cualquier municipio de La Rioja por hijos de 0 a 3 años",
+        "art. 32.7: adquisición de vehículos eléctricos nuevos",
+        "art. 32.8: (anulado por STC 63/2026, de 22 de septiembre; apartado añadido por Ley 5/2025)",
+        "art. 32.9: gastos por acceso a Internet para los jóvenes emancipados",
+        "art. 32.10: gastos por suministro de luz y gas de uso doméstico para los jóvenes emancipados",
+        "art. 32.11: inversión en vivienda habitual de jóvenes menores de 36 años",
+        "art. 32.12: arrendamiento de vivienda habitual para contribuyentes menores de 36 años",
+        "art. 32.13: adquisición de bicicletas de pedaleo no asistido",
+        "art. 32.14: donaciones irrevocables, puras y simples en materia de mecenazgo",
+        "art. 32.15: cantidades destinadas a investigación, conservación, restauración, rehabilitación o consolidación de bienes del patrimonio histórico de La Rioja",
+        "art. 32.16: límite a las deducciones de los apartados 14 y 15 e incompatibilidad (no es una deducción)",
+        "art. 32.17: fomento del ejercicio físico y la práctica deportiva",
+        "art. 32.18: deducción destinada a los enfermos de ELA",
+        "art. 32.19: cuotas satisfechas a organizaciones profesionales agrarias",
+        "art. 32.20: enfermedad celiaca diagnosticada",
+        "disp. adicional 2.ª: paliar la subida de intereses de los préstamos hipotecarios para adquisición de vivienda habitual (solo ejercicios 2023, 2024 y 2025; no 2026)",
+        "disp. transitoria 1.ª a): obras de rehabilitación de vivienda habitual en La Rioja (régimen transitorio, anteriores a 2013)",
+        "disp. transitoria 1.ª b): adquisición o construcción de vivienda habitual por jóvenes (régimen transitorio, anteriores a 2013)",
+        "disp. transitoria 1.ª c): adquisición o rehabilitación de segunda vivienda en el medio rural (régimen transitorio, anteriores a 2013)",
+        "disp. transitoria 1.ª d): obras de adecuación de vivienda habitual para personas con discapacidad (régimen transitorio)"
+      ],
+      "notas": [
+        "La Rioja eleva un 10 % el mínimo por discapacidad de descendientes (3.300 € y 9.900 €, art. 31 bis): la calculadora no lo aplica."
+      ]
+    },
+    "murcia": {
+      "nombre": "Región de Murcia",
+      "alias": [
+        "murcia",
+        "region de murcia",
+        "comunidad autonoma de la region de murcia"
+      ],
+      "fuente_principal": {
+        "norma": "Decreto Legislativo 1/2010, de 5 de noviembre, por el que se aprueba el Texto Refundido de las disposiciones legales vigentes en la Región de Murcia en materia de tributos cedidos (texto consolidado)",
+        "boe_id": "BOE-A-2011-10542",
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2011-10542",
+        "consolidado_a": "2026-03-17",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "92b48f796bc03b8df6648e4f2591cc477922f42c03f8d19b1fe2135f6149d27b"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "12450",
+            "tipo": "0.095",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "20200",
+            "tipo": "0.112",
+            "cuota_hasta_inicio": "1182.75"
+          },
+          {
+            "hasta": "34000",
+            "tipo": "0.133",
+            "cuota_hasta_inicio": "2050.75"
+          },
+          {
+            "hasta": "60000",
+            "tipo": "0.179",
+            "cuota_hasta_inicio": "3886.15"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.225",
+            "cuota_hasta_inicio": "8540.15"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 2 DLeg. 1/2010 de la Región de Murcia (redacción Ley 14/2018)",
+          "en_vigor_desde": "2019-01-01",
+          "verificado": true
+        }
+      },
+      "otras_deducciones": [
+        "art. 1.Uno: inversión en vivienda habitual (jóvenes)",
+        "art. 1.Dos: donaciones",
+        "art. 1.Tres: gastos de guardería (gastos educativos de hijos o descendientes)",
+        "art. 1.Cuatro: inversiones en dispositivos domésticos de ahorro de agua",
+        "art. 1.Cinco: inversión en instalaciones de recursos energéticos renovables",
+        "art. 1.Seis: inversión en la adquisición de acciones o participaciones sociales en entidades nuevas o de reciente creación",
+        "art. 1.Siete: inversión en acciones de entidades que cotizan en el segmento de empresas en expansión del mercado alternativo bursátil",
+        "art. 1.Ocho: gastos en la adquisición de material escolar y libros de texto",
+        "art. 1.Nueve: nacimiento o adopción",
+        "art. 1.Diez: contribuyentes con discapacidad",
+        "art. 1.Once: conciliación",
+        "art. 1.Doce: acogimiento no remunerado de mayores de sesenta y cinco años y/o personas con discapacidad",
+        "art. 1.Trece: arrendamiento de vivienda habitual",
+        "art. 1.Catorce: mujeres trabajadoras",
+        "art. 1.Quince: adquisición de nueva vivienda habitual o ampliación de la vivienda habitual actual por familias numerosas",
+        "art. 1.Dieciséis: familia monoparental",
+        "art. 1.Diecisiete: gastos de enseñanza de idiomas",
+        "art. 1.Dieciocho: gastos por acceso a internet",
+        "art. 1.Diecinueve: gastos en la adquisición de vehículos eléctricos",
+        "art. 1.Veinte: gastos en la instalación de infraestructuras de recarga de vehículos eléctricos",
+        "art. 1.Veintiuno: cristales graduados, lentes de contacto y soluciones de limpieza",
+        "art. 1.Veintidós: gastos asociados a la práctica del deporte y actividades saludables",
+        "art. 1.Veintitrés: gastos asociados a las Enfermedades Raras",
+        "art. 1.Veinticuatro: inversión en entidades de economía social",
+        "art. 1.Veinticinco: gastos veterinarios",
+        "disp. transitoria 1.ª: regímenes transitorios de las deducciones por adquisición o rehabilitación de vivienda habitual de ejercicios anteriores"
+      ],
+      "notas": [
+        "La página del texto consolidado murciano indica como última actualización el 24-7-2025: no se ha podido descartar un cambio posterior de la escala."
+      ]
     }
   },
   "reparto_deducciones_estatales": {

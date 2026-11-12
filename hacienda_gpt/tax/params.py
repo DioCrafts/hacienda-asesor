@@ -305,6 +305,8 @@ class Comunidad(_Model):
     deducciones_madrid: DeduccionesMadrid | None = None
     # Other deductions the community has, by article and title only.
     otras_deducciones: list[str] = Field(default_factory=list)
+    # Caveats about this community's data that the calculator repeats as warnings.
+    notas: list[str] = Field(default_factory=list)
 
 
 def normalizar_comunidad(nombre: str) -> str:

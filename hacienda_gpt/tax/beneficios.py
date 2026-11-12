@@ -383,7 +383,8 @@ def evaluar_beneficios(inp: IRPFInput, *, conocidos: set[str], params: IRPFParam
         return out
 
     base_imponible = base.base_imponible_general + base.base_imponible_ahorro
-    norma = f"DLeg. 1/2010 de la {comunidad.nombre}" if "Madrid" in comunidad.nombre else comunidad.nombre
+    es_madrid = comunidad.deducciones_madrid is not None
+    norma = f"DLeg. 1/2010 de la {comunidad.nombre}" if es_madrid else comunidad.nombre
     # article → (calculator line it produces, input that triggers it)
     calculadas = {
         "art. 4": ("Deducción autonómica por nacimiento", "hijos_nacidos_ultimos_3_ejercicios"),
@@ -426,10 +427,21 @@ def evaluar_beneficios(inp: IRPFInput, *, conocidos: set[str], params: IRPFParam
             "autonomicas_otras",
             f"{comunidad.nombre}: otras deducciones",
             "por_confirmar",
-            "La comunidad tiene además estas deducciones, de las que aquí solo consta el título: "
+            ("La comunidad tiene además estas deducciones" if es_madrid else "La comunidad tiene estas deducciones")
+            + ", de las que aquí solo consta el título y que la simulación no calcula: "
             + "; ".join(comunidad.otras_deducciones)
             + ". Consulta sus requisitos e importes con buscar_fuentes antes de mencionarlas.",
-            ["Cada una tiene sus propios requisitos y límites de renta (art. 18)."],
-            f"arts. 3 a 18 {norma} ({comunidad.fuente_principal.boe_id})",
+            [
+                (
+                    "Cada una tiene sus propios requisitos y límites de renta (art. 18)."
+                    if es_madrid
+                    else "Cada una tiene sus propios requisitos y límites de renta."
+                )
+            ],
+            (
+                f"arts. 3 a 18 {norma} ({comunidad.fuente_principal.boe_id})"
+                if es_madrid
+                else f"{comunidad.fuente_principal.norma} ({comunidad.fuente_principal.boe_id})"
+            ),
         )
     return out

@@ -461,12 +461,21 @@ Los parámetros de 2026 se leyeron del texto consolidado de la Ley 35/2006
 (BOE-A-2006-20764, consolidado a 11-11-2026) y de la Ley 49/2002. **Límites
 actuales**, que la calculadora declara en los `avisos` de cada resultado:
 
-- **Parte autonómica: solo Madrid está cargada.** Para residentes en la
-  Comunidad de Madrid se aplican su escala (art. 1) y sus mínimos personales y
-  familiares (arts. 2 a 2 quater) del Decreto Legislativo 1/2010
-  (BOCM-m-2010-90068, consolidado a 10-07-2026). Para el resto de comunidades
-  se usa una escala igual a la estatal como aproximación, y se avisa.
-- **Deducciones autonómicas: seis de Madrid.** La calculadora resta de la
+- **Parte autonómica: las 15 comunidades de régimen común.** Se aplican la
+  escala general y, donde la comunidad los regula, los mínimos personales y
+  familiares de Andalucía, Aragón, Asturias, Baleares, Canarias, Cantabria,
+  Castilla-La Mancha, Castilla y León, Cataluña, Comunidad Valenciana,
+  Extremadura, Galicia, La Rioja, Madrid y Murcia, leídos del texto
+  consolidado de cada norma en el BOE (cada entrada guarda su identificador,
+  la fecha de consolidación y el hash del HTML). Las cautelas de cada una
+  (texto consolidado antiguo, mínimos calculados en Baleares, escalas de 2026
+  aprobadas a mitad de año en Extremadura y la Comunidad Valenciana…) salen
+  como avisos del cálculo. **Navarra y País Vasco** tienen impuesto foral
+  propio y no están cubiertos: se aproximan con la escala estatal y se avisa.
+  **Ceuta y Melilla**: no se aplica su deducción del art. 68.4 LIRPF.
+- **Deducciones autonómicas: solo seis de Madrid se calculan.** Las de las
+  otras 14 comunidades figuran por artículo y título para que el asesor las
+  busque en el corpus, sin importe. En Madrid, la calculadora resta de la
   cuota autonómica las de nacimiento o adopción (art. 4), alquiler de menores
   de 40 años (art. 8), donativos a fundaciones madrileñas (art. 9), gastos
   educativos (art. 11), cuidado de menores o dependientes (art. 11 bis) y

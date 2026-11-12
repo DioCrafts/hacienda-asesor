@@ -61,9 +61,29 @@ const MADRID_GROUP: { title: string; fields: FieldDef[] } = {
 };
 const COMUNIDADES = [
   { value: "", label: "Sin indicar" },
+  { value: "Andalucía", label: "Andalucía" },
+  { value: "Aragón", label: "Aragón" },
+  { value: "Asturias", label: "Principado de Asturias" },
+  { value: "Baleares", label: "Illes Balears" },
+  { value: "Canarias", label: "Canarias" },
+  { value: "Cantabria", label: "Cantabria" },
+  { value: "Castilla-La Mancha", label: "Castilla-La Mancha" },
+  { value: "Castilla y León", label: "Castilla y León" },
+  { value: "Cataluña", label: "Cataluña" },
+  { value: "Comunidad Valenciana", label: "Comunitat Valenciana" },
+  { value: "Extremadura", label: "Extremadura" },
+  { value: "Galicia", label: "Galicia" },
+  { value: "La Rioja", label: "La Rioja" },
   { value: "Madrid", label: "Comunidad de Madrid" },
-  { value: "Otra", label: "Otra comunidad" },
+  { value: "Murcia", label: "Región de Murcia" },
+  { value: "Otra", label: "Navarra, País Vasco, Ceuta o Melilla" },
 ];
+// Accent- and case-insensitive match of a saved community name against the list.
+const plain = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 const FIELDS = [...GROUPS, MADRID_GROUP].flatMap((g) => g.fields);
 const TRIBUTACION = [
   { value: "individual", label: "Individual" },
@@ -114,7 +134,9 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   const savedComunidad = useMemo(() => {
     const value = facts.find((f) => f.name === "comunidad_autonoma")?.value;
     if (typeof value !== "string") return "";
-    return /madrid/i.test(value) ? "Madrid" : "Otra";
+    const saved = plain(value);
+    const match = COMUNIDADES.find((c) => c.value && c.value !== "Otra" && (saved.includes(plain(c.value)) || saved.includes(plain(c.label))));
+    return match ? match.value : "Otra";
   }, [facts]);
 
   const cambios = useMemo(() => {
@@ -313,7 +335,11 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
                     <span className="mt-1 block text-[11.5px] leading-snug text-muted">
                       {comunidad === "Madrid"
                         ? "Se aplican la escala, los mínimos y varias deducciones de Madrid."
-                        : "Solo Madrid tiene cargada su normativa; para el resto la parte autonómica es una aproximación."}
+                        : comunidad === "Otra"
+                          ? "Los territorios forales tienen su propio impuesto y Ceuta y Melilla una deducción específica: aquí la parte autonómica es solo una aproximación."
+                          : comunidad
+                            ? "Se aplican la escala y los mínimos de tu comunidad; sus deducciones propias no se calculan."
+                            : "Sin comunidad, la parte autonómica se aproxima con la escala estatal."}
                     </span>
                   </label>
                 )}

@@ -638,6 +638,9 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
                 else ". Sus deducciones autonómicas NO están incluidas en el cálculo."
             )
         )
+    if comunidad is not None:
+        for nota in comunidad.notas:
+            t.aviso(nota)
     minimo_autonomico_general = min(minimo_autonomico, general)
     minimo_autonomico_ahorro = min(minimo_autonomico - minimo_autonomico_general, ahorro)
 

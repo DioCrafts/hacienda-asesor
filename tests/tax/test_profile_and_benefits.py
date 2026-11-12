@@ -186,9 +186,14 @@ def test_regional_deductions_stay_open_under_the_income_ceiling_and_unloaded_reg
     }
     assert applied["autonomica_art_8"].estado == "aplicado" and "1237.20 €" in applied["autonomica_art_8"].detalle
 
-    other = IRPFInput(ejercicio=2026, rendimiento_trabajo_bruto=D(24000), comunidad_autonoma="Galicia")
+    other = IRPFInput(ejercicio=2026, rendimiento_trabajo_bruto=D(24000), comunidad_autonoma="Navarra")
     regional = {b.id: b for b in evaluar_beneficios(other, conocidos={"comunidad_autonoma"})}["deducciones_autonomicas"]
-    assert "autonomico:Galicia" in regional.detalle and not any(k.startswith("autonomica_art") for k in by_id if False)
+    assert "autonomico:Navarra" in regional.detalle and not any(k.startswith("autonomica_art") for k in by_id if False)
+    # A loaded community other than Madrid lists its deductions by title only.
+    gallego = IRPFInput(ejercicio=2026, rendimiento_trabajo_bruto=D(24000), comunidad_autonoma="Galicia")
+    titulos = {b.id: b for b in evaluar_beneficios(gallego, conocidos={"comunidad_autonoma"})}["autonomicas_otras"]
+    assert titulos.estado == "por_confirmar" and "BOE-A-2011-18161" in titulos.referencia
+    assert "la simulación no calcula" in titulos.detalle
     unknown = {b.id: b for b in evaluar_beneficios(IRPFInput(ejercicio=2026), conocidos=set())}[
         "deducciones_autonomicas"
     ]
