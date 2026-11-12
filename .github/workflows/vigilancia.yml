@@ -1,0 +1,60 @@
+name: vigilancia
+
+# Weekly check that the laws the calculator's parameters were read from have not
+# been updated in the BOE since. A RED run means "re-read these laws": the JSON
+# printed by the step lists them under `a_revisar`. It does not mean the figures
+# changed, only that someone has to look.
+#
+# Needs network access to www.boe.es and nothing else (no LLM, no secrets).
+
+on:
+  schedule:
+    - cron: "17 5 * * 1" # Mondays at 05:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  params-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync
+      - name: Source laws of the calculator parameters
+        shell: bash # explicit, so `pipefail` is on and the exit code survives `tee`
+        run: |
+          uv run python -m hacienda_gpt.cli.proactive params-check --fail-on-stale | tee params-check.json
+      - name: Fail when the check could not be completed
+        # params-check reports laws it could not query under `errores` and still
+        # exits 0. A watchdog that stays green when the BOE was unreachable would
+        # be worse than none, so that case is turned into a red run here.
+        if: always()
+        run: |
+          uv run python - <<'PY'
+          import json, sys
+          try:
+              report = json.load(open("params-check.json", encoding="utf-8"))
+          except (OSError, ValueError) as exc:
+              sys.exit(f"params-check did not produce a report: {exc}")
+          if report.get("errores") or not report.get("comprobadas"):
+              sys.exit(f"params-check could not verify every law: {report.get('errores')}")
+          PY
+      - name: Do the parameters still match the text of each law?
+        # Stronger than the date check above: literal quotes and figures are
+        # looked up in today's consolidated texts. The JSON lists, per year,
+        # the parameter groups under `no_coinciden`.
+        if: always()
+        shell: bash
+        run: |
+          uv run python -m hacienda_gpt.cli.proactive params-verify --fail-on-mismatch | tee params-verify.json
+      - name: Decree-laws awaiting validation
+        # Informative: prints whether each decree-law some parameters depend on
+        # is still pending, validated or repealed. The deployed app keeps its own
+        # status file with the same command on a schedule.
+        if: always()
+        run: uv run python -m hacienda_gpt.cli.proactive normas-check

@@ -16,12 +16,11 @@ calling `_process_shard_worker` directly with a stubbed loader.
 
 from __future__ import annotations
 
-import pytest
 from click.testing import CliRunner
 from langchain_core.documents import Document
+import pytest
 
 from hacienda_gpt.cli import processor as cli_module
-from hacienda_gpt.processor import document_loader as loader_module
 from hacienda_gpt.processor.document_loader import DocumentProcessor, _shard_files
 
 
@@ -115,25 +114,38 @@ def test_process_one_file_uses_per_worker_chunker(monkeypatch: pytest.MonkeyPatc
 def test_init_worker_configures_logging(monkeypatch: pytest.MonkeyPatch) -> None:
     """`configure_logging` MUST run inside the worker; otherwise the
     `Finished converting document X` lines stay invisible — that's exactly
-    the visibility regression we just fixed."""
+    the visibility regression we just fixed.
+
+    `_init_worker` builds the chunker from an explicit `HuggingFaceTokenizer`
+    (Docling >= 2.50 cannot auto-detect `max_tokens` for the local MLX model),
+    so both Docling seams are stubbed: the real tokenizer would try to load the
+    embedder from disk or from the HuggingFace Hub.
+    """
     from hacienda_gpt.processor import document_loader as dl
 
-    calls = {"configure_logging": 0, "chunker_built": 0}
+    calls: dict = {"configure_logging": 0, "chunker_built": 0, "tokenizer_built": 0}
+
+    class _FakeTokenizer:
+        @classmethod
+        def from_pretrained(cls, **kw):
+            calls["tokenizer_built"] += 1
+            calls["tokenizer_kwargs"] = kw
+            return cls()
 
     class _FakeChunker:
         def __init__(self, **kw):
             calls["chunker_built"] += 1
             calls["chunker_kwargs"] = kw
 
-    fake_settings = type("S", (), {"EMBEDDING_MODEL": "stub/embedder"})()
-
     def fake_configure_logging() -> None:
         calls["configure_logging"] += 1
 
+    modules = __import__("sys").modules
+    monkeypatch.setitem(modules, "docling.chunking", type("M", (), {"HybridChunker": _FakeChunker}))
     monkeypatch.setitem(
-        __import__("sys").modules,
-        "docling.chunking",
-        type("M", (), {"HybridChunker": _FakeChunker}),
+        modules,
+        "docling_core.transforms.chunker.tokenizer.huggingface",
+        type("M", (), {"HuggingFaceTokenizer": _FakeTokenizer}),
     )
     monkeypatch.setattr(
         __import__("hacienda_gpt.utils", fromlist=["configure_logging"]),
@@ -147,9 +159,15 @@ def test_init_worker_configures_logging(monkeypatch: pytest.MonkeyPatch) -> None
 
     dl._init_worker(512)
     assert calls["configure_logging"] == 1
+    assert calls["tokenizer_built"] == 1
+    assert calls["tokenizer_kwargs"] == {"model_name": "stub/embedder", "max_tokens": 512}
     assert calls["chunker_built"] == 1
-    assert calls["chunker_kwargs"]["max_tokens"] == 512
+    assert isinstance(calls["chunker_kwargs"]["tokenizer"], _FakeTokenizer)
     assert dl._WORKER_CHUNKER is not None
+
+    # An unset --max-tokens falls back to the budget the index fingerprint assumes.
+    dl._init_worker(None)
+    assert calls["tokenizer_kwargs"]["max_tokens"] == 512
 
 
 # --------------------------------------------------------------------------- #
