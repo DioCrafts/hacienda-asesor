@@ -542,9 +542,13 @@ function Advisor({ account }: { account?: AccountControls }) {
         open={autonomosOpen}
         onClose={() => setAutonomosOpen(false)}
         taxPeriod={active.taxPeriod}
-        onUse={(net) => {
-          // The net income of the activity becomes a fact of the case and feeds the simulator.
-          void handleChangeFact("rendimiento_actividad_neto", net);
+        caseId={active.caseId}
+        facts={active.facts}
+        onSaveFact={handleChangeFact}
+        busy={busy}
+        onUse={() => {
+          // The panel has saved the income and expenses as facts of the case; the simulator
+          // works the activity's net income out of them together with the rest of the case.
           setAutonomosOpen(false);
           setSimulatorOpen(true);
         }}

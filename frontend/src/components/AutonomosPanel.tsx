@@ -3,15 +3,15 @@
 // is the deterministic calculators behind POST /autonomos/* — no model call,
 // so it recomputes as the user types. Same visual language as SimulatorPanel.
 
-import { ArrowRight, BriefcaseBusiness, ChevronDown, TriangleAlert, X } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, ChevronDown, RotateCcw, Save, TriangleAlert, X } from "lucide-react";
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
-import type { CalcLine } from "../api";
+import type { CalcLine, Fact } from "../api";
 import { ApiError } from "../api";
-import type { ResultadoActividad, ResultadoModelo130, ResultadoModelo303, Trimestre } from "../apiAutonomos";
-import { calcularActividad, calcularModelo130, calcularModelo303, getEjerciciosAutonomos } from "../apiAutonomos";
+import type { ActividadPerfil, ResultadoActividad, ResultadoModelo130, ResultadoModelo303, Trimestre } from "../apiAutonomos";
+import { calcularActividad, calcularActividadDelExpediente, calcularModelo130, calcularModelo303, getEjerciciosAutonomos } from "../apiAutonomos";
 import { formatMoney } from "../lib/presentation";
 
 type Tab = "actividad" | "m130" | "m303";
@@ -44,6 +44,12 @@ const ACTIVIDAD_GASTOS: FieldDef[] = [
   { name: "amortizaciones", label: "Amortizaciones", hint: "La parte del año de equipos, vehículos, mobiliario…" },
   { name: "otros_gastos", label: "Otros gastos", hint: "Material, seguros, software, publicidad, viajes…" },
 ];
+const ACTIVIDAD_IRREGULARES: FieldDef = {
+  name: "rendimientos_irregulares",
+  label: "Beneficio extraordinario de varios años",
+  hint: "La parte del beneficio generada durante más de dos años o por una indemnización por cese, una subvención de capital o un premio. Tiene una reducción propia.",
+};
+// Only asked when there is no case to take them from.
 const ACTIVIDAD_MAS: FieldDef[] = [
   { name: "otras_rentas_no_exentas", label: "Otros ingresos del año", hint: "Sueldo, alquileres, intereses… Déjalo vacío si no lo sabes: no se aplicarán las reducciones que dependen de ello" },
   { name: "reduccion_rendimientos_trabajo", label: "Reducción por rendimientos del trabajo", hint: "Solo si además tienes un sueldo bajo y conoces la reducción que se le aplica" },
@@ -64,6 +70,18 @@ const M303_COMPRAS: FieldDef[] = [
   { name: "cuotas_soportadas_bienes_inversion", label: "IVA de bienes de inversión", hint: "La cuota de IVA de equipos, vehículos, maquinaria…" },
   { name: "cuotas_a_compensar_periodos_anteriores", label: "Saldo a tu favor de trimestres anteriores", hint: "Lo que quedó «a compensar» en declaraciones anteriores" },
 ];
+
+// Panel field -> the case fact that stores it (hacienda_gpt/tax/profile.py: ACTIVIDAD_FACT_FIELDS).
+const FACT_OF: Record<string, string> = {
+  ...Object.fromEntries([...ACTIVIDAD_INGRESOS, ...ACTIVIDAD_GASTOS].map((f) => [f.name, `actividad_${f.name}`])),
+  rendimientos_irregulares: "actividad_rendimientos_irregulares",
+};
+const FLAG_FACT_OF: Record<string, string> = {
+  cumple_requisitos_reduccion_dependiente: "actividad_cumple_requisitos_dependiente",
+  reduccion_inicio_actividad: "actividad_reduccion_inicio",
+};
+const CEUTA_FACT = "actividad_ceuta_melilla";
+const NET_FACT = "rendimiento_actividad_neto";
 
 type Values = Record<string, string>;
 type Flags = Record<string, boolean>;
@@ -205,6 +223,7 @@ function QuarterPicker({ value, onChange, cumulative }: { value: Trimestre; onCh
 function Detail({ lineas, avisos }: { lineas: CalcLine[]; avisos: string[] }) {
   return (
     <>
+      {lineas.length > 0 && (
       <details className="group rounded-xl border border-line bg-surface">
         <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-ink-soft [&::-webkit-details-marker]:hidden">
           Desglose del cálculo
@@ -224,6 +243,7 @@ function Detail({ lineas, avisos }: { lineas: CalcLine[]; avisos: string[] }) {
           </tbody>
         </table>
       </details>
+      )}
       {avisos.length > 0 && (
         <details open className="group rounded-xl border border-grounding-uncited-bd bg-grounding-uncited-bg">
           <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-grounding-uncited-fg [&::-webkit-details-marker]:hidden">
@@ -263,6 +283,26 @@ function ErrorNote({ message }: { message: string }) {
   );
 }
 
+function CeutaSelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="block sm:col-span-2">
+      <span className="text-[12.5px] text-ink-soft">¿Desarrollas la actividad en Ceuta o Melilla?</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-[16px] text-ink focus:border-primary focus:outline-none sm:text-[14px]"
+      >
+        <option value="">No</option>
+        <option value="ceuta">Sí, en Ceuta</option>
+        <option value="melilla">Sí, en Melilla</option>
+      </select>
+      <span className="mt-1 block text-[11.5px] leading-snug text-muted">
+        Solo si sus rendimientos tienen derecho a la deducción por rentas obtenidas en Ceuta o Melilla. Cambia los pagos trimestrales y, según el año, los gastos de difícil justificación.
+      </span>
+    </label>
+  );
+}
+
 interface AutonomosPanelProps {
   open: boolean;
   onClose: () => void;
@@ -270,9 +310,17 @@ interface AutonomosPanelProps {
   onUse: (net: number) => void;
   /** Fiscal year of the conversation ("2026"); used when the calculators have parameters for it. */
   taxPeriod?: string | null;
+  /** With a case, its facts prefill "Mi actividad" and its other income decides the reductions. */
+  caseId?: string | null;
+  facts?: Fact[];
+  /** Persist one fact to the case (null deletes it). Resolves true when saved. */
+  onSaveFact?: (factName: string, value: string | number | boolean | null) => Promise<boolean>;
+  busy?: boolean;
 }
 
-export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: AutonomosPanelProps) {
+const NO_FACTS: Fact[] = [];
+
+export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null, caseId = null, facts = NO_FACTS, onSaveFact, busy = false }: AutonomosPanelProps) {
   const [tab, setTab] = useState<Tab>("actividad");
   const [ejercicios, setEjercicios] = useState<number[] | null>(null);
   const [ejercicioEdit, setEjercicioEdit] = useState<number | null>(null);
@@ -281,8 +329,11 @@ export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: Auton
   const [actividad, setActividad] = useState<Values>({});
   const [actividadFlags, setActividadFlags] = useState<Flags>({});
   const [discapacidad, setDiscapacidad] = useState("no");
+  // null = whatever the case says.
+  const [ceutaEdit, setCeutaEdit] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [m130, setM130] = useState<Values>({});
-  const [m130Flags, setM130Flags] = useState<Flags>({ actividad_profesional: true, aplicar_gastos_dificil_justificacion: true });
+  const [m130Flags, setM130Flags] = useState<Flags>({ aplicar_gastos_dificil_justificacion: true });
   const [trimestre130, setTrimestre130] = useState<Trimestre>(1);
   const [m303, setM303] = useState<Values>({});
   const [trimestre303, setTrimestre303] = useState<Trimestre>(1);
@@ -310,20 +361,75 @@ export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: Auton
     return () => controller.abort();
   }, [open, ejercicios]);
 
+  // What the case already holds about the activity: typed figures are edits over it.
+  const saved = useMemo(() => {
+    const byName = new Map(facts.map((fact) => [fact.name, fact.value]));
+    const values: Values = {};
+    for (const [field, fact] of Object.entries(FACT_OF)) {
+      const value = byName.get(fact);
+      if (typeof value === "number") values[field] = String(value);
+    }
+    const flags: Flags = {};
+    for (const [field, fact] of Object.entries(FLAG_FACT_OF)) {
+      const value = byName.get(fact);
+      if (typeof value === "boolean") flags[field] = value;
+    }
+    const ciudad = byName.get(CEUTA_FACT);
+    const profesional = byName.get("actividad_profesional");
+    return {
+      values,
+      flags,
+      ceuta: typeof ciudad === "string" && ["ceuta", "melilla"].includes(ciudad.trim().toLowerCase()) ? ciudad.trim().toLowerCase() : "",
+      profesional: typeof profesional === "boolean" ? profesional : null,
+      hasNet: byName.has(NET_FACT),
+    };
+  }, [facts]);
+  const conExpediente = Boolean(caseId);
+  const actividadValues: Values = { ...saved.values, ...actividad };
+  const actividadFlagValues: Flags = { ...saved.flags, ...actividadFlags };
+  const ceuta = ceutaEdit ?? saved.ceuta;
+
   const wanted = taxPeriod ? Number(taxPeriod.slice(0, 4)) : null;
   const ejercicio = ejercicios?.length ? (ejercicioEdit ?? (wanted !== null && ejercicios.includes(wanted) ? wanted : ejercicios[ejercicios.length - 1])) : null;
 
+  // Without a case: the figures alone, with whatever "other income" the user types.
   const actividadBody =
-    ejercicio === null
+    ejercicio === null || conExpediente
       ? null
       : JSON.stringify({
           ejercicio,
-          ...numbers(actividad, [...ACTIVIDAD_INGRESOS, ...ACTIVIDAD_GASTOS, ...ACTIVIDAD_MAS].map((f) => f.name)),
-          ...(actividadFlags.cumple_requisitos_reduccion_dependiente ? { cumple_requisitos_reduccion_dependiente: true } : {}),
+          ...numbers(actividadValues, [...Object.keys(FACT_OF), ...ACTIVIDAD_MAS.map((f) => f.name)]),
+          ...(actividadFlagValues.cumple_requisitos_reduccion_dependiente ? { cumple_requisitos_reduccion_dependiente: true } : {}),
+          ...(actividadFlagValues.reduccion_inicio_actividad ? { reduccion_inicio_actividad: true } : {}),
           ...(discapacidad === "si" ? { discapacidad: true } : discapacidad === "ampliada" ? { discapacidad_ampliada: true } : {}),
+          ...(ceuta ? { ceuta_melilla: ceuta } : {}),
         });
+  // With a case: the same figures as facts layered over the saved ones, so the case's other
+  // income (salary, interest…) decides the reductions exactly as the simulator will.
+  const cambiosExpediente: Record<string, unknown> = {};
+  for (const [field, fact] of Object.entries(FACT_OF)) {
+    const n = parseNumber(actividadValues[field]);
+    if (n !== null) cambiosExpediente[fact] = n;
+    else if (field in saved.values) cambiosExpediente[fact] = 0; // cleared in the form
+  }
+  for (const [field, fact] of Object.entries(FLAG_FACT_OF)) cambiosExpediente[fact] = actividadFlagValues[field] ?? false;
+  if (ceuta || saved.ceuta) cambiosExpediente[CEUTA_FACT] = ceuta;
+  const expedienteBody = ejercicio === null || !caseId ? null : JSON.stringify({ caseId, ejercicio, cambios: cambiosExpediente, facts: facts.length });
+
+  // What "Guardar en mi expediente" would write: [fact, value | null to delete].
+  const pendientes: Array<[string, string | number | boolean | null]> = [];
+  for (const [field, fact] of Object.entries(FACT_OF)) {
+    const n = parseNumber(actividadValues[field]);
+    const before = field in saved.values ? Number(saved.values[field]) : null;
+    if (n !== before) pendientes.push([fact, n]);
+  }
+  for (const [field, fact] of Object.entries(FLAG_FACT_OF)) {
+    const value = actividadFlagValues[field] ?? false;
+    if (value !== (saved.flags[field] ?? false)) pendientes.push([fact, value]);
+  }
+  if (ceuta !== saved.ceuta) pendientes.push([CEUTA_FACT, ceuta || null]);
   const primero130 = trimestre130 === 1;
-  const profesional = m130Flags.actividad_profesional ?? true;
+  const profesional = m130Flags.actividad_profesional ?? saved.profesional ?? true;
   const inicio = m130Flags.inicio_actividad ?? false;
   const m130Body =
     ejercicio === null
@@ -341,11 +447,16 @@ export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: Auton
           actividad_profesional: profesional,
           aplicar_gastos_dificil_justificacion: m130Flags.aplicar_gastos_dificil_justificacion ?? true,
           ...(profesional && inicio ? { inicio_actividad: true } : {}),
+          ...(ceuta ? { ceuta_melilla: ceuta } : {}),
         });
   const m303Body =
     ejercicio === null ? null : JSON.stringify({ ejercicio, trimestre: trimestre303, ...numbers(m303, [...M303_VENTAS, ...M303_COMPRAS].map((f) => f.name)) });
 
   const calcActividad = useCalculo<ResultadoActividad>(open && tab === "actividad", actividadBody, (body, signal) => calcularActividad(body as Parameters<typeof calcularActividad>[0], signal));
+  const calcExpediente = useCalculo<ActividadPerfil | null>(open && tab === "actividad", expedienteBody, (body, signal) => {
+    const { caseId: id, ejercicio: year, cambios } = body as { caseId: string; ejercicio: number; cambios: Record<string, unknown> };
+    return calcularActividadDelExpediente({ caseId: id, ejercicio: year, cambios, signal });
+  });
   const calc130 = useCalculo<ResultadoModelo130>(open && tab === "m130", m130Body, (body, signal) => calcularModelo130(body as Parameters<typeof calcularModelo130>[0], signal));
   const calc303 = useCalculo<ResultadoModelo303>(open && tab === "m303", m303Body, (body, signal) => calcularModelo303(body as Parameters<typeof calcularModelo303>[0], signal));
 
@@ -356,13 +467,36 @@ export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: Auton
   const fields = (defs: FieldDef[], values: Values, setter: (update: (prev: Values) => Values) => void) =>
     defs.map((field) => <MoneyField key={field.name} field={field} values={values} onChange={setIn(setter)} />);
 
-  const current = tab === "actividad" ? calcActividad : tab === "m130" ? calc130 : calc303;
-  const fuente = current.result?.fuente;
+  const perfil = conExpediente ? calcExpediente.result : null;
+  const resultadoActividad = conExpediente ? (perfil?.resultado ?? null) : calcActividad.result;
+  const current = tab === "actividad" ? (conExpediente ? calcExpediente : calcActividad) : tab === "m130" ? calc130 : calc303;
+  const fuente = tab === "actividad" ? resultadoActividad?.fuente : (current.result as { fuente?: string } | null)?.fuente;
+  const flagProps = { flags: { ...actividadFlagValues }, onChange: setFlagIn(setActividadFlags) };
+
+  /** Write the typed figures to the case. The breakdown replaces a net figure saved before. */
+  async function saveActividad(): Promise<boolean> {
+    if (!onSaveFact) return false;
+    setSaving(true);
+    try {
+      for (const [fact, value] of pendientes) {
+        if (!(await onSaveFact(fact, value))) return false;
+      }
+      if (saved.hasNet && parseNumber(actividadValues.ingresos_integros) !== null && !(await onSaveFact(NET_FACT, null))) return false;
+      setActividad({});
+      setActividadFlags({});
+      setCeutaEdit(null);
+      return true;
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function actividadTab() {
-    const r = calcActividad.result;
+    const r = resultadoActividad;
     const neto = r ? Number(r.rendimiento_actividad_neto) : 0;
-    const hasIncome = parseNumber(actividad.ingresos_integros) !== null;
+    const hasIncome = parseNumber(actividadValues.ingresos_integros) !== null;
+    const canSave = conExpediente && onSaveFact !== undefined;
+    const reducciones = r ? Number(r.reduccion_art_32_1) + Number(r.reduccion_art_32_2) + Number(r.reduccion_art_32_3) : 0;
     return (
       <>
         {r && (
@@ -370,34 +504,88 @@ export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: Auton
             <p className="mt-2 text-[13px] text-ink-soft">
               Ingresos {formatMoney(r.ingresos_integros)} · gastos {formatMoney(r.gastos_deducibles)}
               {Number(r.gastos_dificil_justificacion) > 0 && <> · gastos de difícil justificación {formatMoney(r.gastos_dificil_justificacion)}</>}
-              {Number(r.reduccion_art_32_2) > 0 && <> · reducción {formatMoney(r.reduccion_art_32_2)}</>}
+              {reducciones > 0 && <> · reducciones {formatMoney(reducciones)}</>}
             </p>
             <p className="mt-1 text-[12.5px] text-muted">Es la cifra por la que tu actividad tributa en el IRPF, antes de sumar tus otros ingresos.</p>
+            {perfil?.otras_rentas_no_exentas != null && (
+              <p className="mt-1 text-[12.5px] text-muted">
+                Se han tenido en cuenta los otros ingresos de tu expediente ({formatMoney(perfil.otras_rentas_no_exentas)}) para ver qué reducciones te corresponden.
+              </p>
+            )}
             {hasIncome ? (
-              <button
-                type="button"
-                onClick={() => onUse(neto)}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-[13px] font-semibold text-white transition hover:bg-primary-hover"
-              >
-                Usar en mi simulación
-                <ArrowRight size={14} aria-hidden />
-              </button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={saving || busy}
+                  onClick={() => {
+                    // With a case the breakdown itself is saved, so the simulator recomputes it with the rest of the case.
+                    if (!canSave) onUse(neto);
+                    else void saveActividad().then((ok) => ok && onUse(neto));
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-[13px] font-semibold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Usar en mi simulación
+                  <ArrowRight size={14} aria-hidden />
+                </button>
+                {canSave && pendientes.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={saving || busy}
+                      onClick={() => void saveActividad()}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-[13px] font-semibold text-primary-dark transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Save size={14} aria-hidden />
+                      {saving ? "Guardando…" : "Guardar en mi expediente"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActividad({});
+                        setActividadFlags({});
+                        setCeutaEdit(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-soft hover:bg-line/60"
+                    >
+                      <RotateCcw size={14} aria-hidden />
+                      Deshacer cambios
+                    </button>
+                  </>
+                )}
+              </div>
             ) : (
               <p className="mt-2 text-[12.5px] text-muted">Introduce al menos tus ingresos del año para obtener el cálculo.</p>
             )}
+            {canSave && pendientes.length > 0 && hasIncome && (
+              <p className="mt-2 text-[12px] leading-snug text-muted">Tienes cambios sin guardar: al guardarlos, el simulador y el asesor calcularán tu actividad con estas cifras.</p>
+            )}
           </ResultCard>
         )}
-        <Group title="Ingresos">{fields(ACTIVIDAD_INGRESOS, actividad, setActividad)}</Group>
-        <Group title="Gastos del año (sin IVA)">{fields(ACTIVIDAD_GASTOS, actividad, setActividad)}</Group>
+        {!r && conExpediente && !current.error && <p className="text-[13px] text-muted">Introduce tus ingresos del año para calcular el beneficio de tu actividad.</p>}
+        <Group title="Ingresos">{fields(ACTIVIDAD_INGRESOS, actividadValues, setActividad)}</Group>
+        <Group title="Gastos del año (sin IVA)">{fields(ACTIVIDAD_GASTOS, actividadValues, setActividad)}</Group>
         <Optional title="Más datos (opcional)">
-          {fields(ACTIVIDAD_MAS, actividad, setActividad)}
+          {!conExpediente && fields(ACTIVIDAD_MAS, actividadValues, setActividad)}
+          {conExpediente && (
+            <p className="text-[12px] leading-snug text-muted sm:col-span-2">
+              Tus otros ingresos (sueldo, intereses, alquileres…) y tu grado de discapacidad se toman de tu expediente: cámbialos en «Tu expediente» o en el simulador.
+            </p>
+          )}
+          <MoneyField field={ACTIVIDAD_IRREGULARES} values={actividadValues} onChange={setIn(setActividad)} />
           <Flag
             name="cumple_requisitos_reduccion_dependiente"
             label="Trabajo para un único cliente y cumplo los requisitos de la reducción"
             hint="Autónomo dependiente o de cliente único no vinculado, sin sueldo y con retención en casi todos los ingresos. Sustituye a los gastos de difícil justificación; el resultado detalla los requisitos."
-            flags={actividadFlags}
-            onChange={setFlagIn(setActividadFlags)}
+            {...flagProps}
           />
+          <Flag
+            name="reduccion_inicio_actividad"
+            label="Es una actividad nueva y este es mi primer año con beneficio (o el siguiente)"
+            hint="Solo si no ejerciste ninguna actividad el año anterior a empezar y la mayor parte de tus ingresos no viene de tu antiguo empleador. Tiene una reducción propia."
+            {...flagProps}
+          />
+          <CeutaSelect value={ceuta} onChange={setCeutaEdit} />
+          {!conExpediente && (
           <label className="block sm:col-span-2">
             <span className="text-[12.5px] text-ink-soft">Discapacidad reconocida</span>
             <select
@@ -411,8 +599,10 @@ export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: Auton
             </select>
             <span className="mt-1 block text-[11.5px] leading-snug text-muted">Solo cuenta junto con la reducción de cliente único.</span>
           </label>
+          )}
         </Optional>
-        {r && <Detail lineas={r.lineas} avisos={r.avisos} />}
+        {r && <Detail lineas={r.lineas} avisos={perfil ? [perfil.aviso, ...r.avisos] : r.avisos} />}
+        {!r && perfil && <Detail lineas={[]} avisos={[perfil.aviso]} />}
       </>
     );
   }
@@ -460,7 +650,7 @@ export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: Auton
             name="actividad_profesional"
             label="Mi actividad es profesional"
             hint="Abogados, médicos, programadores, diseñadores… (no comercio, hostelería o talleres). Solo los profesionales restan las retenciones."
-            flags={m130Flags}
+            flags={{ ...m130Flags, actividad_profesional: profesional }}
             onChange={setFlagIn(setM130Flags)}
           />
           <Flag
@@ -484,6 +674,9 @@ export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: Auton
               onChange={setIn(setM130)}
             />
           )}
+        </Optional>
+        <Optional title="Ceuta y Melilla (opcional)">
+          <CeutaSelect value={ceuta} onChange={setCeutaEdit} />
         </Optional>
         {profesional && (
           <Optional title="¿Tengo que presentarlo? (opcional)">
