@@ -25,6 +25,7 @@ const GROUPS: Array<{ title: string; fields: FieldDef[] }> = [
       { name: "rendimiento_trabajo_bruto", label: "Salario bruto", kind: "money" },
       { name: "cotizaciones_seguridad_social", label: "Cotizaciones a la Seguridad Social", kind: "money", hint: "Lo que te descuentan en nómina (≈ 6,5 % del bruto)" },
       { name: "retenciones", label: "IRPF ya retenido", kind: "money" },
+      { name: "rendimiento_actividad_neto", label: "Beneficio neto de tu actividad", kind: "money", hint: "Si eres autónomo: calcúlalo en el panel «Autónomos»" },
       { name: "rendimiento_capital_mobiliario", label: "Intereses y dividendos", kind: "money" },
       { name: "ganancias_patrimoniales", label: "Ganancias por ventas", kind: "money", hint: "Acciones, fondos, inmuebles… (negativo si son pérdidas)" },
     ],

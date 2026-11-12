@@ -36,6 +36,7 @@ import { NotificationsPanel } from "./components/NotificationsPanel";
 import { ObligationCardList } from "./components/ObligationCard";
 import { PrivacyPanel } from "./components/PrivacyPanel";
 import { RichText } from "./components/RichText";
+import { AutonomosPanel } from "./components/AutonomosPanel";
 import { SimulatorPanel } from "./components/SimulatorPanel";
 import { Sidebar } from "./components/Sidebar";
 import { SourceCardList } from "./components/SourceCard";
@@ -108,6 +109,7 @@ function Advisor({ account }: { account?: AccountControls }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [caseOpen, setCaseOpen] = useState(false);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
+  const [autonomosOpen, setAutonomosOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<{ caseId: string; items: AdvisorNotification[] } | null>(null);
   // Key of the last request that finished; while it differs from the current one we are loading.
@@ -400,6 +402,7 @@ function Advisor({ account }: { account?: AccountControls }) {
           factCount={visibleFactCount}
           onOpenCase={() => setCaseOpen(true)}
           onOpenSimulator={() => setSimulatorOpen(true)}
+          onOpenAutonomos={() => setAutonomosOpen(true)}
           onOpenNotifications={() => setNotificationsOpen(true)}
           unreadNotifications={unreadNotifications}
           onOpenMenu={() => setMenuOpen(true)}
@@ -533,6 +536,18 @@ function Advisor({ account }: { account?: AccountControls }) {
         taxPeriod={active.taxPeriod}
         onSaveFact={handleChangeFact}
         busy={busy}
+      />
+      <AutonomosPanel
+        key={`autonomos-${activeId}`}
+        open={autonomosOpen}
+        onClose={() => setAutonomosOpen(false)}
+        taxPeriod={active.taxPeriod}
+        onUse={(net) => {
+          // The net income of the activity becomes a fact of the case and feeds the simulator.
+          void handleChangeFact("rendimiento_actividad_neto", net);
+          setAutonomosOpen(false);
+          setSimulatorOpen(true);
+        }}
       />
     </div>
   );

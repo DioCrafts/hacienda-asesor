@@ -66,6 +66,8 @@ from hacienda_gpt.agent.agent import AgentResult, TaxAgent
 from hacienda_gpt.agent.providers.base import LLMProvider, ProviderError
 from hacienda_gpt.api.observability import ApiMetrics, observability_middleware
 from hacienda_gpt.api.routers import auth as auth_router
+from hacienda_gpt.api.routers import autonomos as autonomos_router
+from hacienda_gpt.api.routers import consumo as consumo_router
 from hacienda_gpt.api.security import (
     RateLimiter,
     make_rate_limit_middleware,
@@ -99,6 +101,7 @@ from hacienda_gpt.decision.state_store import CaseVersionConflictError
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.decision.turn_service import process_turn
 from hacienda_gpt.llm.grounding import AnswerEnvelope
+from hacienda_gpt.ops.consumo import PresupuestoAgotadoError, contexto_consumo, medir
 from hacienda_gpt.proactive.jobs import ejecutar_para_caso, hoy_en_espana
 from hacienda_gpt.proactive.store import Notification, NotificationStore
 from hacienda_gpt.settings import API_RATE_LIMIT_PER_MIN, DECISION_STATE_DB_PATH
@@ -509,7 +512,13 @@ def post_agent(
     """
     case = _load_agent_case(payload.case_id, store, access)
     try:
-        result = agent.run(payload.query, chat_history=payload.chat_history, case=case)
+        with contexto_consumo(
+            user_id=access.user.id if access.user is not None else (case.user_id if case is not None else None),
+            case_id=payload.case_id,
+        ):
+            result = agent.run(payload.query, chat_history=payload.chat_history, case=case)
+    except PresupuestoAgotadoError as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
     except ProviderError as exc:
         raise HTTPException(
             status_code=503,
@@ -544,14 +553,21 @@ def post_agent_stream(
 
     def work() -> None:
         try:
-            result = agent.run(
-                payload.query,
-                chat_history=payload.chat_history,
-                case=case,
-                on_event=lambda event: events.put({"event": "progress", "data": event}),
-            )
+            # Inside the worker thread: the usage context does not cross threads by itself.
+            with contexto_consumo(
+                user_id=access.user.id if access.user is not None else (case.user_id if case is not None else None),
+                case_id=payload.case_id,
+            ):
+                result = agent.run(
+                    payload.query,
+                    chat_history=payload.chat_history,
+                    case=case,
+                    on_event=lambda event: events.put({"event": "progress", "data": event}),
+                )
             response = _finish_agent_turn(payload, case, result, store)
             events.put({"event": "result", "data": response.model_dump(mode="json")})
+        except PresupuestoAgotadoError as exc:
+            events.put({"event": "error", "data": {"status": 429, "detail": str(exc)}})
         except ProviderError as exc:
             events.put({"event": "error", "data": {"status": 503, "detail": f"No se pudo procesar la consulta: {exc}"}})
         except HTTPException as exc:
@@ -779,7 +795,7 @@ def _build_document_provider() -> LLMProvider:
     from hacienda_gpt.agent.providers import create_provider
 
     # Locating labelled figures in a document is a constrained task: low effort.
-    return create_provider(effort=settings.DECISION_EXTRACTOR_EFFORT)
+    return medir(create_provider(effort=settings.DECISION_EXTRACTOR_EFFORT), "documentos")
 
 
 def get_document_provider() -> LLMProvider:
@@ -814,9 +830,12 @@ def post_case_document(
         raise HTTPException(status_code=404, detail="case not found")
     try:
         data = decode_upload(payload.content_base64)
-        analysis = analizar_documento(provider, filename=payload.filename, data=data)
+        with contexto_consumo(user_id=None, case_id=case_id):
+            analysis = analizar_documento(provider, filename=payload.filename, data=data)
     except DocumentoNoLegibleError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except PresupuestoAgotadoError as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
     except ProviderError as exc:
         raise HTTPException(status_code=503, detail=f"No se pudo analizar el documento: {exc}") from exc
     store.append_audit_event(
@@ -939,4 +958,6 @@ def export_case_audit(
 app.include_router(
     auth_router.build_router(get_case_store=get_case_store, get_notification_store=get_notification_store)
 )
+app.include_router(autonomos_router.router)
+app.include_router(consumo_router.router)
 # --- /routers ---
