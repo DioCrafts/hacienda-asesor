@@ -136,14 +136,24 @@ def test_agent_stream_emits_progress_then_one_result() -> None:
     events = _stream({"query": "¿Plazo para reinvertir?"})
 
     progress = [e["data"] for e in events if e["event"] == "progress"]
-    assert [p["type"] for p in progress] == ["thinking", "tool_call", "tool_result", "thinking", "verifying"]
+    assert [p["type"] for p in progress] == [
+        "thinking",
+        "tool_call",
+        "tool_result",
+        "thinking",
+        "text_delta",
+        "text_delta",
+        "verifying",
+    ]
+    # The draft answer is streamed chunk by chunk before it is verified.
+    assert progress[4]["text"] + progress[5]["text"] == "El plazo es de dos años [F2]."
     assert progress[1] == {
         "type": "tool_call",
         "tool": "buscar_fuentes",
         "arguments": {"consulta": "plazo reinversión"},
     }
     assert progress[2]["summary"].startswith("3 fragmentos")
-    assert progress[4] == {"type": "verifying", "citations": 1}
+    assert progress[6] == {"type": "verifying", "citations": 1}
 
     assert [e["event"] for e in events if e["event"] != "progress"] == ["result"]
     result = events[-1]["data"]
@@ -203,3 +213,39 @@ def test_agent_response_exposes_case_facts_and_user_can_delete_one() -> None:
 
     assert client.delete(f"/cases/{case_id}/facts/tipo_renta").status_code == 404
     assert client.delete("/cases/case_nope/facts/tipo_renta").status_code == 404
+
+
+def test_user_can_edit_and_add_case_facts() -> None:
+    case_id = client.post("/cases", json={"user_id": "u-edit", "jurisdiction": "ES", "tax_period": "2025"}).json()[
+        "case_id"
+    ]
+
+    def put(name: str, value):
+        return client.put(f"/cases/{case_id}/facts/{name}", json={"value": value})
+
+    assert put("residencia_fiscal", "ES").status_code == 200
+    assert put("tipo_renta", "trabajo").status_code == 200
+    assert put("menciona_ingresos", True).status_code == 200
+    # Typed as the user would: Spanish thousands separator and currency sign.
+    amount = put("importe_renta_aproximado", "45.000 €").json()
+    assert {f["name"]: f["value"] for f in amount["facts"]}["importe_renta_aproximado"] == 45000.0
+
+    # Setting the fiscal year moves the case's period and makes the IRPF rule fire.
+    edited = put("periodo_fiscal", "2024").json()
+    assert edited["tax_period"] == "2024"
+    assert [o["obligation_id"] for o in edited["obligation_candidates"]] == ["obl_irpf_candidate"]
+    assert edited["obligation_candidates"][0]["due_date"] == "2025-06-30"
+
+    # Editing replaces, never duplicates.
+    replaced = put("tipo_renta", "capital_mobiliario").json()
+    assert [f["value"] for f in replaced["facts"] if f["name"] == "tipo_renta"] == ["capital_mobiliario"]
+    assert next(f for f in replaced["facts"] if f["name"] == "tipo_renta")["source"] == "user_edit"
+
+    assert put("importe_renta_aproximado", "mucho").status_code == 422
+    assert put("periodo_fiscal", "el año pasado").status_code == 422
+    assert put("periodo_fiscal", "1800").status_code == 422
+    assert put("color_favorito", "azul").status_code == 404
+    assert client.put("/cases/case_nope/facts/tipo_renta", json={"value": "trabajo"}).status_code == 404
+
+    events = client.get(f"/cases/{case_id}/audit").json()["events"]
+    assert sum(1 for e in events if e.get("event_type") == "fact_edited_by_user") == 6

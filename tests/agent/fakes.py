@@ -27,9 +27,15 @@ class ScriptedConversation:
     def __init__(self, provider: ScriptedProvider) -> None:
         self._provider = provider
 
-    def step(self, *, allow_tools: bool = True) -> ModelTurn:
+    def step(self, *, allow_tools: bool = True, on_text=None) -> ModelTurn:
         self._provider.allow_tools_log.append(allow_tools)
-        return self._provider.turns.pop(0)
+        self._provider.streamed_log.append(on_text is not None)
+        turn = self._provider.turns.pop(0)
+        if on_text is not None and turn.text:
+            half = len(turn.text) // 2
+            on_text(turn.text[:half])
+            on_text(turn.text[half:])
+        return turn
 
     def add_tool_results(self, results: list[ToolResult]) -> None:
         self._provider.tool_results.extend(results)
@@ -51,6 +57,7 @@ class ScriptedProvider:
         self.tool_results: list[ToolResult] = []
         self.user_messages: list[str] = []
         self.allow_tools_log: list[bool] = []
+        self.streamed_log: list[bool] = []
         self.json_requests: list[dict[str, Any]] = []
 
     def start(

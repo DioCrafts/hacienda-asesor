@@ -188,3 +188,40 @@ def test_untouched_case_is_not_returned_for_persistence() -> None:
     case = CaseState(case_id="case_1", user_id="u1", jurisdiction="ES", tax_period="2025")
     provider = ScriptedProvider([text_turn("¿En qué comunidad resides?")], [verdict("pregunta_aclaratoria")])
     assert _agent(provider).run("hola", case=case).updated_case is None
+
+
+def _two_step_script() -> ScriptedProvider:
+    return ScriptedProvider(
+        [tool_turn(SEARCH), text_turn(GOOD_ANSWER)],
+        [verdict("respuesta", ("Exención", ["F1"], "respaldada"), ("Plazo", ["F2"], "respaldada"))],
+    )
+
+
+def test_text_is_streamed_only_when_someone_listens() -> None:
+    silent = _two_step_script()
+    _agent(silent).run(QUESTION)
+    assert silent.streamed_log == [False, False]
+
+    listening = _two_step_script()
+    events: list[dict] = []
+    _agent(listening).run(QUESTION, on_event=events.append)
+    assert listening.streamed_log == [True, True]
+    assert "".join(e["text"] for e in events if e["type"] == "text_delta") == GOOD_ANSWER
+
+
+def test_broken_progress_callback_does_not_break_the_run() -> None:
+    provider = ScriptedProvider([text_turn("¿En qué comunidad resides?")], [verdict("pregunta_aclaratoria")])
+
+    def boom(event: dict) -> None:
+        raise RuntimeError("cliente desconectado")
+
+    assert _agent(provider).run("hola", on_event=boom).mode is AgentMode.CLARIFICATION
+
+
+def test_tool_call_truncated_by_max_tokens_is_never_executed() -> None:
+    truncated = ModelTurn(text="", tool_calls=tool_turn(SEARCH).tool_calls, stop_reason="max_tokens")
+    searcher = FakeSearcher(corpus())
+    result = TaxAgent(provider=ScriptedProvider([truncated]), searcher=searcher).run(QUESTION)
+
+    assert result.mode is AgentMode.ABSTAINED and "truncó" in result.warnings[0]
+    assert searcher.calls == [] and result.tool_trace == []

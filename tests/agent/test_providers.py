@@ -295,3 +295,133 @@ def test_create_provider_selects_backend(monkeypatch) -> None:
 
     with pytest.raises(ValueError, match="desconocido"):
         create_provider("gemini")
+
+
+# --------------------------------------------------------------------------- #
+# Streaming
+# --------------------------------------------------------------------------- #
+
+
+class _FakeStream:
+    def __init__(self, chunks: list[str], final, error: Exception | None = None) -> None:
+        self._chunks, self._final, self._error = chunks, final, error
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc) -> bool:
+        return False
+
+    @property
+    def text_stream(self):
+        yield from self._chunks
+        if self._error is not None:
+            raise self._error
+
+    def get_final_message(self):
+        return self._final
+
+
+class _FakeStreamingMessages(_FakeMessages):
+    def stream(self, **kwargs):
+        self.calls.append({**kwargs, "messages": list(kwargs["messages"])})
+        return self.responses.pop(0)
+
+
+def _streaming_anthropic(streams: list) -> tuple[SimpleNamespace, _FakeStreamingMessages]:
+    beta = _FakeStreamingMessages(streams)
+    return SimpleNamespace(messages=_FakeStreamingMessages([]), beta=SimpleNamespace(messages=beta)), beta
+
+
+def test_anthropic_streaming_forwards_text_and_marks_tools_eager() -> None:
+    final = _claude_response([SimpleNamespace(type="text", text="El tipo general es el 21 % [F1].")])
+    client, beta = _streaming_anthropic([_FakeStream(["El tipo general ", "es el 21 % [F1]."], final)])
+    chunks: list[str] = []
+
+    turn = (
+        AnthropicProvider(model="claude-opus-5-5", client=client)
+        .start(system="S", tools=TOOLS, history=[], user_message="¿IVA?")
+        .step(on_text=chunks.append)
+    )
+
+    assert chunks == ["El tipo general ", "es el 21 % [F1]."]
+    assert turn.text == "El tipo general es el 21 % [F1]." and turn.stop_reason == "end"
+    (call,) = beta.calls
+    assert call["max_tokens"] == 64000  # streamed requests are not bound by the HTTP timeout
+    assert call["fallbacks"] == "default" and call["thinking"] == {"type": "adaptive"}
+    assert call["tools"][0]["eager_input_streaming"] is True
+
+
+def test_anthropic_non_streamed_tools_do_not_carry_the_eager_flag() -> None:
+    client = _FakeAnthropic([_claude_response([SimpleNamespace(type="text", text="ok")])])
+    AnthropicProvider(model="claude-opus-5-5", client=client).start(
+        system="S", tools=TOOLS, history=[], user_message="x"
+    ).step()
+    assert "eager_input_streaming" not in client.beta.messages.calls[0]["tools"][0]
+    assert client.beta.messages.calls[0]["max_tokens"] == 16000
+
+
+def test_anthropic_unparseable_streamed_tool_input_is_a_retryable_provider_error() -> None:
+    client, _ = _streaming_anthropic([_FakeStream(["Voy a buscar"], None, error=ValueError("bad partial json"))])
+    conversation = AnthropicProvider(model="claude-opus-5-5", client=client).start(
+        system="S", tools=TOOLS, history=[], user_message="x"
+    )
+    with pytest.raises(ProviderError) as excinfo:
+        conversation.step(on_text=lambda chunk: None)
+    assert excinfo.value.retryable
+
+
+def _chunk(content=None, tool_calls=None, finish_reason=None, usage=None):
+    if content is None and tool_calls is None and finish_reason is None:
+        return SimpleNamespace(choices=[], usage=usage)
+    delta = SimpleNamespace(content=content, tool_calls=tool_calls)
+    return SimpleNamespace(choices=[SimpleNamespace(delta=delta, finish_reason=finish_reason)], usage=None)
+
+
+def _call_fragment(index: int, call_id=None, name=None, arguments=None):
+    return SimpleNamespace(index=index, id=call_id, function=SimpleNamespace(name=name, arguments=arguments))
+
+
+def test_openai_streaming_forwards_text_and_reassembles_tool_calls() -> None:
+    chunks_in = [
+        _chunk(content="Voy a "),
+        _chunk(content="buscarlo."),
+        _chunk(tool_calls=[_call_fragment(0, "c1", "buscar_fuentes", '{"consul')]),
+        _chunk(
+            tool_calls=[_call_fragment(0, arguments='ta": "iva"}'), _call_fragment(1, "c2", "buscar_fuentes", "{}")]
+        ),
+        _chunk(finish_reason="tool_calls"),
+        _chunk(usage=SimpleNamespace(prompt_tokens=40, completion_tokens=9)),
+    ]
+    client, completions = _fake_openai([iter(chunks_in)])
+    chunks: list[str] = []
+    conversation = OpenAIProvider(model="gpt-test", client=client).start(
+        system="S", tools=TOOLS, history=[], user_message="¿IVA?"
+    )
+
+    turn = conversation.step(on_text=chunks.append)
+
+    assert chunks == ["Voy a ", "buscarlo."]
+    assert turn.stop_reason == "tool_use" and turn.text == "Voy a buscarlo."
+    assert [(c.id, c.arguments) for c in turn.tool_calls] == [("c1", {"consulta": "iva"}), ("c2", {})]
+    assert turn.usage == {"input_tokens": 40, "output_tokens": 9}
+    (call,) = completions.calls
+    assert call["stream"] is True and call["stream_options"] == {"include_usage": True}
+    # The reassembled assistant turn is what gets replayed on the next request.
+    assert conversation._messages[-1]["tool_calls"][0]["function"]["arguments"] == '{"consulta": "iva"}'
+
+
+def test_local_streaming_omits_stream_options_and_truncation_wins_over_tool_calls() -> None:
+    chunks_in = [
+        _chunk(tool_calls=[_call_fragment(0, "c1", "buscar_fuentes", '{"consulta": "i')]),
+        _chunk(finish_reason="length"),
+    ]
+    client, completions = _fake_openai([iter(chunks_in)])
+    turn = (
+        OpenAIProvider(model="qwen3", client=client, name="local")
+        .start(system="S", tools=TOOLS, history=[], user_message="x")
+        .step(on_text=lambda chunk: None)
+    )
+    assert "stream_options" not in completions.calls[0]
+    # A turn cut off mid tool call must surface as truncated, not as runnable tools.
+    assert turn.stop_reason == "max_tokens" and turn.tool_calls[0].arguments_error is not None

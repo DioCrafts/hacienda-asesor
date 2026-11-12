@@ -145,8 +145,8 @@ class TaxAgent:
         """Answer ``query``. Raises :class:`ProviderError` if the agent model fails.
 
         ``on_event`` receives progress events while the run is in flight
-        (``thinking`` / ``tool_call`` / ``tool_result`` / ``verifying`` /
-        ``revising``), so a UI can show what the agent is doing instead of a
+        (``thinking`` / ``text_delta`` / ``tool_call`` / ``tool_result`` /
+        ``verifying`` / ``revising``), so a UI can show what the agent is doing instead of a
         silent multi-minute wait. A failing callback never breaks the run.
         """
 
@@ -190,7 +190,12 @@ class TaxAgent:
             # On the last allowed step the model must answer: tools are switched off.
             allow_tools = steps < budget - 1
             emit("thinking", step=steps + 1)
-            turn = conversation.step(allow_tools=allow_tools)
+            turn = conversation.step(
+                allow_tools=allow_tools,
+                # Stream the draft only when someone is listening; otherwise the
+                # cheaper non-streamed call is used.
+                on_text=(lambda chunk: emit("text_delta", text=chunk)) if on_event is not None else None,
+            )
             steps += 1
             for key, value in turn.usage.items():
                 usage[key] = usage.get(key, 0) + value
@@ -198,6 +203,15 @@ class TaxAgent:
             if turn.stop_reason == "refusal":
                 return finish(
                     answer=REFUSAL_MESSAGE, mode=AgentMode.ABSTAINED, warnings=["Petición declinada por el modelo."]
+                )
+
+            if turn.tool_calls and turn.stop_reason == "max_tokens":
+                # The turn was cut off mid tool call: its arguments may be a
+                # truncated-but-parseable object, so the tools must not run.
+                return finish(
+                    answer=ABSTAIN_MESSAGE,
+                    mode=AgentMode.ABSTAINED,
+                    warnings=["La respuesta del modelo se truncó mientras preparaba una búsqueda."],
                 )
 
             if turn.tool_calls:

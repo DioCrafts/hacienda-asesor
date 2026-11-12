@@ -9,6 +9,7 @@ from hacienda_gpt.agent.providers.base import (
     ModelTurn,
     ProviderError,
     StopReason,
+    TextCallback,
     ToolCall,
     ToolResult,
     ToolSpec,
@@ -16,8 +17,10 @@ from hacienda_gpt.agent.providers.base import (
 )
 
 # Non-streaming requests: 16k keeps a full answer + thinking comfortably under
-# the SDK's HTTP timeout. Tool inputs here are tiny (a query and a few filters).
+# the SDK's HTTP timeout. Streamed requests have no such ceiling, so they get
+# room to finish a long answer instead of being cut off mid-thought.
 _MAX_TOKENS = 16000
+_MAX_TOKENS_STREAMING = 64000
 
 # Models whose safety classifiers can decline a request with
 # ``stop_reason="refusal"``; for these we opt into the server-side fallback so a
@@ -86,15 +89,12 @@ class AnthropicProvider:
             self._client = anthropic.Anthropic()
         return self._client
 
-    def _create(self, **kwargs: Any) -> Any:
-        """One Messages call, with adaptive thinking, effort and caching set."""
-        import anthropic
-
-        client = self._ensure_client()
+    def _params(self, kwargs: dict[str, Any], *, max_tokens: int) -> dict[str, Any]:
+        """Request parameters with adaptive thinking, effort and caching set."""
         output_config = {"effort": self.effort, **kwargs.pop("output_config", {})}
-        params: dict[str, Any] = {
+        return {
             "model": self.model,
-            "max_tokens": _MAX_TOKENS,
+            "max_tokens": max_tokens,
             "thinking": {"type": "adaptive"},
             "output_config": output_config,
             # Caches the growing prefix (tools → system → messages) so each
@@ -102,12 +102,43 @@ class AnthropicProvider:
             "cache_control": {"type": "ephemeral"},
             **kwargs,
         }
+
+    def _create(self, **kwargs: Any) -> Any:
+        """One non-streamed Messages call."""
+        import anthropic
+
+        client = self._ensure_client()
+        params = self._params(kwargs, max_tokens=_MAX_TOKENS)
         try:
             if self._refusal_fallback:
                 return client.beta.messages.create(betas=[_FALLBACK_BETA], fallbacks="default", **params)
             return client.messages.create(**params)
         except anthropic.APIError as exc:
             raise _wrap_errors(exc) from exc
+
+    def _stream(self, on_text: TextCallback, **kwargs: Any) -> Any:
+        """One streamed Messages call: forwards text chunks, returns the final message."""
+        import anthropic
+
+        client = self._ensure_client()
+        params = self._params(kwargs, max_tokens=_MAX_TOKENS_STREAMING)
+        try:
+            if self._refusal_fallback:
+                manager = client.beta.messages.stream(betas=[_FALLBACK_BETA], fallbacks="default", **params)
+            else:
+                manager = client.messages.stream(**params)
+            with manager as stream:
+                for text in stream.text_stream:
+                    on_text(text)
+                return stream.get_final_message()
+        except anthropic.APIError as exc:
+            raise _wrap_errors(exc) from exc
+        except ValueError as exc:
+            # With eager input streaming the API no longer validates tool input;
+            # the SDK raises ValueError from the iterator for JSON it cannot
+            # parse at all. Nothing was appended to the history, so the caller
+            # may simply retry the step.
+            raise ProviderError(f"Claude emitió una llamada a herramienta ilegible ({exc})", retryable=True) from exc
 
     def start(
         self,
@@ -157,14 +188,24 @@ class AnthropicConversation:
         ]
         self._messages = messages
 
-    def step(self, *, allow_tools: bool = True) -> ModelTurn:
+    def step(self, *, allow_tools: bool = True, on_text: TextCallback | None = None) -> ModelTurn:
         kwargs: dict[str, Any] = {"system": self._system, "messages": self._messages}
         if self._tools:
             # The tool list never changes between steps (that would invalidate
             # the prompt cache); "none" is how the loop asks for a final answer.
             kwargs["tools"] = self._tools
             kwargs["tool_choice"] = {"type": "auto" if allow_tools else "none"}
-        response = self._provider._create(**kwargs)
+        if on_text is None:
+            response = self._provider._create(**kwargs)
+        else:
+            if self._tools:
+                # Streamed requests let tool inputs stream as generated. The API
+                # then stops validating them, so the Toolbox type-checks every
+                # argument and the agent never runs tools from a turn truncated
+                # by max_tokens. (A run is streamed or not for its whole length,
+                # so the tool list — and the prompt cache — stays stable.)
+                kwargs["tools"] = [{**tool, "eager_input_streaming": True} for tool in self._tools]
+            response = self._provider._stream(on_text, **kwargs)
 
         # Replay the full content (thinking blocks included) on the next call.
         self._messages.append({"role": "assistant", "content": response.content})

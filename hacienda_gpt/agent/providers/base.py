@@ -13,6 +13,7 @@ shape and rebuilding it would lose information the API needs back.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
@@ -66,9 +67,17 @@ class ModelTurn:
     usage: dict[str, int] = field(default_factory=dict)
 
 
+# Receives the model's visible text as it is generated, chunk by chunk.
+TextCallback = Callable[[str], None]
+
+
 class Conversation(Protocol):
-    def step(self, *, allow_tools: bool = True) -> ModelTurn:
-        """Ask the model for its next turn and record it in the history."""
+    def step(self, *, allow_tools: bool = True, on_text: TextCallback | None = None) -> ModelTurn:
+        """Ask the model for its next turn and record it in the history.
+
+        With ``on_text`` the request is streamed and each text chunk is passed
+        to the callback as it arrives; the returned turn is the same either way.
+        """
         ...
 
     def add_tool_results(self, results: list[ToolResult]) -> None:

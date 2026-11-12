@@ -73,7 +73,13 @@ from hacienda_gpt.api.security import (
     require_api_key,
 )
 from hacienda_gpt.decision.audit import build_recommendation_audit_event
-from hacienda_gpt.decision.fact_extractor import FactExtractor, OpenAIExtractionError, default_fact_extractor
+from hacienda_gpt.decision.fact_extractor import (
+    EXPECTED_FACT_TYPE,
+    FactExtractor,
+    OpenAIExtractionError,
+    _coerce_value,
+    default_fact_extractor,
+)
 from hacienda_gpt.decision.planner import Planner
 from hacienda_gpt.decision.rules_engine import evaluate_rules
 from hacienda_gpt.decision.schemas import (
@@ -81,6 +87,7 @@ from hacienda_gpt.decision.schemas import (
     Fact,
     MissingFact,
     ObligationCandidate,
+    parse_fiscal_year,
 )
 from hacienda_gpt.decision.state_store import CaseVersionConflictError
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
@@ -105,7 +112,7 @@ _ALLOWED_ORIGINS = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_ALLOWED_ORIGINS,
-    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "X-API-Key"],
     allow_credentials=False,
 )
@@ -546,32 +553,108 @@ def post_agent_stream(
     )
 
 
+def _save_case_after_user_edit(
+    case: CaseState, facts: list[Fact], store: SQLiteCaseStateStore, audit_event: dict, tax_period: str | None = None
+) -> CaseState:
+    """Persist a user-driven change to the case facts and re-evaluate obligations."""
+    known = {fact.name for fact in facts}
+    edited = case.model_copy(
+        update={
+            "facts": facts,
+            "tax_period": tax_period or case.tax_period,
+            # CaseState forbids a fact being both known and missing.
+            "missing_facts": [m for m in case.missing_facts if m.fact_name not in known],
+            "updated_at": datetime.now(UTC),
+        }
+    )
+    rules_result = evaluate_rules(case_state=edited, recent_facts=[])
+    edited = edited.model_copy(update={"obligation_candidates": rules_result.candidate_obligations})
+    try:
+        updated = store.save_case(edited)
+    except CaseVersionConflictError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail="El caso se modificó concurrentemente; vuelve a cargarlo y reintenta.",
+        ) from exc
+    store.append_audit_event(case.case_id, audit_event)
+    return updated
+
+
+class FactUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    value: str | float | bool
+
+
+@app.put("/cases/{case_id}/facts/{fact_name}", response_model=CaseState, dependencies=[Depends(require_api_key)])
+def put_case_fact(
+    case_id: str,
+    fact_name: str,
+    payload: FactUpdateRequest,
+    store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+) -> CaseState:
+    """Set one fact of a case to a value the user typed — correcting what the
+    advisor recorded, or filling it in directly. The value is coerced to the
+    fact's type exactly like an extracted one; obligations are re-evaluated."""
+    case = store.get_case(case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="case not found")
+    expected = EXPECTED_FACT_TYPE.get(fact_name)
+    if expected is None:
+        raise HTTPException(status_code=404, detail="fact not found")
+
+    raw = payload.value
+    value = _coerce_value(
+        expected=expected,
+        value_string=raw if isinstance(raw, str) else None,
+        value_number=raw if isinstance(raw, int | float) and not isinstance(raw, bool) else None,
+        value_boolean=raw if isinstance(raw, bool) else None,
+    )
+    if value is None:
+        raise HTTPException(
+            status_code=422, detail=f"El valor no es válido para este dato (se espera {expected.value})."
+        )
+    tax_period: str | None = None
+    if fact_name == "periodo_fiscal":
+        year = parse_fiscal_year(str(value))
+        if year is None or not 1990 <= year <= datetime.now(UTC).year + 1:
+            raise HTTPException(status_code=422, detail="El ejercicio debe ser un año de cuatro cifras.")
+        value = tax_period = str(year)
+
+    fact = Fact(
+        fact_id=f"fact_{fact_name}",
+        name=fact_name,
+        value=value,
+        value_type=expected,
+        source="user_edit",
+        confidence=1.0,
+    )
+    facts = [*(existing for existing in case.facts if existing.name != fact_name), fact]
+    return _save_case_after_user_edit(
+        case,
+        facts,
+        store,
+        {"event_type": "fact_edited_by_user", "fact_name": fact_name, "value": value},
+        tax_period=tax_period,
+    )
+
+
 @app.delete("/cases/{case_id}/facts/{fact_name}", response_model=CaseState, dependencies=[Depends(require_api_key)])
 def delete_case_fact(
     case_id: str,
     fact_name: str,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
 ) -> CaseState:
-    """Remove one fact from a case — the user's way to correct what the advisor
-    recorded about them. Obligations are re-evaluated without it."""
+    """Remove one fact from a case. Obligations are re-evaluated without it."""
     case = store.get_case(case_id)
     if case is None:
         raise HTTPException(status_code=404, detail="case not found")
     remaining = [fact for fact in case.facts if fact.name != fact_name]
     if len(remaining) == len(case.facts):
         raise HTTPException(status_code=404, detail="fact not found")
-    pruned = case.model_copy(update={"facts": remaining, "updated_at": datetime.now(UTC)})
-    rules_result = evaluate_rules(case_state=pruned, recent_facts=[])
-    pruned = pruned.model_copy(update={"obligation_candidates": rules_result.candidate_obligations})
-    try:
-        updated = store.save_case(pruned)
-    except CaseVersionConflictError as exc:
-        raise HTTPException(
-            status_code=409,
-            detail="El caso se modificó concurrentemente; vuelve a cargarlo y reintenta.",
-        ) from exc
-    store.append_audit_event(case_id, {"event_type": "fact_removed_by_user", "fact_name": fact_name})
-    return updated
+    return _save_case_after_user_edit(
+        case, remaining, store, {"event_type": "fact_removed_by_user", "fact_name": fact_name}
+    )
 
 
 @app.get("/cases/{case_id}/audit/export", dependencies=[Depends(require_api_key)])

@@ -17,6 +17,7 @@ from hacienda_gpt.agent.providers.base import (
     ModelTurn,
     ProviderError,
     StopReason,
+    TextCallback,
     ToolCall,
     ToolResult,
     ToolSpec,
@@ -166,25 +167,30 @@ class OpenAIConversation:
         ]
         self._messages = messages
 
-    def step(self, *, allow_tools: bool = True) -> ModelTurn:
+    def step(self, *, allow_tools: bool = True, on_text: TextCallback | None = None) -> ModelTurn:
         kwargs: dict[str, Any] = {"messages": self._messages}
         if self._tools:
             kwargs["tools"] = self._tools
             kwargs["tool_choice"] = "auto" if allow_tools else "none"
-        response = self._provider._create(**kwargs)
-        choice = response.choices[0]
-        message = choice.message
+
+        if on_text is None:
+            response = self._provider._create(**kwargs)
+            choice = response.choices[0]
+            content = choice.message.content or ""
+            raw_calls = [
+                (call.id, call.function.name, call.function.arguments or "{}")
+                for call in choice.message.tool_calls or []
+            ]
+            finish_reason = choice.finish_reason
+            usage = _usage_dict(getattr(response, "usage", None))
+        else:
+            content, raw_calls, finish_reason, usage = self._stream(on_text, kwargs)
 
         tool_calls: list[ToolCall] = []
         native_calls: list[dict[str, Any]] = []
-        for call in message.tool_calls or []:
-            raw_arguments = call.function.arguments or "{}"
+        for call_id, name, raw_arguments in raw_calls:
             native_calls.append(
-                {
-                    "id": call.id,
-                    "type": "function",
-                    "function": {"name": call.function.name, "arguments": raw_arguments},
-                }
+                {"id": call_id, "type": "function", "function": {"name": name, "arguments": raw_arguments}}
             )
             arguments: dict[str, Any] = {}
             error: str | None = None
@@ -196,29 +202,73 @@ class OpenAIConversation:
                     error = "los argumentos deben ser un objeto JSON"
             except json.JSONDecodeError as exc:
                 error = f"argumentos JSON no válidos: {exc}"
-            tool_calls.append(ToolCall(id=call.id, name=call.function.name, arguments=arguments, arguments_error=error))
+            tool_calls.append(ToolCall(id=call_id, name=name, arguments=arguments, arguments_error=error))
 
-        assistant: dict[str, Any] = {"role": "assistant", "content": message.content or ""}
+        assistant: dict[str, Any] = {"role": "assistant", "content": content}
         if native_calls:
             assistant["tool_calls"] = native_calls
         self._messages.append(assistant)
 
         stop_reason: StopReason
-        if tool_calls:
-            stop_reason = "tool_use"
-        elif choice.finish_reason == "length":
+        if finish_reason == "length":
+            # Checked first: a truncated turn may carry half-written tool calls
+            # that must not be executed.
             stop_reason = "max_tokens"
-        elif choice.finish_reason == "content_filter":
+        elif tool_calls:
+            stop_reason = "tool_use"
+        elif finish_reason == "content_filter":
             stop_reason = "refusal"
         else:
             stop_reason = "end"
 
-        return ModelTurn(
-            text=(message.content or "").strip(),
-            tool_calls=tool_calls,
-            stop_reason=stop_reason,
-            usage=_usage_dict(getattr(response, "usage", None)),
-        )
+        return ModelTurn(text=content.strip(), tool_calls=tool_calls, stop_reason=stop_reason, usage=usage)
+
+    def _stream(
+        self, on_text: TextCallback, kwargs: dict[str, Any]
+    ) -> tuple[str, list[tuple[str, str, str]], str | None, dict[str, int]]:
+        """Streamed Chat Completions call: forwards text, reassembles tool calls."""
+        import openai
+
+        if self._provider.name == "openai":
+            # Local OpenAI-compatible servers often reject stream_options, so the
+            # token usage of streamed turns is only requested from OpenAI itself.
+            kwargs = {**kwargs, "stream_options": {"include_usage": True}}
+        text_parts: list[str] = []
+        calls: dict[int, dict[str, str]] = {}
+        finish_reason: str | None = None
+        usage: dict[str, int] = {}
+        try:
+            for chunk in self._provider._create(stream=True, **kwargs):
+                chunk_usage = getattr(chunk, "usage", None)
+                if chunk_usage is not None:
+                    usage = _usage_dict(chunk_usage)
+                if not chunk.choices:
+                    continue
+                choice = chunk.choices[0]
+                delta = choice.delta
+                if getattr(delta, "content", None):
+                    text_parts.append(delta.content)
+                    on_text(delta.content)
+                for fragment in getattr(delta, "tool_calls", None) or []:
+                    slot = calls.setdefault(fragment.index, {"id": "", "name": "", "arguments": ""})
+                    if fragment.id:
+                        slot["id"] = fragment.id
+                    function = getattr(fragment, "function", None)
+                    if function is not None:
+                        if function.name:
+                            slot["name"] += function.name
+                        if function.arguments:
+                            slot["arguments"] += function.arguments
+                if choice.finish_reason:
+                    finish_reason = choice.finish_reason
+        except openai.APIError as exc:  # raised mid-stream, after _create returned the iterator
+            raise _wrap_errors(exc, self._provider.name) from exc
+
+        raw_calls = [
+            (slot["id"] or f"call_{index}", slot["name"], slot["arguments"] or "{}")
+            for index, slot in sorted(calls.items())
+        ]
+        return "".join(text_parts), raw_calls, finish_reason, usage
 
     def add_tool_results(self, results: list[ToolResult]) -> None:
         for result in results:
