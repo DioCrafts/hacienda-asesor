@@ -36,7 +36,6 @@ from hacienda_gpt.tax.sociedades_params import SociedadesParams, load_sociedades
 Regimen = Literal["general", "entidad_patrimonial", "nueva_creacion", "microempresa", "reducida_dimension"]
 
 _CIEN = Decimal(100)
-_LIRPF = "BOE-A-2006-20764"
 _ORDEN_202 = "BOE-A-2025-5407"
 
 
@@ -1047,5 +1046,5 @@ def comparar_autonomo_vs_sociedad(inp: ComparacionInput) -> ComparacionResult:
         detalle_autonomo=autonomo,
         detalle_sociedad=sociedad,
         detalle_irpf_socio=socio,
-        fuente=f"{p.fuente_texto(_LIRPF)}; {autonomo.fuente}",
+        fuente=f"{p.fuente_texto()}; {autonomo.fuente}",
     )

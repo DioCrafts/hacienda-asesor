@@ -9,6 +9,7 @@ from __future__ import annotations
 from decimal import Decimal
 import os
 from pathlib import Path
+import re
 
 import pytest
 
@@ -67,6 +68,8 @@ def test_parameters_are_the_ones_read_from_the_law() -> None:
     ]
     assert p.pago_fraccionado.porcentaje_cuota == D("0.18")
     assert p.compensacion_bases_negativas.limite_porcentaje == D("0.70")
+    assert (p.reserva_nivelacion.porcentaje, p.reserva_nivelacion.limite) == (D("0.10"), D(1000000))
+    assert p.comparacion_irpf.retencion_capital_mobiliario == D("0.19")
     assert all(g.fuente.verificado for g in p.grupos().values())
     with pytest.raises(EjercicioNoDisponibleError):
         load_sociedades_params(2024)
@@ -84,7 +87,9 @@ def test_quotes_against_the_full_downloaded_pages_when_available() -> None:
     directorio = os.environ.get("HACIENDA_BOE_PAGINAS")
     if not directorio or not (Path(directorio) / "BOE-A-2014-12328.html").exists():
         pytest.skip("HACIENDA_BOE_PAGINAS no contiene la Ley 27/2014")
-    assert comprobar_evidencias(load_sociedades_params(2026), textos_de_directorio(Path(directorio))) == []
+    # The annexes of the two orders only exist as PDF: their extracts stay the reference for them.
+    textos = {**textos_de_directorio(EXTRACTOS), **textos_de_directorio(Path(directorio))}
+    assert comprobar_evidencias(load_sociedades_params(2026), textos) == []
 
 
 def test_self_check_catches_a_wrong_figure_a_wrong_quote_and_a_figure_without_evidence() -> None:
@@ -374,6 +379,131 @@ def test_seventy_percent_is_measured_before_the_capitalisation_reserve() -> None
     assert r.cuota_integra == D("92000.00")
 
 
+# --- Levelling reserve (art. 105) ------------------------------------------------
+
+
+def test_levelling_reserve_is_only_applied_on_request_and_only_on_the_micro_scale() -> None:
+    kwargs = {"resultado_contable": D(80000), "cifra_negocios_anterior": D(300000)}
+    # Not asked: nothing changes (15.800, see test_micro_company_scale_2026) and the result says it exists.
+    r = _is(**kwargs)
+    assert (r.minoracion_reserva_nivelacion, r.base_imponible_tras_nivelacion) == (0, D("80000.00"))
+    assert _aviso(r, "No se ha aplicado la reserva de nivelación porque no se ha pedido")
+    # Maximum: 10 % x 80.000 = 8.000. Base 72.000: 50.000 x 19 % = 9.500; 22.000 x 21 % = 4.620; total 14.120.
+    r = _is(reserva_nivelacion_maxima=True, **kwargs)
+    assert r.base_imponible == D("80000.00")
+    assert r.minoracion_reserva_nivelacion == D("8000.00")
+    assert r.base_imponible_tras_nivelacion == D("72000.00")
+    assert r.cuota_integra == D("14120.00")
+    assert r.reserva_nivelacion_pendiente == D("8000.00")
+    assert r.tipo_medio == D("19.61")  # 14.120 / 72.000
+    assert _aviso(r, "no es un ahorro definitivo sino un diferimiento")
+    assert _aviso(r, "«apliquen el tipo de gravamen previsto en el primer párrafo del apartado 1 del artículo 29»")
+    assert _aviso(r, "Confírmalo antes de dotar la reserva")
+    # A declared amount: 3.000 -> base 77.000: 9.500 + 27.000 x 21 % = 5.670; total 15.170.
+    assert _is(reserva_nivelacion=D(3000), **kwargs).cuota_integra == D("15170.00")
+    # More than the maximum: capped at 8.000, and said.
+    r = _is(reserva_nivelacion=D(20000), **kwargs)
+    assert r.minoracion_reserva_nivelacion == D("8000.00")
+    assert _aviso(r, "supera el máximo")
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "cuota", "motivo"),
+    [
+        # Reduced-size rate (23 % x 80.000): the law's wording and the official forms disagree -> not applied.
+        ({"cifra_negocios_anterior": D(3000000)}, "18400.00", "La ley y los modelos no dicen lo mismo"),
+        # 15 % of a newly created entity: another paragraph of art. 29.1.
+        (
+            {"cifra_negocios_anterior": D(300000), "nueva_creacion_tipo_reducido": True},
+            "12000.00",
+            "está en otro párrafo del art. 29.1",
+        ),
+        ({"cifra_negocios_anterior": D(300000), "entidad_patrimonial": True}, "20000.00", "entidad patrimonial"),
+        ({}, "20000.00", "no se ha indicado la cifra de negocios"),
+        ({"cifra_negocios_anterior": D(10000000)}, "20000.00", "no cumple las condiciones del art. 101"),
+    ],
+)
+def test_levelling_reserve_is_refused_outside_the_micro_scale(kwargs: dict, cuota: str, motivo: str) -> None:
+    r = _is(resultado_contable=D(80000), reserva_nivelacion_maxima=True, **kwargs)
+    assert r.minoracion_reserva_nivelacion == 0
+    assert r.cuota_integra == D(cuota)
+    assert _aviso(r, "Has pedido la reserva de nivelación y NO se ha aplicado")
+    assert _aviso(r, motivo)
+    # Without asking, the same explanation is given as plain information.
+    assert _aviso(_is(resultado_contable=D(80000), **kwargs), "No se aplica la reserva de nivelación del art. 105 LIS")
+
+
+def test_levelling_reserve_comes_after_the_capitalisation_reserve_and_the_losses() -> None:
+    # Base previa 100.000; capitalisation 20 % x 20.000 = 4.000; losses 10.000 -> base imponible 86.000.
+    # Levelling: 10 % x 86.000 = 8.600 -> 77.400: 9.500 + 27.400 x 21 % = 5.754; total 15.254.
+    r = _is(
+        resultado_contable=D(100000),
+        cifra_negocios_anterior=D(300000),
+        incremento_fondos_propios=D(20000),
+        bases_negativas_pendientes=D(10000),
+        reserva_nivelacion_maxima=True,
+    )
+    assert r.base_imponible == D("86000.00")
+    assert r.minoracion_reserva_nivelacion == D("8600.00")
+    assert r.cuota_integra == D("15254.00")
+    # Nothing to reduce when the base is not positive.
+    r = _is(resultado_contable=D(-5000), cifra_negocios_anterior=D(300000), reserva_nivelacion_maxima=True)
+    assert r.minoracion_reserva_nivelacion == 0
+    assert _aviso(r, "solo puede minorarse una base imponible positiva")
+
+
+def test_levelling_reserve_ceiling_is_prorated_in_a_short_period() -> None:
+    # 73 days: ceiling 1 M x 73 / 365 = 200.000 (< 10 % x 3 M = 300.000). Base 2.800.000.
+    # First bracket 50.000 x 73 / 365 = 10.000 x 19 % = 1.900; 2.790.000 x 21 % = 585.900; total 587.800.
+    r = _is(
+        resultado_contable=D(3000000),
+        cifra_negocios_anterior=D(900000),
+        dias_periodo=73,
+        reserva_nivelacion_maxima=True,
+    )
+    assert r.minoracion_reserva_nivelacion == D("200000.00")
+    assert r.cuota_integra == D("587800.00")
+    assert _aviso(r, "art. 105.1 LIS); se ha prorrateado por días")
+
+
+def test_levelling_reserve_is_added_back_to_a_negative_base_and_at_the_end_of_the_term() -> None:
+    # Loss of 30.000 with 12.000 pending: 12.000 added, the loss carried forward is 18.000.
+    r = _is(resultado_contable=D(-30000), cifra_negocios_anterior=D(300000), reserva_nivelacion_pendiente=D(12000))
+    assert r.adicion_reserva_nivelacion == D("12000.00")
+    assert (r.base_imponible, r.base_imponible_tras_nivelacion) == (D("-30000.00"), D("-18000.00"))
+    assert (r.bases_negativas_pendientes, r.reserva_nivelacion_pendiente, r.cuota_integra) == (D("18000.00"), 0, 0)
+    # With 50.000 pending only 30.000 are added ("hasta el importe de la misma"): base 0, 20.000 still pending.
+    r = _is(resultado_contable=D(-30000), cifra_negocios_anterior=D(300000), reserva_nivelacion_pendiente=D(50000))
+    assert (r.adicion_reserva_nivelacion, r.base_imponible_tras_nivelacion) == (D("30000.00"), 0)
+    assert (r.bases_negativas_pendientes, r.reserva_nivelacion_pendiente) == (0, D("20000.00"))
+    # Positive base, 4.000 of the 10.000 pending reach the end of the 5 years: 44.000 x 19 % = 8.360.
+    kwargs = {
+        "resultado_contable": D(40000),
+        "cifra_negocios_anterior": D(300000),
+        "reserva_nivelacion_pendiente": D(10000),
+        "reserva_nivelacion_vence": D(4000),
+    }
+    r = _is(**kwargs)
+    assert (r.adicion_reserva_nivelacion, r.cuota_integra, r.reserva_nivelacion_pendiente) == (
+        D("4000.00"),
+        D("8360.00"),
+        D("6000.00"),
+    )
+    # The same year a new reduction of 10 % of the base imponible (40.000) = 4.000: taxed on 40.000 -> 7.600.
+    r = _is(reserva_nivelacion_maxima=True, **kwargs)
+    assert (r.minoracion_reserva_nivelacion, r.cuota_integra, r.reserva_nivelacion_pendiente) == (
+        D("4000.00"),
+        D("7600.00"),
+        D("10000.00"),
+    )
+    # The additions are an obligation whatever the rate now is: reduced-size 23 % x 44.000 = 10.120.
+    assert _is(**{**kwargs, "cifra_negocios_anterior": D(3000000)}).cuota_integra == D("10120.00")
+    with pytest.raises(ValueError, match="vence"):
+        SociedadesInput(ejercicio=2026, reserva_nivelacion_vence=D(1))
+    with pytest.raises(ValueError, match="no las dos cosas"):
+        SociedadesInput(ejercicio=2026, reserva_nivelacion=D(1), reserva_nivelacion_maxima=True)
+
+
 # --- Quota to pay --------------------------------------------------------------
 
 
@@ -469,10 +599,45 @@ def test_instalment_on_the_current_base() -> None:
     assert _pf(modalidad="base", base_imponible_acumulada=D(1000), retenciones_acumuladas=D(900)).importe == 0
 
 
-def test_instalment_on_the_base_is_not_guessed_for_the_scale_or_large_turnover() -> None:
-    r = _pf(modalidad="base", base_imponible_acumulada=D(100000), cifra_negocios_anterior=D(500000))
-    assert r.importe is None and r.porcentaje is None
-    assert _aviso(r, "sin decir cómo se aplica a una escala")
+def test_instalment_on_the_base_for_the_micro_scale_takes_five_sevenths_of_each_rate() -> None:
+    # 2026 scale 19 % / 21 %: 19 x 5/7 = 13,57 -> 13 %; 21 x 5/7 = 15 -> 15 %.
+    # 100.000: 50.000 x 13 % = 6.500; 50.000 x 15 % = 7.500; total 14.000 - 1.000 withheld - 2.000 paid = 11.000.
+    r = _pf(
+        modalidad="base",
+        base_imponible_acumulada=D(100000),
+        cifra_negocios_anterior=D(500000),
+        retenciones_acumuladas=D(1000),
+        pagos_fraccionados_anteriores=D(2000),
+    )
+    assert (r.porcentaje, r.porcentaje_resto, r.base_pago, r.importe) == (
+        D("0.13"),
+        D("0.15"),
+        D("100000.00"),
+        D("11000.00"),
+    )
+    assert _aviso(r, "«B.2) Casos específicos (entidades con más de un porcentaje)»")
+    assert _aviso(r, "NINGUNA norma leída dice es cómo se reparte la base acumulada")
+    assert _aviso(r, "el pago sería 1000.00 euros mayor")  # 50.000 x (15 % - 13 %)
+    assert "BOE-A-2025-5407" in r.fuente
+    # Base inside the first bracket: 30.000 x 13 % = 3.900.
+    r = _pf(modalidad="base", base_imponible_acumulada=D(30000), cifra_negocios_anterior=D(0))
+    assert (r.importe, r.porcentaje_resto) == (D("3900.00"), D("0.15"))
+    assert _aviso(r, "el pago sería 600.00 euros mayor")  # 30.000 x 2 %
+    # 2025 scale 21 % / 22 %: 15 % and 15,71 -> 15 %: 100.000 x 15 % = 15.000, whatever the split.
+    r = _pf(ejercicio=2025, modalidad="base", base_imponible_acumulada=D(100000), cifra_negocios_anterior=D(500000))
+    assert (r.porcentaje, r.porcentaje_resto, r.importe) == (D("0.15"), D("0.15"), D("15000.00"))
+    assert _aviso(r, "los dos porcentajes coinciden")
+    # 2027 scale 17 % / 20 %: 12,14 -> 12 % and 14,29 -> 14 %: 6.000 + 7.000 = 13.000.
+    r = _pf(ejercicio=2027, modalidad="base", base_imponible_acumulada=D(100000), cifra_negocios_anterior=D(500000))
+    assert (r.porcentaje, r.porcentaje_resto, r.importe) == (D("0.12"), D("0.14"), D("13000.00"))
+    # Tax period of 73 days: first bracket 50.000 x 73 / 365 = 10.000. 10.000 x 13 % + 90.000 x 15 % = 14.800.
+    r = _pf(modalidad="base", base_imponible_acumulada=D(100000), cifra_negocios_anterior=D(500000), dias_periodo=73)
+    assert r.importe == D("14800.00")
+    # A single-rate result has no second percentage.
+    assert _pf(modalidad="base", base_imponible_acumulada=D(100000)).porcentaje_resto is None
+
+
+def test_instalment_on_the_base_is_not_guessed_for_large_turnover() -> None:
     r = _pf(modalidad="base", base_imponible_acumulada=D(100000), cifra_negocios_anterior=D(10000000))
     assert r.importe is None
     assert _aviso(r, "disposición adicional 14.ª")
@@ -570,3 +735,129 @@ def test_comparison_without_cifra_uses_the_general_rate_and_rejects_impossible_f
         comparar_autonomo_vs_sociedad(
             ComparacionInput(ejercicio=2026, beneficio_antes_retribucion=D(50000), dividendo=D(40000))
         )
+
+
+def test_comparison_legal_references_and_dividend_withholding() -> None:
+    c = comparar_autonomo_vs_sociedad(
+        ComparacionInput(
+            ejercicio=2026,
+            beneficio_antes_retribucion=D(80000),
+            salario=D(30000),
+            cifra_negocios_anterior=D(120000),
+        )
+    )
+    referencias = {line.concepto: line.referencia for line in c.lineas}
+    assert referencias["(b) Socio: salario (rendimiento íntegro del trabajo)"] == "art. 17.1 LIRPF"
+    assert (
+        referencias["(b) Socio: dividendo (rendimiento del capital mobiliario, renta del ahorro)"]
+        == "arts. 25.1.a) y 46.a) LIRPF"
+    )
+    # 19 % x 40.500 = 7.695: a payment on account, already inside the owner's IRPF.
+    assert c.retencion_dividendo == D("7695.00")
+    assert _aviso(c, "no tiene hoy deducción por doble imposición de dividendos ni exención")
+    assert _aviso(c, "retiene el 19 % (art. 101.4 LIRPF; aquí 7695.00 euros)")
+    # The art. 27.1 rule is quoted, not modelled.
+    assert _aviso(c, "tendrán esta consideración cuando el contribuyente esté incluido, a tal efecto, en el régimen")
+    # No contributions given: none in the result, and the warning stays.
+    assert (c.autonomo_cotizaciones, c.sociedad_cotizaciones, c.diferencia_con_cotizaciones) == (None, None, None)
+    assert _aviso(c, "NO se incluyen las cotizaciones a la Seguridad Social")
+    assert "BOE-A-2006-20764" in c.fuente
+
+
+def test_comparison_with_the_contributions_the_user_supplies() -> None:
+    # Profit 80.000. (a) RETA 5.000 -> net activity income 75.000.
+    # (b) salary 30.000, employer 9.500 -> company base 40.500 x 19 % = 7.695; after tax 32.805, all distributed.
+    #     Owner: work income 30.000 with 1.900 of contributions deducted, dividend 32.805.
+    c = comparar_autonomo_vs_sociedad(
+        ComparacionInput(
+            ejercicio=2026,
+            beneficio_antes_retribucion=D(80000),
+            salario=D(30000),
+            cifra_negocios_anterior=D(120000),
+            cuota_autonomos=D(5000),
+            cotizaciones_socio=D(1900),
+            cotizaciones_empresa=D(9500),
+        )
+    )
+    autonomo = calcular_irpf(IRPFInput(ejercicio=2026, rendimiento_actividad_neto=D(75000)))
+    socio = calcular_irpf(
+        IRPFInput(
+            ejercicio=2026,
+            rendimiento_trabajo_bruto=D(30000),
+            cotizaciones_seguridad_social=D(1900),
+            rendimiento_capital_mobiliario=D(32805),
+        )
+    )
+    assert c.autonomo_irpf == autonomo.resultado
+    assert c.sociedad_impuesto_sociedades == D("7695.00")
+    assert c.beneficio_despues_impuesto == D("32805.00")
+    assert c.sociedad_irpf_socio == socio.resultado
+    assert c.diferencia == c.sociedad_total - c.autonomo_irpf
+    assert (c.autonomo_cotizaciones, c.sociedad_cotizaciones) == (D("5000.00"), D("11400.00"))
+    assert c.diferencia_con_cotizaciones == c.sociedad_total + D(11400) - c.autonomo_irpf - D(5000)
+    assert _aviso(c, "Las cotizaciones a la Seguridad Social son las cifras que indicas")
+    assert not _aviso(c, "NO se incluyen las cotizaciones")
+    assert not _aviso(c, "NO has indicado")
+    # Lower taxes than without contributions on both sides (they are deductible).
+    sin = comparar_autonomo_vs_sociedad(
+        ComparacionInput(
+            ejercicio=2026, beneficio_antes_retribucion=D(80000), salario=D(30000), cifra_negocios_anterior=D(120000)
+        )
+    )
+    assert c.autonomo_irpf < sin.autonomo_irpf and c.sociedad_total < sin.sociedad_total
+
+    # Only one side given: it enters that side, there is no joint difference, and the result says what is missing.
+    c = comparar_autonomo_vs_sociedad(
+        ComparacionInput(
+            ejercicio=2026,
+            beneficio_antes_retribucion=D(80000),
+            salario=D(30000),
+            cifra_negocios_anterior=D(120000),
+            cuota_autonomos=D(5000),
+        )
+    )
+    assert c.autonomo_irpf == autonomo.resultado
+    assert (c.autonomo_cotizaciones, c.sociedad_cotizaciones, c.diferencia_con_cotizaciones) == (
+        D("5000.00"),
+        None,
+        None,
+    )
+    assert _aviso(c, "NO has indicado las cotizaciones que paga el socio por su salario (opción sociedad); ni las")
+    with pytest.raises(ValueError, match="salario"):
+        comparar_autonomo_vs_sociedad(
+            ComparacionInput(
+                ejercicio=2026, beneficio_antes_retribucion=D(50000), salario=D(45000), cotizaciones_empresa=D(6000)
+            )
+        )
+
+
+def test_every_literal_quote_shown_to_the_user_is_in_the_downloaded_texts() -> None:
+    # Whatever the calculators print between «» must be in the extracts, word for word.
+    textos = " ".join(" ".join(texto.split()) for texto in textos_de_directorio(EXTRACTOS).values()).lower()
+    resultados = [
+        _is(resultado_contable=D(80000), cifra_negocios_anterior=D(300000), reserva_nivelacion_maxima=True),
+        _is(resultado_contable=D(80000), cifra_negocios_anterior=D(3000000), reserva_nivelacion_maxima=True),
+        _is(resultado_contable=D(80000), cifra_negocios_anterior=D(300000), nueva_creacion_tipo_reducido=True),
+        _is(resultado_contable=D(80000), cifra_negocios_anterior=D(300000), entidad_patrimonial=True),
+        _is(
+            resultado_contable=D(1200000),
+            cifra_negocios_anterior=D(30000000),
+            bases_negativas_pendientes=D(1800000),
+            incremento_fondos_propios=D(1000),
+            nueva_creacion_sin_limite_bases_negativas=True,
+            dias_periodo=73,
+        ),
+        _is(resultado_contable=D(1200000), bases_negativas_pendientes=D(1800000), dias_periodo=73),
+        _is(
+            resultado_contable=D(3000000), cifra_negocios_anterior=D(0), dias_periodo=73, reserva_nivelacion_maxima=True
+        ),
+        _pf(modalidad="base", base_imponible_acumulada=D(100000), cifra_negocios_anterior=D(500000)),
+        _pf(modalidad="base", base_imponible_acumulada=D(100000), cifra_negocios_anterior=D(5000000)),
+        comparar_autonomo_vs_sociedad(
+            ComparacionInput(ejercicio=2026, beneficio_antes_retribucion=D(80000), salario=D(30000))
+        ),
+    ]
+    citas = {cita for r in resultados for aviso in r.avisos for cita in re.findall(r"«([^»]+)»", aviso)}
+    assert len(citas) >= 12
+    for cita in sorted(citas):
+        assert cita.removesuffix("...").lower() in textos, cita

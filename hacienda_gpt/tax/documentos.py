@@ -28,7 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from hacienda_gpt.agent.providers.base import Attachment
 from hacienda_gpt.decision.fact_extractor import EXPECTED_FACT_TYPE, _coerce_value
-from hacienda_gpt.tax.profile import PROFILE_FACT_TYPES
+from hacienda_gpt.tax.profile import ACTIVIDAD_FACT_FIELDS, PROFILE_FACT_TYPES
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +42,13 @@ _IMAGE_SIGNATURES: tuple[tuple[bytes, str], ...] = (
     (b"GIF87a", "image/gif"),
     (b"GIF89a", "image/gif"),
 )
-# Facts a document can establish: the fiscal profile plus the fiscal year.
-DOCUMENT_FACTS: tuple[str, ...] = (*PROFILE_FACT_TYPES, "periodo_fiscal")
+# Facts a document can establish: the fiscal profile, the annual income and expenses of a
+# self-employed activity (figures only: what the user must declare, such as the single-client
+# requirements, is never read off a document) and the fiscal year.
+DOCUMENT_ACTIVITY_FACTS: tuple[str, ...] = tuple(
+    name for name in ACTIVIDAD_FACT_FIELDS if name != "actividad_rendimientos_irregulares"
+)
+DOCUMENT_FACTS: tuple[str, ...] = (*PROFILE_FACT_TYPES, *DOCUMENT_ACTIVITY_FACTS, "periodo_fiscal")
 
 
 class DocumentoNoLegibleError(ValueError):
@@ -135,7 +140,8 @@ def extract_text(data: bytes, filename: str) -> tuple[str, int]:
 
 SYSTEM_PROMPT = """\
 Lees un documento fiscal de un contribuyente español (certificado de retenciones, nómina, datos fiscales de la \
-AEAT, certificado de aportaciones a un plan de pensiones, certificado de donativos, extracto de un bróker…) y \
+AEAT, certificado de aportaciones a un plan de pensiones, certificado de donativos, extracto de un bróker, libro \
+registro de ingresos o de gastos de un autónomo, modelo 130…) y \
 localizas en él los datos de su perfil fiscal. El resultado se le mostrará al usuario para que lo confirme antes de \
 guardarlo, y cada dato se comprobará contra el texto del documento.
 
@@ -153,6 +159,18 @@ Campos y qué buscar:
 - rendimiento_capital_mobiliario, ganancias_patrimoniales, rendimiento_alquiler_neto, rendimiento_actividad_neto.
 - aportacion_plan_pensiones (del partícipe), contribucion_empresa_plan_pensiones (del promotor), donativos, \
 gastos_guarderia, pagos_vivienda_habitual_pre2013.
+- Actividad de un autónomo (siempre totales del AÑO COMPLETO y sin IVA; si el documento solo cubre un mes o un \
+trimestre, no devuelvas estos importes):
+  - actividad_ingresos_integros: total anual de ingresos de la actividad. Búscalo en el total del libro registro \
+de ingresos o de facturas emitidas (base imponible, sin IVA), en el apartado de actividades económicas de una \
+declaración de la renta, o en los ingresos acumulados de un modelo 130 SOLO si es el del cuarto trimestre.
+  - actividad_seguridad_social_autonomo (cuotas de autónomos/RETA del titular), actividad_suministros, \
+actividad_alquileres (arrendamientos del local u oficina), actividad_servicios_profesionales (gestoría, asesoría y \
+otros profesionales independientes), actividad_amortizaciones y actividad_otros_gastos: solo cuando el documento \
+dé el total anual de ESE concepto (libro registro de gastos con totales por concepto, desglose de gastos de la \
+actividad en una declaración de la renta). No repartas un total de gastos entre conceptos ni uses el total de \
+gastos de un modelo 130 (puede incluir ya los gastos de difícil justificación). No uses un modelo 303 o 390 para \
+estos campos: sus bases son de IVA, no los ingresos y gastos del IRPF.
 - periodo_fiscal: el ejercicio al que se refiere el documento (año de cuatro cifras).
 - comunidad_autonoma, estado_civil, edad, num_descendientes y similares solo si constan de forma expresa.
 

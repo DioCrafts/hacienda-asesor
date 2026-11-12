@@ -259,6 +259,7 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     actividad_servicios_profesionales   → autónomos: pagado en el año a gestoría, asesoría y otros profesionales, sin IVA
     actividad_otros_gastos              → autónomos: resto de gastos anuales de la actividad, sin IVA
     actividad_amortizaciones            → autónomos: amortización anual de equipos, vehículos y otros bienes de la actividad
+    actividad_rendimientos_irregulares  → autónomos: parte del beneficio del año generada en más de dos años o por indemnización por cese, subvención de capital o premio (solo si el usuario lo dice así)
 
   value_boolean:
     familia_numerosa                    → true si tiene título de familia numerosa
@@ -282,6 +283,11 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     bienes_en_el_extranjero             → true si tiene cuentas, valores o inmuebles fuera de España
     es_autonomo                         → true si trabaja por cuenta propia (autónomo)
     actividad_profesional               → true si su actividad es profesional (abogado, médico, programador, diseñador…); false si es empresarial (comercio, hostelería, taller…)
+    actividad_cumple_requisitos_dependiente → true SOLO si el usuario afirma que factura todo a un único cliente no vinculado (o es TRADE), sin sueldo aparte y con retención en casi todos sus ingresos
+    actividad_reduccion_inicio          → true SOLO si el usuario afirma que empezó la actividad sin haber ejercido ninguna el año anterior y este es su primer año con beneficio o el siguiente
+
+  value_string:
+    actividad_ceuta_melilla             → "ceuta" o "melilla" si desarrolla su actividad en una de esas ciudades
 
   "gano 38.000 brutos al año, vivo en Valencia, tengo dos hijos, uno de 2 años"
     → rendimiento_trabajo_bruto value_number=38000 · comunidad_autonoma value_string="Comunidad Valenciana"
