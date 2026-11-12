@@ -18,6 +18,7 @@ whatever failed is retried on the next run.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from email.header import Header
 from email.message import EmailMessage
@@ -271,7 +272,13 @@ def texto_plano(notification: Notification) -> str:
     return "\n\n".join(parte for parte in partes if parte) + "\n"
 
 
-def entregar_pendientes(store: EntregaStore, canales: list[Canal], *, ahora: datetime | None = None) -> dict[str, Any]:
+def entregar_pendientes(
+    store: EntregaStore,
+    canales: list[Canal],
+    *,
+    ahora: datetime | None = None,
+    permitido: Callable[[Notification], bool] | None = None,
+) -> dict[str, Any]:
     """Send every notification not yet delivered on each channel, one message per notification.
 
     Subject = the notification title; body = :func:`texto_plano`. A delivery is
@@ -287,6 +294,10 @@ def entregar_pendientes(store: EntregaStore, canales: list[Canal], *, ahora: dat
     resumen: dict[str, Any] = {"enviadas": 0, "errores": 0, "canales": {}}
     for canal in canales:
         pendientes = store.pendientes(canal.nombre)
+        if permitido is not None:
+            # e.g. the owner of the case has not consented to notices leaving the app:
+            # those stay pending, in case the consent is given later.
+            pendientes = [n for n in pendientes if permitido(n)]
         cuenta = {"pendientes": len(pendientes), "enviadas": 0, "errores": 0}
         seguidos = 0
         for notification in pendientes:

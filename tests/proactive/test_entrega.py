@@ -319,3 +319,34 @@ def test_canales_configurados_from_settings(monkeypatch, sin_canales) -> None:
     monkeypatch.setattr(settings, "NOTIFY_EMAIL_FROM", "a@example.test")
     monkeypatch.setattr(settings, "NOTIFY_EMAIL_TO", "b@example.test")
     assert [canal.nombre for canal in canales_configurados()] == ["webhook", "email"]
+
+
+def test_delivery_can_be_restricted_to_consenting_owners(tmp_path) -> None:
+    """With accounts on, notices of users who did not agree stay in the app (and stay pending)."""
+    from datetime import UTC, datetime
+
+    from hacienda_gpt.proactive.entrega import EntregaStore, entregar_pendientes
+    from hacienda_gpt.proactive.store import Notification, NotificationStore
+
+    db = str(tmp_path / "n.db")
+    notifications = NotificationStore(db)
+    for case_id in ("con", "sin"):
+        notifications.add(
+            Notification(case_id=case_id, kind="plazo", key="k", title=f"Aviso {case_id}", body="b", severity="info")
+        )
+
+    class Canal:
+        nombre = "webhook"
+
+        def __init__(self) -> None:
+            self.enviados: list[str] = []
+
+        def enviar(self, asunto: str, cuerpo: str) -> None:
+            self.enviados.append(asunto)
+
+    canal, store = Canal(), EntregaStore(db)
+    ahora = datetime.now(UTC)
+    resumen = entregar_pendientes(store, [canal], ahora=ahora, permitido=lambda n: n.case_id == "con")
+    assert canal.enviados == ["Aviso con"] and resumen["enviadas"] == 1
+    # The other one was not marked as delivered: it goes out once consent is given.
+    assert entregar_pendientes(store, [canal], ahora=ahora)["enviadas"] == 1 and canal.enviados[-1] == "Aviso sin"

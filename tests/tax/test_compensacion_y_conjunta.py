@@ -212,3 +212,22 @@ def test_company_and_wealth_calculators_are_available_to_the_agent() -> None:
         ToolCall(id="4", name="calcular_patrimonio", arguments={"comunidad": "Navarra", "depositos": 1})
     )
     assert foral.is_error
+
+
+def test_inheritance_calculator_is_available_to_the_agent() -> None:
+    from hacienda_gpt.agent.evidence import EvidenceLedger
+    from hacienda_gpt.agent.providers.base import ToolCall
+    from hacienda_gpt.agent.tools import Toolbox
+    from tests.agent.fakes import FakeSearcher
+
+    toolbox = Toolbox(searcher=FakeSearcher([]), ledger=EvidenceLedger())
+    hijo = {"modo": "sucesion", "parentesco": "hijo", "edad": 40, "valor_recibido": 300000}
+    estatal = toolbox.execute(ToolCall(id="1", name="calcular_sucesiones_donaciones", arguments=hijo))
+    madrid = toolbox.execute(
+        ToolCall(id="2", name="calcular_sucesiones_donaciones", arguments={**hijo, "comunidad": "Madrid"})
+    )
+    assert not estatal.is_error and not madrid.is_error
+    assert "Impuesto sobre Sucesiones y Donaciones" in estatal.content and estatal.content != madrid.content
+    assert toolbox.execute(
+        ToolCall(id="3", name="calcular_sucesiones_donaciones", arguments={"modo": "regalo"})
+    ).is_error

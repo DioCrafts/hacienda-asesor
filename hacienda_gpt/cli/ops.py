@@ -21,6 +21,7 @@ from datetime import UTC, datetime
 import json
 import logging
 import subprocess
+from typing import Any
 
 import click
 
@@ -74,6 +75,21 @@ def cli() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 
+def _con_consentimiento(db_path: str) -> Any:
+    """With user accounts on, only notices of users who agreed to receive them outside the app leave it."""
+    if settings.AUTH_MODE != "required":
+        return None
+    from hacienda_gpt.auth.store import AuthStore
+
+    auth = AuthStore(db_path)
+
+    def permitido(notification: Any) -> bool:
+        owner = auth.owner_of(notification.case_id)
+        return owner is not None and auth.has_consent(owner, "avisos_por_correo")
+
+    return permitido
+
+
 @cli.command("deliver")
 @click.option(
     "--db-path",
@@ -108,7 +124,9 @@ def deliver(db_path: str | None, marcar_entregadas: bool) -> None:
                 marcadas = {canal.nombre: store.marcar_todas(canal.nombre, ahora=ahora) for canal in canales}
                 click.echo(json.dumps({"configurado": True, "marcadas_sin_enviar": marcadas}, ensure_ascii=False))
                 return
-            resumen = entregar_pendientes(store, canales, ahora=ahora)
+            resumen = entregar_pendientes(
+                store, canales, ahora=ahora, permitido=_con_consentimiento(db_path or settings.DECISION_STATE_DB_PATH)
+            )
         finally:
             store.close()
         click.echo(json.dumps({"configurado": True, **resumen}, ensure_ascii=False))

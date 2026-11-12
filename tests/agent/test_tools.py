@@ -75,6 +75,7 @@ def test_case_tools_only_offered_with_a_case() -> None:
         "calcular_pago_fraccionado_sociedades",
         "comparar_autonomo_vs_sociedad",
         "calcular_patrimonio",
+        "calcular_sucesiones_donaciones",
     }
     assert {spec.name for spec in without.specs()} == stateless
     assert without.execute(_call("consultar_expediente")).is_error

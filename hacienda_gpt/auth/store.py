@@ -352,6 +352,12 @@ class AuthStore:
         with self._write() as conn:
             conn.execute("INSERT INTO case_owners (case_id, user_id) VALUES (?, ?)", (case_id, user_id))
 
+    def owner_of(self, case_id: str) -> str | None:
+        """User who owns a case (None for a case created without accounts)."""
+        with self._read() as conn:
+            row = conn.execute("SELECT user_id FROM case_owners WHERE case_id = ?", (case_id,)).fetchone()
+        return str(row["user_id"]) if row is not None else None
+
     def owns_case(self, case_id: str, user_id: str) -> bool:
         with self._read() as conn:
             row = conn.execute(

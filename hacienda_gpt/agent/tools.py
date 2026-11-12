@@ -47,6 +47,8 @@ from hacienda_gpt.tax.sociedades import (
     comparar_autonomo_vs_sociedad,
 )
 from hacienda_gpt.tax.sociedades_params import ejercicios_sociedades_disponibles
+from hacienda_gpt.tax.sucesiones import BeneficiarioISD, calcular_isd
+from hacienda_gpt.tax.sucesiones_params import ejercicios_isd_disponibles
 
 logger = logging.getLogger(__name__)
 
@@ -465,6 +467,75 @@ PATRIMONIO_TOOL = ToolSpec(
     },
 )
 
+ISD_TOOL = ToolSpec(
+    name="calcular_sucesiones_donaciones",
+    description="Calcula el Impuesto sobre Sucesiones y Donaciones de UN heredero, legatario, beneficiario de seguro o donatario (llámala una vez por persona). Aplica la ley estatal y, si está cargada, la normativa de la comunidad autónoma (reducciones, tarifa, coeficientes y bonificaciones); para las comunidades no cargadas aplica solo la ley estatal y lo avisa. No decide qué comunidad corresponde: en herencias es la de residencia habitual del fallecido; en donaciones de inmuebles, donde esté el inmueble; en el resto de donaciones, la de residencia del donatario. Devuelve el desglose con referencias legales y avisos que SIEMPRE hay que trasladar.",
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["modo", "valor_recibido"],
+        "properties": {
+            "modo": {"type": "string", "enum": ["sucesion", "donacion"]},
+            "comunidad": {
+                "type": "string",
+                "description": "Comunidad cuya normativa se aplica; omítela para solo ley estatal.",
+            },
+            "fecha_devengo": {"type": "string", "description": "AAAA-MM-DD del fallecimiento o de la donación (2026)."},
+            "parentesco": {
+                "type": "string",
+                "description": "Parentesco del beneficiario con el fallecido o donante: conyuge, pareja_de_hecho, hijo, otro_descendiente (nieto), padre, otro_ascendiente (abuelo), hermano, sobrino, tio, colateral_afinidad (cuñado), hijastro, yerno_nuera, padrastro, suegro, colateral_cuarto_grado (primo), colateral_lejano, extrano.",
+            },
+            "grupo": {
+                "type": "string",
+                "enum": ["I", "II", "III", "IV"],
+                "description": "Solo si no se conoce el parentesco exacto.",
+            },
+            "edad": {
+                "type": "integer",
+                "description": "Edad del beneficiario; imprescindible en descendientes (menores de 21 = grupo I).",
+            },
+            "grado_discapacidad": {"type": "integer"},
+            "valor_recibido": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Valor neto de lo que recibe (ya restadas cargas, deudas y gastos deducibles), sin el seguro de vida.",
+            },
+            "incluir_ajuar": {
+                "type": "boolean",
+                "description": "Añade la presunción legal del 3 % de ajuar doméstico (solo herencias).",
+            },
+            "seguro_vida": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Importe percibido como beneficiario de seguros de vida del fallecido.",
+            },
+            "valor_vivienda_habitual": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Parte de valor_recibido que es la vivienda habitual del fallecido.",
+            },
+            "participacion_vivienda": {"type": "number", "description": "Fracción (0-1) de esa vivienda que adquiere."},
+            "valor_empresa_familiar": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Parte de valor_recibido con derecho a la reducción de empresa familiar, según declara el usuario.",
+            },
+            "valor_patrimonio_historico": {"type": "number", "minimum": 0},
+            "otras_reducciones": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Importe de otras reducciones a las que el usuario afirma tener derecho.",
+            },
+            "patrimonio_preexistente": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Patrimonio del beneficiario antes de la adquisición.",
+            },
+            "escritura_publica": {"type": "boolean", "description": "La donación consta en escritura pública."},
+        },
+    },
+)
+
 BENEFITS_TOOL = ToolSpec(
     name="listar_beneficios_fiscales",
     description=(
@@ -605,6 +676,7 @@ class Toolbox:
             SOCIEDADES_PAGO_TOOL,
             AUTONOMO_SOCIEDAD_TOOL,
             PATRIMONIO_TOOL,
+            ISD_TOOL,
             BENEFITS_TOOL,
             CALENDAR_TOOL,
         ]
@@ -659,6 +731,14 @@ class Toolbox:
                 "Impuesto sobre el Patrimonio",
                 ejercicios_patrimonio_disponibles(),
                 "patrimonio",
+            ),
+            ISD_TOOL.name: lambda a: self._calculadora(
+                a,
+                BeneficiarioISD,
+                calcular_isd,
+                "Impuesto sobre Sucesiones y Donaciones",
+                ejercicios_isd_disponibles(),
+                "sucesiones",
             ),
             BENEFITS_TOOL.name: self._benefits,
             CALENDAR_TOOL.name: self._calendar,

@@ -280,6 +280,13 @@
       "label": "Real Decreto-ley 8/2023 — prórroga del ITSGF",
       "subdir": "boe-seed",
       "track": true
+    },
+    {
+      "id": "BOE-A-2009-20375",
+      "topic": "sucesiones",
+      "label": "Ley 22/2009 — sistema de financiación de las comunidades autónomas (puntos de conexión)",
+      "subdir": "boe-seed",
+      "track": true
     }
   ]
 }
