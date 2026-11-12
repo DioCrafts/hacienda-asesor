@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
+import json
+import queue
 import threading
 from typing import Annotated, TypeVar
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
@@ -72,6 +75,7 @@ from hacienda_gpt.api.security import (
 from hacienda_gpt.decision.audit import build_recommendation_audit_event
 from hacienda_gpt.decision.fact_extractor import FactExtractor, OpenAIExtractionError, default_fact_extractor
 from hacienda_gpt.decision.planner import Planner
+from hacienda_gpt.decision.rules_engine import evaluate_rules
 from hacienda_gpt.decision.schemas import (
     CaseState,
     Fact,
@@ -101,7 +105,7 @@ _ALLOWED_ORIGINS = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_ALLOWED_ORIGINS,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "X-API-Key"],
     allow_credentials=False,
 )
@@ -376,6 +380,10 @@ class AgentResponse(AgentResult):
     case_updated: bool = False
     # Candidate obligations on the attached case after this turn (empty without a case).
     obligations: list[ObligationCandidate] = Field(default_factory=list)
+    # What the advisor knows about the user after this turn, so the UI can show
+    # (and let the user correct) the facts the answer was based on.
+    facts: list[Fact] = Field(default_factory=list)
+    tax_period: str | None = None
 
 
 @_thread_safe_singleton
@@ -402,32 +410,22 @@ def get_agent() -> TaxAgent:
         ) from exc
 
 
-@app.post("/agent", response_model=AgentResponse, dependencies=[Depends(require_api_key)])
-def post_agent(
+def _load_agent_case(case_id: str | None, store: SQLiteCaseStateStore) -> CaseState | None:
+    if case_id is None:
+        return None
+    case = store.get_case(case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="case not found")
+    return case
+
+
+def _finish_agent_turn(
     payload: AgentRequest,
-    agent: Annotated[TaxAgent, Depends(get_agent)],
-    store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+    case: CaseState | None,
+    result: AgentResult,
+    store: SQLiteCaseStateStore,
 ) -> AgentResponse:
-    """Tool-using advisor: searches the corpus, cites fragments, verifies claims.
-
-    Unlike ``/qa`` (fixed retrieve-then-answer chain), the model decides what to
-    look up and how often, and every normative claim in the answer is checked
-    against the fragment it cites before the response is labelled ``verified``.
-    """
-    case: CaseState | None = None
-    if payload.case_id is not None:
-        case = store.get_case(payload.case_id)
-        if case is None:
-            raise HTTPException(status_code=404, detail="case not found")
-
-    try:
-        result = agent.run(payload.query, chat_history=payload.chat_history, case=case)
-    except ProviderError as exc:
-        raise HTTPException(
-            status_code=503,
-            detail=f"No se pudo procesar la consulta: {exc}",
-        ) from exc
-
+    """Persist what the agent changed on the case, audit the turn, build the response."""
     case_updated = False
     if payload.case_id is not None:
         if result.updated_case is not None:
@@ -460,7 +458,120 @@ def post_agent(
         case_id=payload.case_id,
         case_updated=case_updated,
         obligations=list(final_case.obligation_candidates) if final_case is not None else [],
+        facts=list(final_case.facts) if final_case is not None else [],
+        tax_period=final_case.tax_period if final_case is not None else None,
     )
+
+
+@app.post("/agent", response_model=AgentResponse, dependencies=[Depends(require_api_key)])
+def post_agent(
+    payload: AgentRequest,
+    agent: Annotated[TaxAgent, Depends(get_agent)],
+    store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+) -> AgentResponse:
+    """Tool-using advisor: searches the corpus, cites fragments, verifies claims.
+
+    Unlike ``/qa`` (fixed retrieve-then-answer chain), the model decides what to
+    look up and how often, and every normative claim in the answer is checked
+    against the fragment it cites before the response is labelled ``verified``.
+    """
+    case = _load_agent_case(payload.case_id, store)
+    try:
+        result = agent.run(payload.query, chat_history=payload.chat_history, case=case)
+    except ProviderError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"No se pudo procesar la consulta: {exc}",
+        ) from exc
+    return _finish_agent_turn(payload, case, result, store)
+
+
+# Seconds between keep-alive lines while the model is working, so proxies and
+# the browser's idle timeout do not cut a long (but healthy) run.
+_STREAM_HEARTBEAT_SECONDS = 10.0
+
+
+@app.post("/agent/stream", dependencies=[Depends(require_api_key)])
+def post_agent_stream(
+    payload: AgentRequest,
+    agent: Annotated[TaxAgent, Depends(get_agent)],
+    store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+) -> StreamingResponse:
+    """Same as ``/agent``, streamed as NDJSON so the UI can show live progress.
+
+    One JSON object per line: ``{"event": "progress", "data": {...}}`` while the
+    agent works (searches issued, verification, revision), ``{"event": "ping"}``
+    keep-alives, then exactly one terminal line — ``{"event": "result", "data":
+    <AgentResponse>}`` or ``{"event": "error", "data": {"status", "detail"}}``.
+    Request-level failures that happen before the run starts (404 case, 503
+    agent unavailable, 401) are still plain HTTP errors.
+    """
+    case = _load_agent_case(payload.case_id, store)
+    events: queue.Queue[dict] = queue.Queue()
+
+    def work() -> None:
+        try:
+            result = agent.run(
+                payload.query,
+                chat_history=payload.chat_history,
+                case=case,
+                on_event=lambda event: events.put({"event": "progress", "data": event}),
+            )
+            response = _finish_agent_turn(payload, case, result, store)
+            events.put({"event": "result", "data": response.model_dump(mode="json")})
+        except ProviderError as exc:
+            events.put({"event": "error", "data": {"status": 503, "detail": f"No se pudo procesar la consulta: {exc}"}})
+        except HTTPException as exc:
+            events.put({"event": "error", "data": {"status": exc.status_code, "detail": str(exc.detail)}})
+        except Exception as exc:  # the stream must always end with a terminal line
+            events.put({"event": "error", "data": {"status": 500, "detail": f"Error interno: {exc}"}})
+
+    def lines():
+        threading.Thread(target=work, name="agent-stream", daemon=True).start()
+        while True:
+            try:
+                event = events.get(timeout=_STREAM_HEARTBEAT_SECONDS)
+            except queue.Empty:
+                yield json.dumps({"event": "ping"}) + "\n"
+                continue
+            yield json.dumps(event, ensure_ascii=False, default=str) + "\n"
+            if event["event"] in ("result", "error"):
+                return
+
+    return StreamingResponse(
+        lines(),
+        media_type="application/x-ndjson",
+        # Tell reverse proxies (nginx) not to buffer: progress must arrive live.
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.delete("/cases/{case_id}/facts/{fact_name}", response_model=CaseState, dependencies=[Depends(require_api_key)])
+def delete_case_fact(
+    case_id: str,
+    fact_name: str,
+    store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+) -> CaseState:
+    """Remove one fact from a case — the user's way to correct what the advisor
+    recorded about them. Obligations are re-evaluated without it."""
+    case = store.get_case(case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="case not found")
+    remaining = [fact for fact in case.facts if fact.name != fact_name]
+    if len(remaining) == len(case.facts):
+        raise HTTPException(status_code=404, detail="fact not found")
+    pruned = case.model_copy(update={"facts": remaining, "updated_at": datetime.now(UTC)})
+    rules_result = evaluate_rules(case_state=pruned, recent_facts=[])
+    pruned = pruned.model_copy(update={"obligation_candidates": rules_result.candidate_obligations})
+    try:
+        updated = store.save_case(pruned)
+    except CaseVersionConflictError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail="El caso se modificó concurrentemente; vuelve a cargarlo y reintenta.",
+        ) from exc
+    store.append_audit_event(case_id, {"event_type": "fact_removed_by_user", "fact_name": fact_name})
+    return updated
 
 
 @app.get("/cases/{case_id}/audit/export", dependencies=[Depends(require_api_key)])

@@ -1,55 +1,73 @@
 /** @type {import('tailwindcss').Config} */
-// Design tokens mirror the Streamlit redesign so any screenshot or copy
-// that exists today maps 1:1 to the new React UI. New tokens (e.g.
-// risk-critical) are added here when needed.
+// Every colour is a CSS variable (RGB triplet) defined in src/index.css, with
+// a light and a dark value, so components never branch on the theme: the same
+// `bg-surface text-ink` reads correctly in both. `<alpha-value>` keeps
+// Tailwind's opacity modifiers (`bg-line/60`) working.
+const token = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        paper: "#f6f4ef",
-        surface: "#ffffff",
-        ink: "#1b2330",
-        "ink-soft": "#46505f",
-        muted: "#79828f",
-        line: "#e7e2d8",
+        paper: token("paper"),
+        surface: token("surface"),
+        ink: token("ink"),
+        "ink-soft": token("ink-soft"),
+        muted: token("muted"),
+        line: token("line"),
         primary: {
-          DEFAULT: "#14635e",
-          dark: "#0f4f4a",
-          soft: "#e4efed",
+          DEFAULT: token("primary"),
+          hover: token("primary-hover"),
+          // Text/icon colour on `primary-soft` plates.
+          dark: token("primary-dark"),
+          soft: token("primary-soft"),
         },
-        navy: "#1f3a5f",
+        navy: token("navy"),
         grounding: {
-          "cited-bg":   "#e8f3ec",
-          "cited-fg":   "#1f7a52",
-          "cited-bd":   "#c2e2cf",
-          "uncited-bg": "#fbf1da",
-          "uncited-fg": "#a96f08",
-          "uncited-bd": "#eed8a6",
-          "abstain-bg": "#eef0f3",
-          "abstain-fg": "#586679",
-          "abstain-bd": "#d6dbe2",
+          "cited-bg": token("cited-bg"),
+          "cited-fg": token("cited-fg"),
+          "cited-bd": token("cited-bd"),
+          "uncited-bg": token("uncited-bg"),
+          "uncited-fg": token("uncited-fg"),
+          "uncited-bd": token("uncited-bd"),
+          "abstain-bg": token("abstain-bg"),
+          "abstain-fg": token("abstain-fg"),
+          "abstain-bd": token("abstain-bd"),
         },
         risk: {
-          "high-bg":   "#fae8e4",
-          "high-fg":   "#c1442e",
-          "medium-bg": "#fbf0db",
-          "medium-fg": "#b5760a",
-          "low-bg":    "#e8f3ec",
-          "low-fg":    "#1f7a52",
+          "high-bg": token("risk-high-bg"),
+          "high-fg": token("risk-high-fg"),
+          "medium-bg": token("uncited-bg"),
+          "medium-fg": token("uncited-fg"),
+          "low-bg": token("cited-bg"),
+          "low-fg": token("cited-fg"),
         },
       },
       fontFamily: {
-        // Body: system sans for crispness without webfont latency.
-        sans: ["ui-sans-serif", "-apple-system", "BlinkMacSystemFont",
-               "Segoe UI", "Inter", "sans-serif"],
-        // Brand-only serif. Used by the logotype + section headings.
+        sans: ["ui-sans-serif", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Inter", "sans-serif"],
         serif: ["Georgia", "Cambria", "Times New Roman", "serif"],
         mono: ["ui-monospace", "SF Mono", "Menlo", "monospace"],
       },
       borderRadius: { pill: "999px" },
       boxShadow: {
-        card: "0 1px 2px rgba(27,35,48,0.04), 0 4px 12px rgba(27,35,48,0.04)",
+        card: "0 1px 2px rgb(var(--shadow) / 0.05), 0 4px 12px rgb(var(--shadow) / 0.05)",
+        pop: "0 8px 30px rgb(var(--shadow) / 0.18)",
+      },
+      keyframes: {
+        "fade-up": {
+          from: { opacity: "0", transform: "translateY(6px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        flash: {
+          "0%, 60%": { boxShadow: "0 0 0 3px rgb(var(--primary) / 0.45)" },
+          "100%": { boxShadow: "0 0 0 3px rgb(var(--primary) / 0)" },
+        },
+      },
+      animation: {
+        "fade-up": "fade-up 220ms ease-out both",
+        flash: "flash 1.8s ease-out both",
       },
     },
   },

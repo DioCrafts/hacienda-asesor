@@ -388,6 +388,10 @@ curl -X POST http://127.0.0.1:8000/agent \
 | `clarification` | El agente necesita un dato del usuario antes de responder. |
 | `abstained` | Sin base suficiente (si ninguna afirmación sobrevive, la respuesta se sustituye y el original queda en `raw_answer`). |
 
+`POST /agent/stream` hace lo mismo emitiendo NDJSON con el progreso en vivo
+(búsquedas, verificación, corrección) y una línea final `result` o `error`;
+es lo que usa el frontend.
+
 La respuesta incluye además `citations`, `claims` (dictamen por afirmación) y
 `tool_trace` (qué buscó el agente), y con `case_id` todo ello queda en el
 audit log del caso.

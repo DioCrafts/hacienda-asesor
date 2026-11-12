@@ -4,7 +4,17 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HaciendaGPT — Asesor fiscal con citas</title>
+    <title>HaciendaGPT — Asesor fiscal con fuentes verificadas</title>
+    <meta name="description" content="Asesor fiscal para España: responde con la normativa aplicable y verifica cada afirmación contra su fuente." />
+    <script>
+      // Apply the saved (or OS) theme before first paint to avoid a flash.
+      try {
+        var t = localStorage.getItem("haciendagpt_theme");
+        if (t === "dark" || (!t && matchMedia("(prefers-color-scheme: dark)").matches)) {
+          document.documentElement.classList.add("dark");
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

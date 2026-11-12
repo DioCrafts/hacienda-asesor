@@ -1,48 +1,58 @@
-// Trust strip: the grounding-verdict pill rendered above every answer.
-// Matches the mockup: a centred pill with a filled status icon (check /
-// alert / shield) and a single short label. The auxiliary "reason"
-// copy (e.g. why we abstained) is rendered as a small caption below
-// the pill so it does not crowd the headline verdict.
+// The verdict banner above every answer: how far this answer can be trusted,
+// in one line plus a plain-language explanation.
 
-import { AlertCircle, CheckCircle2, ShieldAlert } from "lucide-react";
+import { AlertCircle, CheckCircle2, HelpCircle, ShieldAlert } from "lucide-react";
 import clsx from "clsx";
 
 import type { AnswerMode } from "../api";
 import { TRUST } from "../lib/presentation";
 
-const ICON_BY_MODE = {
-  cited: CheckCircle2,
-  uncited: AlertCircle,
-  abstain: ShieldAlert,
-} as const;
+const ICON_BY_CLS = { cited: CheckCircle2, uncited: AlertCircle, abstain: ShieldAlert } as const;
 
 interface TrustStripProps {
   mode: AnswerMode;
-  reason?: string | null;
+  // e.g. "4 de 5 afirmaciones verificadas"; replaces the generic explanation.
+  detail?: string | null;
 }
 
-export function TrustStrip({ mode, reason }: TrustStripProps) {
+export function TrustStrip({ mode, detail }: TrustStripProps) {
   const copy = TRUST[mode];
-  const Icon = ICON_BY_MODE[copy.cls];
+  const Icon = mode === "clarification" ? HelpCircle : ICON_BY_CLS[copy.cls];
   return (
-    <div className="my-4 flex flex-col items-center gap-1.5">
-      <div
-        className={clsx(
-          "inline-flex items-center gap-2 rounded-pill border px-5 py-2.5 text-[15px] font-bold",
-          copy.cls === "cited" &&
-            "border-grounding-cited-bd bg-grounding-cited-bg text-grounding-cited-fg",
-          copy.cls === "uncited" &&
-            "border-grounding-uncited-bd bg-grounding-uncited-bg text-grounding-uncited-fg",
-          copy.cls === "abstain" &&
-            "border-grounding-abstain-bd bg-grounding-abstain-bg text-grounding-abstain-fg",
-        )}
-      >
-        <Icon size={18} aria-hidden strokeWidth={2.5} />
-        {copy.label}
-      </div>
-      {reason && (
-        <p className="text-center text-[12px] text-muted px-4">{reason}</p>
+    <div
+      role="status"
+      className={clsx(
+        "mt-4 flex items-start gap-3 rounded-xl border px-4 py-3",
+        copy.cls === "cited" && "border-grounding-cited-bd bg-grounding-cited-bg",
+        copy.cls === "uncited" && "border-grounding-uncited-bd bg-grounding-uncited-bg",
+        copy.cls === "abstain" && "border-grounding-abstain-bd bg-grounding-abstain-bg",
       )}
+    >
+      <Icon
+        size={20}
+        aria-hidden
+        strokeWidth={2.25}
+        className={clsx(
+          "mt-0.5 flex-shrink-0",
+          copy.cls === "cited" && "text-grounding-cited-fg",
+          copy.cls === "uncited" && "text-grounding-uncited-fg",
+          copy.cls === "abstain" && "text-grounding-abstain-fg",
+        )}
+      />
+      <div className="min-w-0">
+        <p
+          className={clsx(
+            "text-[14.5px] font-bold leading-snug",
+            copy.cls === "cited" && "text-grounding-cited-fg",
+            copy.cls === "uncited" && "text-grounding-uncited-fg",
+            copy.cls === "abstain" && "text-grounding-abstain-fg",
+          )}
+        >
+          {copy.label}
+          {detail && <span className="font-medium"> · {detail}</span>}
+        </p>
+        <p className="mt-0.5 text-[13px] leading-snug text-ink-soft">{copy.short}</p>
+      </div>
     </div>
   );
 }

@@ -71,10 +71,30 @@ export interface AgentResponse {
   raw_answer?: string | null;
   tool_trace: ToolTraceEntry[];
   obligations: ObligationCandidate[];
+  facts: Fact[];
+  tax_period?: string | null;
   case_id?: string | null;
   case_updated: boolean;
   provider: string;
   model: string;
+}
+
+// Live progress of a running agent turn (hacienda_gpt/agent/agent.py -> emit).
+export type ProgressEvent =
+  | { type: "thinking"; step: number }
+  | { type: "tool_call"; tool: string; arguments: Record<string, unknown> }
+  | { type: "tool_result"; tool: string; summary: string; is_error: boolean }
+  | { type: "verifying"; citations: number }
+  | { type: "revising"; problems: number };
+
+/** An API failure with the server's human-readable `detail`, when it sent one. */
+export class ApiError extends Error {
+  readonly status: number | null;
+  constructor(message: string, status: number | null = null, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "ApiError";
+    this.status = status;
+  }
 }
 
 export interface ObligationCandidate {
@@ -86,6 +106,9 @@ export interface ObligationCandidate {
   blocking_missing_facts: string[];
   trigger_facts: string[];
   evidence_refs: Array<{ title?: string; locator?: string }>;
+  // Filing deadline declared by the rule (ISO date) and its caveat, if any.
+  due_date?: string | null;
+  due_date_note?: string | null;
 }
 
 // Decision-engine shapes. These mirror hacienda_gpt/decision/schemas.py
@@ -180,7 +203,8 @@ function isAgentResponse(value: unknown): value is AgentResponse {
     Array.isArray(value.claims) &&
     Array.isArray(value.warnings) &&
     Array.isArray(value.tool_trace) &&
-    Array.isArray(value.obligations)
+    Array.isArray(value.obligations) &&
+    Array.isArray(value.facts)
   );
 }
 
@@ -201,13 +225,29 @@ function isCaseState(value: unknown): value is CaseState {
 interface RequestOptions {
   signal?: AbortSignal;
   timeoutMs?: number;
+  method?: "POST" | "DELETE" | "GET";
+}
+
+/** FastAPI errors are `{"detail": "..."}`; surface that sentence, not raw JSON. */
+async function errorFromResponse(path: string, resp: Response): Promise<ApiError> {
+  const text = await resp.text().catch(() => "");
+  let detail = text || resp.statusText;
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (isRecord(parsed) && typeof parsed.detail === "string") detail = parsed.detail;
+  } catch {
+    // not JSON: keep the raw text
+  }
+  if (resp.status === 401) detail = "El servicio requiere una clave de acceso que esta aplicación no tiene configurada.";
+  if (resp.status === 429) detail = "Demasiadas consultas seguidas. Espera un momento y vuelve a intentarlo.";
+  return new ApiError(detail || `${path}: error ${resp.status}`, resp.status);
 }
 
 async function request<T>(
   path: string,
   body: unknown,
   validate: (value: unknown) => value is T,
-  { signal, timeoutMs = DEFAULT_TIMEOUT_MS }: RequestOptions = {},
+  { signal, timeoutMs = DEFAULT_TIMEOUT_MS, method = "POST" }: RequestOptions = {},
 ): Promise<T> {
   // Either the caller (e.g. "Nueva consulta" / unmount) or the timeout can
   // abort the request; combine both signals into one.
@@ -217,26 +257,23 @@ async function request<T>(
   let resp: Response;
   try {
     resp = await fetch(`${API_BASE}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      method,
+      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
       signal: combined,
     });
   } catch (err) {
     // A timeout gets a clear message; a caller-cancel or genuine network
     // failure propagates the original error (already an AbortError on cancel).
-    if (timeout.aborted) throw new Error(`${path}: tiempo de espera agotado`, { cause: err });
+    if (timeout.aborted) throw new ApiError("El servicio tardó demasiado en responder.", null, { cause: err });
     throw err;
   }
 
-  if (!resp.ok) {
-    const text = await resp.text().catch(() => "");
-    throw new Error(`${path} ${resp.status}: ${text || resp.statusText}`);
-  }
+  if (!resp.ok) throw await errorFromResponse(path, resp);
 
   const data: unknown = await resp.json();
   if (!validate(data)) {
-    throw new Error(`${path}: respuesta con formato inesperado del servidor`);
+    throw new ApiError("El servidor devolvió una respuesta con un formato inesperado.", resp.status);
   }
   return data;
 }
@@ -290,4 +327,105 @@ export function postAgent(opts: {
   const body: Record<string, unknown> = { query: opts.query, chat_history: opts.chatHistory ?? [] };
   if (opts.caseId) body.case_id = opts.caseId;
   return request("/agent", body, isAgentResponse, { signal: opts.signal, timeoutMs: AGENT_TIMEOUT_MS });
+}
+
+// If the stream goes silent for this long the connection is dead: the server
+// sends a keep-alive line every ~10 s even while the model is thinking.
+const STREAM_IDLE_TIMEOUT_MS = 60_000;
+
+const PROGRESS_TYPES: ReadonlySet<string> = new Set(["thinking", "tool_call", "tool_result", "verifying", "revising"]);
+
+function isProgressEvent(value: unknown): value is ProgressEvent {
+  return isRecord(value) && typeof value.type === "string" && PROGRESS_TYPES.has(value.type);
+}
+
+/**
+ * Run one agent turn over the NDJSON stream, reporting live progress.
+ *
+ * Resolves with the final AgentResponse; rejects with ApiError on a server
+ * error (HTTP or in-stream), a dead connection, or a malformed stream.
+ */
+export async function streamAgent(
+  opts: {
+    query: string;
+    chatHistory?: Array<{ role: "user" | "assistant"; content: string }>;
+    caseId?: string | null;
+    signal?: AbortSignal;
+  },
+  onProgress: (event: ProgressEvent) => void,
+): Promise<AgentResponse> {
+  const body: Record<string, unknown> = { query: opts.query, chat_history: opts.chatHistory ?? [] };
+  if (opts.caseId) body.case_id = opts.caseId;
+
+  const idle = new AbortController();
+  const combined = opts.signal ? AbortSignal.any([opts.signal, idle.signal]) : idle.signal;
+  let idleTimer = setTimeout(() => idle.abort(), STREAM_IDLE_TIMEOUT_MS);
+  const touch = () => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => idle.abort(), STREAM_IDLE_TIMEOUT_MS);
+  };
+
+  try {
+    const resp = await fetch(`${API_BASE}/agent/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: combined,
+    });
+    if (!resp.ok) throw await errorFromResponse("/agent/stream", resp);
+    if (!resp.body) throw new ApiError("El servidor no devolvió ninguna respuesta.", resp.status);
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      touch();
+      buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const message: unknown = JSON.parse(line);
+        if (!isRecord(message)) continue;
+        if (message.event === "progress" && isProgressEvent(message.data)) onProgress(message.data);
+        if (message.event === "error") {
+          const data = isRecord(message.data) ? message.data : {};
+          throw new ApiError(
+            typeof data.detail === "string" ? data.detail : "El servicio no pudo procesar la consulta.",
+            typeof data.status === "number" ? data.status : null,
+          );
+        }
+        if (message.event === "result") {
+          if (!isAgentResponse(message.data)) {
+            throw new ApiError("El servidor devolvió una respuesta con un formato inesperado.");
+          }
+          return message.data;
+        }
+      }
+      if (done) throw new ApiError("La conexión se cerró antes de recibir la respuesta.");
+    }
+  } catch (err) {
+    if (idle.signal.aborted && !opts.signal?.aborted) {
+      throw new ApiError("Se perdió la conexión con el servicio mientras preparaba la respuesta.", null, {
+        cause: err,
+      });
+    }
+    if (err instanceof SyntaxError) {
+      throw new ApiError("El servidor devolvió una respuesta ilegible.", null, { cause: err });
+    }
+    throw err;
+  } finally {
+    clearTimeout(idleTimer);
+  }
+}
+
+/** Remove a fact the advisor recorded about the user; returns the updated case. */
+export function deleteCaseFact(opts: { caseId: string; factName: string; signal?: AbortSignal }): Promise<CaseState> {
+  return request(
+    `/cases/${encodeURIComponent(opts.caseId)}/facts/${encodeURIComponent(opts.factName)}`,
+    undefined,
+    isCaseState,
+    { signal: opts.signal, method: "DELETE" },
+  );
 }

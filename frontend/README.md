@@ -71,3 +71,16 @@ export default defineConfig([
   },
 ])
 ```
+
+
+## Qué hace la interfaz
+
+- **Una llamada por turno a `/agent/stream`** (NDJSON): mientras el agente trabaja se muestran en vivo sus
+  búsquedas, la verificación y las correcciones; el botón de enviar pasa a ser *Detener*.
+- **Citas navegables**: cada `[F#]` de la respuesta es un chip que salta a su tarjeta de fuente (autoridad,
+  referencia, fecha, carácter vinculante y pasaje literal).
+- **Veredicto y comprobación afirmación por afirmación**, con el motivo cuando algo no queda respaldado.
+- **Tu expediente**: panel con los datos que el asesor ha anotado del usuario; se pueden eliminar
+  (`DELETE /cases/{id}/facts/{name}`).
+- **Historial real** en `localStorage` (`src/lib/storage.ts`): sobrevive a recargas y se puede borrar.
+- **Tema claro/oscuro** con tokens CSS (`src/index.css` + `tailwind.config.js`) y diseño adaptado a móvil.

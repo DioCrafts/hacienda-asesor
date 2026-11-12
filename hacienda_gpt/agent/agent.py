@@ -8,6 +8,7 @@ normative claim, and the final verdict shown to the user.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from enum import Enum
 import logging
@@ -21,7 +22,7 @@ from hacienda_gpt.agent.prompts import AGENT_SYSTEM_PROMPT, CASE_TOOLS_ADDENDUM,
 from hacienda_gpt.agent.providers.base import LLMProvider, ProviderError, ToolResult
 from hacienda_gpt.agent.search import CorpusSearcher
 from hacienda_gpt.agent.tools import Toolbox
-from hacienda_gpt.agent.verifier import ClaimCheck, ResponseType, VerificationReport, Verifier
+from hacienda_gpt.agent.verifier import ClaimCheck, ResponseType, Verdict, VerificationReport, Verifier
 from hacienda_gpt.decision.schemas import CaseState
 
 logger = logging.getLogger(__name__)
@@ -139,8 +140,24 @@ class TaxAgent:
         *,
         chat_history: list[dict[str, Any]] | None = None,
         case: CaseState | None = None,
+        on_event: Callable[[dict[str, Any]], None] | None = None,
     ) -> AgentResult:
-        """Answer ``query``. Raises :class:`ProviderError` if the agent model fails."""
+        """Answer ``query``. Raises :class:`ProviderError` if the agent model fails.
+
+        ``on_event`` receives progress events while the run is in flight
+        (``thinking`` / ``tool_call`` / ``tool_result`` / ``verifying`` /
+        ``revising``), so a UI can show what the agent is doing instead of a
+        silent multi-minute wait. A failing callback never breaks the run.
+        """
+
+        def emit(event_type: str, **data: Any) -> None:
+            if on_event is None:
+                return
+            try:
+                on_event({"type": event_type, **data})
+            except Exception:
+                logger.exception("agent progress callback failed")
+
         ledger = EvidenceLedger()
         toolbox = Toolbox(searcher=self._searcher, ledger=ledger, case=case, default_k=self._default_k)
         system = AGENT_SYSTEM_PROMPT + (CASE_TOOLS_ADDENDUM if case is not None else "")
@@ -172,6 +189,7 @@ class TaxAgent:
         while True:
             # On the last allowed step the model must answer: tools are switched off.
             allow_tools = steps < budget - 1
+            emit("thinking", step=steps + 1)
             turn = conversation.step(allow_tools=allow_tools)
             steps += 1
             for key, value in turn.usage.items():
@@ -186,11 +204,13 @@ class TaxAgent:
                 results: list[ToolResult] = []
                 for call in turn.tool_calls:
                     if allow_tools:
+                        emit("tool_call", tool=call.name, arguments=call.arguments)
                         outcome = toolbox.execute(call)
                         content, summary, is_error = outcome.content, outcome.summary, outcome.is_error
                     else:
                         content = summary = "Sin pasos de búsqueda disponibles; responde con lo que ya tienes."
                         is_error = True
+                    emit("tool_result", tool=call.name, summary=summary, is_error=is_error)
                     results.append(ToolResult(call_id=call.id, content=content, is_error=is_error))
                     trace.append(
                         ToolTraceEntry(
@@ -221,6 +241,7 @@ class TaxAgent:
             cited_ids = extract_cited_ids(answer)
             invalid_ids = [fragment_id for fragment_id in cited_ids if ledger.get(fragment_id) is None]
             fragments = [f for f in (ledger.get(fragment_id) for fragment_id in cited_ids) if f is not None]
+            emit("verifying", citations=len(fragments))
             report = self._verifier.verify(question=query, answer=answer, fragments=fragments)
 
             needs_revision = (
@@ -231,6 +252,7 @@ class TaxAgent:
             )
             if needs_revision:
                 revisions += 1
+                emit("revising", problems=len(report.problems) + len(invalid_ids))
                 budget = steps + _STEPS_PER_REVISION
                 conversation.add_user_message(_revision_message(report.problems, invalid_ids))
                 continue
@@ -273,7 +295,12 @@ class TaxAgent:
             return {**base, "mode": AgentMode.ABSTAINED, "warnings": warnings}
 
         for claim in report.problems:
-            warnings.append(f"Sin respaldo suficiente ({claim.verdict.value}): «{claim.text}». {claim.reason}".strip())
+            lead = (
+                "Solo respaldada en parte por la fuente citada"
+                if claim.verdict is Verdict.PARTIAL
+                else "Sin respaldo en la fuente citada"
+            )
+            warnings.append(f"{lead}: «{claim.text}». {claim.reason}".strip())
 
         if not report.claims:
             warnings.append("La respuesta no contiene afirmaciones normativas verificables; trátala como orientativa.")

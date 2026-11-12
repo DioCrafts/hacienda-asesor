@@ -111,3 +111,95 @@ def test_agent_endpoint_returns_case_obligations_after_rules_run() -> None:
     assert body["obligations"][0]["due_date"] == "2026-06-30"
     stored = client.get(f"/cases/{case_id}").json()
     assert [o["obligation_id"] for o in stored["obligation_candidates"]] == ["obl_irpf_candidate"]
+
+
+def _stream(payload: dict) -> list[dict]:
+    import json
+
+    response = client.post("/agent/stream", json=payload)
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/x-ndjson")
+    return [json.loads(line) for line in response.text.splitlines() if line]
+
+
+def test_agent_stream_emits_progress_then_one_result() -> None:
+    _override(
+        ScriptedProvider(
+            [
+                tool_turn(("buscar_fuentes", {"consulta": "plazo reinversión"})),
+                text_turn("El plazo es de dos años [F2]."),
+            ],
+            [verdict("respuesta", ("Plazo dos años", ["F2"], "respaldada"))],
+        )
+    )
+
+    events = _stream({"query": "¿Plazo para reinvertir?"})
+
+    progress = [e["data"] for e in events if e["event"] == "progress"]
+    assert [p["type"] for p in progress] == ["thinking", "tool_call", "tool_result", "thinking", "verifying"]
+    assert progress[1] == {
+        "type": "tool_call",
+        "tool": "buscar_fuentes",
+        "arguments": {"consulta": "plazo reinversión"},
+    }
+    assert progress[2]["summary"].startswith("3 fragmentos")
+    assert progress[4] == {"type": "verifying", "citations": 1}
+
+    assert [e["event"] for e in events if e["event"] != "progress"] == ["result"]
+    result = events[-1]["data"]
+    assert result["mode"] == "verified" and result["citations"][0]["fragment_id"] == "F2"
+    assert result["facts"] == [] and result["tax_period"] is None
+
+
+def test_agent_stream_reports_provider_failure_as_terminal_error_line() -> None:
+    class Failing(ScriptedProvider):
+        def start(self, **kwargs):
+            raise ProviderError("Claude: límite de peticiones alcanzado")
+
+    _override(Failing([]))
+    events = _stream({"query": "¿IVA?"})
+    assert events[-1]["event"] == "error"
+    assert events[-1]["data"]["status"] == 503 and "límite" in events[-1]["data"]["detail"]
+    # A missing case is still a plain HTTP error, before any streaming starts.
+    assert client.post("/agent/stream", json={"query": "x", "case_id": "case_nope"}).status_code == 404
+
+
+def test_agent_response_exposes_case_facts_and_user_can_delete_one() -> None:
+    case_id = client.post("/cases", json={"user_id": "u-facts", "jurisdiction": "ES", "tax_period": "2025"}).json()[
+        "case_id"
+    ]
+    facts = [
+        {"nombre": "residencia_fiscal", "valor": "ES"},
+        {"nombre": "periodo_fiscal", "valor": "2025"},
+        {"nombre": "tipo_renta", "valor": "trabajo"},
+        {"nombre": "menciona_ingresos", "valor": True},
+    ]
+    _override(
+        ScriptedProvider(
+            [
+                tool_turn(("registrar_hechos", {"hechos": facts})),
+                tool_turn(("evaluar_obligaciones", {})),
+                text_turn("¿Cuánto ingresaste?"),
+            ],
+            [verdict("pregunta_aclaratoria")],
+        )
+    )
+    body = client.post("/agent", json={"query": "Trabajo en España", "case_id": case_id}).json()
+    assert {f["name"] for f in body["facts"]} == {
+        "residencia_fiscal",
+        "periodo_fiscal",
+        "tipo_renta",
+        "menciona_ingresos",
+    }
+    assert body["tax_period"] == "2025" and len(body["obligations"]) == 1
+
+    removed = client.delete(f"/cases/{case_id}/facts/tipo_renta")
+    assert removed.status_code == 200
+    assert "tipo_renta" not in {f["name"] for f in removed.json()["facts"]}
+    # The IRPF rule needs tipo_renta: without it the obligation no longer stands.
+    assert removed.json()["obligation_candidates"] == []
+    events = client.get(f"/cases/{case_id}/audit").json()["events"]
+    assert any(e.get("event_type") == "fact_removed_by_user" and e["fact_name"] == "tipo_renta" for e in events)
+
+    assert client.delete(f"/cases/{case_id}/facts/tipo_renta").status_code == 404
+    assert client.delete("/cases/case_nope/facts/tipo_renta").status_code == 404
