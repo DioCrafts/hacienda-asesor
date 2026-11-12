@@ -647,8 +647,15 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
     return (
       <div key={field.name} className="sm:col-span-2">
         {input}
-        <details open={isOpen} onToggle={(e) => setOpenParts((prev) => ({ ...prev, [field.name]: (e.currentTarget as HTMLDetailsElement).open }))} className="group/parts mt-1.5">
-          <summary className="flex cursor-pointer list-none items-center gap-1 text-[12.5px] font-semibold text-primary-dark [&::-webkit-details-marker]:hidden">
+        <details open={isOpen} className="group/parts mt-1.5">
+          <summary
+            // Opened and closed through state: a re-render (a new result arriving) must not undo the click.
+            onClick={(e) => {
+              e.preventDefault();
+              setOpenParts((prev) => ({ ...prev, [field.name]: !isOpen }));
+            }}
+            className="flex cursor-pointer list-none items-center gap-1 text-[12.5px] font-semibold text-primary-dark [&::-webkit-details-marker]:hidden"
+          >
             <ChevronDown size={14} aria-hidden className="transition group-open/parts:rotate-180" />
             Desglose por tipo{sum > 0 ? ` · ${formatMoney(sum)}` : " (opcional)"}
           </summary>
