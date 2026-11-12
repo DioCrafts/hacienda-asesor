@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 
 import type { ProgressEvent } from "../api";
 import { type ActivityRow, activityRows, formatElapsed, statusLine } from "../lib/presentation";
+import { RichText } from "./RichText";
 
 const ROW_ICON = { search: FileSearch, case: ClipboardList, verify: ShieldCheck, revise: PencilLine } as const;
 
@@ -38,19 +39,28 @@ function Rows({ rows }: { rows: ActivityRow[] }) {
 }
 
 /** Live view while the turn is running. */
-export function LiveActivity({ events, startedAt }: { events: ProgressEvent[]; startedAt: number }) {
+interface LiveActivityProps {
+  events: ProgressEvent[];
+  startedAt: number;
+  // The answer as it is being written. It has NOT been verified yet.
+  draft: string;
+}
+
+export function LiveActivity({ events, startedAt, draft }: LiveActivityProps) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
   const rows = activityRows(events);
+  const last = events[events.length - 1];
+  const checking = last?.type === "verifying" || last?.type === "revising";
 
   return (
-    <div className="rounded-xl border border-line bg-surface px-4 py-3.5 shadow-card" aria-live="polite">
-      <p className="flex items-center gap-2.5 text-[14.5px] font-semibold text-ink">
+    <div className="rounded-xl border border-line bg-surface px-4 py-3.5 shadow-card">
+      <p className="flex items-center gap-2.5 text-[14.5px] font-semibold text-ink" aria-live="polite">
         <Loader2 size={17} aria-hidden className="animate-spin text-primary" />
-        <span className="flex-1">{statusLine(events)}</span>
+        <span className="flex-1">{draft && !checking ? "Redactando la respuesta…" : statusLine(events)}</span>
         <span className="font-mono text-[12px] font-normal tabular-nums text-muted">{formatElapsed(now - startedAt)}</span>
       </p>
       {rows.length > 0 && (
@@ -58,9 +68,22 @@ export function LiveActivity({ events, startedAt }: { events: ProgressEvent[]; s
           <Rows rows={rows} />
         </div>
       )}
-      <p className="mt-3 text-[12px] text-muted">
-        Busco en la normativa y compruebo cada afirmación antes de responder; puede tardar uno o dos minutos.
-      </p>
+      {draft ? (
+        <div className="mt-3 border-t border-line pt-3">
+          <p className="mb-2 inline-flex items-center gap-1.5 rounded-pill bg-grounding-uncited-bg px-2.5 py-1 text-[11.5px] font-semibold text-grounding-uncited-fg">
+            <PencilLine size={12} aria-hidden />
+            {checking ? "Borrador · comprobándolo contra las fuentes" : "Borrador · aún sin verificar"}
+          </p>
+          {/* aria-hidden: a screen reader should hear the final, verified answer once, not every token. */}
+          <div aria-hidden className="opacity-80">
+            <RichText text={draft} draft />
+          </div>
+        </div>
+      ) : (
+        <p className="mt-3 text-[12px] text-muted">
+          Busco en la normativa y compruebo cada afirmación antes de responder; puede tardar uno o dos minutos.
+        </p>
+      )}
     </div>
   );
 }

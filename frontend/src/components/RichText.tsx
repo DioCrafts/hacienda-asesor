@@ -10,6 +10,9 @@ interface RichTextProps {
   text: string;
   citations?: Citation[];
   onCite?: (fragmentId: string) => void;
+  // A draft still being written/verified: its sources are not known yet, so
+  // citations render as neutral, non-interactive markers.
+  draft?: boolean;
 }
 
 type Block =
@@ -68,12 +71,19 @@ function parseBlocks(text: string): Block[] {
 // inside bold text still becomes a chip.
 const INLINE_RE = /\[\s*(F\d+(?:\s*[,;y]\s*F\d+)*)\s*\]|\*\*([^*]+)\*\*|\*([^*\s][^*]*)\*|`([^`]+)`/gi;
 
-export function RichText({ text, citations = [], onCite }: RichTextProps) {
+export function RichText({ text, citations = [], onCite, draft = false }: RichTextProps) {
   const byId = new Map(citations.filter((c) => c.fragment_id).map((c) => [c.fragment_id as string, c]));
 
   function citeChip(rawId: string, key: string): ReactNode {
     const id = rawId.toUpperCase();
     const citation = byId.get(id);
+    if (draft) {
+      return (
+        <span key={key} className="ml-0.5 rounded bg-line/70 px-1.5 py-px font-mono text-[11px] font-semibold text-muted">
+          {id}
+        </span>
+      );
+    }
     if (!citation) {
       // Cited but never retrieved: never render it as if it were a source.
       return (

@@ -389,7 +389,7 @@ curl -X POST http://127.0.0.1:8000/agent \
 | `abstained` | Sin base suficiente (si ninguna afirmación sobrevive, la respuesta se sustituye y el original queda en `raw_answer`). |
 
 `POST /agent/stream` hace lo mismo emitiendo NDJSON con el progreso en vivo
-(búsquedas, verificación, corrección) y una línea final `result` o `error`;
+(búsquedas, texto del borrador token a token, verificación, corrección) y una línea final `result` o `error`;
 es lo que usa el frontend.
 
 La respuesta incluye además `citations`, `claims` (dictamen por afirmación) y

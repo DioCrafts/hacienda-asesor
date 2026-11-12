@@ -80,7 +80,9 @@ export default defineConfig([
 - **Citas navegables**: cada `[F#]` de la respuesta es un chip que salta a su tarjeta de fuente (autoridad,
   referencia, fecha, carácter vinculante y pasaje literal).
 - **Veredicto y comprobación afirmación por afirmación**, con el motivo cuando algo no queda respaldado.
-- **Tu expediente**: panel con los datos que el asesor ha anotado del usuario; se pueden eliminar
-  (`DELETE /cases/{id}/facts/{name}`).
+- **Borrador en vivo**: la respuesta se ve escribirse token a token, marcada como *sin verificar* hasta que
+  pasa la comprobación; si el agente la reescribe, el borrador se reinicia.
+- **Tu expediente**: panel con los datos que el asesor ha anotado del usuario; cada uno se puede corregir en
+  el sitio (`PUT /cases/{id}/facts/{name}`) o eliminar con confirmación (`DELETE`).
 - **Historial real** en `localStorage` (`src/lib/storage.ts`): sobrevive a recargas y se puede borrar.
 - **Tema claro/oscuro** con tokens CSS (`src/index.css` + `tailwind.config.js`) y diseño adaptado a móvil.

@@ -5,7 +5,7 @@ import { Check, Copy, RotateCcw, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ProgressEvent } from "./api";
-import { ApiError, createCase, deleteCaseFact, streamAgent } from "./api";
+import { ApiError, createCase, deleteCaseFact, streamAgent, updateCaseFact } from "./api";
 import { ActivitySummary, LiveActivity } from "./components/ActivityPanel";
 import { CasePanel } from "./components/CasePanel";
 import { AssistantBubble, UserBubble } from "./components/ChatBubbles";
@@ -28,6 +28,8 @@ interface PendingTurn {
   text: string;
   events: ProgressEvent[];
   startedAt: number;
+  // The answer text streamed so far for the current model step (unverified).
+  draft: string;
 }
 
 // Warnings the backend derives from individual claims; those are shown in the
@@ -113,9 +115,11 @@ export default function App() {
   // While the advisor works, follow its progress at the bottom. When the answer
   // lands, bring its START into view instead: a long answer must be read from
   // the top, not from its last source card.
+  // (The draft grows token by token; re-scroll only every ~120 characters.)
+  const draftBucket = Math.floor((pending?.draft.length ?? 0) / 120);
   useEffect(() => {
     if (busy) bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [busy, pending?.events.length]);
+  }, [busy, pending?.events.length, draftBucket]);
   useEffect(() => {
     lastTurnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [active.turns.length, activeId]);
@@ -154,7 +158,7 @@ export default function App() {
     abortRef.current = controller;
     const startedAt = Date.now();
     const events: ProgressEvent[] = [];
-    setPending({ text, events: [], startedAt });
+    setPending({ text, events: [], startedAt, draft: "" });
     if (replaceTurnId) {
       upsert(conversation.id, (c) => ({ ...c, turns: c.turns.filter((t) => t.id !== replaceTurnId) }));
     }
@@ -188,8 +192,16 @@ export default function App() {
       let turn: ChatTurn;
       try {
         const resp = await streamAgent({ query: text, chatHistory, caseId, signal: controller.signal }, (event) => {
+          if (event.type === "text_delta") {
+            // Tokens only grow the draft; they are not timeline entries.
+            setPending((p) => (p ? { ...p, draft: p.draft + event.text } : p));
+            return;
+          }
           events.push(event);
-          setPending((p) => (p ? { ...p, events: [...events] } : p));
+          // A new model step, or a tool call, means whatever text came before
+          // was not the answer (a preamble, or a draft now being rewritten).
+          const resetsDraft = event.type === "thinking" || event.type === "tool_call";
+          setPending((p) => (p ? { ...p, events: [...events], draft: resetsDraft ? "" : p.draft } : p));
         });
         turn = {
           id: newId(),
@@ -264,20 +276,26 @@ export default function App() {
     setConversations((prev) => prev.filter((c) => c.id !== id));
   }
 
-  async function handleRemoveFact(factName: string) {
-    if (!active.caseId || removingFact) return;
+  /** Apply a user edit to the case file: a new value, or `null` to delete the fact. */
+  async function handleChangeFact(factName: string, value: string | number | boolean | null): Promise<boolean> {
+    if (!active.caseId || removingFact) return false;
     setRemovingFact(factName);
     setCaseError(null);
     try {
-      const updated = await deleteCaseFact({ caseId: active.caseId, factName });
+      const updated =
+        value === null
+          ? await deleteCaseFact({ caseId: active.caseId, factName })
+          : await updateCaseFact({ caseId: active.caseId, factName, value });
       upsert(active.id, (c) => ({
         ...c,
         facts: updated.facts,
         obligations: updated.obligation_candidates,
         taxPeriod: updated.tax_period,
       }));
+      return true;
     } catch (err) {
-      setCaseError(`No se pudo eliminar el dato. ${errorMessage(err)}`);
+      setCaseError(`No se pudo guardar el cambio. ${errorMessage(err)}`);
+      return false;
     } finally {
       setRemovingFact(null);
     }
@@ -376,7 +394,7 @@ export default function App() {
               <section className="flex flex-col gap-4">
                 <UserBubble text={pending.text} />
                 <AssistantBubble>
-                  <LiveActivity events={pending.events} startedAt={pending.startedAt} />
+                  <LiveActivity events={pending.events} startedAt={pending.startedAt} draft={pending.draft} />
                 </AssistantBubble>
               </section>
             )}
@@ -401,8 +419,9 @@ export default function App() {
         facts={active.facts}
         taxPeriod={active.taxPeriod}
         obligations={active.obligations}
-        onRemoveFact={(name) => void handleRemoveFact(name)}
-        removing={removingFact}
+        hasCase={active.caseId !== null}
+        onChangeFact={handleChangeFact}
+        saving={removingFact}
         error={caseError}
         disabled={busy}
       />

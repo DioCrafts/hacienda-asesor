@@ -82,6 +82,7 @@ export interface AgentResponse {
 // Live progress of a running agent turn (hacienda_gpt/agent/agent.py -> emit).
 export type ProgressEvent =
   | { type: "thinking"; step: number }
+  | { type: "text_delta"; text: string }
   | { type: "tool_call"; tool: string; arguments: Record<string, unknown> }
   | { type: "tool_result"; tool: string; summary: string; is_error: boolean }
   | { type: "verifying"; citations: number }
@@ -225,7 +226,7 @@ function isCaseState(value: unknown): value is CaseState {
 interface RequestOptions {
   signal?: AbortSignal;
   timeoutMs?: number;
-  method?: "POST" | "DELETE" | "GET";
+  method?: "POST" | "PUT" | "DELETE" | "GET";
 }
 
 /** FastAPI errors are `{"detail": "..."}`; surface that sentence, not raw JSON. */
@@ -333,7 +334,7 @@ export function postAgent(opts: {
 // sends a keep-alive line every ~10 s even while the model is thinking.
 const STREAM_IDLE_TIMEOUT_MS = 60_000;
 
-const PROGRESS_TYPES: ReadonlySet<string> = new Set(["thinking", "tool_call", "tool_result", "verifying", "revising"]);
+const PROGRESS_TYPES: ReadonlySet<string> = new Set(["thinking", "text_delta", "tool_call", "tool_result", "verifying", "revising"]);
 
 function isProgressEvent(value: unknown): value is ProgressEvent {
   return isRecord(value) && typeof value.type === "string" && PROGRESS_TYPES.has(value.type);
@@ -427,5 +428,20 @@ export function deleteCaseFact(opts: { caseId: string; factName: string; signal?
     undefined,
     isCaseState,
     { signal: opts.signal, method: "DELETE" },
+  );
+}
+
+/** Set a case fact to a value the user typed; returns the updated case. */
+export function updateCaseFact(opts: {
+  caseId: string;
+  factName: string;
+  value: string | number | boolean;
+  signal?: AbortSignal;
+}): Promise<CaseState> {
+  return request(
+    `/cases/${encodeURIComponent(opts.caseId)}/facts/${encodeURIComponent(opts.factName)}`,
+    { value: opts.value },
+    isCaseState,
+    { signal: opts.signal, method: "PUT" },
   );
 }

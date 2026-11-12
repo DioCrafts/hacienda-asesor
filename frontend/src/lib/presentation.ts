@@ -173,6 +173,19 @@ const FACT_LABEL: Record<string, string> = {
   tema_tributario: "Tema de la consulta",
 };
 
+// Enum values the backend stores as ASCII slugs.
+const VALUE_LABEL: Record<string, string> = {
+  actividad_economica: "Actividad económica",
+  capital_mobiliario: "Capital mobiliario (intereses, dividendos)",
+  capital_inmobiliario: "Capital inmobiliario (alquileres)",
+  ganancias_patrimoniales: "Ganancias patrimoniales",
+  autonomo: "Autónomo",
+  estimacion_directa_normal: "Estimación directa normal",
+  estimacion_directa_simplificada: "Estimación directa simplificada",
+  estimacion_objetiva: "Estimación objetiva (módulos)",
+  modulos: "Estimación objetiva (módulos)",
+};
+
 const MONEY_FACTS = new Set(["importe_renta_aproximado", "volumen_facturacion"]);
 const EUR = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
@@ -190,10 +203,63 @@ export function factValue(fact: Pick<Fact, "name" | "value">): string {
   if (typeof value === "number") return MONEY_FACTS.has(name) ? EUR.format(value) : String(value);
   if (typeof value === "string") {
     if (name === "residencia_fiscal") return value === "ES" ? "España" : value === "OTHER" ? "Fuera de España" : value;
+    const known = VALUE_LABEL[value];
+    if (known) return known;
     const spaced = value.replace(/_/g, " ");
     return spaced.charAt(0).toUpperCase() + spaced.slice(1);
   }
   return JSON.stringify(value);
+}
+
+export type FactInput =
+  | { kind: "choice"; options: Array<{ value: string | boolean; label: string }> }
+  | { kind: "money" }
+  | { kind: "number" }
+  | { kind: "year" }
+  | { kind: "text" };
+
+const choice = (values: string[]): FactInput => ({
+  kind: "choice",
+  options: values.map((value) => ({ value, label: factValue({ name: "", value }) })),
+});
+
+const FACT_INPUT: Record<string, FactInput> = {
+  residencia_fiscal: {
+    kind: "choice",
+    options: [
+      { value: "ES", label: "España" },
+      { value: "OTHER", label: "Fuera de España" },
+    ],
+  },
+  periodo_fiscal: { kind: "year" },
+  tipo_renta: choice(["trabajo", "actividad_economica", "capital_mobiliario", "capital_inmobiliario", "ganancias_patrimoniales", "otros"]),
+  categoria_contribuyente: choice(["asalariado", "autonomo", "pensionista", "sociedad", "estudiante", "desempleado"]),
+  regimen_tributario: choice(["estimacion_directa_normal", "estimacion_directa_simplificada", "estimacion_objetiva"]),
+  periodicidad_iva: choice(["trimestral", "mensual"]),
+  importe_renta_aproximado: { kind: "money" },
+  volumen_facturacion: { kind: "money" },
+  plantilla: { kind: "number" },
+};
+
+const YES_NO: FactInput = {
+  kind: "choice",
+  options: [
+    { value: true, label: "Sí" },
+    { value: false, label: "No" },
+  ],
+};
+
+/** Which control edits a fact: a fixed list where the values are an enum,
+ *  a number box for amounts, free text otherwise. */
+export function factInput(fact: Pick<Fact, "name" | "value">): FactInput {
+  if (typeof fact.value === "boolean") return YES_NO;
+  const known = FACT_INPUT[fact.name];
+  if (known) {
+    // A stored value outside the list (e.g. a country code) must stay editable as text.
+    if (known.kind === "choice" && !known.options.some((o) => o.value === fact.value)) return { kind: "text" };
+    return known;
+  }
+  return typeof fact.value === "number" ? { kind: "number" } : { kind: "text" };
 }
 
 /** "Aún me falta: tipo de renta y ejercicio" from raw fact names. */
@@ -289,6 +355,7 @@ export function activityRows(events: ProgressEvent[]): ActivityRow[] {
 export function statusLine(events: ProgressEvent[]): string {
   const last = events[events.length - 1];
   if (!last) return "Conectando con el asesor…";
+  if (last.type === "text_delta") return "Redactando la respuesta…";
   if (last.type === "thinking") return last.step === 1 ? "Analizando tu consulta…" : "Leyendo lo encontrado y decidiendo el siguiente paso…";
   if (last.type === "tool_call") return last.tool === "buscar_fuentes" ? "Buscando en la normativa…" : "Actualizando tu expediente…";
   if (last.type === "tool_result") return "Leyendo lo encontrado…";
