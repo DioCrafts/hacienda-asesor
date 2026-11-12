@@ -2,7 +2,7 @@
 // silent "Consultando…" with the actual searches as they happen; afterwards it
 // collapses into a "how I got here" disclosure under the answer.
 
-import { Calculator, ChevronDown, ClipboardList, FileSearch, Loader2, PencilLine, ShieldCheck } from "lucide-react";
+import { Calculator, ChevronDown, ClipboardList, FileSearch, Loader2, PencilLine, ShieldCheck, Users } from "lucide-react";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 
@@ -10,7 +10,7 @@ import type { ProgressEvent } from "../api";
 import { type ActivityRow, activityRows, formatElapsed, statusLine } from "../lib/presentation";
 import { RichText } from "./RichText";
 
-const ROW_ICON = { search: FileSearch, case: ClipboardList, calc: Calculator, verify: ShieldCheck, revise: PencilLine } as const;
+const ROW_ICON = { search: FileSearch, case: ClipboardList, calc: Calculator, team: Users, verify: ShieldCheck, revise: PencilLine } as const;
 
 function Rows({ rows }: { rows: ActivityRow[] }) {
   return (
@@ -81,7 +81,7 @@ export function LiveActivity({ events, startedAt, draft }: LiveActivityProps) {
         </div>
       ) : (
         <p className="mt-3 text-[12px] text-muted">
-          Busco en la normativa y compruebo cada afirmación antes de responder; puede tardar uno o dos minutos.
+          Busco en la normativa y compruebo cada afirmación antes de responder; puede tardar uno o dos minutos (algo más si la consulta es compleja).
         </p>
       )}
     </div>
@@ -94,6 +94,7 @@ export function ActivitySummary({ rows, elapsedMs }: { rows: ActivityRow[]; elap
   const searches = rows.filter((r) => r.kind === "search").length;
   const label = [
     searches > 0 ? (searches === 1 ? "1 búsqueda" : `${searches} búsquedas`) : null,
+    rows.some((r) => r.kind === "team") ? "con equipo de agentes" : null,
     rows.some((r) => r.kind === "revise") ? "1 corrección" : null,
     formatElapsed(elapsedMs),
   ]

@@ -338,7 +338,7 @@ const SOURCE_TYPE_LABEL: Record<string, string> = {
 
 /** One persistent row of the "what the advisor did" timeline. */
 export interface ActivityRow {
-  kind: "search" | "case" | "calc" | "verify" | "revise";
+  kind: "search" | "case" | "calc" | "team" | "verify" | "revise";
   text: string;
   detail?: string;
   outcome?: string;
@@ -355,15 +355,36 @@ function searchDetail(args: Record<string, unknown>): string | undefined {
   return parts.length ? `Solo en ${parts.join(" · ")}` : undefined;
 }
 
+const TEAM_MEMBER: Record<string, string> = {
+  investigador_normativa: "Investigador de normativa",
+  investigador_doctrina: "Investigador de doctrina y jurisprudencia",
+  critico: "Revisor adversarial",
+  planificador: "Planificador",
+};
+
 /** Fold raw progress events into human-readable rows (tool results attach to
  *  the call they answer; "thinking" is transient and produces no row). */
 export function activityRows(events: ProgressEvent[]): ActivityRow[] {
   const rows: ActivityRow[] = [];
   for (const event of events) {
-    if (event.type === "tool_call") {
+    if (event.type === "team") {
+      if (event.stage === "planning" && event.status === "done" && event.complex) {
+        rows.push({ kind: "team", text: "Consulta compleja: la reparto entre dos investigadores y un revisor" });
+      } else if (event.stage === "escalation") {
+        rows.push({ kind: "team", text: "Las fuentes discrepan: pido una segunda investigación al equipo" });
+      } else if (event.stage === "critic" && event.status === "start") {
+        rows.push({ kind: "team", text: "Revisión adversarial del borrador, como lo haría un inspector" });
+      } else if (event.stage === "critic" && event.status === "done") {
+        const last = rows[rows.length - 1];
+        const target = last && last.kind === "team" && last.outcome === undefined ? last : rows.find((r) => r.kind === "team" && r.text.startsWith("Revisión adversarial") && r.outcome === undefined);
+        if (target) target.outcome = event.objections ? "con objeciones: reescribo la respuesta" : "sin objeciones";
+      }
+    } else if (event.type === "tool_call") {
       if (event.tool === "buscar_fuentes") {
         const query = typeof event.arguments.consulta === "string" ? event.arguments.consulta : "…";
-        rows.push({ kind: "search", text: query, detail: searchDetail(event.arguments) });
+        const who = event.agent ? TEAM_MEMBER[event.agent] : undefined;
+        const filters = searchDetail(event.arguments);
+        rows.push({ kind: "search", text: query, detail: [who, filters].filter(Boolean).join(" · ") || undefined });
       } else if (event.tool === "registrar_hechos") {
         const facts = Array.isArray(event.arguments.hechos) ? event.arguments.hechos : [];
         const names = facts
@@ -423,8 +444,16 @@ export function statusLine(events: ProgressEvent[]): string {
   const last = events[events.length - 1];
   if (!last) return "Conectando con el asesor…";
   if (last.type === "text_delta") return "Redactando la respuesta…";
+  if (last.type === "team") {
+    if (last.stage === "planning") return "Valorando si la consulta necesita al equipo…";
+    if (last.stage === "critic") return last.status === "start" ? "Un revisor busca fallos en el borrador…" : "Leyendo la revisión…";
+    return "El equipo está investigando…";
+  }
   if (last.type === "thinking") return last.step === 1 ? "Analizando tu consulta…" : "Leyendo lo encontrado y decidiendo el siguiente paso…";
-  if (last.type === "tool_call") return last.tool === "buscar_fuentes" ? "Buscando en la normativa…" : "Actualizando tu expediente…";
+  if (last.type === "tool_call") {
+    if (last.agent) return `${TEAM_MEMBER[last.agent] ?? "El equipo"}: buscando…`;
+    return last.tool === "buscar_fuentes" ? "Buscando en la normativa…" : "Trabajando con tus datos…";
+  }
   if (last.type === "tool_result") return "Leyendo lo encontrado…";
   if (last.type === "verifying") return "Verificando la respuesta contra las fuentes…";
   return "Corrigiendo la respuesta…";

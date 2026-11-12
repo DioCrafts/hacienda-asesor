@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import hashlib
 import re
+import threading
 from typing import Any
 
 # [F3], [F3, F7], [F3][F7] — tolerant about spacing and separators.
@@ -126,9 +127,17 @@ def _first_str(metadata: dict[str, Any], keys: tuple[str, ...]) -> str | None:
 class EvidenceLedger:
     _fragments: dict[str, Fragment] = field(default_factory=dict)
     _by_key: dict[str, str] = field(default_factory=dict)
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
 
     def register(self, *, text: str, metadata: dict[str, Any]) -> Fragment:
-        """Register a retrieved chunk; the same chunk always gets the same id."""
+        """Register a retrieved chunk; the same chunk always gets the same id.
+
+        Thread-safe: researcher subagents share one ledger and search in parallel.
+        """
+        with self._lock:
+            return self._register(text=text, metadata=metadata)
+
+    def _register(self, *, text: str, metadata: dict[str, Any]) -> Fragment:
         locator = _first_str(metadata, ("source_url", "source", "locator", "source_file")) or "fuente_desconocida"
         chunk_id = metadata.get("chunk_id")
         key = str(chunk_id) if chunk_id else hashlib.sha256(f"{locator}\x00{text}".encode()).hexdigest()

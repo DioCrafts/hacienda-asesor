@@ -214,3 +214,15 @@ DECISION_EXTRACTOR_EFFORT = os.environ.get("DECISION_EXTRACTOR_EFFORT", "low")
 # exists the agent annotates every retrieved ruling/consulta with its validity
 # (current, qualified, superseded, disputed); when it does not, nothing changes.
 DOCTRINE_GRAPH_PATH = os.environ.get("DOCTRINE_GRAPH_PATH", "./data/doctrine_graph.sqlite3")
+
+# --- Agent team (planner + researchers + critic) ----------------------------
+# auto   : a single agent answers; the team is used only when the question spans
+#          several taxes (per the planner) or the single agent hit conflicting or
+#          superseded sources it did not resolve.
+# always : every question goes through the team (slow and costly; for evaluation).
+# never  : single agent only.
+AGENT_TEAM_MODE = os.environ.get("AGENT_TEAM_MODE", "auto")
+# Model turns each researcher / the critic may take.
+SUBAGENT_MAX_STEPS = int(os.environ.get("SUBAGENT_MAX_STEPS", "4"))
+# Run the two researchers concurrently (their LLM calls; corpus searches are serialised).
+SUBAGENTS_PARALLEL = _env_bool("SUBAGENTS_PARALLEL", default=True)

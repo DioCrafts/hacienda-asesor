@@ -307,7 +307,10 @@ class Toolbox:
         case: CaseState | None = None,
         default_k: int = 6,
         graph: DoctrineGraph | None = None,
+        allowed: frozenset[str] | None = None,
     ) -> None:
+        # Subagents get a subset of the tools (a researcher must not edit the case).
+        self._allowed = allowed
         self._graph = graph
         self._searcher = searcher
         self.ledger = ledger
@@ -321,6 +324,8 @@ class Toolbox:
             specs.append(VALIDITY_TOOL)
         if self.case is not None:
             specs.extend([READ_CASE_TOOL, RECORD_FACTS_TOOL, EVALUATE_RULES_TOOL])
+        if self._allowed is not None:
+            specs = [spec for spec in specs if spec.name in self._allowed]
         return specs
 
     def execute(self, call: ToolCall) -> ToolOutcome:
@@ -337,9 +342,10 @@ class Toolbox:
             EVALUATE_RULES_TOOL.name: self._evaluate_rules,
         }
         handler = handlers.get(call.name)
-        unavailable = (call.name in _CASE_ONLY_TOOLS and self.case is None) or (
-            call.name == VALIDITY_TOOL.name and self._graph is None
-        )
+        unavailable = (
+            (call.name in _CASE_ONLY_TOOLS and self.case is None)
+            or (self._allowed is not None and call.name not in self._allowed)
+        ) or (call.name == VALIDITY_TOOL.name and self._graph is None)
         if handler is None or unavailable:
             return _error(f"Herramienta no disponible: {call.name}.")
         try:

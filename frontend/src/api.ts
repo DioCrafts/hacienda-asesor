@@ -92,8 +92,11 @@ export interface AgentResponse {
 export type ProgressEvent =
   | { type: "thinking"; step: number }
   | { type: "text_delta"; text: string }
-  | { type: "tool_call"; tool: string; arguments: Record<string, unknown> }
-  | { type: "tool_result"; tool: string; summary: string; is_error: boolean }
+  // `agent` is set when a member of the team (not the advisor) made the call.
+  | { type: "tool_call"; tool: string; arguments: Record<string, unknown>; agent?: string }
+  | { type: "tool_result"; tool: string; summary: string; is_error: boolean; agent?: string }
+  // Team mode (complex questions): planner, researchers and critic at work.
+  | { type: "team"; stage: string; agent: string; status: string; complex?: boolean; objections?: boolean }
   | { type: "verifying"; citations: number }
   | { type: "revising"; problems: number };
 
@@ -343,7 +346,7 @@ export function postAgent(opts: {
 // sends a keep-alive line every ~10 s even while the model is thinking.
 const STREAM_IDLE_TIMEOUT_MS = 60_000;
 
-const PROGRESS_TYPES: ReadonlySet<string> = new Set(["thinking", "text_delta", "tool_call", "tool_result", "verifying", "revising"]);
+const PROGRESS_TYPES: ReadonlySet<string> = new Set(["thinking", "text_delta", "tool_call", "tool_result", "team", "verifying", "revising"]);
 
 function isProgressEvent(value: unknown): value is ProgressEvent {
   return isRecord(value) && typeof value.type === "string" && PROGRESS_TYPES.has(value.type);

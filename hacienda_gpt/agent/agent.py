@@ -18,10 +18,29 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from hacienda_gpt import settings
-from hacienda_gpt.agent.evidence import EvidenceLedger, extract_cited_ids
-from hacienda_gpt.agent.prompts import AGENT_SYSTEM_PROMPT, CASE_TOOLS_ADDENDUM, FORCE_ANSWER_MESSAGE
+from hacienda_gpt.agent.evidence import EvidenceLedger, Fragment, extract_cited_ids
+from hacienda_gpt.agent.prompts import (
+    AGENT_SYSTEM_PROMPT,
+    CASE_TOOLS_ADDENDUM,
+    CRITIC_REVISION_MESSAGE,
+    FORCE_ANSWER_MESSAGE,
+)
 from hacienda_gpt.agent.providers.base import LLMProvider, ProviderError, ToolResult
 from hacienda_gpt.agent.search import CorpusSearcher
+from hacienda_gpt.agent.team import (
+    RESEARCH_TOOLS,
+    LockedSearcher,
+    Plan,
+    SubagentRun,
+    TeamReport,
+    criticar,
+    detectar_tributos,
+    investigar,
+    new_toolbox_factory,
+    planificar,
+    render_briefing,
+    team_mode,
+)
 from hacienda_gpt.agent.tools import Toolbox
 from hacienda_gpt.agent.verifier import ClaimCheck, ResponseType, Verdict, VerificationReport, Verifier
 from hacienda_gpt.decision.schemas import CaseState
@@ -72,6 +91,8 @@ class ToolTraceEntry(BaseModel):
     arguments: dict[str, Any]
     summary: str
     is_error: bool = False
+    # Who made the call: the advisor, or a member of the team.
+    agent: str = "asesor"
 
 
 class AgentResult(BaseModel):
@@ -86,6 +107,8 @@ class AgentResult(BaseModel):
     conflicts: list[str] = Field(default_factory=list)
     # True when the answer itself tells the user the question has no settled criterion.
     sin_criterio_firme: bool = False
+    # Set when the question was handled by the team (planner, researchers, critic).
+    team: TeamReport | None = None
     # The model's original text when `answer` was replaced by the abstain message.
     raw_answer: str | None = None
     tool_trace: list[ToolTraceEntry] = Field(default_factory=list)
@@ -186,8 +209,16 @@ class TaxAgent:
         chat_history: list[dict[str, Any]] | None = None,
         case: CaseState | None = None,
         on_event: Callable[[dict[str, Any]], None] | None = None,
+        ledger: EvidenceLedger | None = None,
+        briefing: str | None = None,
+        critic: Callable[[str, list[Fragment], Toolbox], str | None] | None = None,
     ) -> AgentResult:
         """Answer ``query``. Raises :class:`ProviderError` if the agent model fails.
+
+        Team mode passes three extras: a ``ledger`` already holding the
+        researchers' fragments, a ``briefing`` with their memos, and a
+        ``critic`` called once on the first draft — its objections, if any,
+        go back to the model before the answer is verified.
 
         ``on_event`` receives progress events while the run is in flight
         (``thinking`` / ``text_delta`` / ``tool_call`` / ``tool_result`` /
@@ -203,7 +234,7 @@ class TaxAgent:
             except Exception:
                 logger.exception("agent progress callback failed")
 
-        ledger = EvidenceLedger()
+        ledger = ledger if ledger is not None else EvidenceLedger()
         toolbox = Toolbox(
             searcher=self._searcher, ledger=ledger, case=case, default_k=self._default_k, graph=self._graph
         )
@@ -212,7 +243,7 @@ class TaxAgent:
             system=system,
             tools=toolbox.specs(),
             history=chat_history or [],  # type: ignore[arg-type]  # normalized by the provider
-            user_message=f"{_context_block(case)}\n\n{query}",
+            user_message="\n\n".join(part for part in (_context_block(case), briefing, query) if part),
         )
 
         trace: list[ToolTraceEntry] = []
@@ -220,6 +251,7 @@ class TaxAgent:
         steps = 0
         revisions = 0
         budget = self._max_steps
+        critic_pending = critic is not None
 
         def finish(**fields: Any) -> AgentResult:
             return AgentResult(
@@ -302,6 +334,18 @@ class TaxAgent:
             cited_ids = extract_cited_ids(answer)
             invalid_ids = [fragment_id for fragment_id in cited_ids if ledger.get(fragment_id) is None]
             fragments = [f for f in (ledger.get(fragment_id) for fragment_id in cited_ids) if f is not None]
+
+            if critic_pending and critic is not None:
+                # One adversarial pass on the first draft, before spending a
+                # verification on text that may be about to change.
+                critic_pending = False
+                objections = critic(answer, fragments, toolbox)
+                if objections:
+                    emit("revising", problems=1)
+                    budget = steps + _STEPS_PER_REVISION
+                    conversation.add_user_message(CRITIC_REVISION_MESSAGE.format(objeciones=objections))
+                    continue
+
             emit("verifying", citations=len(fragments))
             report = self._verifier.verify(question=query, answer=answer, fragments=fragments)
 
@@ -395,6 +439,163 @@ class TaxAgent:
         return {**base, "mode": AgentMode.VERIFIED, "warnings": warnings}
 
 
+class TeamAgent(TaxAgent):
+    """The advisor, with a team it calls in only when a question needs one.
+
+    ``mode`` (default: ``settings.AGENT_TEAM_MODE``):
+
+    * ``auto`` — the single agent answers. The team takes over when (a) the
+      question mentions two or more taxes **and** the planner confirms it is
+      complex, or (b) the single agent's answer relies on superseded or
+      disputed sources that it did not resolve.
+    * ``always`` / ``never`` — force one path.
+    """
+
+    def __init__(
+        self, *args: Any, mode: str | None = None, subagent_max_steps: int | None = None, **kwargs: Any
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self._mode = mode if mode in ("auto", "always", "never") else team_mode()
+        self._subagent_max_steps = subagent_max_steps if subagent_max_steps is not None else settings.SUBAGENT_MAX_STEPS
+
+    def run(
+        self,
+        query: str,
+        *,
+        chat_history: list[dict[str, Any]] | None = None,
+        case: CaseState | None = None,
+        on_event: Callable[[dict[str, Any]], None] | None = None,
+        **kwargs: Any,
+    ) -> AgentResult:
+        if self._mode == "never" or kwargs:
+            return super().run(query, chat_history=chat_history, case=case, on_event=on_event, **kwargs)
+
+        def emit(event_type: str, **data: Any) -> None:
+            if on_event is None:
+                return
+            try:
+                on_event({"type": event_type, **data})
+            except Exception:
+                logger.exception("agent progress callback failed")
+
+        tributos = detectar_tributos(query)
+        plan: Plan | None = None
+        if self._mode == "always" or len(tributos) >= 2:
+            emit("team", stage="planning", agent="planificador", status="start")
+            plan = planificar(self._provider, query, case)
+            emit("team", stage="planning", agent="planificador", status="done", complex=bool(plan and plan.compleja))
+
+        if self._mode == "always" or (plan is not None and plan.compleja):
+            plan = plan or Plan(compleja=True, motivo="Modo equipo forzado por configuración.", tributos=tributos)
+            trigger = "planificador" if plan.compleja and self._mode != "always" else "forzado"
+            return self._run_team(
+                query, plan, trigger, chat_history=chat_history, case=case, on_event=on_event, emit=emit
+            )
+
+        result = super().run(query, chat_history=chat_history, case=case, on_event=on_event)
+        # Escalate when the single agent ran into doctrine it could not settle.
+        if result.conflicts and result.mode is not AgentMode.VERIFIED:
+            emit("team", stage="escalation", agent="planificador", status="start")
+            plan = Plan(
+                compleja=True,
+                motivo="La primera respuesta se apoyaba en fuentes superadas o discutidas sin resolverlo.",
+                tributos=tributos,
+                encargo_doctrina=(
+                    "La primera investigación encontró estas fuentes con la vigencia en cuestión: "
+                    + " | ".join(result.conflicts)
+                    + ". Localiza las resoluciones posteriores, determina cuál es el criterio vigente y, si las "
+                    "fuentes de rango comparable siguen discrepando, dilo."
+                ),
+            )
+            team_result = self._run_team(
+                query,
+                plan,
+                "conflicto",
+                chat_history=chat_history,
+                # Facts the first pass recorded must not be lost.
+                case=result.updated_case or case,
+                on_event=on_event,
+                emit=emit,
+            )
+            for key, value in result.usage.items():
+                team_result.usage[key] = team_result.usage.get(key, 0) + value
+            if team_result.updated_case is None:
+                team_result.updated_case = result.updated_case
+            return team_result
+        return result
+
+    def _run_team(
+        self,
+        query: str,
+        plan: Plan,
+        trigger: str,
+        *,
+        chat_history: list[dict[str, Any]] | None,
+        case: CaseState | None,
+        on_event: Callable[[dict[str, Any]], None] | None,
+        emit: Callable[..., None],
+    ) -> AgentResult:
+        ledger = EvidenceLedger()
+        make_toolbox = new_toolbox_factory(
+            searcher=LockedSearcher(self._searcher),
+            ledger=ledger,
+            case=case,
+            default_k=self._default_k,
+            graph=self._graph,
+        )
+        runs = investigar(
+            self._provider,
+            plan=plan,
+            query=query,
+            case=case,
+            make_toolbox=make_toolbox,
+            emit=emit,
+            max_steps=self._subagent_max_steps,
+            parallel=settings.SUBAGENTS_PARALLEL,
+        )
+        critic_runs: list[SubagentRun] = []
+
+        def critic(draft: str, fragments: list[Fragment], _toolbox: Toolbox) -> str | None:
+            run = criticar(
+                self._provider,
+                query=query,
+                case=case,
+                draft=draft,
+                fragments=fragments,
+                toolbox=make_toolbox(RESEARCH_TOOLS),
+                emit=emit,
+                max_steps=self._subagent_max_steps,
+            )
+            critic_runs.append(run)
+            return run.memo or None
+
+        result = super().run(
+            query,
+            chat_history=chat_history,
+            case=case,
+            on_event=on_event,
+            ledger=ledger,
+            briefing=render_briefing(runs),
+            critic=critic,
+        )
+        all_runs = [*runs, *critic_runs]
+        result.tool_trace = [
+            *(ToolTraceEntry(**entry) for run in all_runs for entry in run.trace),
+            *result.tool_trace,
+        ]
+        for run in all_runs:
+            for key, value in run.usage.items():
+                result.usage[key] = result.usage.get(key, 0) + value
+        result.team = TeamReport(
+            trigger=trigger,
+            motivo=plan.motivo,
+            tributos=plan.tributos,
+            subagents=[run.summary() for run in all_runs],
+            objections=next((run.memo for run in critic_runs if run.memo), None),
+        )
+        return result
+
+
 def build_agent() -> TaxAgent:
     """Wire the production agent from settings (provider, FAISS searcher, verifier)."""
     from hacienda_gpt.agent.providers import create_provider
@@ -411,7 +612,7 @@ def build_agent() -> TaxAgent:
         graph = DoctrineGraph(settings.DOCTRINE_GRAPH_PATH)
     else:
         logger.info("No doctrine graph at %s: validity alerts are disabled.", settings.DOCTRINE_GRAPH_PATH)
-    return TaxAgent(
+    return TeamAgent(
         provider=provider,
         searcher=FaissCorpusSearcher.from_settings(),
         verifier=Verifier(verifier_provider),
@@ -419,4 +620,4 @@ def build_agent() -> TaxAgent:
     )
 
 
-__all__ = ["AgentMode", "AgentResult", "ProviderError", "TaxAgent", "build_agent"]
+__all__ = ["AgentMode", "AgentResult", "ProviderError", "TaxAgent", "TeamAgent", "build_agent"]
