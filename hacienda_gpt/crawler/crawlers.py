@@ -70,7 +70,9 @@ def extraer_enlaces(reglas: ReglasSedeAeat, html: str, url: str | None = None) -
         base = _BASE_HREF_RE.search(html[:4096])
         url = base.group(1) if base else SEDE_AEAT
     response = HtmlResponse(url=url, body=html.encode("utf-8"), encoding="utf-8")
-    extractor = LinkExtractor(allow=[re.compile(p) for p in reglas.rutas_permitidas], allow_domains=list(reglas.dominios))
+    extractor = LinkExtractor(
+        allow=[re.compile(p) for p in reglas.rutas_permitidas], allow_domains=list(reglas.dominios)
+    )
     return [link.url for link in extractor.extract_links(response)]
 
 
@@ -141,6 +143,9 @@ class AgenciaTributariaWebCrawler(scrapy.Spider):
         self.logger.warning("AEAT seed page failed: %s (%s)", request.url if request else "?", failure.value)
 
     def closed(self, reason: str) -> None:
+        if not self._paginas and not any(fallo["http"] for fallo in self._semillas_fallidas):
+            # Nothing answered at all (no network): that says nothing about the sede's format.
+            return
         formatos.observar(
             "aeat_rastreo",
             None,
@@ -248,7 +253,12 @@ class AgenciaTributariaPDFCrawler(scrapy.Spider):
         self.logger.info("Saved PDF %s -> %s", response.url, path)
 
     def closed(self, reason: str) -> None:
-        formatos.observar("aeat_pdf", None, extraccion=dict(self._recuento), contexto=reason)
+        if not self.seen_urls and not self._recuento["respuestas_pdf"]:
+            # Nothing was read (no network): that says nothing about the sede's format.
+            return
+        formatos.observar(
+            "aeat_pdf", None, extraccion={**self._recuento, "paginas": len(self.seen_urls)}, contexto=reason
+        )
 
     def _generate_pdf_path(self, url: str) -> str:
         # basename strips any directory component, so path traversal via the URL

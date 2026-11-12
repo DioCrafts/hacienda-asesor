@@ -81,7 +81,7 @@ def modelos_configurados() -> dict[str, str]:
     base = {"anthropic": "ANTHROPIC_MODEL", "claude": "ANTHROPIC_MODEL", "openai": "OPENAI_AGENT_MODEL"}.get(proveedor)
     if base is None:
         return {}
-    nombres = (base, "FORMAT_MODEL", "FORMAT_REVIEWER_MODEL", "RECODE_MODEL", "RECODE_REVIEWER_MODEL")
+    nombres: tuple[str, ...] = (base, "FORMAT_MODEL", "FORMAT_REVIEWER_MODEL", "RECODE_MODEL", "RECODE_REVIEWER_MODEL")
     if not settings.VERIFIER_PROVIDER or settings.VERIFIER_PROVIDER.strip().lower() == proveedor:
         nombres += ("VERIFIER_MODEL",)
     out: dict[str, str] = {}

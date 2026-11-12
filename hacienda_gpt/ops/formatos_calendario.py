@@ -19,8 +19,9 @@ sets them. Two silent failures are possible, and each is a source here:
   them. When only the wording changed, the diagnosis agent may propose new
   quotes (same gate, reflection and manual apply as every spec; never
   automatic). When the deadline itself changed no quote can pass the gate, so
-  the outcome is a report: the legal data is corrected by a person, with its
-  source, in ``calendario.json``.
+  the outcome is a report: a person corrects the legal data in
+  ``calendario.json``, with its source, and the quote of the bundled spec in
+  the same reviewed change.
 
 The Renta campaign deadline is set every year by a ministerial order that the
 data does not identify: there is no machine-readable source to contrast it
@@ -34,10 +35,10 @@ from datetime import date, timedelta
 import json
 import logging
 import re
-from typing import Any
+from typing import Annotated, Any
 
 import parsel
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator, model_validator
 
 from hacienda_gpt.ops import formatos
 from hacienda_gpt.ops.formatos import Fallo, Fuente, Lectura
@@ -139,6 +140,15 @@ def menciona_mes(texto: str, mes: int) -> bool:
 # --------------------------------------------------------------------------- #
 
 
+def _a_tupla(value: Any) -> Any:
+    return (value,) if isinstance(value, str) else value
+
+
+# One quote, or several wordings of it tried in order: a new wording is added next to the old one, so that
+# the text as it was is still read the same (the gate replays the known-good sample).
+Cita = Annotated[tuple[str, ...], BeforeValidator(_a_tupla), Field(min_length=1)]
+
+
 class Contraste(BaseModel):
     """Quotes of one article of a consolidated BOE text that state an obligation's deadline."""
 
@@ -149,7 +159,7 @@ class Contraste(BaseModel):
     boe_id: str
     # Start of the article's heading as the page prints it, e.g. "Artículo 71.".
     articulo: str = Field(min_length=3, max_length=60)
-    citas: tuple[str, ...] = Field(min_length=1)
+    citas: tuple[Cita, ...] = Field(min_length=1)
 
     @field_validator("boe_id")
     @classmethod
@@ -160,8 +170,8 @@ class Contraste(BaseModel):
 
     @field_validator("citas")
     @classmethod
-    def _citas(cls, value: tuple[str, ...]) -> tuple[str, ...]:
-        if any(not 10 <= len(normalizar(cita)) <= 600 for cita in value):
+    def _citas(cls, value: tuple[tuple[str, ...], ...]) -> tuple[tuple[str, ...], ...]:
+        if any(not 10 <= len(normalizar(cita)) <= 600 for alternativas in value for cita in alternativas):
             raise ValueError("cada cita debe tener entre 10 y 600 caracteres")
         return value
 
@@ -214,8 +224,41 @@ def carga_contraste(reglas: ReglasCalendarioBoe, paginas: dict[str, str]) -> dic
     return out
 
 
+def _alternativa(alternativas: tuple[str, ...], plano: str) -> int | None:
+    """Index of the first wording of a quote found in ``plano`` (whitespace-insensitive), None if none is."""
+    return next((i for i, cita in enumerate(alternativas) if normalizar(cita) in plano), None)
+
+
+_RUIDO_ARTICULO = re.compile(
+    r"^(?:Se\s+(?:modifica|añade|deroga|suprime)|Véase|\[Bloque|Seleccionar redacción|Redacción)"
+)
+
+
+def recortar_contraste(crudo: str) -> str:
+    """Keep the payload under the sample size as valid JSON: notes and selector labels go first, then each
+    article keeps an equal share (a quote cut away only costs that sample, never a reading)."""
+    if len(crudo) <= formatos.MAX_MUESTRA_CHARS:
+        return crudo
+    try:
+        carga = json.loads(crudo)
+        articulos = [(ley, art) for ley, arts in carga.items() for art in arts]
+        for ley, art in articulos:
+            lineas = carga[ley][art].split("\n")
+            carga[ley][art] = "\n".join(lineas[:2] + [x for x in lineas[2:] if not _RUIDO_ARTICULO.match(x)])
+        cuota = (formatos.MAX_MUESTRA_CHARS - 4000) // max(len(articulos), 1)
+        for ley, art in articulos:
+            carga[ley][art] = carga[ley][art][:cuota]
+        return json.dumps(carga, ensure_ascii=False, indent=1)
+    except (ValueError, AttributeError, TypeError):
+        return crudo[: formatos.MAX_MUESTRA_CHARS]
+
+
 def extraer_contraste(reglas: ReglasCalendarioBoe, texto: str) -> list[dict[str, Any]]:
-    """For each quote of the rules: is the article there, and is the quote in it (whitespace-insensitive)."""
+    """For each article the rules quote: is it there, and which wording of each quote it contains.
+
+    ``citas`` holds, per quote, the index of the first of its wordings found
+    in the article (None: none is).
+    """
     carga = json.loads(texto)
     out: list[dict[str, Any]] = []
     for contraste in reglas.contrastes:
@@ -227,7 +270,7 @@ def extraer_contraste(reglas: ReglasCalendarioBoe, texto: str) -> list[dict[str,
                 "boe_id": contraste.boe_id,
                 "articulo": contraste.articulo,
                 "encontrado": articulo is not None,
-                "citas": [normalizar(cita) in plano for cita in contraste.citas],
+                "citas": [_alternativa(alternativas, plano) for alternativas in contraste.citas],
             }
         )
     return out
@@ -239,9 +282,14 @@ def _canarios_contraste(datos: Any, muestra: str, contexto: str, reglas: Any) ->
     datos = datos if isinstance(datos, list) else []
     fallos: list[Fallo] = []
     citas = {(c.id, c.boe_id, c.articulo): c.citas for c in reglas.contrastes} if reglas else {}
+    # Per obligation, the wordings the BOE text actually contains: they are what must state its days.
+    # An obligation with a quote missing is already reported; its days are not judged on what is left.
+    dichas: dict[str, list[str]] = {}
+    incompletas: set[str] = set()
     for item in datos:
         donde = f"{item.get('articulo')} de {item.get('boe_id')} ({item.get('id')})"
         if not item.get("encontrado"):
+            incompletas.add(str(item.get("id")))
             fallos.append(
                 _grave(
                     "articulo",
@@ -250,36 +298,42 @@ def _canarios_contraste(datos: Any, muestra: str, contexto: str, reglas: Any) ->
                 )
             )
             continue
-        for cita, presente in zip(
-            citas.get((item.get("id"), item.get("boe_id"), item.get("articulo")), ()), item.get("citas") or []
-        ):
-            if not presente:
+        alternativas = citas.get((item.get("id"), item.get("boe_id"), item.get("articulo")), ())
+        for cita, indice in zip(alternativas, item.get("citas") or [], strict=False):
+            if indice is None or not 0 <= int(indice) < len(cita):
+                incompletas.add(str(item.get("id")))
                 fallos.append(
                     _grave(
                         "cita",
-                        f"El {donde} ya no dice «{cita}». Si el plazo ha cambiado, hay que corregir "
-                        "tax/data/calendario.json (dato legal, con su fuente); si solo ha cambiado la redacción, "
-                        "basta con una cita nueva.",
+                        f"El {donde} ya no dice «{cita[0]}». Si el plazo ha cambiado, hay que corregir "
+                        "tax/data/calendario.json (dato legal, con su fuente) y esta cita en el mismo cambio; si "
+                        "solo ha cambiado la redacción, basta con añadir la redacción nueva como alternativa.",
                     )
                 )
+            else:
+                dichas.setdefault(str(item.get("id")), []).append(cita[int(indice)])
     if isinstance(reglas, ReglasCalendarioBoe):
-        fallos += _coherencia_con_los_datos(reglas, calendario._load())
-    encontradas = sum(sum(bool(c) for c in item.get("citas") or []) for item in datos)
+        completas = {ident: textos for ident, textos in dichas.items() if ident not in incompletas}
+        fallos += _coherencia_con_los_datos(reglas, calendario._load(), completas)
+    encontradas = sum(sum(i is not None for i in item.get("citas") or []) for item in datos)
     return Lectura(fallos=fallos, metricas={"contrastes": len(datos), "citas_encontradas": encontradas})
 
 
-def _coherencia_con_los_datos(reglas: ReglasCalendarioBoe, cal: Any) -> list[Fallo]:
-    """Every day and month of calendario.json must be stated in the quotes of its obligation."""
+def _coherencia_con_los_datos(reglas: ReglasCalendarioBoe, cal: Any, dichas: dict[str, list[str]]) -> list[Fallo]:
+    """Every day and month of calendario.json must be stated in what the BOE says for its obligation."""
     fallos: list[Fallo] = []
     referencias = [(o.id, o.fuente.referencia) for o in cal.obligaciones]
     referencias.append(("regla_dia_inhabil", cal.regla_dia_inhabil.referencia))
     for ident, referencia in referencias:
         if _BOE_ID.search(referencia) and not any(c.id == ident for c in reglas.contrastes):
             fallos.append(
-                _leve("sin_contraste", f"«{ident}» cita una norma del BOE ({referencia}) pero no tiene citas que contrastar.")
+                _leve(
+                    "sin_contraste",
+                    f"«{ident}» cita una norma del BOE ({referencia}) pero no tiene citas que contrastar.",
+                )
             )
     for obligacion in cal.obligaciones:
-        texto = " ".join(cita for c in reglas.contrastes if c.id == obligacion.id for cita in c.citas)
+        texto = " ".join(dichas.get(obligacion.id, []))
         if not texto:
             continue
         for plazo in obligacion.plazos:
@@ -288,7 +342,8 @@ def _coherencia_con_los_datos(reglas: ReglasCalendarioBoe, cal: Any) -> list[Fal
                     _grave(
                         "plazo",
                         f"tax/data/calendario.json fija «{obligacion.id}» ({plazo.periodo}) el día {plazo.dia} del mes "
-                        f"{plazo.mes}, pero sus citas del BOE no dicen ese día o ese mes.",
+                        f"{plazo.mes}, pero lo que dice hoy el BOE no menciona ese día o ese mes: el plazo ha "
+                        "cambiado o la cita no es la que lo fija.",
                     )
                 )
     return fallos
@@ -388,9 +443,7 @@ def _canarios_calendario(datos: Any, muestra: str, contexto: str, reglas: Any) -
         hasta = date(anio, 12, 31)
         en_el_anio = {
             v.id.split(":", 1)[0]
-            for v in calendario.proximos_vencimientos(
-                HECHOS_TODO, hoy=desde, dias=(hasta - desde).days, calendario=cal
-            )
+            for v in calendario.proximos_vencimientos(HECHOS_TODO, hoy=desde, dias=(hasta - desde).days, calendario=cal)
             if v.fecha.year == anio
         }
         for ident in ids:
@@ -413,7 +466,9 @@ def _canarios_calendario(datos: Any, muestra: str, contexto: str, reglas: Any) -
     for obligacion in cal.obligaciones:
         siguiente = primero.get(obligacion.id)
         if siguiente is None:
-            fallos.append(_grave("sin_proximo", f"«{obligacion.id}» no tiene ningún vencimiento en los próximos 365 días."))
+            fallos.append(
+                _grave("sin_proximo", f"«{obligacion.id}» no tiene ningún vencimiento en los próximos 365 días.")
+            )
         elif not obligacion.fuente.verificado and siguiente.dias_restantes <= DIAS_AVISO_SIN_VERIFICAR:
             fallos.append(
                 _leve(
@@ -502,12 +557,14 @@ def registrar_fuentes() -> None:
                 "literalmente (salvo espacios) en el artículo indicado de buscar/act.php?id=<boe_id>.",
                 "Cada día y cada mes de tax/data/calendario.json para esa obligación aparece en sus citas, en cifra "
                 "o en letra («veinte»), o la cita sitúa el plazo en «el mes siguiente».",
-                "Si el BOE solo ha cambiado la redacción, basta con citas nuevas que sigan diciendo los mismos días. "
-                "Si ha cambiado el plazo, NO es adaptable con datos: hay que corregir calendario.json.",
+                "Si el BOE solo ha cambiado la redacción, la redacción nueva se añade como alternativa de la cita "
+                "([«antigua», «nueva»]) y debe seguir diciendo los mismos días. Si ha cambiado el plazo, NO es "
+                "adaptable con datos: hay que corregir calendario.json.",
             ),
             reglas=ReglasCalendarioBoe,
             extraer=extraer_contraste,
             canarios=_canarios_contraste,
+            recortar=recortar_contraste,
             # A change here decides which deadline wording counts as "the law": always a person.
             auto_aplicable=False,
             codigo="hacienda_gpt/ops/formatos_calendario.py (texto_articulo, extraer_contraste), "

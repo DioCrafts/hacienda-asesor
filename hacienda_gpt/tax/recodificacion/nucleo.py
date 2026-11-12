@@ -691,17 +691,19 @@ def examinar_sin_cambios(
     if nuevas:
         control.fallos += citas_no_literales(nuevas, texto.comprimido)
     vigente = adaptador.valor_previo(objetivo.antes[con_grupo[-1]])
-    modelo, propio = adaptador.controlar(vigente, [*previas, *nuevas], objetivo, efectos_desde=None, datos=datos)
+    iguales = [e for e in con_grupo if adaptador.valor_previo(objetivo.antes[e]) == vigente]
+    # Checked against the files that hold this very encoding: another year's file may hold another wording.
+    propio_objetivo = objetivo.model_copy(update={"ejercicios": iguales})
+    modelo, propio = adaptador.controlar(vigente, [*previas, *nuevas], propio_objetivo, efectos_desde=None, datos=datos)
     control.fallos += [f"la codificación vigente no supera el control: {fallo}" for fallo in propio.fallos]
     control.revisar += propio.revisar
     if modelo is None and control.ok:
         control.fallos.append("la codificación vigente no se pudo validar con el modelo del grupo")
-    examen = _Examen(control=control, modelo=modelo)
-    examen.ejercicios = [e for e in con_grupo if adaptador.valor_previo(objetivo.antes[e]) == vigente]
+    examen = _Examen(control=control, modelo=modelo, ejercicios=iguales)
     examen.excluidos = {
         e: "su fichero tiene otra codificación de este grupo: se comprueba aparte, con su propia redacción"
         for e in con_grupo
-        if e not in examen.ejercicios
+        if e not in iguales
     }
     _notas_de_origen(objetivo, control)
     return examen
@@ -1520,6 +1522,77 @@ def desglosar(objetivo: Objetivo, *, lector: Any, texto_de: TextoDe, etiqueta_ar
             vistas.add(etiqueta)
             desglose.elementos.append(Elemento(etiqueta=etiqueta, titulo=titulo, cita=cita))
     return desglose
+
+
+# --------------------------------------------------------------------------- #
+# Listing the articles an amending norm changes
+# --------------------------------------------------------------------------- #
+
+
+class Precepto(_Registro):
+    # Key of the block of the amended law ("5", "9 bis", "da 3").
+    articulo: str
+    cita: str
+
+
+class ListaDePreceptos(_Registro):
+    norma: str
+    ley: str
+    preceptos: list[Precepto] = Field(default_factory=list)
+    # What the reader listed and the program did not accept, with the reason.
+    descartados: list[str] = Field(default_factory=list)
+    llamadas_llm: int = 0
+    caracteres_enviados: int = 0
+
+
+def listar_preceptos(lector: Any, *, pagina: str, norma: str, ley: str, nombre_ley: str, ley_citada: str) -> ListaDePreceptos:
+    """Ask a reader which blocks of ``ley`` the amending ``norma`` changes, when its text could not be parsed for them.
+
+    The last resort for a norm whose analysis names no article and whose sentences the deterministic parser
+    (:func:`~hacienda_gpt.tax.recodificacion.control.articulos_que_modifica`) does not understand. The reader only
+    LISTS: an item is kept only if its quote is literally in the passages of the norm that name the amended law by
+    its number and names that very article or provision. Every item kept is then re-read by the normal loop; nothing
+    is encoded here. Lets the provider's ``ProviderError`` through.
+    """
+    from hacienda_gpt.tax.recodificacion.control import claves_nombradas, pasajes_que_nombran
+
+    lista = ListaDePreceptos(norma=norma, ley=ley)
+    pasajes = pasajes_que_nombran(pagina, ley_citada)
+    if not pasajes:
+        lista.descartados.append(f"el texto de {norma} no nombra la ley {ley_citada or ley}")
+        return lista
+    if len(pasajes) > MAX_CARACTERES_TEXTO:
+        lista.descartados.append(f"los pasajes de {norma} sobre {ley} ocupan {len(pasajes)} caracteres: demasiado")
+        return lista
+    sistema = prompts.SISTEMA_PRECEPTOS.format(ley=f"{nombre_ley} ({ley})")
+    usuario = "\n\n".join(
+        [
+            prompts.etiquetar("tarea", f"Norma modificadora: {norma}\nLey modificada: {nombre_ley} ({ley})"),
+            prompts.etiquetar("texto_de_la_norma", pasajes),
+        ]
+    )
+    leido = lector.complete_json(
+        system=sistema, user=usuario, schema=prompts.ESQUEMA_PRECEPTOS, schema_name="recodificacion_preceptos"
+    )
+    lista.llamadas_llm, lista.caracteres_enviados = 1, len(sistema) + len(usuario)
+    comprimido = _comprimido(pasajes)
+    brutos = leido.get("preceptos")
+    for item in brutos if isinstance(brutos, list) else []:
+        if not isinstance(item, dict):
+            continue
+        articulo, cita = _texto(item.get("articulo")), _texto(item.get("cita"))
+        pedido = claves_nombradas(f"artículo {articulo}" if articulo[:1].isdigit() else articulo)
+        if len(pedido) != 1:
+            lista.descartados.append(f"«{articulo}»: no se entiende qué artículo o disposición es")
+        elif not es_literal(cita, comprimido):
+            lista.descartados.append(f"«{articulo}»: su cita no es literal")
+        elif pedido[0] not in claves_nombradas(cita):
+            lista.descartados.append(f"«{articulo}»: su cita no lo nombra")
+        elif any(p.articulo == pedido[0] for p in lista.preceptos):
+            continue
+        else:
+            lista.preceptos.append(Precepto(articulo=pedido[0], cita=cita))
+    return lista
 
 
 # --------------------------------------------------------------------------- #

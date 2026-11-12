@@ -547,6 +547,9 @@ def _registrar_seeds() -> None:
             codigo="hacienda_gpt/cli/teac_seed.py (collect_criterio_ids, ids_de_pagina)",
         )
     )
+
+
+def _registrar_boe_seed() -> None:
     registrar(
         Fuente(
             clave="boe_seed",
@@ -614,11 +617,22 @@ def _registrar_rastreadores() -> None:
 
 MAX_CENDOJ_MUESTRA = 30_000
 MIN_LOTE = 3
+_SIN_TEXTO = re.compile(r"(?is)<!--.*?-->|<(svg|noscript)\b.*?</\1\s*>")
+
+
+def _sin_ruido(crudo: str) -> str:
+    """HTML without scripts, styles, comments or inline drawings: what a sample needs is text and links."""
+    return _SIN_TEXTO.sub("", _SCRIPTS.sub("", crudo))
 
 
 def _recortar_cendoj(crudo: str) -> str:
     """The start of the ruling without scripts or styles: the header (ROJ, ECLI, date, court) is there."""
-    return _SCRIPTS.sub("", crudo)[:MAX_CENDOJ_MUESTRA]
+    return _sin_ruido(crudo)[:MAX_CENDOJ_MUESTRA]
+
+
+def _recortar_html(crudo: str) -> str:
+    """A rendered page without its noise, so that its text fits in a sample (a leading ``<base>`` stays)."""
+    return _sin_ruido(crudo)[:MAX_MUESTRA_CHARS]
 
 
 def _canarios_cendoj(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
@@ -637,6 +651,8 @@ def _canarios_cendoj(datos: Any, muestra: str, contexto: str, reglas: Any) -> Le
         )
     elif not datos.get("roj") and not datos.get("ecli"):
         fallos.append(_grave("identificadores", "No se reconoce ni el ROJ ni el ECLI de la resolución."))
+    elif not datos.get("roj"):
+        fallos.append(_leve("roj", "Se reconoce el ECLI pero no el ROJ: la sentencia se guarda con otro nombre."))
     if caracteres >= MIN_CARACTERES_DOCUMENTO and not datos.get("fecha_resolucion"):
         fallos.append(
             _grave(
@@ -734,7 +750,9 @@ def _canarios_aeat_sede(enlaces: Any, muestra: str, contexto: str, reglas: Any) 
     visible = " ".join(re.sub(r"<[^>]+>", " ", _SCRIPTS.sub("", muestra)).split())
     if len(visible) < MIN_TEXTO_SEDE:
         fallos.append(
-            _grave("pagina_vacia", f"La página de entrada {contexto or ''} apenas tiene texto ({len(visible)} caracteres).")
+            _grave(
+                "pagina_vacia", f"La página de entrada {contexto or ''} apenas tiene texto ({len(visible)} caracteres)."
+            )
         )
     elif not enlaces:
         fallos.append(
@@ -766,8 +784,13 @@ def _canarios_aeat_rastreo(datos: Any, muestra: str, contexto: str, reglas: Any)
 
 def _canarios_aeat_pdf(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
     datos = datos if isinstance(datos, dict) else {}
-    n = {clave: int(datos.get(clave) or 0) for clave in ("respuestas_pdf", "no_pdf", "guardados", "duplicados")}
+    claves = ("respuestas_pdf", "no_pdf", "guardados", "duplicados", "paginas")
+    n = {clave: int(datos.get(clave) or 0) for clave in claves}
     fallos: list[Fallo] = []
+    if n["paginas"] >= 20 and n["respuestas_pdf"] == 0:
+        fallos.append(
+            _leve("sin_pdf", f"Se han recorrido {n['paginas']} páginas de la sede sin encontrar ningún enlace .pdf.")
+        )
     if n["respuestas_pdf"] >= MIN_LOTE and n["guardados"] + n["duplicados"] == 0:
         fallos.append(
             _grave(
@@ -799,6 +822,7 @@ def _registrar_aeat() -> None:
             reglas=ReglasSedeAeat,
             extraer=extraer_enlaces,
             canarios=_canarios_aeat_sede,
+            recortar=_recortar_html,
             codigo="hacienda_gpt/crawler/crawlers.py (AgenciaTributariaWebCrawler.urls, extraer_enlaces)",
         )
     )
@@ -848,7 +872,10 @@ def _canarios_ccaa_pdf(datos: Any, muestra: str, contexto: str, reglas: Any) -> 
             _grave(
                 "no_pdf",
                 "Respuestas que no son un PDF: "
-                + "; ".join(f"{f.get('ccaa')} (HTTP {f.get('status')}, empieza por {f.get('inicio', '')[:30]!r})" for f in no_pdf[:5])
+                + "; ".join(
+                    f"{f.get('ccaa')} (HTTP {f.get('status')}, empieza por {f.get('inicio', '')[:30]!r})"
+                    for f in no_pdf[:5]
+                )
                 + ".",
             )
         )
@@ -914,7 +941,9 @@ def _canarios_corpus(datos: Any, muestra: str, contexto: str, reglas: Any) -> Le
         fallos.append(_grave("fragmentos", f"Ninguno de los {ficheros} ficheros convertidos ha dado un fragmento."))
     elif ficheros >= 4 and vacios * 4 > ficheros:
         ejemplos = ", ".join(str(f) for f in (datos.get("sin_fragmentos") or [])[:5])
-        fallos.append(_leve("sin_fragmentos", f"{vacios} de {ficheros} ficheros no han dado ningún fragmento ({ejemplos})."))
+        fallos.append(
+            _leve("sin_fragmentos", f"{vacios} de {ficheros} ficheros no han dado ningún fragmento ({ejemplos}).")
+        )
     por_fichero = fragmentos / ficheros if ficheros else 0.0
     return Lectura(fallos=fallos, metricas={"ficheros": ficheros, "fragmentos_por_fichero": por_fichero})
 
@@ -1053,6 +1082,7 @@ for _grupo in (
     _registrar_dgt,
     _registrar_rastreadores,
     _registrar_seeds,
+    _registrar_boe_seed,
     _registrar_cendoj,
     _registrar_aeat,
     _registrar_ccaa,

@@ -511,7 +511,28 @@ _NUMERO_DE_NORMA = re.compile(r"(?<![\d/])\d{1,4}/\d{4}(?![\d/])")
 _DISPOSICIONES_NOMBRADAS = re.compile(
     r"\bdisposici(?:on|ones)\s+(adicional|transitoria|derogatoria|final)(?:es)?\s+", re.IGNORECASE
 )
-_ORDINAL_SUELTO = re.compile(r"(\d+)\s*(?:\.?\s*[ªa]\b)?|unica\b|([a-z]+)(?:\s+([a-z]+))?", re.IGNORECASE)
+_CIFRA_ORDINAL = re.compile(r"(\d+)(?:\s*\.?\s*[ªºa](?![a-z]))?", re.IGNORECASE)
+_PALABRAS_ORDINAL = re.compile(r"([a-z]+)(?:\s+([a-z]+))?", re.IGNORECASE)
+_SIGUE_LISTA = re.compile(r"\s*(?:,|\by\b)\s*", re.IGNORECASE)
+
+
+def _ordinal_en(plana: str, posicion: int) -> tuple[str | None, int]:
+    """The ordinal of a provision at ``posicion`` ("tercera", "vigésima sexta", "61.ª", "única") and where it ends."""
+    cifra = _CIFRA_ORDINAL.match(plana, posicion)
+    if cifra is not None:
+        return str(int(cifra.group(1))), cifra.end()
+    palabras = _PALABRAS_ORDINAL.match(plana, posicion)
+    if palabras is None:
+        return None, posicion
+    primera = palabras.group(1).lower()
+    if primera == "unica":
+        return "unica", palabras.end(1)
+    if palabras.group(2):
+        numero = _ORDINAL_A_NUMERO.get(_clave_ordinal(f"{primera} {palabras.group(2)}"))
+        if numero is not None:
+            return str(numero), palabras.end()
+    numero = _ORDINAL_A_NUMERO.get(_clave_ordinal(primera))
+    return (str(numero), palabras.end(1)) if numero is not None else (None, posicion)
 
 
 def _disposiciones_nombradas(plana: str) -> list[str]:
@@ -520,30 +541,14 @@ def _disposiciones_nombradas(plana: str) -> list[str]:
     for match in _DISPOSICIONES_NOMBRADAS.finditer(plana):
         clase, posicion = _CLASES_DISPOSICION[match.group(1).lower()], match.end()
         while True:
-            ordinal = _ORDINAL_SUELTO.match(plana, posicion)
+            ordinal, fin = _ordinal_en(plana, posicion)
             if ordinal is None:
                 break
-            if ordinal.group(1):
-                claves.append(f"{clase} {int(ordinal.group(1))}")
-            elif ordinal.group(0).lower().startswith("unica"):
-                claves.append(f"{clase} unica")
-            else:
-                dos = f"{ordinal.group(2)} {ordinal.group(3) or ''}".strip()
-                numero = _ORDINAL_A_NUMERO.get(_clave_ordinal(dos))
-                if numero is None:
-                    numero = _ORDINAL_A_NUMERO.get(_clave_ordinal(ordinal.group(2)))
-                    if numero is None:
-                        break
-                    fin = ordinal.start(2) + len(ordinal.group(2))
-                else:
-                    fin = ordinal.end()
-                claves.append(f"{clase} {numero}")
-                ordinal = re.match(r".{" + str(fin - ordinal.start()) + "}", plana[ordinal.start() :], re.S)
-                assert ordinal is not None
-            siguiente = re.match(r"\s*(?:,|\by\b)\s*", plana[ordinal.end() if ordinal.group(0) else posicion :])
+            claves.append(f"{clase} {ordinal}")
+            siguiente = _SIGUE_LISTA.match(plana, fin)
             if siguiente is None:
                 break
-            posicion = (ordinal.end() if ordinal.group(0) else posicion) + siguiente.end()
+            posicion = siguiente.end()
     return claves
 
 
@@ -584,18 +589,21 @@ def articulos_que_modifica(pagina: str, *, ley: str) -> list[str]:
         if dentro:
             continue
         plana = _sin_acentos(linea)
+        cabecera = _CABECERA_RE.match(plana) or _DISPOSICION_RE.match(plana)
+        if cabecera is not None and clave_de_cabecera(linea) is not None:
+            # A block of the norm starts: what it amends is whatever its heading names (not its own number).
+            plana = plana[cabecera.end() :]
         nombra_propia = bool(propia.search(plana))
         otras = bool(_NUMERO_DE_NORMA.search(propia.sub(" ", plana)))
         cambia = bool(_CAMBIA.search(plana))
-        if clave_de_cabecera(linea) is not None:
-            # A block of the norm starts: what it amends is whatever its heading names, if anything.
+        if cabecera is not None:
             contexto = True if nombra_propia else (False if otras else None)
         elif nombra_propia:
             contexto = True
         elif otras and cambia:
             contexto = False
         if cambia and contexto is True:
-            claves += claves_nombradas(linea)
+            claves += claves_nombradas(plana)
     return list(dict.fromkeys(claves))
 
 

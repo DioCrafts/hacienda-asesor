@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime
 import json
+import re
 from typing import Any
 
 from click.testing import CliRunner
@@ -396,6 +397,8 @@ def test_no_value_of_a_user_document_reaches_the_disk_or_the_prompt(lector_degra
     propuesta = formatos_agente.diagnosticar("doc_nomina", proveedor)
 
     en_disco = "".join(p.read_text(encoding="utf-8") for p in lector_degradado.dir.parent.rglob("*") if p.is_file())
+    # Timestamps and hashes are ours; by chance they may contain a short run of digits like "0418".
+    en_disco = re.sub(r"\d{4}-\d{2}-\d{2}T[\d:.+]+|\b[0-9a-f]{16,64}\b", "", en_disco)
     for valor in (*VALORES_PERSONALES, "nomina_itziar"):
         assert valor not in proveedor.texto_recibido, valor
         assert valor not in en_disco, valor

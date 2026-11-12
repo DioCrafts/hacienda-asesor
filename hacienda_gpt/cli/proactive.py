@@ -407,6 +407,49 @@ def _verificar_otros_ficheros(
     return resultados
 
 
+def _fecha_boe(boe_id: str) -> date | None:
+    """The day the BOE's metadata says a consolidated law was last updated: what ``params-check`` compares."""
+    from hacienda_gpt.cli.boe_watch import _fetch_metadata
+
+    fecha = parse_fecha_actualizacion(_fetch_metadata(boe_id).get("fecha_actualizacion"))
+    time.sleep(0.3)
+    return fecha
+
+
+_ANOTAR_OPTION = click.option(
+    "--anotar-lecturas/--no-anotar-lecturas",
+    "anotar",
+    default=True,
+    show_default=True,
+    help="Anotar en los ficheros de parámetros la lectura de hoy (consolidado_a, consultado_el, sha256_html) de cada "
+    "ley que el BOE ha actualizado si todas sus comprobaciones coinciden y no queda nada abierto sobre ella. Con "
+    "--snapshot-dir solo se simula: esos textos no se han leído hoy del BOE.",
+)
+
+
+def _anotar_lecturas(
+    texto_de: Any, *, desde_snapshot: bool, data_dir: Path, proposals_dir: Path | None = None
+) -> dict[str, Any]:
+    """Record today's reading of the laws that are up to date again (see ``recodificacion.procedencia``)."""
+    from hacienda_gpt.tax.recodificacion.procedencia import refrescar_lo_que_se_pueda
+
+    try:
+        hecho = refrescar_lo_que_se_pueda(
+            texto_de,
+            hoy=hoy_en_espana(),
+            data_dir=data_dir,
+            almacen=_almacen(proposals_dir),
+            fecha_boe=None if desde_snapshot else _fecha_boe,
+            simular=desde_snapshot,
+        )
+    except RecodificacionError as exc:
+        return {"errores": [str(exc)]}
+    salida = hecho.model_dump(exclude={"fijadas"})
+    if desde_snapshot:
+        salida["omitido"] = "Textos leídos de una carpeta, no del BOE de hoy: solo se simula, no se escribe nada."
+    return salida
+
+
 @cli.command("params-verify")
 @click.option("--ejercicio", "ejercicios", type=int, multiple=True, help="Ejercicio a verificar (por defecto, todos).")
 @click.option(
@@ -422,8 +465,20 @@ def _verificar_otros_ficheros(
     help="Solo estos ficheros de parámetros: irpf, autonomos, sociedades, patrimonio, isd (por defecto, todos).",
 )
 @click.option("--fail-on-mismatch", is_flag=True, help="Termina con código 1 si alguna comprobación falla.")
+@_ANOTAR_OPTION
+@click.option(
+    "--proposals-dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    default=None,
+    help="Carpeta de las propuestas, para no anotar una ley con propuestas abiertas (por defecto, RECODE_PROPOSALS_PATH).",
+)
 def params_verify(
-    ejercicios: tuple[int, ...], snapshot_dir: Path | None, ficheros: tuple[str, ...], fail_on_mismatch: bool
+    ejercicios: tuple[int, ...],
+    snapshot_dir: Path | None,
+    ficheros: tuple[str, ...],
+    fail_on_mismatch: bool,
+    anotar: bool,
+    proposals_dir: Path | None,
 ) -> None:
     """Reverifica cada parámetro de las calculadoras contra el texto vigente de su ley.
 
@@ -431,6 +486,8 @@ def params_verify(
     autónomos, sociedades, patrimonio y sucesiones) ya no coinciden con lo que
     hoy publica el BOE. Sin LLM: son citas literales y cifras buscadas en el
     texto. Los ejercicios del IRPF van por año; los demás ficheros, bajo «otros».
+    Después anota la lectura de hoy de cada ley que el BOE ha actualizado y está
+    al día (bajo «procedencia»), para que params-check deje de señalarla.
     """
     texto_de = leer_snapshot(snapshot_dir) if snapshot_dir else _texto_del_boe()
     informe: dict[str, Any] = {}
@@ -447,6 +504,10 @@ def params_verify(
     if otros:
         informe["otros"] = otros
         fallos += sum(len(fila["no_coinciden"]) for fila in otros.values())
+    if anotar:
+        informe["procedencia"] = _anotar_lecturas(
+            texto_de, desde_snapshot=snapshot_dir is not None, data_dir=DATA_DIR, proposals_dir=proposals_dir
+        )
     click.echo(json.dumps(informe, ensure_ascii=False, indent=2))
     if fail_on_mismatch and fallos:
         raise SystemExit(1)
@@ -1045,8 +1106,13 @@ def _pilotar(
     auto_aplicar: bool | None = None,
     notify: bool = True,
     usar_llm: bool = True,
+    anotar: bool = True,
 ) -> dict[str, Any]:
-    """One run of the parameters autopilot over the novelties registry kept under ``output_dir``."""
+    """One run of the parameters autopilot over the novelties registry kept under ``output_dir``.
+
+    ``texto_de`` given means the laws come from a snapshot, not from today's BOE: the provenance of the files is then
+    only simulated.
+    """
     from hacienda_gpt.tax.recodificacion import piloto
 
     data_dir = data_dir or DATA_DIR
@@ -1080,6 +1146,8 @@ def _pilotar(
             hoy=hoy_en_espana(),
             leidas={boe_id: ley["leida"] for boe_id, ley in fuentes.items() if ley["leida"]},
             motivo_sin_modelo=motivo,
+            fecha_boe=None if texto_de is not None else _fecha_boe,
+            procedencia="no" if not anotar else ("simular" if texto_de is not None else "anotar"),
         )
     except RecodificacionError as exc:
         raise click.ClickException(str(exc)) from exc
@@ -1127,6 +1195,7 @@ def _pilotar(
 @click.option("--auto-apply/--no-auto-apply", default=None, help="Aplicar sin esperar lo que no deje nada por revisar.")
 @click.option("--notify/--no-notify", default=True, show_default=True, help="Avisar al operador y a los usuarios.")
 @click.option("--fail-on-error", is_flag=True, help="Terminar con código 1 si hubo errores o se agotó el presupuesto.")
+@_ANOTAR_OPTION
 @_SNAPSHOT_OPTION
 @_PROPOSALS_OPTION
 @_DATA_OPTION
@@ -1140,6 +1209,7 @@ def params_autopilot(
     auto_apply: bool | None,
     notify: bool,
     fail_on_error: bool,
+    anotar: bool,
     snapshot_dir: Path | None,
     proposals_dir: Path | None,
     data_dir: Path | None,
@@ -1155,7 +1225,8 @@ def params_autopilot(
     todos los ficheros de parámetros contra el texto vigente. 4) Lanza el bucle
     de recodificación sobre lo anterior, con los topes de RECODE_MAX_PER_RUN y
     del presupuesto diario, y aplica lo que no necesita a nadie si
-    RECODE_AUTO_APPLY está activo. 5) Envía un parte al operador.
+    RECODE_AUTO_APPLY está activo. 5) Anota en los ficheros la lectura de hoy de
+    cada ley actualizada que ha quedado al día. 6) Envía un parte al operador.
 
     Sin credenciales de LLM hace igualmente 1, 2 y 3 y dice qué hay que releer.
     Se puede repetir sin coste: no vuelve a pagar por un grupo ya propuesto
@@ -1178,6 +1249,7 @@ def params_autopilot(
         auto_aplicar=auto_apply,
         notify=notify,
         usar_llm=usar_llm,
+        anotar=anotar,
     )
     click.echo(json.dumps(salida, ensure_ascii=False, indent=2, default=str))
     piloto_ = salida["piloto"]

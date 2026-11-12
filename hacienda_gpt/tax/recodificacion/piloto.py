@@ -3,27 +3,39 @@
 One run does, in order:
 
 1. **Norms** — for every norm the daily watch (``boe-novedades``) recorded as amending a law the parameters are read
-   from, find the groups that hang from the articles the BOE's analysis names. If the BOE has already consolidated
-   the norm into the law, those groups are re-read from the consolidated text, with the analysis as annotations
-   (it often carries the effects clause). If it has not — consolidation takes days — they are re-read from the
-   amending norm's own text; such a proposal is never applied without a person, and the groups are re-read again
-   from the consolidated text when it arrives. Articles the norm ADDS to a community's law, with no group yet, are
-   split into the deductions they hold and each one is offered as new.
-2. **Verification** — every group of every parameter file is checked against the current text of its law (no
+   from, find the blocks of the law it changes: those the BOE's analysis names; once the BOE has consolidated the
+   norm, those whose notes in the consolidated text name it ("Se modifica por… Ref. BOE-A-…"); before that, those
+   the norm's own text names in its sentences ("Se modifica el artículo 5…"), and only when nothing does, those a
+   model LISTS (each with a literal quote the program checks). Every group read from one of those blocks — by its
+   article or because its quotes are there — is re-read from the WHOLE current article, even if its check still
+   passes: a new condition may sit outside the passages it quotes. The reader may answer that the group does not
+   change, which the gate (every old quote still in the text) and the reviewer have to bear out. If the norm is
+   consolidated, the groups are re-read from the consolidated text, with the analysis as annotations. If it is not
+   — consolidation takes days — they are re-read from the amending norm's own text; such a proposal is never
+   applied without a person, and the groups are re-read again from the consolidated text when it arrives. Articles
+   the norm ADDS to a community's law, with no group yet, are split into the deductions they hold.
+2. **Changes nobody announced** — a law the BOE has updated since the files read it: every group read from a block
+   whose wording changed after that reading is re-read the same way, unless a proposal already accepted was made
+   from today's text.
+3. **Verification** — every group of every parameter file is checked against the current text of its law (no
    model): what no longer matches becomes a target too, whatever caused it.
-3. **Re-encoding** — the loop of :mod:`~hacienda_gpt.tax.recodificacion.nucleo` for each target, under the caps of
+4. **Re-encoding** — the loop of :mod:`~hacienda_gpt.tax.recodificacion.nucleo` for each target, under the caps of
    the run and of the daily budget; proposals that need nobody are applied when auto-application is on.
-4. **Report** — what was found, done and left, for the operator.
+5. **Provenance** — a stale law whose every check matches, with nothing open about it (no norm still followed, no
+   group left to re-read, no proposal waiting or that did not converge), has today's reading recorded in every
+   parameter file that cites it (:mod:`~hacienda_gpt.tax.recodificacion.procedencia`), so that ``params-check``
+   stops reporting it.
+6. **Report** — what was found, done and left, for the operator.
 
-Steps 1 and 2 use no model: without credentials the run still says which groups must be re-read. The state file
-makes the run idempotent: a norm is handled once per stage (unconsolidated, consolidated), and the loop itself never
-pays twice for the same group against the same text.
+Steps 1 to 3 and 5 use no model (step 1 only when the norm's text cannot be parsed): without credentials the run
+still says which groups must be re-read. The state file makes the run idempotent: a norm is handled once per stage
+(unconsolidated, consolidated), and the loop itself never pays twice for the same group against the same text.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import hashlib
 import json
 from pathlib import Path
@@ -39,7 +51,14 @@ from hacienda_gpt.tax.recodificacion.adaptadores import (
     objetivos_de_verificacion,
     todos_los_objetivos,
 )
-from hacienda_gpt.tax.recodificacion.control import partir_base, preceptos_de_analisis
+from hacienda_gpt.tax.recodificacion.control import (
+    _sin_acentos,
+    articulos_que_modifica,
+    bloques_anotados,
+    clave_de_cabecera,
+    partir_base,
+    preceptos_de_analisis,
+)
 from hacienda_gpt.tax.recodificacion.nucleo import (
     MAX_ITER,
     AlmacenPropuestas,
@@ -47,18 +66,45 @@ from hacienda_gpt.tax.recodificacion.nucleo import (
     Objetivo,
     Propuesta,
     RecodificacionError,
+    SinTextoError,
+    clave_de,
     ejecutar,
+    leer_texto,
+    listar_preceptos,
     resumen_de,
     texto_del_aviso,
 )
-from hacienda_gpt.tax.verificacion import TextoDe
+from hacienda_gpt.tax.recodificacion.procedencia import (
+    FechaBoe,
+    bloques_del_grupo,
+    grupos_de_los_bloques,
+    lecturas,
+    refrescar_lo_que_se_pueda,
+    releido_contra,
+)
+from hacienda_gpt.tax.verificacion import VERSION_DIARIO, TextoDe
 
 Etapa = Literal["sin_consolidar", "consolidada", "cerrada"]
+# What to do with the provenance of a law that is up to date again: record it, only say so, or neither.
+Procedencia = Literal["anotar", "simular", "no"]
+# How a block of the law was found to be changed by a norm.
+VIA_ANALISIS = "análisis"
+VIA_ANOTACIONES = "anotaciones del consolidado"
+VIA_VERSION = "versión del consolidado"
+VIA_TEXTO = "texto de la norma"
+VIA_MODELO = "modelo"
 # Days a norm may stay unconsolidated before the autopilot stops waiting for it and says so.
 DIAS_ESPERA_CONSOLIDACION = 90
 ASUNTO_PARTE = "HaciendaGPT: parte del piloto de parámetros"
 _ANADE = re.compile(r"\bA[NÑ]ADE\b")
 _NUMERO_DE_LEY = re.compile(r"\b\d+/\d{4}\b")
+# "Ley 5/2026, de 31 de julio": how the BOE's notes in a consolidated text name the norm that changed a block.
+_NOMBRE_CORTO = re.compile(
+    r"^((?:Real\s+Decreto-ley|Real\s+Decreto\s+Legislativo|Real\s+Decreto|Decreto-ley|Decreto\s+Legislativo|"
+    r"Decreto\s+Foral|Decreto|Ley\s+Org[aá]nica|Ley\s+Foral|Ley|Orden)\s+(?:[A-Z]+/)?\d+/\d{4},\s+de\s+\d{1,2}\s+de\s+"
+    r"[a-záéíóú]+)",
+    re.IGNORECASE,
+)
 
 
 class _Registro(BaseModel):
@@ -83,6 +129,11 @@ class NormaModificadora(_Registro):
     grupos_consolidada: list[str] = Field(default_factory=list)
     # Articles already split into the deductions they hold, per stage ("sin_consolidar:14 bis").
     desglosados: list[str] = Field(default_factory=list)
+    # Every block of the law the norm changes and how it was found: "análisis", "anotaciones del consolidado",
+    # "versión del consolidado", "texto de la norma", "modelo".
+    articulos: dict[str, list[str]] = Field(default_factory=dict)
+    # Stages in which a model was asked to list them (once per stage).
+    listados: list[str] = Field(default_factory=list)
     vista_el: str = ""
     consolidada_el: str = ""
     # Why it was closed without re-reading anything, when that is the case.
@@ -131,6 +182,10 @@ class InformePiloto(_Registro):
     desgloses: list[dict[str, Any]] = Field(default_factory=list)
     # Groups applied from an amending norm's own text that the consolidated text, now published, bears out.
     confirmadas_por_el_consolidado: list[str] = Field(default_factory=list)
+    # Groups re-read because a block they are read from changed in a law the BOE updated after the files read it.
+    releidos_por_cambio: list[str] = Field(default_factory=list)
+    # The provenance step: laws whose reading was recorded, laws up to date, laws blocked and why.
+    procedencia: dict[str, Any] | None = None
     # Why no model was called, when it was not.
     omitido: str | None = None
     recodificacion: dict[str, Any] | None = None
@@ -147,6 +202,7 @@ class InformePiloto(_Registro):
             or self.errores
             or self.objetivos
             or self.confirmadas_por_el_consolidado
+            or bool((self.procedencia or {}).get("refrescadas"))
         )
 
 
@@ -208,6 +264,108 @@ def _ley_citada(nombre: str) -> str:
     return match.group(0) if match else ""
 
 
+def _plano(texto: str) -> str:
+    return " ".join(_sin_acentos(texto).lower().split())
+
+
+def nombre_corto(titulo: str) -> str:
+    """ "Ley 5/2026, de 31 de julio" for "Ley 5/2026, de 31 de julio, de medidas fiscales…"; "" when not recognised."""
+    match = _NOMBRE_CORTO.match(" ".join(titulo.split()))
+    return match.group(1) if match else ""
+
+
+def articulos_en_el_consolidado(pagina: str, norma: NormaModificadora) -> dict[str, str]:
+    """Blocks of a consolidated law that a norm changed, as the page itself says, and how it says so.
+
+    A block whose latest wording was published on or after the norm's date and whose note names the norm ("Se
+    modifica por el art. 2 de la Ley 3/2026… Ref. BOE-A-…") is a "versión del consolidado"; any other block whose
+    notes name it (an older version date, a "Téngase en cuenta…" announcing a future wording) is an "anotaciones
+    del consolidado".
+    """
+    from hacienda_gpt.proactive.impacto import articulos_modificados
+
+    referencias = [norma.norma, *([corto] if (corto := nombre_corto(norma.titulo)) else [])]
+    planas = [_plano(r) for r in referencias]
+    encontrados: dict[str, str] = {}
+    try:
+        publicada: date | None = date.fromisoformat(norma.fecha[:10])
+    except ValueError:
+        publicada = None
+    if publicada is not None:
+        for articulo in articulos_modificados(pagina, desde=publicada - timedelta(days=1)):
+            clave = clave_de_cabecera(articulo.titulo)
+            if clave is not None and any(p in _plano(articulo.nota) for p in planas):
+                encontrados[clave] = VIA_VERSION
+    for clave in bloques_anotados(pagina, referencias):
+        encontrados.setdefault(clave, VIA_ANOTACIONES)
+    return encontrados
+
+
+def _anotar_via(norma: NormaModificadora, articulo: str, via: str) -> None:
+    vias = norma.articulos.setdefault(articulo, [])
+    if via not in vias:
+        vias.append(via)
+
+
+def _localizar(
+    norma: NormaModificadora,
+    pagina: str,
+    *,
+    consolidada: bool,
+    texto_de: TextoDe,
+    nombre_ley: str,
+    lector: Any,
+) -> tuple[int, list[str], str | None]:
+    """Find the blocks of the amended law the norm changes and record how (``norma.articulos``).
+
+    Returns (model calls, errors for the report, why something is left for another run or None).
+    """
+    for precepto in norma.preceptos:
+        _anotar_via(norma, precepto, VIA_ANALISIS)
+    if consolidada:
+        for clave, via in articulos_en_el_consolidado(pagina, norma).items():
+            _anotar_via(norma, clave, via)
+        return 0, [], None
+    ley_citada = _ley_citada(nombre_ley)
+    pagina_norma = texto_de(norma.norma, VERSION_DIARIO)
+    if not pagina_norma:
+        if norma.articulos:
+            return 0, [], None
+        return 0, [f"{norma.norma}: no se pudo leer su texto para saber qué artículos modifica"], "texto no legible"
+    for clave in articulos_que_modifica(pagina_norma, ley=ley_citada):
+        _anotar_via(norma, clave, VIA_TEXTO)
+    if norma.articulos or "sin_consolidar" in norma.listados:
+        return 0, [], None
+    if lector is None:
+        return 0, [], "sin modelo para listar los artículos que modifica"
+    try:
+        lista = listar_preceptos(
+            lector, pagina=pagina_norma, norma=norma.norma, ley=norma.ley, nombre_ley=nombre_ley, ley_citada=ley_citada
+        )
+    except ProviderError as exc:
+        return 0, [f"{norma.norma}: no se pudo pedir la lista de artículos que modifica: {str(exc)[:200]}"], "error"
+    norma.listados.append("sin_consolidar")
+    for precepto in lista.preceptos:
+        _anotar_via(norma, precepto.articulo, VIA_MODELO)
+    return lista.llamadas_llm, [f"{norma.norma}: {d}" for d in lista.descartados], None
+
+
+def _enteros(objetivo: Objetivo, tocados: Sequence[str]) -> list[str]:
+    """The whole articles a re-read after an amendment shows: the group's own, and those its quotes are in."""
+    propios = [partir_base(" ".join(a.lower().split()))[0] for a in objetivo.articulos_ley]
+    return list(dict.fromkeys([*propios, *tocados]))
+
+
+def _resuelto(objetivo: Objetivo, texto_de: TextoDe, almacen: AlmacenPropuestas) -> bool:
+    """Whether the latest proposal for this group, against the text it reads today, has been accepted."""
+    try:
+        _, texto = leer_texto(objetivo, texto_de)
+    except SinTextoError:
+        return False
+    previa = almacen.con_clave(clave_de(objetivo, texto))
+    return previa is not None and previa.estado == "aplicada"
+
+
 def pilotar(
     registro: Mapping[str, Any],
     *,
@@ -225,6 +383,8 @@ def pilotar(
     hoy: date | None = None,
     leidas: Mapping[str, str] | None = None,
     motivo_sin_modelo: str = "No hay credenciales del proveedor de LLM configurado: no se ha recodificado nada.",
+    fecha_boe: FechaBoe | None = None,
+    procedencia: Procedencia = "anotar",
 ) -> tuple[InformePiloto, list[Propuesta]]:
     """One run of the autopilot (see the module's docstring). Returns the report and the proposals made in it.
 
@@ -233,6 +393,9 @@ def pilotar(
     date (AAAA-MM-DD) of the consolidated text the parameters were read from; a norm published on or before it is
     already in the data and is not re-read (activating the autopilot on an old registry must not re-pay for the
     past). ``lector`` and ``revisor`` are LLM providers, or None to run the deterministic steps alone.
+    ``fecha_boe(boe_id)``: the day the BOE's metadata says a law was last updated (what ``params-check`` compares);
+    without it, the date its page shows. ``procedencia``: "anotar" records today's reading of the laws that are up to
+    date again, "simular" only reports them (texts that were not read from the BOE today), "no" skips the step.
     """
     hoy = hoy or date.today()
     estado = leer_estado(estado_path)
@@ -282,11 +445,24 @@ def pilotar(
             informe.normas_descartadas.append(f"{norma.norma} → {norma.ley}: {norma.cerrada_por}; revísala a mano")
             continue
         consolidada = norma.etapa == "consolidada"
+        llamadas, errores, pendiente = _localizar(
+            norma, pagina, consolidada=consolidada, texto_de=texto_de, nombre_ley=leyes[norma.ley], lector=lector
+        )
+        llamadas_de_desglose += llamadas
+        informe.errores += errores
+        if pendiente is not None:
+            con_trabajo_pendiente.add(clave)
+        preceptos = set(norma.articulos)
         suyos = todos_los_objetivos(data_dir=data_dir, boe_id=norma.ley)
-        afectados = [o for o in suyos.objetivos if _bases(o) & set(norma.preceptos)]
+        afectados: list[tuple[Objetivo, list[str]]] = []
+        for objetivo in suyos.objetivos:
+            # Read from one of those blocks: by its own article, or because its quotes are there.
+            tocados = sorted(bloques_del_grupo(objetivo, pagina) & preceptos)
+            if tocados:
+                afectados.append((objetivo, tocados))
         hechos = norma.grupos_consolidada if consolidada else norma.grupos_sin_consolidar
         anotaciones = "\n".join(norma.anotaciones)
-        for objetivo in afectados:
+        for objetivo, tocados in afectados:
             ident = _id_de(objetivo)
             de_la_norma = [
                 p
@@ -306,7 +482,10 @@ def pilotar(
                 continue
             objetivo.origen = "norma"
             objetivo.anotaciones = anotaciones
-            objetivo.motivo = [f"{norma.norma} modifica {', '.join(sorted(_bases(objetivo) & set(norma.preceptos)))}"]
+            objetivo.motivo = [f"{norma.norma} modifica {', '.join(tocados)}"]
+            # The whole article is read again, and "it does not change" is an answer the loop can verify.
+            objetivo.articulos_ley = _enteros(objetivo, tocados)
+            objetivo.admite_sin_cambios = True
             if not consolidada:
                 objetivo.norma_texto, objetivo.ley_citada = norma.norma, _ley_citada(leyes[norma.ley])
                 # Until the consolidated text arrives, a check of this group against it says nothing new.
@@ -360,11 +539,42 @@ def pilotar(
                 "norma": norma.norma,
                 "ley": norma.ley,
                 "etapa": norma.etapa,
-                "preceptos": norma.preceptos,
-                "grupos": [_id_de(o) for o in afectados],
-                "ya_tratados": [g for g in hechos if g in {_id_de(o) for o in afectados}],
+                "preceptos": sorted(preceptos, key=_orden_de_bloque),
+                # How each block was found: the analysis, the consolidated text, the norm's text, a model.
+                "articulos": dict(sorted(norma.articulos.items(), key=lambda par: _orden_de_bloque(par[0]))),
+                "grupos": [_id_de(o) for o, _ in afectados],
+                "ya_tratados": [g for g in hechos if g in {_id_de(o) for o, _ in afectados}],
+                # Why the blocks it changes are not known yet, when they are not.
+                **({"pendiente": pendiente} if pendiente is not None and not preceptos else {}),
             }
         )
+
+    # ---- 3. Laws the BOE updated since the files read them -----------------
+    estados_de_ley, paginas = lecturas(texto_de, data_dir=data_dir, fecha_boe=fecha_boe)
+    propuestas = almacen.listar()
+    for estado_de_ley in estados_de_ley.values():
+        if not estado_de_ley.desactualizada or not estado_de_ley.modificados:
+            continue
+        pagina = paginas[estado_de_ley.boe_id]
+        for objetivo, tocados in grupos_de_los_bloques(
+            estado_de_ley.boe_id, pagina, estado_de_ley.modificados, data_dir=data_dir
+        ):
+            ident = _id_de(objetivo)
+            motivo = (
+                f"{', '.join(tocados)}: redacción publicada después de que los parámetros leyeran "
+                f"{estado_de_ley.boe_id} ({estado_de_ley.leida_el})"
+            )
+            if ident in objetivos:
+                objetivos[ident].motivo = list(dict.fromkeys([*objetivos[ident].motivo, motivo]))
+                continue
+            if ident in en_espera or releido_contra(objetivo, pagina, propuestas) is not None:
+                continue
+            objetivo.origen = "relectura"
+            objetivo.motivo = [motivo]
+            objetivo.articulos_ley = _enteros(objetivo, tocados)
+            objetivo.admite_sin_cambios = True
+            objetivos[ident] = objetivo
+            informe.releidos_por_cambio.append(f"{objetivo.etiqueta}: {', '.join(tocados)}")
 
     informe.sin_adaptador = verificacion.sin_adaptador
     informe.errores += verificacion.errores
@@ -381,7 +591,7 @@ def pilotar(
             objetivos[_id_de(objetivo)] = objetivo
     informe.objetivos = len(objetivos)
 
-    # ---- 3. The loop --------------------------------------------------------
+    # ---- 4. The loop --------------------------------------------------------
     nuevas: list[Propuesta] = []
     resultado: Informe | None = None
     if objetivos and lector is None:
@@ -404,9 +614,41 @@ def pilotar(
         informe.errores += resultado.errores
         informe.propuestas = [resumen_de(p) for p in nuevas]
     _anotar_progreso(estado, objetivos, resultado, con_trabajo_pendiente)
+
+    # ---- 5. Provenance of the laws that are up to date again ----------------
+    if procedencia != "no":
+        abiertas: dict[str, list[str]] = {}
+        for norma in estado.normas.values():
+            if norma.etapa != "cerrada":
+                abiertas.setdefault(norma.ley, []).append(f"la norma {norma.norma} sigue en curso ({norma.etapa})")
+        for objetivo in objetivos.values():
+            if not _resuelto(objetivo, texto_de, almacen):
+                abiertas.setdefault(objetivo.boe_id, []).append(
+                    f"{objetivo.etiqueta[:100]}: pendiente de releer o de decidir"
+                )
+        try:
+            hecho = refrescar_lo_que_se_pueda(
+                texto_de,
+                hoy=hoy,
+                data_dir=data_dir,
+                almacen=almacen,
+                fecha_boe=fecha_boe,
+                abiertas=abiertas,
+                simular=procedencia == "simular",
+            )
+        except RecodificacionError as exc:
+            informe.errores.append(f"No se pudo anotar la lectura de las leyes al día: {exc}")
+        else:
+            informe.procedencia = hecho.model_dump(exclude={"fijadas"})
     estado.actualizado_el = datetime.now().isoformat(timespec="seconds")
     guardar_estado(estado_path, estado)
     return informe, nuevas
+
+
+def _orden_de_bloque(clave: str) -> tuple[int, int, str]:
+    """Articles in their numerical order, then the provisions."""
+    numero = re.match(r"(\d+)", clave)
+    return (0, int(numero.group(1)), clave) if numero else (1, 0, clave)
 
 
 def _anotar_progreso(
@@ -460,8 +702,13 @@ def texto_del_parte(informe: InformePiloto, nuevas: Sequence[Propuesta]) -> str:
             if norma["etapa"] == "consolidada"
             else "AÚN SIN CONSOLIDAR: se lee de su propio texto y se repetirá con el consolidado"
         )
+        articulos = norma.get("articulos") or {}
+        preceptos = ", ".join(
+            f"{a} ({', '.join(articulos.get(a, []))})" if articulos.get(a) else a for a in norma["preceptos"]
+        )
+        desconocidos = "aún no se sabe cuáles" + (f" ({norma['pendiente']})" if norma.get("pendiente") else "")
         lineas.append(
-            f"- {norma['norma']} → {norma['ley']} ({estado}); preceptos: {', '.join(norma['preceptos']) or 'no los nombra'}; "
+            f"- {norma['norma']} → {norma['ley']} ({estado}); preceptos: {preceptos or desconocidos}; "
             f"grupos afectados: {len(norma['grupos'])}"
         )
     for desglose in informe.desgloses:
@@ -474,6 +721,9 @@ def texto_del_parte(informe: InformePiloto, nuevas: Sequence[Propuesta]) -> str:
                 else f"artículo nuevo sin desglosar ({desglose.get('pendiente')})"
             )
         )
+    if informe.releidos_por_cambio:
+        lineas += ["", "Grupos que se releen porque su artículo cambió en el texto consolidado desde que se leyeron:"]
+        lineas += [f"- {g[:200]}" for g in informe.releidos_por_cambio[:25]]
     if informe.confirmadas_por_el_consolidado:
         lineas += ["", "El texto consolidado ya publicado respalda lo que se aplicó desde la norma modificadora:"]
         lineas += [f"- {g[:200]}" for g in informe.confirmadas_por_el_consolidado]
@@ -490,6 +740,17 @@ def texto_del_parte(informe: InformePiloto, nuevas: Sequence[Propuesta]) -> str:
         lineas += ["", f"Presupuesto agotado: {recodificacion['presupuesto_agotado']}"]
     if recodificacion.get("sin_procesar"):
         lineas += ["", f"Quedan para la próxima ejecución: {len(recodificacion['sin_procesar'])} grupo(s)."]
+    procedencia = informe.procedencia or {}
+    if procedencia.get("refrescadas"):
+        lineas += ["", "Leyes cuya lectura se anota hoy en los ficheros (params-check deja de señalarlas):"]
+        lineas += [
+            f"- {r['boe_id']}: texto consolidado a {r['consolidado_a']}"
+            + (" (simulado: no se ha escrito)" if r.get("simulado") else f" → {', '.join(r.get('ficheros', []))}")
+            for r in procedencia["refrescadas"]
+        ]
+    if procedencia.get("bloqueadas"):
+        lineas += ["", "Leyes actualizadas en el BOE cuya lectura NO se anota todavía:"]
+        lineas += [f"- {ley}: {'; '.join(m[:200] for m in motivos[:3])}" for ley, motivos in procedencia["bloqueadas"].items()]
     if informe.errores:
         lineas += ["", "Errores:"] + [f"- {e[:300]}" for e in informe.errores[:15]]
     if nuevas:
@@ -509,6 +770,9 @@ def huella_del_parte(informe: InformePiloto) -> str:
             sorted(str(d) for d in informe.desgloses),
             sorted(informe.confirmadas_por_el_consolidado),
             sorted(informe.normas_descartadas),
+            sorted(informe.releidos_por_cambio),
+            sorted(r["boe_id"] for r in (informe.procedencia or {}).get("refrescadas", [])),
+            sorted((informe.procedencia or {}).get("bloqueadas", {})),
         ],
         ensure_ascii=False,
     )
@@ -517,6 +781,8 @@ def huella_del_parte(informe: InformePiloto) -> str:
 
 __all__ = [
     "ASUNTO_PARTE",
+    "articulos_en_el_consolidado",
+    "nombre_corto",
     "EstadoPiloto",
     "InformePiloto",
     "NormaModificadora",

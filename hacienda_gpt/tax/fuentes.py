@@ -26,39 +26,49 @@ class NormaParametros:
     ejercicios: tuple[int, ...]
 
 
+def es_texto_vigente(fuente: FuentePrincipal) -> bool:
+    """Whether a source names the CURRENT consolidated text of its law, not a version pinned to a date or a PDF."""
+    return fuente.url == f"https://www.boe.es/buscar/act.php?id={fuente.boe_id}"
+
+
 @lru_cache(maxsize=1)
 def normas_de_parametros() -> tuple[NormaParametros, ...]:
-    """Every law behind the IRPF parameter files, one entry per BOE id."""
-    found: dict[str, NormaParametros] = {}
+    """Every law behind the parameter files, one entry per BOE id.
+
+    ``consultado_el`` is the earliest reading of the law's CURRENT text: a source pinned to a dated version (the
+    self-employed file of a closed year reads the law "as at 31-12-2025") records a text that does not change, so it
+    only counts when nothing else names the law.
+    """
+    # (source, year, community key, community name, whether it comes from an IRPF file), in the order they are read.
+    leidas: list[tuple[FuentePrincipal, int, str | None, str | None, bool]] = []
     for ejercicio in ejercicios_disponibles():
         params = load_params(ejercicio)
-        fuentes: list[tuple[FuentePrincipal, str | None, str | None]] = [(params.fuente_principal, None, None)]
-        fuentes += [(c.fuente_principal, key, c.nombre) for key, c in params.comunidades.items()]
-        for fuente, key, nombre in fuentes:
-            consultado = date.fromisoformat(fuente.consultado_el)
-            previa = found.get(fuente.boe_id)
-            found[fuente.boe_id] = NormaParametros(
-                boe_id=fuente.boe_id,
-                norma=fuente.norma,
-                comunidad=key,
-                comunidad_nombre=nombre,
-                consultado_el=min(consultado, previa.consultado_el) if previa else consultado,
-                ejercicios=(*(previa.ejercicios if previa else ()), ejercicio),
-            )
+        leidas.append((params.fuente_principal, ejercicio, None, None, True))
+        leidas += [(c.fuente_principal, ejercicio, key, c.nombre, True) for key, c in params.comunidades.items()]
     # The other calculators (self-employed, company, wealth, inheritance) name their laws the same way.
     for cargar, ejercicios in _OTRAS_FAMILIAS():
         for ejercicio in ejercicios():
-            for fuente in cargar(ejercicio).fuentes_principales.values():
-                consultado = date.fromisoformat(fuente.consultado_el)
-                previa = found.get(fuente.boe_id)
-                found[fuente.boe_id] = NormaParametros(
-                    boe_id=fuente.boe_id,
-                    norma=previa.norma if previa else fuente.norma,
-                    comunidad=previa.comunidad if previa else None,
-                    comunidad_nombre=previa.comunidad_nombre if previa else None,
-                    consultado_el=min(consultado, previa.consultado_el) if previa else consultado,
-                    ejercicios=tuple(sorted({*(previa.ejercicios if previa else ()), ejercicio})),
-                )
+            leidas += [(f, ejercicio, None, None, False) for f in cargar(ejercicio).fuentes_principales.values()]
+    found: dict[str, NormaParametros] = {}
+    for fuente, ejercicio, key, nombre, del_irpf in leidas:
+        previa = found.get(fuente.boe_id)
+        suyas = [f for f, *_ in leidas if f.boe_id == fuente.boe_id]
+        fechas = [date.fromisoformat(f.consultado_el) for f in suyas if es_texto_vigente(f)] or [
+            date.fromisoformat(f.consultado_el) for f in suyas
+        ]
+        # The IRPF files name each law in full and say whose community it is; the others keep what they found.
+        if previa is not None and not del_irpf:
+            norma, key, nombre = previa.norma, previa.comunidad, previa.comunidad_nombre
+        else:
+            norma = fuente.norma
+        found[fuente.boe_id] = NormaParametros(
+            boe_id=fuente.boe_id,
+            norma=norma,
+            comunidad=key,
+            comunidad_nombre=nombre,
+            consultado_el=min(fechas),
+            ejercicios=tuple(sorted({*(previa.ejercicios if previa else ()), ejercicio})),
+        )
     return tuple(found.values())
 
 

@@ -527,8 +527,8 @@ de fuentes, supuestos y síntomas está en [`docs/formatos_inventario.md`](forma
 
 | Subcomando | Qué hace | ¿Usa un modelo? |
 |---|---|---|
-| `ops formatos check [--diagnose]` | Estado de cada fuente (`ok`, `degradada`, `rota`) según las últimas lecturas; avisa por los canales `NOTIFY_*`. Con `--diagnose`, además diagnostica lo que falla. | Solo con `--diagnose` y si hay modelo configurado |
-| `ops formatos probe` | Lee ahora del BOE una muestra de cada formato con los lectores reales. Para CI o para comprobar una spec. | No |
+| `ops formatos check [--diagnose]` | Comprueba el calendario fiscal (coherencia, sin red) y da el estado de cada fuente (`ok`, `degradada`, `rota`) según las últimas lecturas; avisa por los canales `NOTIFY_*`. En `otros_avisos`, la tabla de precios. Con `--diagnose`, además diagnostica lo que falla. | Solo con `--diagnose` y si hay modelo configurado |
+| `ops formatos probe` | Lee ahora del BOE una muestra de cada formato con los lectores reales, y los artículos que fijan los plazos del calendario. Para CI o para comprobar una spec. | No |
 | `ops formatos diagnose [--fuente X] [--force] [--dry-run] [--auto-apply]` | Pide el diagnóstico de las fuentes que fallan y deja una propuesta o un informe. | Sí |
 | `ops formatos proposals [--estado E] [--show ID]` | Lista propuestas e informes. | No |
 | `ops formatos apply ID` / `reject ID --motivo …` / `confirm ID` | Pone en vigor una spec, la descarta (restaurando la anterior si ya estaba aplicada) o la da por revisada. | No |
@@ -537,9 +537,14 @@ de fuentes, supuestos y síntomas está en [`docs/formatos_inventario.md`](forma
 ### Puesta en marcha
 
 1. No hay nada que activar: `FORMAT_WATCH` está encendido por defecto y las tareas que ya tienes
-   (`boe-novedades`, `boe_watch`, `boe-impact`, `params-verify`, `normas-check`, los rastreadores,
-   la subida de documentos) empiezan a dejar observaciones en `FORMAT_STATE_PATH` y muestras en
-   `FORMAT_DIR`. Ambas rutas deben estar en un volumen persistente, como `JOBS_STATE_PATH`.
+   (`boe-novedades`, `boe_watch`, `boe-impact`, `params-verify`, `normas-check`, los rastreadores
+   —TEAC, boletines, CENDOJ, sede y PDF de la AEAT, códigos autonómicos—, `supremo_seed`,
+   `teac_seed`, `dgt_seed`, `boe_seed`, la ingesta del corpus y la subida de documentos) empiezan a
+   dejar observaciones en `FORMAT_STATE_PATH` y muestras en `FORMAT_DIR`. Ambas rutas deben estar en
+   un volumen persistente, como `JOBS_STATE_PATH`. La ingesta (Docling) informa desde varios procesos
+   a la vez: el fichero de estado se escribe con bloqueo.
+   Del CENDOJ solo se observa lo que ya se lee por orden tuya (`supremo_seed --from-dir` o
+   `--urls-file`, el rastreador con su lista de URL): la vigilancia no hace ninguna petición propia.
 2. Añade una línea de cron **después** de las tareas diarias:
 
    ```cron
@@ -552,7 +557,9 @@ de fuentes, supuestos y síntomas está en [`docs/formatos_inventario.md`](forma
    programado, te llegará por el mismo canal sin más cambios.
 4. En GitHub Actions, `.github/workflows/formatos.yml` ejecuta `ops formatos probe
    --fail-on-problem` de lunes a viernes: una ejecución en rojo significa que un formato del BOE
-   ya no se entiende (o que no se pudo leer); las muestras quedan como artefacto.
+   ya no se entiende, que un artículo que fija un plazo del calendario ha cambiado o que no se pudo
+   leer; las muestras quedan como artefacto. Las fuentes que no son del BOE (CENDOJ, AEAT, DGT,
+   TEAC, boletines) solo se vigilan donde corren sus rastreadores.
 
 ### Ajustes
 
@@ -591,6 +598,23 @@ medias; se reintenta en la siguiente ejecución.
 6. Con `FORMAT_AUTO_APPLY=true` el paso 3 ocurre solo, pero la propuesta queda en estado
    `aplicada` hasta que la revises (`confirm`) o la deshagas (`reject`).
 
+### El calendario fiscal
+
+`tax/data/calendario.json` se mantiene a mano. Dos fuentes lo vigilan:
+
+- `calendario_fiscal` (en cada `check`): si avisa de `fecha_imposible`, `anio_sin_plazo`,
+  `vencido_como_proximo` o `modelo_desconocido`, el dato está mal y hay que corregirlo; con
+  `sin_verificar`, un plazo marcado `verificado: false` vence en 90 días o menos: compruébalo en la
+  fuente que cita (la Renta: la orden ministerial de la campaña, que publica el BOE) y actualiza el
+  dato y su `fuente`; con `antiguedad`, el conjunto no se revisa desde hace un año.
+- `calendario_boe` (en cada `probe`): las citas de su spec deben seguir en los artículos del BOE. Si
+  falla `cita` o `plazo`, lee el artículo (el detalle dice cuál). Si solo ha cambiado la redacción, el
+  diagnóstico puede proponer la redacción nueva como alternativa de la cita; esa propuesta **nunca se
+  aplica sola**. Si ha cambiado el plazo, no hay propuesta posible (el ensayo exige que la muestra
+  antigua se siga leyendo igual y que los días de `calendario.json` estén en lo que dice el BOE): en un
+  mismo cambio revisado, corrige el plazo en `calendario.json` (dato legal, con su fuente) y la cita
+  en `hacienda_gpt/ops/data/formatos/calendario_boe.json`; el siguiente `probe` lo da por bueno.
+
 ### Documentos de usuarios
 
 De los documentos subidos solo se cuentan resultados por tipo (cuántos datos se proponen y los
@@ -623,7 +647,9 @@ una clave, valida al menos una vez:
   conservadores y no están calibrados con historia real.
 - Las expresiones regulares propuestas se acotan con una heurística (longitud, sin grupos
   cuantificados anidados, sin retrorreferencias), no con una prueba formal.
-- Fuentes aún sin instrumentar: ver «Lo que queda» en el inventario.
+- Fuera del BOE no hay muestras reales (CENDOJ por sus condiciones de reutilización; sede de la AEAT,
+  DGT y TEAC no accesibles desde donde se escribió esto): sus pruebas usan páginas sintéticas.
+- Lo que aún no es spec o no se vigila: ver «Lo que queda» en el inventario.
 
 ## Consumo de modelos de IA: medirlo y limitarlo
 

@@ -417,11 +417,12 @@ def test_dgt_search_canaries() -> None:
         lectura = formatos.fuente_de("dgt_busqueda").canarios(datos, "", "", None)
         return {f.canario for f in lectura.fallos if f.gravedad == "grave"}
 
-    assert graves(filas=20, con_numero=20, total_paginas=True, query=True) == set()
+    filas = [[str(n), f"V{n:04d}-25"] for n in range(20)]
+    assert graves(filas=filas, total_paginas=3, query="q") == set()
     # A month with no consultas is still a recognisable page.
-    assert graves(filas=0, con_numero=0, total_paginas=True, query=True) == set()
-    assert graves(filas=0, con_numero=0, total_paginas=False, query=False) == {"pagina"}
-    assert graves(filas=20, con_numero=20, total_paginas=True, query=False) == {"query"}
+    assert graves(filas=[], total_paginas=1, query="q") == set()
+    assert graves(filas=[], total_paginas=None, query="") == {"pagina"}
+    assert graves(filas=filas, total_paginas=3, query="") == {"query"}
 
 
 def _descargas(sumario: str | None):

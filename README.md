@@ -891,9 +891,21 @@ convierte ese silencio en un estado visible:
   comprueba en cada lectura real. Resultado por fuente: `ok`, `degradada` o `rota`, visible en
   `ops doctor` y por los canales de aviso de siempre. Sin modelo.
 - **El formato es un dato.** Las claves, rutas XML, XPath, etiquetas y expresiones regulares de
-  los lectores del BOE, del TEAC y de los boletines autonómicos están en specs versionadas
+  los lectores del BOE, del TEAC (ficha y listado), de los boletines autonómicos, del CENDOJ, de la
+  DGT y las rutas que sigue el rastreador de la sede de la AEAT están en specs versionadas
   (`hacienda_gpt/ops/data/formatos/*.json`). La versión 1 es el comportamiento de siempre, con
-  pruebas que lo comparan con el código anterior sobre muestras reales.
+  pruebas que lo comparan con el código anterior.
+- **También lo que no es un selector.** Los PDF de los códigos autonómicos (¿llega un PDF?, ¿Docling
+  saca texto con encabezados de artículo?, ¿cae el rendimiento?), la ingesta del corpus, las
+  ejecuciones de los rastreadores y la cabecera de las sentencias del Supremo informan con recuentos.
+  Del CENDOJ solo se observan las lecturas que el operador ya ha pedido: la vigilancia no descarga
+  nada de allí.
+- **El calendario fiscal se vigila como dato que caduca.** `ops formatos check` comprueba su
+  coherencia (cada plazo existe este año y el siguiente, nada pasado se muestra como próximo, cada
+  modelo es conocido, lo no contrastado que se acerca) y `ops formatos probe` contrasta sus plazos con
+  citas literales de los artículos del BOE que los fijan. Un cambio de redacción se adapta con una
+  propuesta revisada por una persona; un cambio de plazo acaba en informe, porque el dato legal se
+  corrige a mano. La campaña de la Renta no tiene fuente legible por máquina en los datos.
 - **Diagnóstico agéntico.** Ante una fuente que falla, un modelo recibe los supuestos del lector,
   la última muestra bien leída y la nueva, y debe decir qué ha cambiado citando literalmente la
   muestra. Si propone una spec nueva, un **ensayo determinista** la ejecuta sobre las dos
@@ -909,7 +921,7 @@ convierte ese silencio en un estado visible:
 
 ```bash
 uv run python -m hacienda_gpt.cli.ops formatos check              # estado, sin modelo
-uv run python -m hacienda_gpt.cli.ops formatos probe              # lee ahora del BOE y comprueba
+uv run python -m hacienda_gpt.cli.ops formatos probe              # lee ahora del BOE (y las leyes del calendario)
 uv run python -m hacienda_gpt.cli.ops formatos check --diagnose   # + diagnóstico si hay modelo
 uv run python -m hacienda_gpt.cli.ops formatos proposals
 ```
