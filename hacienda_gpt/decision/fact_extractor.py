@@ -251,6 +251,10 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
 
   value_boolean:
     familia_numerosa                    → true si tiene título de familia numerosa
+    familia_numerosa_especial           → true si el título es de categoría especial
+    familia_monoparental                → true si es familia monoparental
+    hijos_nacidos_en_el_ejercicio       → hijos nacidos o adoptados en el año
+    gastos_libros_texto                 → pagado en el año en libros de texto y material escolar
     bienes_en_el_extranjero             → true si tiene cuentas, valores o inmuebles fuera de España
 
   "gano 38.000 brutos al año, vivo en Valencia, tengo dos hijos, uno de 2 años"

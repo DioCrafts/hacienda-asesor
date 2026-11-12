@@ -392,7 +392,7 @@ def test_general_deductions_are_split_between_state_and_regional_tax() -> None:
 
     # Madrid inputs supplied for a non-Madrid simulation are reported, not silently ignored.
     elsewhere = _calc(
-        comunidad_autonoma="Galicia", rendimiento_trabajo_bruto=D(24000), edad=30, alquiler_vivienda_habitual=D(9600)
+        comunidad_autonoma="Navarra", rendimiento_trabajo_bruto=D(24000), edad=30, alquiler_vivienda_habitual=D(9600)
     )
-    assert any("no es de un residente en Madrid" in aviso for aviso in elsewhere.avisos)
+    assert any("no tiene deducciones calculables para tu comunidad" in aviso for aviso in elsewhere.avisos)
     assert _aplicada(elsewhere, "Deducción autonómica por alquiler") == 0

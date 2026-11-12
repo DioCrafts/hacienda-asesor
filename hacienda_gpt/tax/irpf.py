@@ -21,6 +21,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from hacienda_gpt.tax import autonomicas
 from hacienda_gpt.tax.arrendamiento import DatosArrendamiento, reduccion_arrendamiento
 from hacienda_gpt.tax.params import (
     DeduccionesMadrid,
@@ -103,6 +104,10 @@ class IRPFInput(BaseModel):
     base_imponible_resto_unidad_familiar: Decimal = Field(default=ZERO, ge=0)
     miembros_unidad_familiar: int | None = Field(default=None, ge=1, le=20)
     familia_numerosa: bool = False
+    familia_numerosa_especial: bool = False
+    familia_monoparental: bool = False
+    hijos_nacidos_en_el_ejercicio: int = Field(default=0, ge=0, le=20)  # born or adopted in the tax year
+    gastos_libros_texto: Decimal = Field(default=ZERO, ge=0)  # textbooks and school material
 
     # Regional (Comunidad de Madrid) deductions
     hijos_nacidos_ultimos_3_ejercicios: int = Field(default=0, ge=0, le=20)  # born/adopted this year or the two before
@@ -729,10 +734,33 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
                 estatales_sobre_autonomica=parte_autonomica,
             )
         )
+    elif comunidad is not None and comunidad.deducciones_calculables:
+        deducciones_autonomicas = _round(
+            autonomicas.aplicar(
+                list(comunidad.deducciones_calculables),
+                inp,
+                autonomicas.Bases(
+                    base_imponible_total=base_imponible_general + base_imponible_ahorro,
+                    base_imponible_general=base_imponible_general,
+                    base_liquidable_total=base_liquidable,
+                    base_liquidable_general=general,
+                    base_imponible_total_menos_minimos=base_imponible_general + base_imponible_ahorro - minimo,
+                    resto_unidad_familiar=inp.base_imponible_resto_unidad_familiar,
+                ),
+                conjunta=inp.tributacion != "individual",
+                norma=f"{comunidad.fuente_principal.norma.split(',')[0]} ({comunidad.fuente_principal.boe_id})",
+                linea=t.linea,
+                aviso=t.aviso,
+            )
+        )
+        t.aviso(
+            f"De las deducciones de {comunidad.nombre} solo se calculan las que dependen de los datos que has dado; "
+            "el resto figuran por título en el catálogo de beneficios."
+        )
     elif any(getattr(inp, name) for name in _MADRID_INPUTS):
         t.aviso(
-            "Has indicado datos de deducciones autonómicas de Madrid (alquiler, gastos educativos, nacimiento…), "
-            "pero la simulación no es de un residente en Madrid: no se han aplicado."
+            "Has indicado datos de deducciones autonómicas (alquiler, gastos educativos, nacimiento…), pero la "
+            "simulación no tiene deducciones calculables para tu comunidad: no se han aplicado."
         )
     liquida_estatal = max(ZERO, estatal - parte_estatal - solo_estatal)
     liquida_autonomica = max(ZERO, autonomica - parte_autonomica - deducciones_autonomicas)

@@ -14,9 +14,10 @@ from decimal import Decimal
 from functools import lru_cache
 import json
 from pathlib import Path
+from typing import Literal
 import unicodedata
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 
@@ -284,6 +285,107 @@ class DeduccionesMadrid(_Model):
     familias_ingresos_reducidos: _MadridFamilias
 
 
+BaseLimite = Literal[
+    "base_imponible_total",
+    "base_imponible_general",
+    "base_liquidable_total",
+    "base_liquidable_general",
+    "base_imponible_total_menos_minimos",
+]
+# Inputs a data-driven regional deduction may refer to.
+CAMPOS_UNIDAD = frozenset(
+    {
+        "num_descendientes",
+        "num_descendientes_menores_3",
+        "hijos_nacidos_en_el_ejercicio",
+        "hijos_nacidos_ultimos_3_ejercicios",
+        "num_ascendientes_mayores_65",
+        "num_ascendientes_mayores_75",
+    }
+)
+CAMPOS_GASTO = frozenset(
+    {
+        "alquiler_vivienda_habitual",
+        "gastos_guarderia",
+        "gastos_libros_texto",
+        "gastos_escolaridad",
+        "gastos_ensenanza_idiomas",
+        "gastos_uniformes_escolares",
+        "cotizaciones_empleada_hogar",
+    }
+)
+CAMPOS_REQUISITO = frozenset({"familia_numerosa", "familia_numerosa_especial", "familia_monoparental"})
+
+
+class ReduccionProgresiva(_Model):
+    """The amount shrinks linearly from 100 % at ``desde`` to nothing at ``hasta``."""
+
+    desde_individual: Decimal
+    hasta_individual: Decimal
+    desde_conjunta: Decimal | None = None
+    hasta_conjunta: Decimal | None = None
+
+
+class DeduccionCalculable(_Model):
+    """A regional deduction simple enough to be computed from data alone.
+
+    Either a fixed amount per unit ("fija") or a percentage of an expense
+    ("porcentaje"), with the eligibility conditions the calculator can check.
+    Whatever it cannot check is listed in ``requisitos_no_comprobados`` and
+    repeated to the user every time the deduction is applied.
+    """
+
+    articulo: str
+    titulo: str
+    resumen: str
+    tipo: Literal["fija", "porcentaje"]
+    importe: Decimal | None = None
+    unidad: str | None = None
+    porcentaje: Decimal | None = None
+    base: str | None = None
+    maximo: Decimal | None = None
+    maximo_por_unidad: Decimal | None = None
+    edad_min: int | None = None
+    edad_max: int | None = None
+    discapacidad_min: int | None = None
+    requiere: list[str] = Field(default_factory=list)
+    base_limite: BaseLimite = "base_imponible_total"
+    limite_individual: Decimal | None = None
+    limite_conjunta: Decimal | None = None
+    limite_es_estricto: bool = False
+    limite_unidad_familiar: Decimal | None = None
+    reduccion_progresiva: ReduccionProgresiva | None = None
+    gasto_minimo_sobre_base: Decimal | None = None
+    reparto_descendientes: bool = False
+    requisitos_no_comprobados: list[str] = Field(default_factory=list)
+    en_vigor_desde: str
+
+    @model_validator(mode="after")
+    def _coherente(self) -> DeduccionCalculable:
+        if self.unidad is not None and self.unidad not in CAMPOS_UNIDAD:
+            raise ValueError(f"unidad desconocida: {self.unidad}")
+        if set(self.requiere) - CAMPOS_REQUISITO:
+            raise ValueError(f"requisitos desconocidos: {self.requiere}")
+        if self.tipo == "fija":
+            if self.importe is None or self.importe <= 0 or self.porcentaje is not None or self.base is not None:
+                raise ValueError("una deducción fija lleva importe y no porcentaje ni base")
+            if self.unidad is None and not (
+                self.requiere
+                or self.edad_min is not None
+                or self.edad_max is not None
+                or self.discapacidad_min is not None
+            ):
+                raise ValueError("una deducción fija sin unidad necesita una condición comprobable")
+        else:
+            if self.porcentaje is None or not 0 < self.porcentaje <= 1 or self.base not in CAMPOS_GASTO:
+                raise ValueError("una deducción porcentual lleva porcentaje (0-1) y una base de gasto conocida")
+            if self.importe is not None:
+                raise ValueError("una deducción porcentual no lleva importe")
+            if self.maximo_por_unidad is not None and self.unidad is None:
+                raise ValueError("maximo_por_unidad exige unidad")
+        return self
+
+
 class RepartoDeducciones(_Model):
     # Share of the general state deductions (donations, housing) borne by the
     # regional tax; the rest reduces the state tax.
@@ -305,6 +407,8 @@ class Comunidad(_Model):
     deducciones_madrid: DeduccionesMadrid | None = None
     # Other deductions the community has, by article and title only.
     otras_deducciones: list[str] = Field(default_factory=list)
+    # Deductions computed generically from their data (see DeduccionCalculable).
+    deducciones_calculables: list[DeduccionCalculable] = Field(default_factory=list)
     # Caveats about this community's data that the calculator repeats as warnings.
     notas: list[str] = Field(default_factory=list)
 

@@ -152,7 +152,9 @@ _INPUT_FIELDS_DOC = (
     "pagos_vivienda_habitual_pre2013, hijos_deduccion_maternidad, gastos_guarderia, retenciones. Para residentes en "
     "Madrid, además: alquiler_vivienda_habitual, gastos_escolaridad, gastos_ensenanza_idiomas, "
     "gastos_uniformes_escolares, num_hijos_gastos_educativos, num_hijos_primer_ciclo_infantil, "
-    "cotizaciones_empleada_hogar, hijos_nacidos_ultimos_3_ejercicios, donativos_fundaciones_madrid, familia_numerosa "
+    "cotizaciones_empleada_hogar, hijos_nacidos_ultimos_3_ejercicios, donativos_fundaciones_madrid, familia_numerosa. Para las deducciones del resto de comunidades: "
+    "alquiler_vivienda_habitual, gastos_guarderia, gastos_libros_texto, hijos_nacidos_en_el_ejercicio, "
+    "familia_numerosa_especial (bool), familia_monoparental (bool), edad, grado_discapacidad "
     "(bool), base_imponible_resto_unidad_familiar, miembros_unidad_familiar"
 )
 

@@ -18,8 +18,9 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
+from hacienda_gpt.tax.autonomicas import campo_que_la_activa
 from hacienda_gpt.tax.irpf import ZERO, IRPFInput, IRPFResult, calcular_irpf
-from hacienda_gpt.tax.params import Fuente, IRPFParams, load_params
+from hacienda_gpt.tax.params import Fuente, IRPFParams, load_params, normalizar_comunidad
 
 Estado = Literal["aplicado", "disponible", "por_confirmar", "no_aplica"]
 
@@ -421,6 +422,24 @@ def evaluar_beneficios(inp: IRPFInput, *, conocidos: set[str], params: IRPFParam
             [deduccion.limites, "Requiere justificación documental (art. 18.4)."],
             f"{deduccion.articulo} {norma} ({comunidad.fuente_principal.boe_id})",
             faltan=faltan(campo) if estado == "por_confirmar" and campo else None,
+        )
+    for calculable in comunidad.deducciones_calculables:
+        activador = campo_que_la_activa(calculable)
+        aplicado = _importe_linea(base, f"Deducción autonómica: {calculable.titulo}")
+        add(
+            f"autonomica_{normalizar_comunidad(calculable.articulo).replace('.', '').replace(' ', '_')}",
+            f"{comunidad.nombre}: {calculable.titulo}",
+            "aplicado" if aplicado else "por_confirmar",
+            (f"Deducción aplicada en la simulación: {aplicado:.2f} €. " if aplicado else "")
+            + calculable.resumen
+            + (
+                ""
+                if aplicado or not campo
+                else f" La simulación la aplica si indicas «{activador}» y cumples los requisitos."
+            ),
+            calculable.requisitos_no_comprobados or ["Requiere justificación documental."],
+            f"{calculable.articulo} {comunidad.fuente_principal.norma.split(',')[0]} ({comunidad.fuente_principal.boe_id})",
+            faltan=faltan(activador) if activador and not aplicado else None,
         )
     if comunidad.otras_deducciones:
         add(
