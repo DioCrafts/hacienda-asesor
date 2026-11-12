@@ -243,7 +243,7 @@ function Detail({ lineas, avisos }: { lineas: CalcLine[]; avisos: string[] }) {
 
 function ResultCard({ title, amount, suffix, good, children }: { title: string; amount: string | number; suffix?: string; good?: boolean; children?: ReactNode }) {
   return (
-    <section aria-live="polite" className="sticky top-0 z-10 rounded-xl border border-line bg-surface px-4 py-4 shadow-pop">
+    <section aria-live="polite" className="z-10 rounded-xl sm:sticky sm:top-0 border border-line bg-surface px-4 py-4 shadow-pop">
       <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-muted">{title}</p>
       <p className={clsx("mt-1 font-serif text-[30px] font-bold leading-none", good ? "text-grounding-cited-fg" : "text-ink")}>
         {formatMoney(amount)}
@@ -601,7 +601,10 @@ export function AutonomosPanel({ open, onClose, onUse, taxPeriod = null }: Auton
         <div role="tabpanel" id="autonomos-tabpanel" aria-labelledby={`autonomos-tab-${tab}`} className="flex-1 space-y-5 overflow-y-auto px-5 pb-5 pt-3">
           {loadError && <ErrorNote message={loadError} />}
           {current.error && <ErrorNote message={current.error} />}
-          {tab === "actividad" ? actividadTab() : tab === "m130" ? m130Tab() : m303Tab()}
+          {/* Keyed by tab so React does not reuse one tab's DOM (open <details>, focus) for another. */}
+          <div key={tab} className="space-y-5">
+            {tab === "actividad" ? actividadTab() : tab === "m130" ? m130Tab() : m303Tab()}
+          </div>
         </div>
 
         <footer className="border-t border-line px-5 py-3 text-[11.5px] leading-relaxed text-muted">

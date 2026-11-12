@@ -23,7 +23,6 @@ from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from datetime import date
 from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
-from typing import cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -256,13 +255,13 @@ def _avisar_descartes(titulo: str, articulo: str, motivos: list[str], t: _Traza)
     t.aviso(f"«{titulo}» ({articulo}) no se ha aplicado: {' y '.join(partes)}.")
 
 
-def _primera[R: _Regla](reglas: Sequence[R], caso: _Caso, t: _Traza, titulo: str | None = None) -> R | None:
+def _primera[R: _Regla](reglas: Sequence[R], caso: _Caso, t: _Traza) -> R | None:
     """First rule whose conditions hold."""
     for regla in reglas:
         motivos = _incumple(regla.cuando, caso)
         if not motivos:
             return regla
-        _avisar_descartes(titulo or getattr(regla, "titulo", regla.resumen), regla.articulo, motivos, t)
+        _avisar_descartes(str(getattr(regla, "titulo", regla.resumen)), regla.articulo, motivos, t)
     return None
 
 
@@ -709,7 +708,7 @@ def _avisos_generales(
             "puede no valer para una fecha anterior al cambio."
         )
     t.aviso(estatal.acumulacion.resumen)
-    for nota in cast(list[str], estatal.notas):
+    for nota in estatal.notas:
         t.aviso(nota)
 
 

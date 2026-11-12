@@ -34,8 +34,19 @@ from hacienda_gpt.tax.irpf import IRPFInput, IRPFResult
 from hacienda_gpt.tax.iva import Modelo303Input, calcular_modelo_303
 from hacienda_gpt.tax.pagos_fraccionados import Modelo130Input, calcular_modelo_130
 from hacienda_gpt.tax.params import EjercicioNoDisponibleError, ejercicios_disponibles, load_params
+from hacienda_gpt.tax.patrimonio import PatrimonioInput, calcular_patrimonio
+from hacienda_gpt.tax.patrimonio_params import ejercicios_patrimonio_disponibles
 from hacienda_gpt.tax.profile import DatosInvalidosError, build_input
 from hacienda_gpt.tax.simulador import simular
+from hacienda_gpt.tax.sociedades import (
+    ComparacionInput,
+    PagoFraccionadoSociedadesInput,
+    SociedadesInput,
+    calcular_pago_fraccionado_sociedades,
+    calcular_sociedades,
+    comparar_autonomo_vs_sociedad,
+)
+from hacienda_gpt.tax.sociedades_params import ejercicios_sociedades_disponibles
 
 logger = logging.getLogger(__name__)
 
@@ -318,6 +329,142 @@ MODELO_303_TOOL = ToolSpec(
     },
 )  # fmt: skip
 
+SOCIEDADES_TOOL = ToolSpec(
+    name="calcular_impuesto_sociedades",
+    description="Calcula el Impuesto sobre Sociedades de una sociedad pequeña (territorio común, art. 29.1 LIS) para un período iniciado en 2025-2028: del resultado contable a la cuota diferencial, con reserva de capitalización, compensación de bases negativas y el tipo que corresponda (general, escala de microempresas, reducida dimensión o nueva creación). Los ajustes y las deducciones son totales que aporta el usuario. Devuelve el desglose y avisos de lo no modelado, que hay que trasladar siempre.",
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["ejercicio"],
+        "properties": {
+            "ejercicio": {"type": "integer", "description": "Año en que se inicia el período impositivo (2025-2028)"},
+            "resultado_contable": {
+                "type": "number",
+                "description": "Resultado contable antes del gasto por Impuesto sobre Sociedades (puede ser negativo)",
+            },
+            "ajustes_positivos": {"type": "number", "minimum": 0},
+            "ajustes_negativos": {"type": "number", "minimum": 0},
+            "cifra_negocios_anterior": {
+                "type": ["number", "null"],
+                "minimum": 0,
+                "description": "Importe neto de la cifra de negocios del período anterior. Sin él se aplica el 25 %",
+            },
+            "cifra_negocios_12_meses_anteriores": {"type": ["number", "null"], "minimum": 0},
+            "entidad_patrimonial": {"type": "boolean"},
+            "nueva_creacion_tipo_reducido": {
+                "type": "boolean",
+                "description": "El usuario afirma cumplir los requisitos del 15 % de entidades de nueva creación",
+            },
+            "incremento_fondos_propios": {"type": "number", "minimum": 0},
+            "incremento_plantilla_porcentaje": {"type": ["number", "null"], "minimum": 0},
+            "reserva_capitalizacion_pendiente": {"type": "number", "minimum": 0},
+            "bases_negativas_pendientes": {"type": "number", "minimum": 0},
+            "nueva_creacion_sin_limite_bases_negativas": {"type": "boolean"},
+            "dias_periodo": {"type": "integer", "minimum": 1, "maximum": 366},
+            "bonificaciones_deducciones": {"type": "number", "minimum": 0},
+            "retenciones_ingresos_cuenta": {"type": "number", "minimum": 0},
+            "pagos_fraccionados": {"type": "number", "minimum": 0},
+        },
+    },
+)
+
+SOCIEDADES_PAGO_TOOL = ToolSpec(
+    name="calcular_pago_fraccionado_sociedades",
+    description="Calcula un pago fraccionado del Impuesto sobre Sociedades (modelo 202, art. 40 LIS): modalidad 'cuota' (18 % de la cuota del último período menos deducciones y retenciones) o modalidad 'base'. Si el texto legal no permite una cifra exacta (escala de microempresas en modalidad base, cifra de negocios de 10 millones o más, último período inferior al año) devuelve importe nulo y lo explica en avisos.",
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["ejercicio"],
+        "properties": {
+            "ejercicio": {"type": "integer"},
+            "modalidad": {"type": "string", "enum": ["cuota", "base"]},
+            "cifra_negocios_anterior": {"type": ["number", "null"], "minimum": 0},
+            "cifra_negocios_12_meses_anteriores": {"type": ["number", "null"], "minimum": 0},
+            "entidad_patrimonial": {"type": "boolean"},
+            "nueva_creacion_tipo_reducido": {"type": "boolean"},
+            "cuota_integra_ultimo_periodo": {"type": "number", "minimum": 0},
+            "deducciones_bonificaciones_ultimo_periodo": {"type": "number", "minimum": 0},
+            "retenciones_ultimo_periodo": {"type": "number", "minimum": 0},
+            "ultimo_periodo_inferior_al_ano": {"type": "boolean"},
+            "base_imponible_acumulada": {"type": "number"},
+            "bonificaciones": {"type": "number", "minimum": 0},
+            "retenciones_acumuladas": {"type": "number", "minimum": 0},
+            "pagos_fraccionados_anteriores": {"type": "number", "minimum": 0},
+        },
+    },
+)
+
+AUTONOMO_SOCIEDAD_TOOL = ToolSpec(
+    name="comparar_autonomo_vs_sociedad",
+    description="Compara, solo en impuestos sobre la renta, ganar el mismo beneficio como autónomo (IRPF) o a través de una sociedad que paga un salario al socio y reparte el resto como dividendo (Impuesto sobre Sociedades + IRPF del socio). NO incluye Seguridad Social, reglas del art. 27 LIRPF sobre socios profesionales, IVA ni costes de gestión, y el beneficio no repartido no tributa en el socio hasta que se distribuya. No declara qué opción es mejor: presenta siempre las cifras junto con los avisos y no concluyas más allá de la aritmética. Ejercicios 2025 y 2026.",
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["ejercicio", "beneficio_antes_retribucion"],
+        "properties": {
+            "ejercicio": {"type": "integer"},
+            "beneficio_antes_retribucion": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Beneficio anual del negocio antes de retribuir al titular",
+            },
+            "salario": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Salario bruto anual que la sociedad pagaría al socio",
+            },
+            "dividendo": {
+                "type": ["number", "null"],
+                "minimum": 0,
+                "description": "Dividendo repartido; null = todo el beneficio después de impuestos",
+            },
+            "comunidad_autonoma": {"type": ["string", "null"]},
+            "cifra_negocios_anterior": {"type": ["number", "null"], "minimum": 0},
+            "nueva_creacion_tipo_reducido": {"type": "boolean"},
+        },
+    },
+)
+
+PATRIMONIO_TOOL = ToolSpec(
+    name="calcular_patrimonio",
+    description="Calcula el Impuesto sobre el Patrimonio y el Impuesto Temporal de Solidaridad de las Grandes Fortunas (ITSGF) de UN contribuyente residente en una comunidad de régimen común, devengo 31 de diciembre de 2026. Aplica la exención de vivienda habitual, el mínimo exento y la escala estatales o autonómicos, el límite conjunto con el IRPF (solo si se dan las dos cifras del IRPF), la bonificación general autonómica y el ITSGF, e indica si hay obligación de declarar. Los importes son los valores de la parte del contribuyente, ya valorados por el usuario. No cubre Navarra ni País Vasco, no residentes ni bonificaciones autonómicas de bienes concretos. Traslada los avisos al usuario.",
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["comunidad"],
+        "properties": {
+            "ejercicio": {"type": "integer", "description": "Año del devengo (31-12). Solo 2026."},
+            "comunidad": {"type": "string", "description": "Comunidad autónoma de residencia."},
+            "vivienda_habitual": {"type": "number", "minimum": 0},
+            "otros_inmuebles": {"type": "number", "minimum": 0},
+            "depositos": {"type": "number", "minimum": 0},
+            "valores_cotizados": {"type": "number", "minimum": 0},
+            "participaciones_no_cotizadas": {"type": "number", "minimum": 0},
+            "seguros_y_rentas": {"type": "number", "minimum": 0},
+            "vehiculos_y_otros": {"type": "number", "minimum": 0},
+            "deuda_vivienda_habitual": {"type": "number", "minimum": 0},
+            "otras_deudas": {"type": "number", "minimum": 0},
+            "bienes_exentos_empresa_familiar": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Bienes afectos y participaciones que el usuario declara exentos (art. 4.Ocho).",
+            },
+            "grado_discapacidad": {"type": "number", "minimum": 0, "maximum": 100},
+            "irpf_base_imponible": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Suma de bases imponibles del IRPF, sin las ganancias de elementos con más de un año. Omítelo si no se conoce.",
+            },
+            "irpf_cuota_integra": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Suma de cuotas íntegras del IRPF, sin la parte de esas ganancias. Omítelo si no se conoce.",
+            },
+            "bienes_no_productivos": {"type": "number", "minimum": 0},
+        },
+    },
+)
+
 BENEFITS_TOOL = ToolSpec(
     name="listar_beneficios_fiscales",
     description=(
@@ -454,6 +601,10 @@ class Toolbox:
             ACTIVITY_TOOL,
             MODELO_130_TOOL,
             MODELO_303_TOOL,
+            SOCIEDADES_TOOL,
+            SOCIEDADES_PAGO_TOOL,
+            AUTONOMO_SOCIEDAD_TOOL,
+            PATRIMONIO_TOOL,
             BENEFITS_TOOL,
             CALENDAR_TOOL,
         ]
@@ -477,6 +628,38 @@ class Toolbox:
             ),
             MODELO_130_TOOL.name: lambda a: self._autonomo(a, Modelo130Input, calcular_modelo_130, "Modelo 130"),
             MODELO_303_TOOL.name: lambda a: self._autonomo(a, Modelo303Input, calcular_modelo_303, "Modelo 303"),
+            SOCIEDADES_TOOL.name: lambda a: self._calculadora(
+                a,
+                SociedadesInput,
+                calcular_sociedades,
+                "Impuesto sobre Sociedades",
+                ejercicios_sociedades_disponibles(),
+                "sociedades",
+            ),
+            SOCIEDADES_PAGO_TOOL.name: lambda a: self._calculadora(
+                a,
+                PagoFraccionadoSociedadesInput,
+                calcular_pago_fraccionado_sociedades,
+                "Pago fraccionado de Sociedades",
+                ejercicios_sociedades_disponibles(),
+                "sociedades",
+            ),
+            AUTONOMO_SOCIEDAD_TOOL.name: lambda a: self._calculadora(
+                a,
+                ComparacionInput,
+                comparar_autonomo_vs_sociedad,
+                "Autónomo frente a sociedad",
+                [2025, 2026],
+                "sociedades",
+            ),
+            PATRIMONIO_TOOL.name: lambda a: self._calculadora(
+                a,
+                PatrimonioInput,
+                calcular_patrimonio,
+                "Impuesto sobre el Patrimonio",
+                ejercicios_patrimonio_disponibles(),
+                "patrimonio",
+            ),
             BENEFITS_TOOL.name: self._benefits,
             CALENDAR_TOOL.name: self._calendar,
             VALIDITY_TOOL.name: self._validity,
@@ -612,41 +795,47 @@ class Toolbox:
         )
 
     def _autonomo(self, arguments: dict[str, Any], modelo: Any, calcular: Any, titulo: str) -> ToolOutcome:
-        """Shared handler of the self-employed calculators: validate, compute, register as evidence."""
+        return self._calculadora(arguments, modelo, calcular, titulo, ejercicios_autonomos_disponibles(), "autonomos")
+
+    def _calculadora(
+        self, arguments: dict[str, Any], modelo: Any, calcular: Any, titulo: str, ejercicios: list[int], ambito: str
+    ) -> ToolOutcome:
+        """Shared handler of the deterministic calculators: validate, compute, register as evidence."""
         datos = dict(arguments)
         if not isinstance(datos.get("ejercicio"), int) or isinstance(datos.get("ejercicio"), bool):
             case_year = parse_fiscal_year(self.case.tax_period) if self.case is not None else None
-            datos["ejercicio"] = (
-                case_year
-                if case_year in ejercicios_autonomos_disponibles()
-                else max(ejercicios_autonomos_disponibles())
-            )
+            datos["ejercicio"] = case_year if case_year in ejercicios else max(ejercicios)
         try:
             result = calcular(modelo(**datos))
         except ValidationError as exc:
             problems = "; ".join(f"{'.'.join(str(p) for p in e['loc'])}: {e['msg']}" for e in exc.errors())
             return _error(f"Datos no válidos: {problems}")
-        except EjercicioNoDisponibleError as exc:
+        except ValueError as exc:  # unavailable year or community, inconsistent figures
             return _error(str(exc))
         lines = [f"{titulo} — ejercicio {datos['ejercicio']}"]
-        for linea in result.lineas:
+        for linea in getattr(result, "lineas", None) or []:
             ref = f" ({linea.referencia})" if linea.referencia else ""
             lines.append(f"  {linea.concepto}: {_money(linea.importe)}{ref}")
         resumen = {
             k: v
             for k, v in result.model_dump(mode="json").items()
-            if k not in ("lineas", "avisos", "parametros_no_verificados", "fuente") and v is not None
+            if k not in ("lineas", "avisos", "parametros_no_verificados", "fuente", "no_modelado")
+            and v is not None
+            and not isinstance(v, dict | list)
         }
         lines.append("Resultado: " + "; ".join(f"{k} = {v}" for k, v in resumen.items()))
-        if result.avisos:
+        if getattr(result, "avisos", None):
             lines.append("Avisos (lo que este cálculo no cubre o da por supuesto):")
             lines.extend(f"  * {aviso}" for aviso in result.avisos)
-        lines.append(f"Parámetros: {result.fuente}.")
+        if getattr(result, "no_modelado", None):
+            lines.append("No modelado: " + "; ".join(str(x) for x in result.no_modelado))
+        if getattr(result, "fuente", None):
+            lines.append(f"Parámetros: {result.fuente}.")
         fragment = self.ledger.register(
             text="\n".join(lines),
             metadata={
                 "title": f"{titulo} {datos['ejercicio']}",
-                "source": f"calculadora://autonomos/{datos['ejercicio']}/{len(self.ledger) + 1}",
+                "source": f"calculadora://{ambito}/{datos['ejercicio']}/{len(self.ledger) + 1}",
                 "source_authority": "CALCULADORA",
                 "section": "Cálculo determinista",
             },

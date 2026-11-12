@@ -143,7 +143,10 @@ export function AuthScreen({ config, notice, onSignedIn }: AuthScreenProps) {
                     type="checkbox"
                     name="tratamiento_datos"
                     checked={acceptsData}
-                    onChange={(e) => setAcceptsData(e.target.checked)}
+                    onChange={(e) => {
+                      setAcceptsData(e.target.checked);
+                      setError(null);
+                    }}
                     className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
                   />
                   <span>

@@ -259,6 +259,27 @@
       "subdir": "boe-autonomico",
       "track": true,
       "comunidad": "murcia"
+    },
+    {
+      "id": "BOE-A-1991-14392",
+      "topic": "patrimonio",
+      "label": "Ley 19/1991 — Impuesto sobre el Patrimonio",
+      "subdir": "boe-seed",
+      "track": true
+    },
+    {
+      "id": "BOE-A-2022-22684",
+      "topic": "patrimonio",
+      "label": "Ley 38/2022 — Impuesto Temporal de Solidaridad de las Grandes Fortunas",
+      "subdir": "boe-seed",
+      "track": true
+    },
+    {
+      "id": "BOE-A-2023-26452",
+      "topic": "patrimonio",
+      "label": "Real Decreto-ley 8/2023 — prórroga del ITSGF",
+      "subdir": "boe-seed",
+      "track": true
     }
   ]
 }

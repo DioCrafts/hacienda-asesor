@@ -373,6 +373,12 @@ class NormativaAutonomicaISD(NormativaISD):
     alias: list[str] = Field(default_factory=list)
     equiparaciones: list[Equiparacion] = Field(default_factory=list)
 
+    @model_validator(mode="after")
+    def _caracter(self) -> NormativaAutonomicaISD:
+        if any(r.caracter == "estatal" for r in self.reducciones):
+            raise ValueError("una reducción autonómica es «mejora» o «propia», nunca «estatal»")
+        return self
+
 
 class EstatalISD(NormativaISD):
     """Ley 29/1987: what applies when the community has not legislated (or its rules do not apply)."""

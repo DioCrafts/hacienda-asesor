@@ -178,3 +178,37 @@ def test_self_employed_calculators_are_available_to_the_agent() -> None:
     assert len(ledger) == 3
     mal = toolbox.execute(ToolCall(id="4", name="calcular_modelo_303", arguments={"trimestre": 9}))
     assert mal.is_error and "trimestre" in mal.content
+
+
+def test_company_and_wealth_calculators_are_available_to_the_agent() -> None:
+    from hacienda_gpt.agent.evidence import EvidenceLedger
+    from hacienda_gpt.agent.providers.base import ToolCall
+    from hacienda_gpt.agent.tools import Toolbox
+    from tests.agent.fakes import FakeSearcher
+
+    toolbox = Toolbox(searcher=FakeSearcher([]), ledger=EvidenceLedger())
+    # Micro company in 2026: 19 % on the first 50.000 and 21 % on the rest: 9.500 + 2.100 = 11.600.
+    sociedad = toolbox.execute(
+        ToolCall(
+            id="1",
+            name="calcular_impuesto_sociedades",
+            arguments={"ejercicio": 2026, "resultado_contable": 60000, "cifra_negocios_anterior": 300000},
+        )
+    )
+    assert not sociedad.is_error and "11.600" in sociedad.content
+    comparacion = toolbox.execute(
+        ToolCall(
+            id="2",
+            name="comparar_autonomo_vs_sociedad",
+            arguments={"ejercicio": 2026, "beneficio_antes_retribucion": 80000, "salario": 30000},
+        )
+    )
+    assert not comparacion.is_error and "SOLO SUMA IMPUESTOS" in comparacion.content
+    patrimonio = toolbox.execute(
+        ToolCall(id="3", name="calcular_patrimonio", arguments={"comunidad": "Madrid", "depositos": 1500000})
+    )
+    assert not patrimonio.is_error and "Impuesto sobre el Patrimonio" in patrimonio.content
+    foral = toolbox.execute(
+        ToolCall(id="4", name="calcular_patrimonio", arguments={"comunidad": "Navarra", "depositos": 1})
+    )
+    assert foral.is_error

@@ -50,6 +50,10 @@ def test_search_then_answer_verified() -> None:
         "calcular_rendimiento_actividad",
         "calcular_modelo_130",
         "calcular_modelo_303",
+        "calcular_impuesto_sociedades",
+        "calcular_pago_fraccionado_sociedades",
+        "comparar_autonomo_vs_sociedad",
+        "calcular_patrimonio",
     }
 
     # The verifier got only the CITED fragments, not everything retrieved.
