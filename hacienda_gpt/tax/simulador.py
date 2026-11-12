@@ -42,6 +42,7 @@ def simular(
     datos: dict[str, Any] | None = None,
     escenarios: list[dict[str, Any]] | None = None,
     con_beneficios: bool = True,
+    beneficios_sobre_ultimo: bool = False,
 ) -> Simulacion:
     """Run the base scenario plus alternatives. Raises ``DatosInvalidosError``
     or ``EjercicioNoDisponibleError`` on bad input."""
@@ -54,12 +55,14 @@ def simular(
         raise DatosInvalidosError(f"'escenarios' debe ser una lista de hasta {MAX_ESCENARIOS} alternativas.")
 
     inputs: list[tuple[str, IRPFInput]] = []
+    cambios_ultimo: dict[str, Any] = {}
     for item in raw:
         if not isinstance(item, dict) or not isinstance(item.get("nombre"), str) or not item["nombre"].strip():
             raise DatosInvalidosError("Cada escenario necesita un 'nombre' y un objeto 'cambios'.")
         cambios = item.get("cambios") or {}
         if not isinstance(cambios, dict):
             raise DatosInvalidosError("'cambios' debe ser un objeto {campo: valor}.")
+        cambios_ultimo = cambios
         inputs.append(
             (item["nombre"].strip(), build_input(ejercicio=ejercicio, facts=facts, datos=datos, cambios=cambios))
         )
@@ -73,6 +76,16 @@ def simular(
             EscenarioResultado(nombre=nombre, resultado=result, ahorro_frente_a_base=base.resultado - result.resultado)
             for nombre, result in results
         ],
-        beneficios=evaluar_beneficios(inputs[0][1], conocidos=provided, params=params) if con_beneficios else [],
+        beneficios=(
+            # Levers are normally judged against the saved profile; an interactive
+            # simulator wants them for the scenario being edited instead.
+            evaluar_beneficios(
+                inputs[-1][1] if beneficios_sobre_ultimo else inputs[0][1],
+                conocidos=provided | (set(cambios_ultimo) if beneficios_sobre_ultimo else set()),
+                params=params,
+            )
+            if con_beneficios
+            else []
+        ),
         datos_no_aportados=[name for name in CORE_FIELDS if name not in provided],
     )

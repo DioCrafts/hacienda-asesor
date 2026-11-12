@@ -445,3 +445,143 @@ export function updateCaseFact(opts: {
     { signal: opts.signal, method: "PUT" },
   );
 }
+
+// ---- Step 4: simulator, calendar, documents --------------------------------
+
+export interface CalcLine {
+  concepto: string;
+  importe: string; // decimal as string, e.g. "-1500.00"
+  referencia?: string | null;
+}
+
+export interface IRPFResult {
+  ejercicio: number;
+  tributacion: string;
+  cuota_liquida: string;
+  retenciones: string;
+  resultado: string; // positive: to pay; negative: refund
+  tipo_medio_efectivo: string;
+  lineas: CalcLine[];
+  avisos: string[];
+  fuente: string;
+}
+
+export type BenefitState = "aplicado" | "disponible" | "por_confirmar" | "no_aplica";
+
+export interface Benefit {
+  id: string;
+  nombre: string;
+  estado: BenefitState;
+  detalle: string;
+  requisitos: string[];
+  referencia: string;
+  verificado: boolean;
+  ahorro_estimado?: string | null;
+  datos_que_faltan: string[];
+}
+
+export interface Simulation {
+  ejercicio: number;
+  escenarios: Array<{ nombre: string; resultado: IRPFResult; ahorro_frente_a_base: string }>;
+  beneficios: Benefit[];
+  datos_no_aportados: string[];
+}
+
+function isSimulation(value: unknown): value is Simulation {
+  return (
+    isRecord(value) &&
+    typeof value.ejercicio === "number" &&
+    Array.isArray(value.escenarios) &&
+    value.escenarios.length > 0 &&
+    Array.isArray(value.beneficios)
+  );
+}
+
+/** Deterministic IRPF simulation (no LLM): instant, safe to call on every keystroke. */
+export function simulate(opts: {
+  caseId?: string | null;
+  ejercicio?: number | null;
+  datos?: Record<string, unknown>;
+  escenarios?: Array<{ nombre: string; cambios: Record<string, unknown> }>;
+  // Judge the "ways to pay less" against the last scenario, not the saved profile.
+  leversForLastScenario?: boolean;
+  signal?: AbortSignal;
+}): Promise<Simulation> {
+  const body: Record<string, unknown> = { datos: opts.datos ?? {} };
+  if (opts.caseId) body.case_id = opts.caseId;
+  if (opts.ejercicio) body.ejercicio = opts.ejercicio;
+  if (opts.escenarios) body.escenarios = opts.escenarios;
+  if (opts.leversForLastScenario) body.beneficios_sobre_ultimo = true;
+  return request("/simulate", body, isSimulation, { signal: opts.signal });
+}
+
+export interface Deadline {
+  id: string;
+  modelo?: string | null;
+  titulo: string;
+  periodo: string;
+  fecha: string; // ISO date
+  ajustada: boolean;
+  dias_restantes: number;
+  detalle: string;
+  referencia: string;
+  verificado: boolean;
+  nota?: string | null;
+}
+
+export interface CalendarResponse {
+  case_id: string;
+  hoy: string;
+  vencimientos: Deadline[];
+  aviso: string;
+}
+
+function isCalendar(value: unknown): value is CalendarResponse {
+  return isRecord(value) && Array.isArray(value.vencimientos) && typeof value.aviso === "string";
+}
+
+export function getCalendar(opts: { caseId: string; dias?: number; signal?: AbortSignal }): Promise<CalendarResponse> {
+  return request(
+    `/cases/${encodeURIComponent(opts.caseId)}/calendar?dias=${opts.dias ?? 365}`,
+    undefined,
+    isCalendar,
+    { signal: opts.signal, method: "GET" },
+  );
+}
+
+export interface ProposedFact {
+  name: string;
+  value: string | number | boolean;
+  evidencia: string;
+}
+
+export interface DocumentAnalysis {
+  filename: string;
+  tipo_documento: string;
+  paginas: number;
+  caracteres: number;
+  hechos_propuestos: ProposedFact[];
+  avisos: string[];
+}
+
+function isDocumentAnalysis(value: unknown): value is DocumentAnalysis {
+  return isRecord(value) && Array.isArray(value.hechos_propuestos) && Array.isArray(value.avisos);
+}
+
+// Reading a document is an LLM call over its full text.
+const DOCUMENT_TIMEOUT_MS = 120_000;
+
+/** Send a document for analysis. Returns PROPOSED facts; nothing is saved server-side. */
+export function analyzeDocument(opts: {
+  caseId: string;
+  filename: string;
+  contentBase64: string;
+  signal?: AbortSignal;
+}): Promise<DocumentAnalysis> {
+  return request(
+    `/cases/${encodeURIComponent(opts.caseId)}/documents`,
+    { filename: opts.filename, content_base64: opts.contentBase64 },
+    isDocumentAnalysis,
+    { signal: opts.signal, timeoutMs: DOCUMENT_TIMEOUT_MS },
+  );
+}

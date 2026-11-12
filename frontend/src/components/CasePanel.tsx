@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 
 import type { Fact, ObligationCandidate } from "../api";
 import { factInput, factLabel, factValue, formatDate } from "../lib/presentation";
+import { DeadlinesSection, DocumentSection } from "./CaseExtras";
 
 type FactValue = string | number | boolean;
 
@@ -16,7 +17,7 @@ interface CasePanelProps {
   facts: Fact[];
   taxPeriod: string | null;
   obligations: ObligationCandidate[];
-  hasCase: boolean;
+  caseId: string | null;
   // Resolves true when the change was saved. `null` deletes the fact.
   onChangeFact: (factName: string, value: FactValue | null) => Promise<boolean>;
   saving: string | null;
@@ -108,7 +109,7 @@ function FactEditor({ fact, busy, onSave, onCancel }: EditorProps) {
   );
 }
 
-export function CasePanel({ open, onClose, facts, taxPeriod, obligations, hasCase, onChangeFact, saving, error, disabled }: CasePanelProps) {
+export function CasePanel({ open, onClose, facts, taxPeriod, obligations, caseId, onChangeFact, saving, error, disabled }: CasePanelProps) {
   // Which row is in edit mode / awaiting delete confirmation (by fact name).
   const [editing, setEditing] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -129,7 +130,7 @@ export function CasePanel({ open, onClose, facts, taxPeriod, obligations, hasCas
     ...(yearFact ? [{ ...yearFact, removable: false }] : []),
     ...facts.filter((f) => f.name !== "periodo_fiscal" && !HIDDEN_FACTS.has(f.name)).map((f) => ({ name: f.name, value: f.value, removable: true })),
   ];
-  const locked = disabled || saving !== null || !hasCase;
+  const locked = disabled || saving !== null || !caseId;
 
   async function save(name: string, value: FactValue | null) {
     if (await onChangeFact(name, value)) {
@@ -246,6 +247,11 @@ export function CasePanel({ open, onClose, facts, taxPeriod, obligations, hasCas
               </p>
             )}
           </section>
+
+          <DocumentSection caseId={caseId} disabled={disabled || saving !== null} onApply={(name, value) => onChangeFact(name, value)} />
+
+          {/* Re-fetched whenever the facts change: a new fact can add obligations. */}
+          <DeadlinesSection caseId={caseId} refreshKey={facts.map((f) => `${f.name}=${String(f.value)}`).join("&")} />
 
           {obligations.length > 0 && (
             <section>

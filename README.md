@@ -474,6 +474,25 @@ actuales**, que la calculadora declara en los `avisos` de cada resultado:
 Para añadir una escala autonómica, incluye sus tramos bajo
 `escalas_generales_autonomicas.<comunidad en minúsculas>` con su `fuente`.
 
+### Simulador, calendario y documentos
+
+- **`POST /simulate`** — la misma calculadora, sin modelo de lenguaje: devuelve
+  el escenario base, cada alternativa con su ahorro y el catálogo de
+  beneficios. Es lo que usa el panel «Simulador» de la interfaz.
+- **`GET /cases/{id}/calendar`** y la herramienta `calendario_fiscal` — plazos
+  que aplican al perfil (cierre del ejercicio, Renta, IVA trimestral y pagos
+  fraccionados si hay actividad económica, modelo 720 si hay bienes en el
+  extranjero). Las fechas recurrentes están en
+  `hacienda_gpt/tax/data/calendario.json` con el precepto que las fija; se
+  ajustan fines de semana pero **no festivos**, y el fin de la campaña de Renta
+  (30 de junio) figura como no contrastado porque lo fija una orden anual.
+- **`POST /cases/{id}/documents`** — lee un PDF con texto (certificado de
+  retenciones, datos fiscales, certificado de un plan…) y **propone** datos
+  del perfil. Cada propuesta lleva el pasaje literal del documento y se
+  descarta si ese pasaje no aparece en él; nada se guarda hasta que el usuario
+  confirma. El documento no se almacena, pero su texto se envía al proveedor
+  de LLM configurado. No hay OCR: los PDF escaneados se rechazan.
+
 ### Evaluación del agente con consultas de la DGT
 
 Cada consulta vinculante de la DGT es un caso de prueba ya resuelto por un

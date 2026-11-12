@@ -193,6 +193,7 @@ const FACT_LABEL: Record<string, string> = {
   donativos: "Donativos",
   pagos_vivienda_habitual_pre2013: "Pagos de hipoteca (vivienda anterior a 2013)",
   gastos_guarderia: "Gastos de guardería",
+  bienes_en_el_extranjero: "Bienes o cuentas en el extranjero",
 };
 
 // Enum values the backend stores as ASCII slugs.
@@ -225,7 +226,8 @@ const MONEY_FACTS = new Set([
   "pagos_vivienda_habitual_pre2013",
   "gastos_guarderia",
 ]);
-const EUR = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+// Cents are kept when present: showing 6.502,57 € as "6503 €" would misstate the figure.
+const EUR = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 /** "tipo_renta" → "Tipo de renta"; unknown names are de-snake-cased. */
 export function factLabel(name: string): string {
@@ -418,3 +420,26 @@ export function verificationSummary(claims: ClaimCheck[]): string | null {
   return `${ok} de ${claims.length} afirmaciones comprobadas`;
 }
 
+
+// ---- Money -----------------------------------------------------------------
+
+const EUR_CENTS = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" });
+
+/** "-1500.00" → "-1.500,00 €". Accepts the decimal strings the API returns. */
+export function formatMoney(value: string | number): string {
+  const amount = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(amount) ? EUR_CENTS.format(amount) : String(value);
+}
+
+/** Read a File as base64 (without the data-URL prefix). */
+export function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      resolve(result.slice(result.indexOf(",") + 1));
+    };
+    reader.readAsDataURL(file);
+  });
+}

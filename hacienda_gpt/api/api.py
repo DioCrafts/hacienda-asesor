@@ -670,6 +670,9 @@ class SimulateRequest(BaseModel):
     ejercicio: int | None = None
     datos: dict = Field(default_factory=dict)
     escenarios: list[dict] | None = None
+    # Evaluate the benefit catalogue on the last scenario instead of the base
+    # one (what an interactive simulator shows while the user edits figures).
+    beneficios_sobre_ultimo: bool = False
 
 
 @app.post("/simulate", response_model=Simulacion, dependencies=[Depends(require_api_key)])
@@ -688,7 +691,13 @@ def post_simulate(
     if year is None:
         year = (parse_fiscal_year(case.tax_period) if case is not None else None) or max(ejercicios_disponibles())
     try:
-        return simular(ejercicio=year, facts=facts, datos=payload.datos, escenarios=payload.escenarios)
+        return simular(
+            ejercicio=year,
+            facts=facts,
+            datos=payload.datos,
+            escenarios=payload.escenarios,
+            beneficios_sobre_ultimo=payload.beneficios_sobre_ultimo,
+        )
     except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 

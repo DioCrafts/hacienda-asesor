@@ -86,3 +86,9 @@ export default defineConfig([
   el sitio (`PUT /cases/{id}/facts/{name}`) o eliminar con confirmación (`DELETE`).
 - **Historial real** en `localStorage` (`src/lib/storage.ts`): sobrevive a recargas y se puede borrar.
 - **Tema claro/oscuro** con tokens CSS (`src/index.css` + `tailwind.config.js`) y diseño adaptado a móvil.
+- **Simulador** (botón de la barra superior): calculadora determinista (`POST /simulate`, sin modelo) que
+  recalcula mientras se teclea, compara con el expediente guardado, lista las formas de pagar menos con su
+  ahorro y permite guardar las cifras en el expediente.
+- **Próximos plazos** en el expediente (`GET /cases/{id}/calendar`), según el perfil.
+- **Leer un documento** (`POST /cases/{id}/documents`): propone datos con el pasaje literal del que salen y solo
+  guarda los que el usuario confirma.

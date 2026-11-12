@@ -103,6 +103,19 @@ def test_simulator_compares_scenarios_and_lists_levers() -> None:
     assert sim.datos_no_aportados == ["comunidad_autonoma"]
     assert {b.id for b in sim.beneficios} >= {"plan_pensiones", "donativos", "deducciones_autonomicas"}
 
+    # An interactive simulator judges the levers on the scenario being edited:
+    # once the plan is maxed out there, it is no longer offered.
+    edited = simular(
+        ejercicio=2026,
+        escenarios=[
+            {"nombre": "Base", "cambios": {}},
+            {"nombre": "Editado", "cambios": {"rendimiento_trabajo_bruto": 50000, "aportacion_plan_pensiones": 1500}},
+        ],
+        beneficios_sobre_ultimo=True,
+    )
+    assert {b.id: b.estado for b in edited.beneficios}["plan_pensiones"] == "aplicado"
+    assert "plan_pensiones" not in {b.id for b in simular(ejercicio=2026).beneficios}  # no income, no lever
+
     with pytest.raises(DatosInvalidosError):
         simular(ejercicio=2026, escenarios=[{"nombre": "x", "cambios": {"sueldo": 1}}])
     with pytest.raises(DatosInvalidosError):

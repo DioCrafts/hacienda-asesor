@@ -13,6 +13,7 @@ import { Composer } from "./components/Composer";
 import { EmptyState } from "./components/EmptyState";
 import { ObligationCardList } from "./components/ObligationCard";
 import { RichText } from "./components/RichText";
+import { SimulatorPanel } from "./components/SimulatorPanel";
 import { Sidebar } from "./components/Sidebar";
 import { SourceCardList } from "./components/SourceCard";
 import { TopBar } from "./components/TopBar";
@@ -75,6 +76,7 @@ export default function App() {
   const [pending, setPending] = useState<PendingTurn | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [caseOpen, setCaseOpen] = useState(false);
+  const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [removingFact, setRemovingFact] = useState<string | null>(null);
   const [caseError, setCaseError] = useState<string | null>(null);
@@ -319,6 +321,7 @@ export default function App() {
           title={active.title}
           factCount={visibleFactCount}
           onOpenCase={() => setCaseOpen(true)}
+          onOpenSimulator={() => setSimulatorOpen(true)}
           onOpenMenu={() => setMenuOpen(true)}
           theme={theme}
           onToggleTheme={toggleTheme}
@@ -419,11 +422,22 @@ export default function App() {
         facts={active.facts}
         taxPeriod={active.taxPeriod}
         obligations={active.obligations}
-        hasCase={active.caseId !== null}
+        caseId={active.caseId}
         onChangeFact={handleChangeFact}
         saving={removingFact}
         error={caseError}
         disabled={busy}
+      />
+      {/* Keyed by conversation: figures typed for one consultation never leak into another. */}
+      <SimulatorPanel
+        key={activeId}
+        open={simulatorOpen}
+        onClose={() => setSimulatorOpen(false)}
+        caseId={active.caseId}
+        facts={active.facts}
+        taxPeriod={active.taxPeriod}
+        onSaveFact={handleChangeFact}
+        busy={busy}
       />
     </div>
   );
