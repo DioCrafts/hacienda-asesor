@@ -633,6 +633,18 @@ def test_income_ceilings_raised_lifted_or_softened() -> None:
     assert total == D(100) and any("se aplica el 50 % de la deducción" in a for a in avisos)
     assert evaluar(mitad, _inp(familia_monoparental=True, **hijo), _bases("31000"), conjunta=False).importe == D(200)
     assert evaluar(mitad, _inp(familia_monoparental=True, **hijo), _bases("40000"), conjunta=False).importe == D(100)
+    # Figures the law gives as an increment are stored as such: 46.455 € plus 15.315 € in a joint return;
+    # a cap of 500 € "incrementado en 100 euros" for the disabled.
+    suma = _pct(maximo="500", limite_individual="46455", limite_conjunta_incremento="15315",
+                variantes=[{"descripcion": "discapacidad", "cuando": {"discapacidad_min": 65},
+                            "maximo_incremento": "100"}])  # fmt: skip
+    renta = dict(alquiler_vivienda_habitual=D(9000))
+    assert evaluar(suma, _inp(**renta), _bases("61770"), conjunta=True).importe == D(500)
+    assert "supera el límite de 61770.00 €" in evaluar(suma, _inp(**renta), _bases("61771"), conjunta=True).motivo
+    assert evaluar(suma, _inp(**renta), _bases("46456"), conjunta=False).motivo is not None
+    assert evaluar(suma, _inp(grado_discapacidad=65, **renta), _bases(), conjunta=False).importe == D(600)
+    with pytest.raises(ValueError, match="excluye limite_conjunta"):
+        _pct(limite_individual="1", limite_conjunta="2", limite_conjunta_incremento="1")
     with pytest.raises(ValueError, match="factor o sin_limite"):
         _fija(ajustes_limite=[{"cuando": {"requiere": ["familia_numerosa"]}}])
 

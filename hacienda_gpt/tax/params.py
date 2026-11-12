@@ -534,6 +534,8 @@ class Variante(_Model):
     porcentaje: Decimal | None = None
     tramos_porcentaje: list[TramoPorcentaje] | None = None
     maximo: Decimal | None = None
+    # Instead of ``maximo``: euros added to the deduction's general cap ("se incrementará en 100 euros").
+    maximo_incremento: Decimal | None = None
     maximo_por_unidad: Decimal | None = None
     base_maxima: Decimal | None = None
     base_maxima_por_unidad: Decimal | None = None
@@ -544,6 +546,8 @@ class Variante(_Model):
     def _con_condicion(self) -> Variante:
         if self.cuando.vacia:
             raise ValueError("una variante necesita al menos una condición")
+        if self.maximo is not None and self.maximo_incremento is not None:
+            raise ValueError("una variante lleva maximo o maximo_incremento, no los dos")
         return self
 
 
@@ -691,6 +695,8 @@ class DeduccionCalculable(Condiciones):
     base_limite: BaseLimite = "base_imponible_total"
     limite_individual: Decimal | None = None
     limite_conjunta: Decimal | None = None
+    # Instead of ``limite_conjunta``: euros added to the individual ceiling in a joint return.
+    limite_conjunta_incremento: Decimal | None = None
     limite_es_estricto: bool = False
     # Taxpayers for whom the ceilings above are higher or do not apply (the first match wins).
     ajustes_limite: list[AjusteLimite] = Field(default_factory=list)
@@ -761,6 +767,12 @@ class DeduccionCalculable(Condiciones):
                 and self.prorrateo.aplica_a != "maximo"
             ):
                 raise ValueError("en una deducción porcentual el prorrateo por hijo se aplica al máximo")
+        if self.limite_conjunta_incremento is not None and (
+            self.limite_conjunta is not None or self.limite_individual is None
+        ):
+            raise ValueError("limite_conjunta_incremento exige limite_individual y excluye limite_conjunta")
+        if any(v.maximo_incremento is not None for v in self.variantes) and self.maximo is None:
+            raise ValueError("maximo_incremento exige un maximo general")
         if self.factor_sobre_limite is not None and not 0 < self.factor_sobre_limite < 1:
             raise ValueError("factor_sobre_limite fuera de rango")
         if self.por_contribuyente and (self.tipo != "fija" or con_unidad or self.conyuge != "en_conjunta"):

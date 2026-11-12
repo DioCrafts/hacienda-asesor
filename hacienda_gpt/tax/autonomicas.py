@@ -410,12 +410,16 @@ def evaluar(d: DeduccionCalculable, inp: Any, bases: Bases, *, conjunta: bool) -
 
     def cifra(nombre: str) -> Any:
         propia = getattr(v, nombre) if v is not None else None
+        if nombre == "maximo" and v is not None and v.maximo_incremento is not None and d.maximo is not None:
+            return d.maximo + v.maximo_incremento
         return propia if propia is not None else getattr(d, nombre)
 
     def hecho(importe: Decimal, motivo: str | None = None, *, falta_detalle: bool = False) -> Resultado:
         return Resultado(importe, motivo, v.descripcion if v is not None else None, tuple(notas), falta_detalle)
 
     limite_conjunta, limite_individual = cifra("limite_conjunta"), cifra("limite_individual")
+    if d.limite_conjunta_incremento is not None and limite_individual is not None and limite_conjunta is None:
+        limite_conjunta = limite_individual + d.limite_conjunta_incremento
     limite = limite_conjunta if conjunta and limite_conjunta is not None else limite_individual
     ajuste_limite = next(
         (a for a in d.ajustes_limite if not incumplidas(a.cuando, inp, ingreso, conjunta=conjunta)), None
