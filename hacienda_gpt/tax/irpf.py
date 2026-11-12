@@ -32,6 +32,7 @@ from hacienda_gpt.tax.params import (
     load_params,
     normalizar_comunidad,
 )
+from hacienda_gpt.tax.vigencia_normas import estado_de
 
 CENT = Decimal("0.01")
 ZERO = Decimal(0)
@@ -441,6 +442,21 @@ def _alquiler_vivienda_reducido(inp: IRPFInput, p: IRPFParams, t: _Trace) -> Dec
             "NO se ha aplicado ninguna reducción, de modo que el resultado puede ser peor que el real."
         )
         return neto
+    nuevo = ra.regimen_2026
+    vigencia = estado_de(nuevo.fuente.condicionada_a) if nuevo is not None else None
+    if nuevo is not None and inp.arrendamiento_fecha_contrato > nuevo.contratos_posteriores_a and vigencia is not None:
+        if vigencia.estado == "derogada":
+            # The wording the decree-law gave to art. 23.2 is gone: the previous one applies.
+            ra = ra.model_copy(update={"regimen_2026": None})
+            t.aviso(
+                "La redacción del art. 23.2 LIRPF que dio el Real Decreto-ley 29/2026 no se aplica porque ha sido "
+                f"derogado ({vigencia.detalle or 'según el BOE'}); se usa la redacción anterior."
+            )
+        elif vigencia.estado == "pendiente":
+            t.aviso(
+                "La reducción aplicada es la del Real Decreto-ley 29/2026, pendiente de convalidación por el Congreso: "
+                "si se deroga, se aplicará la redacción anterior del art. 23.2 LIRPF."
+            )
     r = reduccion_arrendamiento(
         DatosArrendamiento(
             fecha_contrato=inp.arrendamiento_fecha_contrato,
@@ -677,6 +693,10 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
         f"{escala_autonomica.fuente.referencia} y {p.escala_ahorro_autonomica.fuente.referencia}"
         + ("" if comunidad is not None else " (escala estatal usada como aproximación)"),
     )
+    # The scales are cited as text above, so flag an unverified one explicitly.
+    for escala in (p.escala_general_estatal, p.escala_ahorro_estatal, escala_autonomica, p.escala_ahorro_autonomica):
+        if not escala.fuente.verificado and escala.fuente.referencia not in t.no_verificados:
+            t.no_verificados.append(escala.fuente.referencia)
     cuota_integra = estatal + autonomica
 
     # ---- 6. Deductions from gross tax (arts. 67 and 77) --------------------
@@ -705,7 +725,18 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
     # Rent of the main home (art. 68.6): borne by the state tax alone (art. 67.1.a).
     solo_estatal = ZERO
     av = p.alquiler_vivienda_habitual
-    if av is not None and inp.alquiler_vivienda_habitual:
+    vigencia_av = estado_de(av.fuente.condicionada_a) if av is not None else None
+    if (
+        av is not None
+        and inp.alquiler_vivienda_habitual
+        and vigencia_av is not None
+        and vigencia_av.estado == "derogada"
+    ):
+        t.aviso(
+            "No se aplica la deducción estatal por alquiler (art. 68.6 LIRPF): el Real Decreto-ley que la introdujo "
+            f"ha sido derogado ({vigencia_av.detalle or 'según el BOE'})."
+        )
+    elif av is not None and inp.alquiler_vivienda_habitual:
         base_imponible = base_imponible_general + base_imponible_ahorro
         if base_imponible < av.umbral_superior:
             base_maxima = av.base_maxima
@@ -716,8 +747,13 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
             t.linea("Deducción estatal por alquiler de vivienda habitual", -solo_estatal, av.fuente)
             t.aviso(
                 "La deducción estatal por alquiler (art. 68.6 LIRPF) la introdujo el Real Decreto-ley 29/2026, en vigor "
-                "desde el 8 de octubre de 2026 y pendiente de convalidación por el Congreso: si se deroga, desaparece. "
-                "Exige que, durante al menos medio año, ni tú ni tu unidad familiar seáis titulares de otra vivienda a "
+                "desde el 8 de octubre de 2026"
+                + (
+                    " y ya convalidado por el Congreso. "
+                    if vigencia_av is not None and vigencia_av.estado == "convalidada"
+                    else " y pendiente de convalidación por el Congreso: si se deroga, desaparece. "
+                )
+                + "Exige que, durante al menos medio año, ni tú ni tu unidad familiar seáis titulares de otra vivienda a "
                 "menos de 50 km de la alquilada (no se ha comprobado). Se ha calculado sobre todo el alquiler del año "
                 "que has indicado, y se suma a la deducción autonómica por alquiler si la hay: el art. 68.6 no las declara "
                 "incompatibles, pero no se ha contrastado con la norma autonómica ni hay criterio administrativo."

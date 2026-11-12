@@ -39,6 +39,10 @@ from hacienda_gpt.proactive.jobs import ejecutar_para_todos, hoy_en_espana
 from hacienda_gpt.proactive.novedades import ItemSumario, notificar_novedad, revisar
 from hacienda_gpt.proactive.store import NotificationStore
 from hacienda_gpt.tax.fuentes import desactualizadas, normas_de_parametros
+from hacienda_gpt.tax.params import DATA_DIR, ejercicios_disponibles, load_params
+from hacienda_gpt.tax.rollover import preparar_ejercicio
+from hacienda_gpt.tax.verificacion import cargar_y_verificar, leer_snapshot, url_de
+from hacienda_gpt.tax.vigencia_normas import estado_desde_xml, guardar_estados, leer_estados
 
 logger = logging.getLogger(__name__)
 
@@ -270,6 +274,160 @@ def _vigiladas() -> frozenset[str]:
     catalogo = Path(__file__).resolve().parent / "boe_seed_catalog.json"
     ids = {str(doc["id"]) for doc in json.loads(catalogo.read_text(encoding="utf-8")).get("documents", [])}
     return frozenset(ids | {norma.boe_id for norma in normas_de_parametros()})
+
+
+def _texto_del_boe() -> Any:
+    """A ``texto_de`` that downloads each law's consolidated page once."""
+    cache: dict[tuple[str, str | None], str | None] = {}
+
+    def texto_de(boe_id: str, version: str | None = None) -> str | None:
+        clave = (boe_id, version)
+        if clave not in cache:
+            try:
+                raw = _get(url_de(boe_id, version), accept="text/html")
+            except Exception as exc:
+                logger.warning("Could not download %s: %s", boe_id, exc)
+                raw = None
+            cache[clave] = raw.decode("utf-8", errors="replace") if raw else None
+            time.sleep(0.5)
+        return cache[clave]
+
+    return texto_de
+
+
+@cli.command("params-verify")
+@click.option("--ejercicio", "ejercicios", type=int, multiple=True, help="Ejercicio a verificar (por defecto, todos).")
+@click.option(
+    "--snapshot-dir",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    default=None,
+    help="Leer las leyes de esta carpeta (<id>.html) en vez de descargarlas.",
+)
+@click.option("--fail-on-mismatch", is_flag=True, help="Termina con código 1 si alguna comprobación falla.")
+def params_verify(ejercicios: tuple[int, ...], snapshot_dir: Path | None, fail_on_mismatch: bool) -> None:
+    """Reverifica cada parámetro de la calculadora contra el texto vigente de su ley.
+
+    Dice qué grupos de parámetros (escalas, mínimos, deducciones) ya no
+    coinciden con lo que hoy publica el BOE. Sin LLM: son citas literales y
+    cifras buscadas en el texto.
+    """
+    texto_de = leer_snapshot(snapshot_dir) if snapshot_dir else _texto_del_boe()
+    informe: dict[str, Any] = {}
+    fallos = 0
+    for ejercicio in ejercicios or tuple(ejercicios_disponibles()):
+        resultados = cargar_y_verificar(ejercicio, texto_de)
+        malos = [r for r in resultados if not r.ok]
+        fallos += len(malos)
+        informe[str(ejercicio)] = {
+            "comprobaciones": len(resultados),
+            "conformes": len(resultados) - len(malos),
+            "no_coinciden": [
+                {
+                    "boe_id": r.comprobacion.boe_id,
+                    "parametros": "/".join(r.comprobacion.ruta),
+                    "descripcion": r.comprobacion.descripcion,
+                    "tipo": r.comprobacion.tipo,
+                    "falta": r.faltan[:8],
+                }
+                for r in malos
+            ],
+        }
+    click.echo(json.dumps(informe, ensure_ascii=False, indent=2))
+    if fail_on_mismatch and fallos:
+        raise SystemExit(1)
+
+
+@cli.command("params-rollover")
+@click.argument("destino", type=int)
+@click.option(
+    "--desde", "origen", type=int, default=None, help="Ejercicio de partida (por defecto, el último disponible)."
+)
+@click.option("--force", is_flag=True, help="Sobrescribir el fichero del ejercicio si ya existe.")
+@click.option("--dry-run", is_flag=True, help="Mostrar el informe sin escribir nada.")
+def params_rollover(destino: int, origen: int | None, force: bool, dry_run: bool) -> None:
+    """Crea el fichero de parámetros de un ejercicio nuevo a partir del anterior.
+
+    Copia el último ejercicio, reverifica cada grupo contra el texto vigente
+    de su ley y deja marcado lo que ya no coincide, para revisar solo eso.
+    """
+    origen = origen or max(ejercicios_disponibles())
+    path = DATA_DIR / f"irpf_{destino}.json"
+    if path.exists() and not force and not dry_run:
+        raise click.ClickException(f"{path.name} ya existe; usa --force para sobrescribirlo.")
+    data, informe = preparar_ejercicio(origen, destino, _texto_del_boe(), hoy=hoy_en_espana())
+    if not dry_run:
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    click.echo(
+        json.dumps({"fichero": None if dry_run else str(path), **informe.model_dump()}, ensure_ascii=False, indent=2)
+    )
+
+
+@cli.command("normas-check")
+@click.option("--fail-on-change", is_flag=True, help="Termina con código 1 si alguna norma ha cambiado de estado.")
+def normas_check(fail_on_change: bool) -> None:
+    """Comprueba si los reales decretos-ley de los que dependen parámetros se han convalidado o derogado.
+
+    Lee del BOE la ficha de cada uno y actualiza el fichero de estado que
+    consulta la calculadora: si uno se deroga, lo que introdujo deja de aplicarse.
+    """
+    ids: set[str] = set()
+    for ejercicio in ejercicios_disponibles():
+        for check_fuente in _fuentes_condicionadas(load_params(ejercicio).model_dump()):
+            ids.add(check_fuente)
+    previos = leer_estados()
+    estados = dict(previos)
+    cambios: list[dict[str, str]] = []
+    errores: list[str] = []
+    for boe_id in sorted(ids):
+        try:
+            raw = _xml(boe_id)
+            if not raw:
+                raise RuntimeError("sin respuesta del BOE")
+            nuevo = estado_desde_xml(boe_id, raw, hoy=hoy_en_espana())
+        except Exception as exc:
+            errores.append(f"{boe_id}: {exc}")
+            continue
+        anterior = previos.get(boe_id)
+        if anterior is None or anterior.estado != nuevo.estado:
+            cambios.append(
+                {
+                    "boe_id": boe_id,
+                    "antes": anterior.estado if anterior else "sin comprobar",
+                    "ahora": nuevo.estado,
+                    "detalle": nuevo.detalle,
+                }
+            )
+        estados[boe_id] = nuevo
+    if estados != previos:
+        guardar_estados(estados)
+    click.echo(
+        json.dumps(
+            {
+                "normas": {i: estados[i].estado for i in sorted(ids) if i in estados},
+                "cambios": cambios,
+                "errores": errores,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    if fail_on_change and any(c["antes"] != "sin comprobar" for c in cambios):
+        raise SystemExit(1)
+
+
+def _fuentes_condicionadas(node: Any) -> set[str]:
+    """Every ``condicionada_a`` id found in a parameter tree."""
+    found: set[str] = set()
+    if isinstance(node, dict):
+        value = node.get("condicionada_a")
+        if isinstance(value, str) and value:
+            found.add(value)
+        for child in node.values():
+            found |= _fuentes_condicionadas(child)
+    elif isinstance(node, list):
+        for child in node:
+            found |= _fuentes_condicionadas(child)
+    return found
 
 
 @cli.command("boe-novedades")

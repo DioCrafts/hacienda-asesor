@@ -3268,7 +3268,8 @@
         "fuente": {
           "referencia": "art. 2.1 Ley 13/1997 de la Generalitat Valenciana (redacción disp. final 1.1 Ley 9/2022, períodos concluidos desde 01/01/2023; versión histórica p=20221231 del texto consolidado)",
           "en_vigor_desde": "2023-01-01",
-          "verificado": true
+          "verificado": true,
+          "version_historica": "20221231"
         }
       },
       "minimos": {
@@ -3627,7 +3628,8 @@
         "fuente": {
           "referencia": "art. 1 DLeg. 1/2018 de Extremadura, redacción del art. 1.1 del Decreto-ley 4/2023, de 12 de septiembre (efectos desde 2023-01-01)",
           "en_vigor_desde": "2023-09-15",
-          "verificado": true
+          "verificado": true,
+          "version_historica": "20230915"
         }
       },
       "otras_deducciones": [

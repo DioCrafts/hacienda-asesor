@@ -149,6 +149,8 @@ TOP_K = int(os.environ.get("TOP_K", "3"))
 
 DECISION_DEBUG_MODE = _env_bool("DECISION_DEBUG_MODE", default=False)
 DECISION_STATE_DB_PATH = os.environ.get("DECISION_STATE_DB_PATH", "./data/decision_state.sqlite3")
+# Validation / repeal status of the decree-laws some parameters depend on (written by `proactive normas-check`).
+NORM_STATUS_PATH = os.environ.get("NORM_STATUS_PATH", "./data/_estado_normas.json")
 # Decision rules live at the repo root (sibling of the hacienda_gpt package).
 # Resolve to an ABSOLUTE path so the engine loads them regardless of the process
 # working directory (uvicorn/Streamlit may start elsewhere). A relative "rules"
@@ -226,3 +228,31 @@ AGENT_TEAM_MODE = os.environ.get("AGENT_TEAM_MODE", "auto")
 SUBAGENT_MAX_STEPS = int(os.environ.get("SUBAGENT_MAX_STEPS", "4"))
 # Run the two researchers concurrently (their LLM calls; corpus searches are serialised).
 SUBAGENTS_PARALLEL = _env_bool("SUBAGENTS_PARALLEL", default=True)
+
+# --- Notification delivery outside the app ----------------------------------
+# All optional; an empty value keeps that channel off. There are no user
+# accounts yet, so everything goes to ONE owner/operator destination (see
+# hacienda_gpt/proactive/entrega.py). Secrets (the webhook URL, the SMTP
+# password) must come from the environment, never from code.
+NOTIFY_WEBHOOK_URL = os.environ.get("NOTIFY_WEBHOOK_URL", "")
+# json : POST {"title": ..., "text": ...} (Slack-compatible and generic webhooks).
+# text : POST the plain-text body with a ``Title`` header (ntfy.sh topics).
+NOTIFY_WEBHOOK_FORMAT = os.environ.get("NOTIFY_WEBHOOK_FORMAT", "json")
+NOTIFY_SMTP_HOST = os.environ.get("NOTIFY_SMTP_HOST", "")
+NOTIFY_SMTP_PORT = int(os.environ.get("NOTIFY_SMTP_PORT", "587"))
+NOTIFY_SMTP_USER = os.environ.get("NOTIFY_SMTP_USER", "")
+NOTIFY_SMTP_PASSWORD = os.environ.get("NOTIFY_SMTP_PASSWORD", "")
+# STARTTLS after connecting (the norm on port 587). Port 465 always uses
+# implicit TLS, whatever this says.
+NOTIFY_SMTP_STARTTLS = _env_bool("NOTIFY_SMTP_STARTTLS", default=True)
+NOTIFY_EMAIL_FROM = os.environ.get("NOTIFY_EMAIL_FROM", "")
+NOTIFY_EMAIL_TO = os.environ.get("NOTIFY_EMAIL_TO", "")
+
+# --- Scheduled-job watchdog (hacienda_gpt/ops/vigia.py) ---------------------
+# JSON file with the last run / last success / last error of every scheduled job.
+JOBS_STATE_PATH = os.environ.get("JOBS_STATE_PATH", "./data/_jobs_state.json")
+# Dead-man's-switch URL (healthchecks.io convention) pinged after every watched
+# job: the URL itself on success, ``<url>/fail`` on failure. A job-specific
+# ``HEALTHCHECK_URL_<JOB_NAME_IN_UPPERCASE>`` (e.g. HEALTHCHECK_URL_BOE_NOVEDADES)
+# takes precedence and is read when the job finishes.
+HEALTHCHECK_URL = os.environ.get("HEALTHCHECK_URL", "")

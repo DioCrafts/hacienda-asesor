@@ -31,6 +31,12 @@ class Fuente(_Model):
     en_vigor_desde: str
     verificado: bool
     nota: str | None = None
+    # BOE id of a decree-law this parameter exists only because of: if Congress
+    # repeals it, the parameter goes too (see hacienda_gpt.tax.vigencia_normas).
+    condicionada_a: str | None = None
+    # Date (AAAAMMDD) of the superseded wording this was read from, when it is not the
+    # current text: https://www.boe.es/buscar/act.php?id=<id>&tn=1&p=<date>.
+    version_historica: str | None = None
 
 
 class FuentePrincipal(_Model):

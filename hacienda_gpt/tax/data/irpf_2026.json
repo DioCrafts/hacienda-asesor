@@ -212,7 +212,8 @@
       "referencia": "art. 68.6 LIRPF (añadido por el art. 6.2.4 del Real Decreto-ley 29/2026, BOE-A-2026-20823); a cargo solo de la cuota estatal: art. 67.1.a) LIRPF",
       "en_vigor_desde": "2026-10-08",
       "verificado": true,
-      "nota": "Leído en el BOE el 12-11-2026. El Real Decreto-ley 29/2026 no constaba convalidado ni derogado en esa fecha (su antecesor, el 26/2026, fue derogado por el Congreso). No se ha contrastado si las rentas pagadas antes del 8-10-2026 dan derecho a deducción: el texto dice «cantidades satisfechas en el período impositivo»."
+      "nota": "Leído en el BOE el 12-11-2026. El Real Decreto-ley 29/2026 no constaba convalidado ni derogado en esa fecha (su antecesor, el 26/2026, fue derogado por el Congreso). No se ha contrastado si las rentas pagadas antes del 8-10-2026 dan derecho a deducción: el texto dice «cantidades satisfechas en el período impositivo».",
+      "condicionada_a": "BOE-A-2026-20823"
     }
   },
   "obligacion_declarar": {
@@ -4611,7 +4612,8 @@
         "referencia": "art. 23.2 LIRPF en la redacción del art. 6.2.2 del Real Decreto-ley 29/2026 (BOE-A-2026-20823) y disposición transitoria 38.ª",
         "en_vigor_desde": "2026-10-08",
         "verificado": true,
-        "nota": "Leído en el BOE el 12-11-2026; el Real Decreto-ley no constaba convalidado ni derogado en esa fecha."
+        "nota": "Leído en el BOE el 12-11-2026; el Real Decreto-ley no constaba convalidado ni derogado en esa fecha.",
+        "condicionada_a": "BOE-A-2026-20823"
       }
     }
   }
