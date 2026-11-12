@@ -734,7 +734,32 @@ débilmente; y las prórrogas anuales («durante 2026…») hay que revisarlas a
   declaraciones individuales y la conjunta de un matrimonio y dice cuál sale
   mejor y por cuánto.
 
-No hay calculadora de Patrimonio, Sucesiones y Donaciones ni Sociedades.
+### Otros impuestos
+
+Cada calculadora sigue el mismo patrón que la del IRPF: parámetros en JSON
+leídos del BOE, cada cifra con su cita literal y una autocomprobación que
+verifica que la cita sigue en la ley. El asesor las usa como herramientas.
+
+| Impuesto | Herramienta del asesor | Cubre | No cubre |
+|---|---|---|---|
+| Sociedades | `calcular_impuesto_sociedades`, `calcular_pago_fraccionado_sociedades`, `comparar_autonomo_vs_sociedad` | Sociedades pequeñas, ejercicios iniciados en 2025-2028: tipo general, escala de microempresas, reducida dimensión, nueva creación, reserva de capitalización, bases negativas | Reserva de nivelación, pago fraccionado por base con escala de microempresas, regímenes especiales |
+| Patrimonio | `calcular_patrimonio` | Estado y las 15 comunidades de régimen común (mínimo exento, escala, bonificación general), límite conjunto con el IRPF e Impuesto de Solidaridad de las Grandes Fortunas | Reglas de valoración, bonificaciones de bienes concretos, no residentes |
+| Sucesiones y Donaciones | `calcular_sucesiones_donaciones` | Ley estatal y la normativa de las comunidades cargadas en `isd_2026.json`, por beneficiario | Acumulación de donaciones, usufructos, no residentes; las comunidades no cargadas se calculan solo con la ley estatal, con aviso |
+
+La comparación autónomo/sociedad solo suma impuestos sobre la renta: no
+incluye Seguridad Social ni costes de gestión, y no declara un ganador.
+
+### Cuentas, privacidad y coste
+
+- **Cuentas** (`AUTH_MODE=required`; por defecto `off`, modo de un solo
+  usuario): registro con correo y contraseña, sesiones, expedientes por
+  usuario, consentimientos, exportación y borrado de datos. Qué hace y qué no
+  cubre respecto al RGPD: [`docs/privacidad.md`](docs/privacidad.md).
+- **Coste**: cada llamada al modelo se registra (`GET /usage`,
+  `python -m hacienda_gpt.cli.consumo resumen`). Límites opcionales:
+  `LLM_DAILY_BUDGET_USD`, `LLM_DAILY_BUDGET_USD_PER_USER`,
+  `LLM_MAX_CALLS_PER_QUESTION`; al agotarse, la API responde 429. Los límites
+  en dólares solo cuentan modelos con precio en `ops/data/precios_llm.json`.
 
 ### Evaluación del agente con consultas de la DGT
 

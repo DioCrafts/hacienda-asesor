@@ -268,6 +268,16 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     gastos_libros_texto                 → pagado en el año en libros de texto y material escolar
     gastos_cuidado_familiares           → pagado a cuidadores, guarderías o centros por cuidar hijos, mayores o personas con discapacidad
     num_familiares_discapacidad_a_cargo → ascendientes o descendientes con discapacidad que dependen de él
+    menores_acogidos                    → menores en acogimiento familiar
+    hijos_adoptados_en_el_ejercicio     → hijos adoptados en el año
+    donativos_autonomicos               → donado en el año a las entidades que incentiva su comunidad autónoma
+    inversion_vivienda_habitual         → pagado en el año por comprar o rehabilitar su vivienda habitual
+    inversion_empresas_nueva_creacion   → invertido en acciones o participaciones de empresas nuevas
+    gastos_eficiencia_energetica        → pagado en instalaciones de energía renovable o autoconsumo en su vivienda
+    gastos_salud                        → gastos sanitarios no cubiertos por un seguro (honorarios médicos, dentista…)
+    gastos_deporte_cultura              → cuotas de gimnasio, clubes o actividades deportivas
+    viudedad                            → true si es viudo o viuda
+    vivienda_en_municipio_rural         → true si la vivienda que compra está en un municipio rural o en riesgo de despoblación
     municipio_rural_o_despoblacion      → true si vive en un municipio pequeño, rural o en riesgo de despoblación
     bienes_en_el_extranjero             → true si tiene cuentas, valores o inmuebles fuera de España
     es_autonomo                         → true si trabaja por cuenta propia (autónomo)

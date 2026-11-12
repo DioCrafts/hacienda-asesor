@@ -22,7 +22,8 @@ LEY_IRPF = "BOE-A-2006-20764"
 def test_every_parameter_source_is_in_the_watch_catalogue() -> None:
     vigiladas = {d["id"] for d in json.loads(CATALOGO.read_text())["documents"] if d.get("track", True)}
     normas = normas_de_parametros()
-    assert len(normas) == 16  # the state law and one per community
+    # The IRPF Act, one law per community, and the laws behind the other calculators.
+    assert len(normas) >= 25 and sum(n.comunidad is not None for n in normas) == 15
     assert {n.boe_id for n in normas} <= vigiladas
     assert norma_de_parametros(LEY_IRPF).comunidad is None
     assert norma_de_parametros(LEY_GALLEGA).comunidad == "galicia"
@@ -81,7 +82,7 @@ def test_params_check_reports_and_can_fail(monkeypatch) -> None:
     result = CliRunner().invoke(cli_module.cli, ["params-check"])
     assert result.exit_code == 0
     informe = json.loads(result.output)
-    assert informe["comprobadas"] == 15 and len(informe["errores"]) == 1
+    assert informe["comprobadas"] == len(normas_de_parametros()) - 1 and len(informe["errores"]) == 1
     (pendiente,) = informe["a_revisar"]
     assert pendiente["boe_id"] == LEY_GALLEGA and pendiente["comunidad"] == "Galicia"
     assert pendiente["actualizada_en_boe_el"] == "2099-01-01"

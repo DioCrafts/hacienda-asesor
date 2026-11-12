@@ -174,7 +174,10 @@ _INPUT_FIELDS_DOC = (
     "gastos_uniformes_escolares, num_hijos_gastos_educativos, num_hijos_primer_ciclo_infantil, "
     "cotizaciones_empleada_hogar, hijos_nacidos_ultimos_3_ejercicios, donativos_fundaciones_madrid, familia_numerosa. Para las deducciones del resto de comunidades: "
     "alquiler_vivienda_habitual, gastos_guarderia, gastos_libros_texto, hijos_nacidos_en_el_ejercicio, "
-    "familia_numerosa_especial (bool), familia_monoparental (bool), edad, grado_discapacidad "
+    "familia_numerosa_especial (bool), familia_monoparental (bool), edad, grado_discapacidad, menores_acogidos, "
+    "donativos_autonomicos, inversion_vivienda_habitual, inversion_empresas_nueva_creacion, "
+    "gastos_eficiencia_energetica, gastos_salud, gastos_deporte_cultura, viudedad (bool), "
+    "vivienda_en_municipio_rural "
     "(bool), base_imponible_resto_unidad_familiar, miembros_unidad_familiar"
 )
 

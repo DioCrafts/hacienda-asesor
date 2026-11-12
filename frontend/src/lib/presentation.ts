@@ -224,6 +224,16 @@ const FACT_LABEL: Record<string, string> = {
   gastos_libros_texto: "Libros de texto y material escolar",
   gastos_cuidado_familiares: "Gastos de cuidado de familiares",
   num_familiares_discapacidad_a_cargo: "Familiares con discapacidad a cargo",
+  menores_acogidos: "Menores en acogimiento familiar",
+  hijos_adoptados_en_el_ejercicio: "Hijos adoptados este año",
+  donativos_autonomicos: "Donativos a entidades de tu comunidad",
+  inversion_vivienda_habitual: "Compra o rehabilitación de vivienda habitual",
+  inversion_empresas_nueva_creacion: "Inversión en empresas nuevas",
+  gastos_eficiencia_energetica: "Energía renovable o autoconsumo en tu vivienda",
+  gastos_salud: "Gastos sanitarios",
+  gastos_deporte_cultura: "Gastos de deporte",
+  viudedad: "Viudo o viuda",
+  vivienda_en_municipio_rural: "Vivienda comprada en municipio rural",
   municipio_rural_o_despoblacion: "Municipio rural o en riesgo de despoblación",
 };
 

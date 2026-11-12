@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from functools import lru_cache
+from typing import Any
 
 from hacienda_gpt.tax.params import FuentePrincipal, ejercicios_disponibles, load_params
 
@@ -44,7 +45,35 @@ def normas_de_parametros() -> tuple[NormaParametros, ...]:
                 consultado_el=min(consultado, previa.consultado_el) if previa else consultado,
                 ejercicios=(*(previa.ejercicios if previa else ()), ejercicio),
             )
+    # The other calculators (self-employed, company, wealth, inheritance) name their laws the same way.
+    for cargar, ejercicios in _OTRAS_FAMILIAS():
+        for ejercicio in ejercicios():
+            for fuente in cargar(ejercicio).fuentes_principales.values():
+                consultado = date.fromisoformat(fuente.consultado_el)
+                previa = found.get(fuente.boe_id)
+                found[fuente.boe_id] = NormaParametros(
+                    boe_id=fuente.boe_id,
+                    norma=previa.norma if previa else fuente.norma,
+                    comunidad=previa.comunidad if previa else None,
+                    comunidad_nombre=previa.comunidad_nombre if previa else None,
+                    consultado_el=min(consultado, previa.consultado_el) if previa else consultado,
+                    ejercicios=tuple(sorted({*(previa.ejercicios if previa else ()), ejercicio})),
+                )
     return tuple(found.values())
+
+
+def _OTRAS_FAMILIAS() -> list[tuple[Any, Any]]:  # noqa: N802 - reads as a constant, built lazily to avoid import cycles
+    from hacienda_gpt.tax.autonomos_params import ejercicios_autonomos_disponibles, load_autonomos_params
+    from hacienda_gpt.tax.patrimonio_params import ejercicios_patrimonio_disponibles, load_patrimonio_params
+    from hacienda_gpt.tax.sociedades_params import ejercicios_sociedades_disponibles, load_sociedades_params
+    from hacienda_gpt.tax.sucesiones_params import ejercicios_isd_disponibles, load_isd_params
+
+    return [
+        (load_autonomos_params, ejercicios_autonomos_disponibles),
+        (load_sociedades_params, ejercicios_sociedades_disponibles),
+        (load_patrimonio_params, ejercicios_patrimonio_disponibles),
+        (load_isd_params, ejercicios_isd_disponibles),
+    ]
 
 
 def norma_de_parametros(boe_id: str) -> NormaParametros | None:
