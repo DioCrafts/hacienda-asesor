@@ -66,8 +66,12 @@ class ScriptedProvider:
         self.started = {"system": system, "tools": tools, "history": history, "user_message": user_message}
         return ScriptedConversation(self)
 
-    def complete_json(self, *, system: str, user: str, schema: dict[str, Any], schema_name: str) -> dict[str, Any]:
-        self.json_requests.append({"system": system, "user": user, "schema": schema, "schema_name": schema_name})
+    def complete_json(
+        self, *, system: str, user: str, schema: dict[str, Any], schema_name: str, attachments: Any = None
+    ) -> dict[str, Any]:
+        self.json_requests.append(
+            {"system": system, "user": user, "schema": schema, "schema_name": schema_name, "attachments": attachments}
+        )
         response = self.json_responses.pop(0)
         if isinstance(response, Exception):
             raise response

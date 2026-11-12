@@ -9,11 +9,14 @@ cannot make a weak model plan well.
 
 from __future__ import annotations
 
+import base64
+from collections.abc import Sequence
 import json
 import re
 from typing import Any
 
 from hacienda_gpt.agent.providers.base import (
+    Attachment,
     ModelTurn,
     ProviderError,
     StopReason,
@@ -22,8 +25,11 @@ from hacienda_gpt.agent.providers.base import (
     ToolResult,
     ToolSpec,
     normalize_history,
+    rasterizar_pdf,
 )
 
+# Pages of a PDF sent as images in one request.
+_MAX_PDF_PAGES = 20
 _JSON_OBJECT_RE = re.compile(r"\{.*\}", re.DOTALL)
 
 
@@ -105,10 +111,36 @@ class OpenAIProvider:
         ]
         return OpenAIConversation(self, tools=tools, messages=messages)
 
-    def complete_json(self, *, system: str, user: str, schema: dict[str, Any], schema_name: str) -> dict[str, Any]:
+    def complete_json(
+        self,
+        *,
+        system: str,
+        user: str,
+        schema: dict[str, Any],
+        schema_name: str,
+        attachments: Sequence[Attachment] | None = None,
+    ) -> dict[str, Any]:
         import openai
 
-        messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+        content: str | list[dict[str, Any]] = user
+        if attachments:
+            # Images are the common denominator of OpenAI-compatible vision
+            # models (local servers rarely accept PDF parts): PDFs go page by page.
+            images: list[tuple[str, bytes]] = []
+            for item in attachments:
+                if item.media_type == "application/pdf":
+                    images += [("image/png", page) for page in rasterizar_pdf(item.data, max_pages=_MAX_PDF_PAGES)]
+                else:
+                    images.append((item.media_type, item.data))
+            content = [{"type": "text", "text": user}]
+            content += [
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:{media_type};base64,{base64.standard_b64encode(data).decode('ascii')}"},
+                }
+                for media_type, data in images
+            ]
+        messages = [{"role": "system", "content": system}, {"role": "user", "content": content}]
         client = self._ensure_client()
         try:
             response = client.chat.completions.create(

@@ -13,7 +13,7 @@ shape and rebuilding it would lose information the API needs back.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
@@ -30,6 +30,15 @@ class ProviderError(RuntimeError):
     def __init__(self, message: str, *, retryable: bool = False) -> None:
         super().__init__(message)
         self.retryable = retryable
+
+
+@dataclass(frozen=True)
+class Attachment:
+    """A file the model must read itself: a PDF or an image (scans, photos)."""
+
+    media_type: str  # "application/pdf", "image/png", "image/jpeg", "image/webp" or "image/gif"
+    data: bytes
+    filename: str = ""
 
 
 @dataclass(frozen=True)
@@ -100,8 +109,20 @@ class LLMProvider(Protocol):
         user_message: str,
     ) -> Conversation: ...
 
-    def complete_json(self, *, system: str, user: str, schema: dict[str, Any], schema_name: str) -> dict[str, Any]:
-        """Single-shot call that returns an object matching ``schema``."""
+    def complete_json(
+        self,
+        *,
+        system: str,
+        user: str,
+        schema: dict[str, Any],
+        schema_name: str,
+        attachments: Sequence[Attachment] | None = None,
+    ) -> dict[str, Any]:
+        """Single-shot call that returns an object matching ``schema``.
+
+        ``attachments`` are PDFs or images sent alongside ``user`` for the model
+        to read (it needs a vision-capable model).
+        """
         ...
 
 
@@ -124,3 +145,21 @@ def normalize_history(history: list[dict[str, Any]] | None) -> list[dict[str, st
     while cleaned and cleaned[0]["role"] != "user":
         cleaned.pop(0)
     return cleaned
+
+
+def rasterizar_pdf(data: bytes, *, max_pages: int, scale: float = 2.0) -> list[bytes]:
+    """Render each page of a PDF as PNG, for backends that read images but not PDFs."""
+    import io
+
+    import pypdfium2
+
+    pdf = pypdfium2.PdfDocument(data)
+    try:
+        pages: list[bytes] = []
+        for index in range(min(len(pdf), max_pages)):
+            buffer = io.BytesIO()
+            pdf[index].render(scale=scale).to_pil().save(buffer, format="PNG")
+            pages.append(buffer.getvalue())
+        return pages
+    finally:
+        pdf.close()

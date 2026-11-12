@@ -770,7 +770,8 @@ def post_case_document(
     Nothing is written to the case: the client shows the proposals and applies
     the ones the user accepts through ``PUT /cases/{id}/facts/{name}``. The
     document is processed in memory and not stored; its text is sent to the
-    configured LLM provider. Only the file name and the proposed fact names are
+    configured LLM provider (the file itself when it is a scan or a photo,
+    which is then read twice). Only the file name and the proposed fact names are
     audited.
     """
     if store.get_case(case_id) is None:

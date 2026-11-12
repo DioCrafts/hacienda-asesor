@@ -137,7 +137,7 @@ export function DocumentSection({ caseId, disabled, onApply }: DocumentSectionPr
       <input
         ref={inputRef}
         type="file"
-        accept=".pdf,.txt,.csv,application/pdf,text/plain"
+        accept=".pdf,.txt,.csv,.png,.jpg,.jpeg,.webp,application/pdf,text/plain,image/png,image/jpeg,image/webp"
         className="sr-only"
         tabIndex={-1}
         aria-hidden
@@ -153,11 +153,11 @@ export function DocumentSection({ caseId, disabled, onApply }: DocumentSectionPr
         className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line bg-surface px-4 py-3 text-[13.5px] font-semibold text-ink-soft transition hover:border-primary hover:text-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
       >
         {status === "reading" ? <Loader2 size={16} aria-hidden className="animate-spin" /> : <FileUp size={16} aria-hidden />}
-        {status === "reading" ? "Leyendo el documento…" : "Leer un certificado o los datos fiscales (PDF)"}
+        {status === "reading" ? "Leyendo el documento…" : "Leer un certificado o los datos fiscales (PDF o foto)"}
       </button>
       <p className="mt-2 text-[11.5px] leading-relaxed text-muted">
         {caseId
-          ? "Extraigo las cifras y te las enseño para que las confirmes antes de guardarlas. El documento no se almacena; su texto se envía al modelo de lenguaje para leerlo."
+          ? "Extraigo las cifras y te las enseño para que las confirmes antes de guardarlas. El documento no se almacena; su contenido se envía al modelo de lenguaje para leerlo. También leo escaneados y fotos."
           : "Haz primero una consulta para abrir tu expediente."}
       </p>
 
@@ -177,6 +177,11 @@ export function DocumentSection({ caseId, disabled, onApply }: DocumentSectionPr
         <div className="mt-3 rounded-xl border border-line bg-surface">
           <p className="border-b border-line px-3.5 py-2.5 text-[13px] text-ink-soft">
             <strong className="font-semibold text-ink">{analysis.tipo_documento}</strong> · {analysis.filename}
+            {analysis.lectura === "imagen" && (
+              <span className="ml-2 rounded-pill bg-grounding-abstain-bg px-2 py-0.5 text-[11.5px] font-semibold text-grounding-abstain-fg">
+                Leído de la imagen: revisa las cifras
+              </span>
+            )}
           </p>
           {analysis.hechos_propuestos.length > 0 && (
             <ul className="divide-y divide-line">

@@ -565,6 +565,8 @@ export interface ProposedFact {
   name: string;
   value: string | number | boolean;
   evidencia: string;
+  // "imagen": read from a scan or photo (two readings agreed); it cannot be checked against text.
+  origen?: "texto" | "imagen";
 }
 
 export interface DocumentAnalysis {
@@ -572,6 +574,7 @@ export interface DocumentAnalysis {
   tipo_documento: string;
   paginas: number;
   caracteres: number;
+  lectura?: "texto" | "imagen";
   hechos_propuestos: ProposedFact[];
   avisos: string[];
 }

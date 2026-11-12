@@ -516,12 +516,19 @@ convalidado; `irpf_2026.json` guarda en `revisiones` las normas contrastadas.
   `hacienda_gpt/tax/data/calendario.json` con el precepto que las fija; se
   ajustan fines de semana pero **no festivos**, y el fin de la campaña de Renta
   (30 de junio) figura como no contrastado porque lo fija una orden anual.
-- **`POST /cases/{id}/documents`** — lee un PDF con texto (certificado de
+- **`POST /cases/{id}/documents`** — lee un documento (certificado de
   retenciones, datos fiscales, certificado de un plan…) y **propone** datos
-  del perfil. Cada propuesta lleva el pasaje literal del documento y se
-  descarta si ese pasaje no aparece en él; nada se guarda hasta que el usuario
-  confirma. El documento no se almacena, pero su texto se envía al proveedor
-  de LLM configurado. No hay OCR: los PDF escaneados se rechazan.
+  del perfil; nada se guarda hasta que el usuario confirma. El documento no se
+  almacena, pero su contenido se envía al proveedor de LLM configurado.
+  - *PDF con texto o archivo de texto*: cada propuesta lleva el pasaje literal
+    del documento y se descarta si ese pasaje no aparece en él.
+  - *PDF escaneado o foto (PNG, JPEG, WebP; hasta 20 páginas)*: lo lee el
+    propio modelo, que debe tener visión. Como no hay texto contra el que
+    comprobar, el documento se lee **dos veces** de forma independiente y solo
+    se proponen los datos en que ambas lecturas coinciden, marcados como
+    «leído de la imagen» para que el usuario los revise con el papel. Con
+    Claude se envía el PDF tal cual; con OpenAI o un modelo local, cada página
+    como imagen. Cuesta dos llamadas por documento.
 
 ### Jurisprudencia del Supremo, grafo de vigencia y conflictos
 

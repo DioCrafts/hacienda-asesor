@@ -12,7 +12,13 @@ from hacienda_gpt.agent.providers.base import ProviderError, ToolCall
 from hacienda_gpt.agent.tools import Toolbox
 from hacienda_gpt.api.api import app, get_document_provider
 from hacienda_gpt.tax.calendario import proximos_vencimientos
-from hacienda_gpt.tax.documentos import DocumentoNoLegibleError, analizar_documento, decode_upload, extract_text
+from hacienda_gpt.tax.documentos import (
+    DocumentoEscaneadoError,
+    DocumentoNoLegibleError,
+    analizar_documento,
+    decode_upload,
+    extract_text,
+)
 from hacienda_gpt.tax.profile import DatosInvalidosError
 from hacienda_gpt.tax.simulador import simular
 
@@ -243,8 +249,9 @@ def test_text_is_extracted_from_a_real_pdf() -> None:
     buffer = io.BytesIO()
     pdf.save(buffer)
     # A page with no text layer is what a scanned document looks like.
-    with pytest.raises(DocumentoNoLegibleError, match="escaneado"):
+    with pytest.raises(DocumentoEscaneadoError, match="escaneado") as excinfo:
         extract_text(buffer.getvalue(), "escaneado.pdf")
+    assert excinfo.value.paginas == 1
 
 
 def test_document_endpoint_proposes_without_writing_to_the_case() -> None:
@@ -259,7 +266,12 @@ def test_document_endpoint_proposes_without_writing_to_the_case() -> None:
         response = client.post(f"/cases/{case_id}/documents", json=payload)
         assert response.status_code == 200
         assert response.json()["hechos_propuestos"] == [
-            {"name": "retenciones", "value": 6502.57, "evidencia": "Retenciones practicadas: 6.502,57"}
+            {
+                "name": "retenciones",
+                "value": 6502.57,
+                "evidencia": "Retenciones practicadas: 6.502,57",
+                "origen": "texto",
+            }
         ]
         # Proposals only: the case is untouched until the user confirms.
         assert client.get(f"/cases/{case_id}").json()["facts"] == []

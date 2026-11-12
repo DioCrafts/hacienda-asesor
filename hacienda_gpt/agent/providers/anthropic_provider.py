@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import base64
+from collections.abc import Sequence
 import json
 from typing import Any
 
 from hacienda_gpt.agent.providers.base import (
+    Attachment,
     ModelTurn,
     ProviderError,
     StopReason,
@@ -151,11 +154,34 @@ class AnthropicProvider:
         messages: list[dict[str, Any]] = [*normalize_history(history), {"role": "user", "content": user_message}]
         return AnthropicConversation(self, system=system, tools=tools, messages=messages)
 
-    def complete_json(self, *, system: str, user: str, schema: dict[str, Any], schema_name: str) -> dict[str, Any]:
+    def complete_json(
+        self,
+        *,
+        system: str,
+        user: str,
+        schema: dict[str, Any],
+        schema_name: str,
+        attachments: Sequence[Attachment] | None = None,
+    ) -> dict[str, Any]:
         del schema_name  # Claude's json_schema format carries no name
+        content: str | list[dict[str, Any]] = user
+        if attachments:
+            # Claude reads PDFs (text and page images) and images natively; files go before the text.
+            content = [
+                {
+                    "type": "document" if item.media_type == "application/pdf" else "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": item.media_type,
+                        "data": base64.standard_b64encode(item.data).decode("ascii"),
+                    },
+                }
+                for item in attachments
+            ]
+            content.append({"type": "text", "text": user})
         response = self._create(
             system=system,
-            messages=[{"role": "user", "content": user}],
+            messages=[{"role": "user", "content": content}],
             output_config={"format": {"type": "json_schema", "schema": schema}},
         )
         if response.stop_reason == "refusal":

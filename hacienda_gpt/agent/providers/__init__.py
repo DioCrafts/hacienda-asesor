@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from hacienda_gpt import settings
 from hacienda_gpt.agent.providers.base import (
+    Attachment,
     Conversation,
     LLMProvider,
     ModelTurn,
@@ -14,6 +15,7 @@ from hacienda_gpt.agent.providers.base import (
 )
 
 __all__ = [
+    "Attachment",
     "Conversation",
     "LLMProvider",
     "ModelTurn",
