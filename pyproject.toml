@@ -53,6 +53,7 @@ dependencies = [
     "fastapi==0.118.0",
     "uvicorn==0.37.0",
     "pydantic==2.12.3",
+    "anthropic==2.8.0",
 ]
 
 [dependency-groups]

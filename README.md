@@ -345,6 +345,88 @@ curl -X POST "http://127.0.0.1:8000/cases/$CASE/turn" \
 
 ---
 
+## 🤖 Agente con herramientas (`/agent`)
+
+`/agent` es el asesor agéntico: en lugar de la cadena fija de `/qa`
+(recuperar una vez → responder), el modelo decide **qué buscar y cuántas
+veces**, cita cada afirmación normativa con el identificador del fragmento
+que la respalda y un **verificador independiente** comprueba afirmación por
+afirmación antes de etiquetar la respuesta.
+
+```bash
+curl -X POST http://127.0.0.1:8000/agent \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "Vendí mi vivienda habitual en 2025, ¿qué plazo tengo para reinvertir?"}'
+# con expediente (el agente lee/actualiza hechos y ejecuta las reglas):
+#   -d '{"query": "...", "case_id": "case_..."}'
+```
+
+**Flujo de un turno** (`hacienda_gpt/agent/agent.py`):
+
+1. El modelo llama a herramientas (`hacienda_gpt/agent/tools.py`):
+   - `buscar_fuentes` — búsqueda en el corpus con filtros por tipo de fuente
+     (`normativa` / `jurisprudencia` / `doctrina_administrativa` / `aeat`),
+     tributo, ámbito (`estatal` / `autonomico:<ccaa>`) y `solo_vinculante`.
+     Cada fragmento vuelve con un id citable (`[F1]`, `[F2]`…), su autoridad,
+     fecha y carácter vinculante.
+   - Con `case_id`: `consultar_expediente`, `registrar_hechos` y
+     `evaluar_obligaciones` (motor de reglas determinista).
+2. Redacta la respuesta citando `[F#]` en cada afirmación normativa.
+3. El verificador (`hacienda_gpt/agent/verifier.py`) recibe solo la pregunta,
+   la respuesta y los fragmentos citados, y dictamina cada afirmación:
+   `respaldada` / `parcial` / `no_respaldada`.
+4. Si hay afirmaciones sin respaldo, el agente recibe el dictamen y reescribe
+   (hasta `AGENT_MAX_REVISIONS` veces).
+
+**`mode` de la respuesta:**
+
+| `mode` | Significado |
+|---|---|
+| `verified` | Todas las afirmaciones normativas están respaldadas por su fragmento citado. |
+| `partially_verified` | Algunas no lo están; se listan en `warnings`. |
+| `unverified` | Sin afirmaciones comprobables, o el verificador no pudo ejecutarse. |
+| `clarification` | El agente necesita un dato del usuario antes de responder. |
+| `abstained` | Sin base suficiente (si ninguna afirmación sobrevive, la respuesta se sustituye y el original queda en `raw_answer`). |
+
+La respuesta incluye además `citations`, `claims` (dictamen por afirmación) y
+`tool_trace` (qué buscó el agente), y con `case_id` todo ello queda en el
+audit log del caso.
+
+### Proveedor de LLM
+
+El bucle es neutral respecto al proveedor (`hacienda_gpt/agent/providers/`):
+
+```bash
+# Claude (por defecto) — SDK oficial de Anthropic
+export LLM_PROVIDER="anthropic"
+export ANTHROPIC_API_KEY="sk-ant-..."
+export ANTHROPIC_MODEL="claude-opus-5-5"   # por defecto
+export ANTHROPIC_EFFORT="high"             # low | medium | high | xhigh | max
+
+# OpenAI
+export LLM_PROVIDER="openai"
+export OPENAI_API_KEY="sk-..."
+export OPENAI_AGENT_MODEL="gpt-4o"         # por defecto: OPENAI_MODEL
+
+# Modelo local: cualquier servidor compatible con la API de OpenAI
+# (Ollama, LM Studio, mlx_lm.server, vLLM, llama.cpp…)
+export LLM_PROVIDER="local"
+export LOCAL_LLM_BASE_URL="http://127.0.0.1:11434/v1"   # Ollama por defecto
+export LOCAL_LLM_MODEL="qwen3:14b"                      # obligatorio
+```
+
+El verificador puede correr en otro proveedor/modelo que el agente
+(`VERIFIER_PROVIDER`, `VERIFIER_MODEL`), p. ej. agente local + verificador
+Claude. Otros ajustes: `AGENT_MAX_STEPS` (8), `AGENT_MAX_REVISIONS` (1),
+`AGENT_SEARCH_DEFAULT_K` (6).
+
+> ⚠️ Con modelos locales pequeños la calidad del *tool calling* y del
+> verificador baja mucho; el bucle tolera argumentos mal formados, pero no
+> sustituye a un modelo capaz. `/qa`, el extractor de hechos de `/cases` y el
+> frontend siguen usando OpenAI: migrarlos al agente es el siguiente paso.
+
+---
+
 ## 🛡️ Grounding gate (abstención por defecto)
 
 La cadena de respuesta envuelve la salida del LLM en un `AnswerEnvelope` con

@@ -61,6 +61,8 @@ def _thread_safe_singleton(factory: Callable[[], T]) -> Callable[[], T]:
     return wrapper
 
 
+from hacienda_gpt.agent.agent import AgentResult, TaxAgent
+from hacienda_gpt.agent.providers.base import ProviderError
 from hacienda_gpt.api.observability import ApiMetrics, observability_middleware
 from hacienda_gpt.api.security import (
     RateLimiter,
@@ -356,6 +358,101 @@ def post_qa(payload: QARequest, chain=Depends(get_qa_chain)) -> AnswerEnvelope:
             status_code=503,
             detail=f"No se pudo procesar la consulta: {exc}",
         ) from exc
+
+
+class AgentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    query: str = Field(min_length=1)
+    chat_history: list[dict] = Field(default_factory=list)
+    # Optional: attach a case so the agent can read/update the user's fiscal
+    # facts and run the rules engine. Without it the agent only searches.
+    case_id: str | None = None
+
+
+class AgentResponse(AgentResult):
+    case_id: str | None = None
+    # True when a tool changed the case and the change was persisted.
+    case_updated: bool = False
+
+
+@_thread_safe_singleton
+def _build_agent() -> TaxAgent:
+    """Build the agent once (loads the embedder + FAISS index, like the QA chain)."""
+    from hacienda_gpt.agent.agent import build_agent
+
+    return build_agent()
+
+
+def get_agent() -> TaxAgent:
+    """FastAPI dependency returning the cached agent; a failed build is a 503.
+
+    Kept as a thin wrapper so tests can override it via ``app.dependency_overrides``.
+    """
+    try:
+        return _build_agent()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"El agente no está disponible: {exc}",
+        ) from exc
+
+
+@app.post("/agent", response_model=AgentResponse, dependencies=[Depends(require_api_key)])
+def post_agent(
+    payload: AgentRequest,
+    agent: Annotated[TaxAgent, Depends(get_agent)],
+    store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+) -> AgentResponse:
+    """Tool-using advisor: searches the corpus, cites fragments, verifies claims.
+
+    Unlike ``/qa`` (fixed retrieve-then-answer chain), the model decides what to
+    look up and how often, and every normative claim in the answer is checked
+    against the fragment it cites before the response is labelled ``verified``.
+    """
+    case: CaseState | None = None
+    if payload.case_id is not None:
+        case = store.get_case(payload.case_id)
+        if case is None:
+            raise HTTPException(status_code=404, detail="case not found")
+
+    try:
+        result = agent.run(payload.query, chat_history=payload.chat_history, case=case)
+    except ProviderError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"No se pudo procesar la consulta: {exc}",
+        ) from exc
+
+    case_updated = False
+    if payload.case_id is not None:
+        if result.updated_case is not None:
+            try:
+                store.save_case(result.updated_case)
+            except CaseVersionConflictError as exc:
+                raise HTTPException(
+                    status_code=409,
+                    detail="El caso se modificó concurrentemente; vuelve a cargarlo y reintenta.",
+                ) from exc
+            case_updated = True
+        store.append_audit_event(
+            payload.case_id,
+            {
+                "event_type": "agent_answer",
+                "input": payload.query,
+                "mode": result.mode.value,
+                "provider": result.provider,
+                "model": result.model,
+                "tool_trace": [entry.model_dump(mode="json") for entry in result.tool_trace],
+                "citations": [{"fragment_id": c.fragment_id, "locator": c.locator} for c in result.citations],
+                "claims": [claim.model_dump(mode="json") for claim in result.claims],
+                "warnings": result.warnings,
+            },
+        )
+
+    return AgentResponse(**result.model_dump(), case_id=payload.case_id, case_updated=case_updated)
 
 
 @app.get("/cases/{case_id}/audit/export")

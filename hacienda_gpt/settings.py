@@ -179,3 +179,30 @@ API_RATE_LIMIT_PER_MIN = int(os.environ.get("API_RATE_LIMIT_PER_MIN", "0"))
 # and override via env when you have measured numbers.
 RETRIEVAL_DECISION_THRESHOLD = float(os.environ.get("RETRIEVAL_DECISION_THRESHOLD", "0.45"))
 RETRIEVAL_EXPLAIN_THRESHOLD = float(os.environ.get("RETRIEVAL_EXPLAIN_THRESHOLD", "0.35"))
+
+# --- Agent (tool-using advisor) ---------------------------------------------
+# Which LLM drives the agent loop and the verifier:
+#   anthropic (default) | openai | local (any OpenAI-compatible server).
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "anthropic")
+ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-5-5")
+# Thinking depth / token spend for Claude. Legal reasoning over several sources
+# is intelligence-sensitive, so the floor is "high" (Opus 5.5 would otherwise
+# default to "medium"). low | medium | high | xhigh | max.
+ANTHROPIC_EFFORT = os.environ.get("ANTHROPIC_EFFORT", "high")
+# Re-run a request another Claude model when a safety classifier declines it
+# (server-side fallback). Only applied to models that support it.
+ANTHROPIC_REFUSAL_FALLBACK = _env_bool("ANTHROPIC_REFUSAL_FALLBACK", default=True)
+OPENAI_AGENT_MODEL = os.environ.get("OPENAI_AGENT_MODEL", OPENAI_MODEL)
+LOCAL_LLM_BASE_URL = os.environ.get("LOCAL_LLM_BASE_URL", "http://127.0.0.1:11434/v1")  # Ollama default
+LOCAL_LLM_MODEL = os.environ.get("LOCAL_LLM_MODEL", "")
+LOCAL_LLM_API_KEY = os.environ.get("LOCAL_LLM_API_KEY", "local")
+LOCAL_LLM_TIMEOUT = float(os.environ.get("LOCAL_LLM_TIMEOUT", "300"))
+# The verifier may run on a different provider/model than the agent (e.g. a
+# cheaper one, or a different vendor for an independent read). Empty = same.
+VERIFIER_PROVIDER = os.environ.get("VERIFIER_PROVIDER", "")
+VERIFIER_MODEL = os.environ.get("VERIFIER_MODEL", "")
+# Hard cap on model turns per question (each turn may issue several searches).
+AGENT_MAX_STEPS = int(os.environ.get("AGENT_MAX_STEPS", "8"))
+# How many times the agent may rewrite an answer the verifier rejected.
+AGENT_MAX_REVISIONS = int(os.environ.get("AGENT_MAX_REVISIONS", "1"))
+AGENT_SEARCH_DEFAULT_K = int(os.environ.get("AGENT_SEARCH_DEFAULT_K", "6"))
