@@ -1,0 +1,2203 @@
+{
+  "ejercicio": 2026,
+  "fuentes_principales": {
+    "BOE-A-1987-28141": {
+      "norma": "Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones (texto consolidado)",
+      "boe_id": "BOE-A-1987-28141",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1987-28141",
+      "consolidado_a": "2022-12-28",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "87a12ad36018da43ddcc0fd5ffdd1d89115a395bf3a47aef97b27453d0aae7f7"
+    },
+    "BOE-A-1991-27678": {
+      "norma": "Reglamento del Impuesto sobre Sucesiones y Donaciones, Real Decreto 1629/1991, de 8 de noviembre (texto consolidado)",
+      "boe_id": "BOE-A-1991-27678",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1991-27678",
+      "consolidado_a": "2023-04-05",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "42da7ebecc3cfafcfdcd8009a5cb8d6a9f175a7515298750ea28c80120c607c6"
+    },
+    "BOE-A-2009-20375": {
+      "norma": "Ley 22/2009, de 18 de diciembre, del sistema de financiación de las Comunidades Autónomas de régimen común (texto consolidado)",
+      "boe_id": "BOE-A-2009-20375",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2009-20375",
+      "consolidado_a": "2022-07-29",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "c456ca4b74eb8331da508d7c2733a9eb0b682e325db696c0b2cda96725ee32d5"
+    },
+    "BOCM-m-2010-90068": {
+      "norma": "Texto Refundido de las disposiciones legales de la Comunidad de Madrid en materia de tributos cedidos por el Estado, Decreto Legislativo 1/2010, de 21 de octubre (texto consolidado)",
+      "boe_id": "BOCM-m-2010-90068",
+      "url": "https://www.boe.es/buscar/act.php?id=BOCM-m-2010-90068",
+      "consolidado_a": "2026-07-10",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "2f28101cfba7f5c2d1137d10fbbd135d8c6f3aef900e1460aff71a46b55b45df"
+    },
+    "BOE-A-2021-17915": {
+      "norma": "Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía (texto consolidado)",
+      "boe_id": "BOE-A-2021-17915",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2021-17915",
+      "consolidado_a": "2025-12-31",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "9f2dd5e37f2dfb8b4110af9c16284954542124e281ac407271239304c34a6051"
+    },
+    "BOE-A-2024-6951": {
+      "norma": "Decreto Legislativo 1/2024, de 12 de marzo, por el que se aprueba el libro sexto del Código tributario de Cataluña, que integra el texto refundido de los preceptos legales vigentes en Cataluña en materia de tributos cedidos (texto consolidado)",
+      "boe_id": "BOE-A-2024-6951",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-6951",
+      "consolidado_a": "2026-05-22",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "bc994c0eac637ca386b63d8d3cdcf26be2a0dbcc54f5d92572749a071f52508a"
+    }
+  },
+  "no_modelado": [
+    "Solo están cargadas tres comunidades (Madrid, Andalucía y Cataluña); para las demás se aplica únicamente la ley estatal y se avisa.",
+    "Territorios forales (País Vasco y Navarra): tienen normativa propia que no se rige por la Ley 29/1987."
+  ],
+  "estatal": {
+    "fuente_principal": {
+      "norma": "Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones (texto consolidado)",
+      "boe_id": "BOE-A-1987-28141",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1987-28141",
+      "consolidado_a": "2022-12-28",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "87a12ad36018da43ddcc0fd5ffdd1d89115a395bf3a47aef97b27453d0aae7f7"
+    },
+    "reducciones": [
+      {
+        "clave": "parentesco",
+        "titulo": "Reducción por parentesco",
+        "clase": "parentesco",
+        "caracter": "estatal",
+        "articulo": "art. 20.2.a) Ley 29/1987",
+        "resumen": "Reducción fija según el grupo de parentesco con el fallecido; en el grupo I aumenta por cada año que le falte al heredero para cumplir 21, con un tope.",
+        "en_vigor_desde": "2012-12-28",
+        "cuando": {
+          "modo": "sucesion"
+        },
+        "tramos": [
+          {
+            "cuando": {
+              "grupos": [
+                "I"
+              ]
+            },
+            "importe": "15956.87",
+            "incremento_por_ano": "3990.72",
+            "edad_referencia": 21,
+            "maximo": "47858.59"
+          },
+          {
+            "cuando": {
+              "grupos": [
+                "II"
+              ]
+            },
+            "importe": "15956.87"
+          },
+          {
+            "cuando": {
+              "grupos": [
+                "III"
+              ]
+            },
+            "importe": "7993.46"
+          }
+        ],
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.2.a) Ley 29/1987",
+            "cita": "Grupo I: adquisiciones por descendientes y adoptados menores de veintiún años, 15.956,87 euros, más 3.990,72 euros por cada año menos de veintiuno que tenga el causahabiente, sin que la reducción pueda exceder de 47.858,59 euros. Grupo II: adquisiciones por descendientes y adoptados de veintiuno o más años, cónyuges, ascendientes y adoptantes, 15.956,87 euros. Grupo III: adquisiciones por colaterales de segundo y tercer grado, ascendientes y descendientes por afinidad, 7.993,46 euros. Grupo IV: en las adquisiciones por colaterales de cuarto grado, grados más distantes y extraños, no habrá lugar a reducción."
+          }
+        ]
+      },
+      {
+        "clave": "discapacidad",
+        "titulo": "Reducción por discapacidad",
+        "clase": "discapacidad",
+        "caracter": "estatal",
+        "articulo": "art. 20.2.a) Ley 29/1987",
+        "resumen": "Reducción adicional para adquirentes con discapacidad igual o superior al 33 %, mayor desde el 65 %.",
+        "en_vigor_desde": "2012-12-28",
+        "cuando": {
+          "modo": "sucesion"
+        },
+        "tramos": [
+          {
+            "cuando": {
+              "discapacidad_desde": 65
+            },
+            "importe": "150253.03"
+          },
+          {
+            "cuando": {
+              "discapacidad_desde": 33,
+              "discapacidad_menor_de": 65
+            },
+            "importe": "47858.59"
+          }
+        ],
+        "requisitos_no_comprobados": [
+          "Que el grado de discapacidad esté reconocido conforme al baremo legal a la fecha del fallecimiento"
+        ],
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.2.a) Ley 29/1987",
+            "cita": "Se aplicará, además de las que pudieran corresponder en función del grado de parentesco con el causante, una reducción de 47.858,59 euros a las personas que tengan la consideración legal de minusválidos, con un grado de discapacidad igual o superior al 33 por 100 e inferior al 65 por 100, de acuerdo con el baremo a que se refiere el artículo 148 del texto refundido de la Ley General de la Seguridad Social, aprobado por el Real Decreto Legislativo 1/1994, de 20 de junio ; la reducción será de 150.253,03 euros para aquellas personas que, con arreglo a la normativa anteriormente citada, acrediten un grado de minusvalía igual o superior al 65 por 100."
+          }
+        ]
+      }
+    ],
+    "vivienda_habitual": [
+      {
+        "articulo": "art. 20.2.c) Ley 29/1987",
+        "resumen": "Reducción del 95 % del valor de la vivienda habitual del fallecido, con un límite por adquirente, para cónyuge, ascendientes, descendientes o colateral mayor de 65 años que conviviera con él.",
+        "en_vigor_desde": "2012-12-28",
+        "cuando": {
+          "modo": "sucesion"
+        },
+        "porcentaje": "0.95",
+        "limite_por_sujeto": "122606.47",
+        "anos_mantenimiento": 10,
+        "colateral_mayor_de": 65,
+        "colateral_anos_convivencia": 2,
+        "requisitos_no_comprobados": [
+          "Que el inmueble fuera la vivienda habitual del fallecido"
+        ],
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.2.c) Ley 29/1987",
+            "cita": "Del mismo porcentaje de reducción, con el límite de 122.606,47 euros para cada sujeto pasivo y con el requisito de permanencia señalado anteriormente, gozarán las adquisiciones \"mortis causa\" de la vivienda habitual de la persona fallecida, siempre que los causahabientes sean cónyuge, ascendientes o descendientes de aquél, o bien pariente colateral mayor de sesenta y cinco años que hubiese convivido con el causante durante los dos años anteriores al fallecimiento."
+          },
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.2.c) Ley 29/1987",
+            "cita": "otra del 95 por 100 del mencionado valor, siempre que la adquisición se mantenga, durante los diez años siguientes al fallecimiento del causante, salvo que falleciera el adquirente dentro de ese plazo."
+          }
+        ]
+      }
+    ],
+    "seguro_vida": [
+      {
+        "articulo": "art. 20.2.b) Ley 29/1987",
+        "resumen": "Reducción del 100 % de lo percibido por seguros de vida, con un límite único por beneficiario, cuando este es cónyuge, ascendiente o descendiente del contratante fallecido.",
+        "en_vigor_desde": "2012-12-28",
+        "cuando": {
+          "modo": "sucesion"
+        },
+        "porcentaje": "1",
+        "limite": "9195.49",
+        "requisitos_no_comprobados": [
+          "Que no se aplique el régimen de la disposición transitoria cuarta (pólizas anteriores al 19 de enero de 1987)",
+          "En seguros colectivos o de empresa se atiende al parentesco con el asegurado"
+        ],
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.2.b) Ley 29/1987",
+            "cita": "Con independencia de las reducciones anteriores, se aplicará una reducción del 100 por ciento, con un límite de 9.195,49 euros, a las cantidades percibidas por los beneficiarios de contratos de seguros sobre vida, cuando su parentesco con el contratante fallecido sea de cónyuge, ascendiente, descendiente, adoptante o adoptado."
+          }
+        ]
+      }
+    ],
+    "reducciones_bienes": [
+      {
+        "clase": "empresa",
+        "articulo": "art. 20.2.c) Ley 29/1987",
+        "resumen": "Exige que a la empresa, negocio o participaciones les sea aplicable la exención del Impuesto sobre el Patrimonio, que el adquirente sea cónyuge, descendiente o adoptado (ascendientes y colaterales hasta el tercer grado solo si no hay descendientes) y mantener lo adquirido diez años.",
+        "en_vigor_desde": "2012-12-28",
+        "cuando": {
+          "modo": "sucesion"
+        },
+        "porcentaje": "0.95",
+        "anos_mantenimiento": 10,
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.2.c) Ley 29/1987",
+            "cita": "c) En los casos en los que en la base imponible de una adquisición \"mortis causa\" que corresponda a los cónyuges, descendientes o adoptados de la persona fallecida, estuviese incluido el valor de una empresa individual, de un negocio profesional o participaciones en entidades, a los que sea de aplicación la exención regulada en el apartado octavo del artículo 4 de la Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio, o el valor de derechos de usufructo sobre los mismos, o de derechos económicos derivados de la extinción de dicho usufructo, siempre que con motivo del fallecimiento se consolidara el pleno dominio en el cónyuge, descendientes o adoptados, o percibieran éstos los derechos debidos a la finalización del usufructo en forma de participaciones en la empresa, negocio o entidad afectada, para obtener la base liquidable se aplicará en la imponible, con independencia de las reducciones que procedan de acuerdo con los apartados anteriores, otra del 95 por 100 del mencionado valor, siempre que la adquisición se mantenga, durante los diez años siguientes al fallecimiento del causante, salvo que falleciera el adquirente dentro de ese plazo."
+          }
+        ]
+      },
+      {
+        "clase": "empresa",
+        "articulo": "art. 20.6 Ley 29/1987",
+        "resumen": "Exige que el donatario sea cónyuge, descendiente o adoptado, que el donante tenga 65 años o más (o incapacidad permanente absoluta o gran invalidez) y deje las funciones de dirección y su remuneración, y que el donatario mantenga lo adquirido y la exención en Patrimonio diez años.",
+        "en_vigor_desde": "2012-12-28",
+        "cuando": {
+          "modo": "donacion"
+        },
+        "porcentaje": "0.95",
+        "anos_mantenimiento": 10,
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.6 Ley 29/1987",
+            "cita": "6. En los casos de transmisión de participaciones \"ínter vivos\", en favor del cónyuge, descendientes o adoptados, de una empresa individual, un negocio profesional o de participaciones en entidades del donante a los que sea de aplicación la exención regulada en el apartado octavo del artículo 4 de la Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio, se aplicará una reducción en la base imponible para determinar la liquidable del 95 por 100 del valor de adquisición, siempre que concurran las condiciones siguientes:"
+          },
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.6.c) Ley 29/1987",
+            "cita": "c) En cuanto al donatario, deberá mantener lo adquirido y tener derecho a la exención en el Impuesto sobre el Patrimonio durante los diez años siguientes a la fecha de la escritura pública de donación, salvo que falleciera dentro de este plazo."
+          }
+        ]
+      },
+      {
+        "clase": "patrimonio_historico",
+        "articulo": "art. 20.2.c) Ley 29/1987",
+        "resumen": "Para cónyuge, descendientes o adoptados que hereden bienes del Patrimonio Histórico Español o del patrimonio histórico o cultural de las comunidades autónomas, manteniéndolos diez años.",
+        "en_vigor_desde": "2012-12-28",
+        "cuando": {
+          "modo": "sucesion"
+        },
+        "porcentaje": "0.95",
+        "anos_mantenimiento": 10,
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.2.c) Ley 29/1987",
+            "cita": "Cuando en la base imponible correspondiente a una adquisición \"mortis causa\" del cónyuge, descendientes o adoptados de la persona fallecida se incluyeran bienes comprendidos en los apartados uno, dos o tres del artículo 4 de la Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio, en cuanto integrantes del Patrimonio Histórico Español o del Patrimonio Histórico o Cultural de las Comunidades Autónomas, se aplicará, asimismo, una reducción del 95 por 100 de su valor, con los mismos requisitos de permanencia señalados en este apartado."
+          },
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.2.c) Ley 29/1987",
+            "cita": "siempre que la adquisición se mantenga, durante los diez años siguientes al fallecimiento del causante, salvo que falleciera el adquirente dentro de ese plazo."
+          }
+        ]
+      },
+      {
+        "clase": "patrimonio_historico",
+        "articulo": "art. 20.7 Ley 29/1987",
+        "resumen": "Donación a cónyuge, descendientes o adoptados de bienes del patrimonio histórico o cultural, con las condiciones de edad o incapacidad del donante y de mantenimiento durante diez años del art. 20.6.",
+        "en_vigor_desde": "2012-12-28",
+        "cuando": {
+          "modo": "donacion"
+        },
+        "porcentaje": "0.95",
+        "anos_mantenimiento": 10,
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.7 Ley 29/1987",
+            "cita": "7. La misma reducción en la base imponible regulada en el apartado anterior y con las condiciones señaladas en sus letras a) y c) se aplicará, en caso de donación, a favor del cónyuge, descendientes o adoptados, de los bienes comprendidos en los apartados uno, dos y tres del artículo 4 de la Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio, en cuanto integrantes del Patrimonio Histórico Español o del Patrimonio Histórico o Cultural de las Comunidades Autónomas."
+          },
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.6 Ley 29/1987",
+            "cita": "se aplicará una reducción en la base imponible para determinar la liquidable del 95 por 100 del valor de adquisición, siempre que concurran las condiciones siguientes:"
+          },
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 20.6.c) Ley 29/1987",
+            "cita": "c) En cuanto al donatario, deberá mantener lo adquirido y tener derecho a la exención en el Impuesto sobre el Patrimonio durante los diez años siguientes a la fecha de la escritura pública de donación, salvo que falleciera dentro de este plazo."
+          }
+        ]
+      }
+    ],
+    "tarifas": [
+      {
+        "articulo": "art. 21.2 Ley 29/1987",
+        "resumen": "Tarifa estatal, aplicable cuando la comunidad autónoma no ha aprobado la suya.",
+        "en_vigor_desde": "2002-01-01",
+        "escala": {
+          "tramos": [
+            {
+              "hasta": "7993.46",
+              "tipo": "0.0765",
+              "cuota_hasta_inicio": null
+            },
+            {
+              "hasta": "15980.91",
+              "tipo": "0.085",
+              "cuota_hasta_inicio": "611.5"
+            },
+            {
+              "hasta": "23968.36",
+              "tipo": "0.0935",
+              "cuota_hasta_inicio": "1290.43"
+            },
+            {
+              "hasta": "31955.81",
+              "tipo": "0.102",
+              "cuota_hasta_inicio": "2037.26"
+            },
+            {
+              "hasta": "39943.26",
+              "tipo": "0.1105",
+              "cuota_hasta_inicio": "2851.98"
+            },
+            {
+              "hasta": "47930.72",
+              "tipo": "0.119",
+              "cuota_hasta_inicio": "3734.59"
+            },
+            {
+              "hasta": "55918.17",
+              "tipo": "0.1275",
+              "cuota_hasta_inicio": "4685.1"
+            },
+            {
+              "hasta": "63905.62",
+              "tipo": "0.136",
+              "cuota_hasta_inicio": "5703.5"
+            },
+            {
+              "hasta": "71893.07",
+              "tipo": "0.1445",
+              "cuota_hasta_inicio": "6789.79"
+            },
+            {
+              "hasta": "79880.52",
+              "tipo": "0.153",
+              "cuota_hasta_inicio": "7943.98"
+            },
+            {
+              "hasta": "119757.67",
+              "tipo": "0.1615",
+              "cuota_hasta_inicio": "9166.06"
+            },
+            {
+              "hasta": "159634.83",
+              "tipo": "0.187",
+              "cuota_hasta_inicio": "15606.22"
+            },
+            {
+              "hasta": "239389.13",
+              "tipo": "0.2125",
+              "cuota_hasta_inicio": "23063.25"
+            },
+            {
+              "hasta": "398777.54",
+              "tipo": "0.255",
+              "cuota_hasta_inicio": "40011.04"
+            },
+            {
+              "hasta": "797555.08",
+              "tipo": "0.2975",
+              "cuota_hasta_inicio": "80655.08"
+            },
+            {
+              "hasta": null,
+              "tipo": "0.34",
+              "cuota_hasta_inicio": "199291.4"
+            }
+          ],
+          "fuente": {
+            "referencia": "art. 21.2 Ley 29/1987",
+            "en_vigor_desde": "2002-01-01",
+            "verificado": true
+          }
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 21.2 Ley 29/1987",
+            "cita": "0,00 7.993,46 7,65 7.993,46 611,50 7.987,45 8,50 15.980,91 1.290,43 7.987,45 9,35 23.968,36 2.037,26 7.987,45 10,20 31.955,81 2.851,98 7.987,45 11,05 39.943,26 3.734,59 7.987,45 11,90 47.930,72 4.685,10 7.987,45 12,75 55.918,17 5.703,50 7.987,45 13,60 63.905,62 6.789,79 7.987,45 14,45 71.893,07 7.943,98 7.987,45 15,30 79.880,52 9.166,06 39.877,15 16,15 119.757,67 15.606,22 39.877,16 18,70 159.634,83 23.063,25 79.754,30 21,25 239.389,13 40.011,04 159.388,41 25,50 398.777,54 80.655,08 398.777,54 29,75 797.555,08 199.291,40 en adelante 34,00"
+          }
+        ]
+      }
+    ],
+    "coeficientes": [
+      {
+        "articulo": "art. 22.2 Ley 29/1987",
+        "resumen": "Coeficientes multiplicadores estatales según patrimonio preexistente y grupo de parentesco.",
+        "en_vigor_desde": "2002-01-01",
+        "tramos": [
+          {
+            "patrimonio_hasta": "402678.11",
+            "coeficientes": {
+              "I": "1",
+              "II": "1",
+              "III": "1.5882",
+              "IV": "2"
+            }
+          },
+          {
+            "patrimonio_hasta": "2007380.43",
+            "coeficientes": {
+              "I": "1.05",
+              "II": "1.05",
+              "III": "1.6676",
+              "IV": "2.1"
+            }
+          },
+          {
+            "patrimonio_hasta": "4020770.98",
+            "coeficientes": {
+              "I": "1.1",
+              "II": "1.1",
+              "III": "1.7471",
+              "IV": "2.2"
+            }
+          },
+          {
+            "patrimonio_hasta": null,
+            "coeficientes": {
+              "I": "1.2",
+              "II": "1.2",
+              "III": "1.9059",
+              "IV": "2.4"
+            }
+          }
+        ],
+        "regla_exceso": true,
+        "requisitos_no_comprobados": [
+          "El patrimonio preexistente se valora con las reglas del Impuesto sobre el Patrimonio (art. 22.3)"
+        ],
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 22.2 Ley 29/1987",
+            "cita": "De 0 a 402.678,11 .......................................... 1,0000 1,5882 2,0000 De más de 402.678,11 a 2.007.380,43...... 1,0500 1,6676 2,1000 De más de 2.007.380,43 a 4.020.770,98... 1,1000 1,7471 2,2000 Más de 4.020.770,98...................................... 1,2000 1,9059 2,4000"
+          },
+          {
+            "boe_id": "BOE-A-1987-28141",
+            "articulo": "art. 22.2 Ley 29/1987",
+            "cita": "Cuando la diferencia entre la cuota tributaria obtenida por la aplicación del coeficiente multiplicador que corresponda y la que resultaría de aplicar a la misma cuota íntegra el coeficiente multiplicador inmediato inferior sea mayor que la que exista entre el importe del patrimonio preexistente tenido en cuenta para la liquidación y el importe máximo del tramo de patrimonio preexistente que motivaría la aplicación del citado coeficiente multiplicador inferior, aquélla se reducirá en el importe del exceso."
+          }
+        ]
+      }
+    ],
+    "ajuar": {
+      "articulo": "art. 15 Ley 29/1987 y art. 34 RISD",
+      "resumen": "Ajuar doméstico: se ha aplicado la presunción legal del 3 % sobre el valor que heredas (sin contar seguros de vida), suponiendo que te corresponde en proporción a tu parte. La presunción admite prueba en contrario: los interesados pueden acreditar que no existe ajuar o que vale menos, y hay bienes del caudal que no deben entrar en la base del 3 %; revísalo antes de darlo por bueno.",
+      "en_vigor_desde": "1992-01-01",
+      "cuando": {
+        "modo": "sucesion"
+      },
+      "porcentaje": "0.03",
+      "requisitos_no_comprobados": [
+        "Del ajuar se resta el que debe entregarse al cónyuge sobreviviente (3 % del valor catastral de la vivienda habitual del matrimonio, art. 34.3 RISD)",
+        "No se imputa ajuar a quien solo recibe bienes determinados como legatario (art. 23.2 RISD)"
+      ],
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-1987-28141",
+          "articulo": "art. 15 Ley 29/1987",
+          "cita": "El ajuar doméstico formará parte de la masa hereditaria y se valorará en el tres por ciento del importe del caudal relicto del causante, salvo que los interesados asignen a este ajuar un valor superior o prueben fehacientemente su inexistencia o que su valor es inferior al que resulte de la aplicación del referido porcentaje."
+        },
+        {
+          "boe_id": "BOE-A-1991-27678",
+          "articulo": "art. 34.3 RISD",
+          "cita": "3. Para el cálculo del ajuar doméstico en función de porcentajes sobre el resto del caudal relicto, no se incluirá en éste el valor de los bienes adicionados en virtud de lo dispuesto en los artículos 25 a 28 de este Reglamento ni, en su caso, el de las donaciones acumuladas, así como tampoco el importe de las cantidades que procedan de seguros sobre la vida contratados por el causante si el seguro es individual o el de los seguros en que figure como asegurado si fuere colectivo."
+        },
+        {
+          "boe_id": "BOE-A-1991-27678",
+          "articulo": "art. 34.3 RISD",
+          "cita": "El valor del ajuar doméstico así calculado se minorará en el de los bienes que, por disposición del artículo 1.321 del Código Civil o de disposiciones análogas de Derecho civil foral o especial, deben entregarse al cónyuge sobreviviente, cuyo valor se fijará en el 3 por 100 del valor catastral de la vivienda habitual del matrimonio, salvo que los interesados acrediten fehacientemente uno superior."
+        }
+      ]
+    },
+    "puntos_conexion": {
+      "articulo": "art. 32 Ley 22/2009",
+      "resumen": "Qué comunidad se aplica no lo decide esta calculadora (art. 32 Ley 22/2009): en las herencias y seguros de vida, la de la residencia habitual del fallecido; en las donaciones de inmuebles, la del lugar donde está el inmueble; en las demás donaciones, la de la residencia habitual del donatario. La residencia habitual se mide según el art. 28.1.1.º b) de esa ley (dónde se ha permanecido más días de los cinco años anteriores), no por el domicilio del momento.",
+      "en_vigor_desde": "2009-12-20",
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2009-20375",
+          "articulo": "art. 32.2 Ley 22/2009",
+          "cita": "2. Se considera producido en el territorio de una Comunidad Autónoma el rendimiento del Impuesto sobre Sucesiones y Donaciones de los sujetos pasivos residentes en España, según los siguientes puntos de conexión: a) En el caso del impuesto que grava las adquisiciones ``mortis causa´´ y las cantidades percibidas por los beneficiarios de seguros sobre la vida que se acumulen al resto de bienes y derechos que integran la porción hereditaria del beneficiario, en el territorio donde el causante tenga su residencia habitual a la fecha del devengo."
+        },
+        {
+          "boe_id": "BOE-A-2009-20375",
+          "articulo": "art. 32.5 Ley 22/2009",
+          "cita": "5. En los supuestos previstos en las letras a) y c) del apartado 2 anterior, se aplicará la normativa de la Comunidad Autónoma en la que el causante o donatario hubiere tenido su residencia habitual conforme a lo previsto en el artículo 28.1.1º.b) de esta Ley."
+        }
+      ]
+    },
+    "acumulacion": {
+      "articulo": "art. 30 Ley 29/1987",
+      "resumen": "No se han acumulado donaciones anteriores (art. 30 Ley 29/1987): las donaciones del mismo donante al mismo donatario en un plazo de tres años se liquidan como una sola, y las hechas por el fallecido al heredero en los cuatro años anteriores se acumulan a la herencia; en esos casos la cuota se calcula con el tipo medio del total acumulado y será mayor que la que aparece aquí.",
+      "en_vigor_desde": "2021-07-11",
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-1987-28141",
+          "articulo": "art. 30 Ley 29/1987",
+          "cita": "1. Las donaciones y demás transmisiones ''inter vivos'' equiparables que se otorguen por un mismo donante a un mismo donatario, así como las adquisiciones producidas en vida del causante como consecuencia de contratos y pactos sucesorios formalizados entre las mismas personas, todas ellas dentro del plazo de tres años, a contar desde la fecha de cada una, se considerarán como una sola transmisión a los efectos de la liquidación del impuesto. Para determinar la cuota tributaria se aplicará, a la base liquidable de la actual adquisición, el tipo medio correspondiente a la base liquidable teórica del total de las adquisiciones acumuladas. 2. Lo dispuesto en el apartado anterior, a efectos de la determinación de la cuota tributaria, será igualmente aplicable a las donaciones y demás transmisiones ''inter vivos'' equiparables y a las adquisiciones producidas en vida del causante como consecuencia de contratos y pactos sucesorios acumulables a la sucesión que se cause por el donante o causante a favor del donatario o sucesor «mortis causa», siempre que el plazo que medie entre ésta y aquéllas no exceda de cuatro años."
+        }
+      ]
+    },
+    "notas": [
+      "El valor de lo adquirido se ha tomado tal como lo has indicado, ya neto de cargas, deudas y gastos deducibles; no se ha comprobado la valoración (en inmuebles, el valor de referencia del Catastro actúa como mínimo, art. 9 Ley 29/1987)."
+    ],
+    "no_modelado": [
+      "Acumulación de donaciones (art. 30) y adición de bienes (art. 11).",
+      "Usufructo, nuda propiedad, sustituciones, fideicomisos y renuncias (arts. 26 a 28).",
+      "Reducción por transmisiones sucesivas en diez años (art. 20.3) y régimen transitorio de seguros anteriores a 1987 (disposición transitoria cuarta).",
+      "Seguros de vida por actos de terrorismo o misiones internacionales, sin límite de reducción (art. 20.2.b).",
+      "Deducción por doble imposición internacional (art. 23) y bonificación de Ceuta y Melilla (art. 23 bis).",
+      "Reducciones de la Ley 19/1995 de explotaciones agrarias.",
+      "Obligación real de contribuir y no residentes (aplican la ley estatal o, según la disposición adicional segunda, pueden optar por la de una comunidad)."
+    ]
+  },
+  "comunidades": {
+    "madrid": {
+      "nombre": "Comunidad de Madrid",
+      "alias": [
+        "madrid",
+        "comunidad de madrid",
+        "cam"
+      ],
+      "fuente_principal": {
+        "norma": "Texto Refundido de las disposiciones legales de la Comunidad de Madrid en materia de tributos cedidos por el Estado, Decreto Legislativo 1/2010, de 21 de octubre (texto consolidado)",
+        "boe_id": "BOCM-m-2010-90068",
+        "url": "https://www.boe.es/buscar/act.php?id=BOCM-m-2010-90068",
+        "consolidado_a": "2026-07-10",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "2f28101cfba7f5c2d1137d10fbbd135d8c6f3aef900e1460aff71a46b55b45df"
+      },
+      "equiparaciones": [
+        {
+          "parentesco": "pareja_de_hecho",
+          "equivale_a": "conyuge",
+          "articulo": "art. 26 DLeg 1/2010 (Madrid)",
+          "resumen": "Exige que la unión de hecho cumpla los requisitos de la Ley 11/2001 de la Comunidad de Madrid y esté inscrita en su Registro de Uniones de Hecho o en uno análogo.",
+          "en_vigor_desde": "2023-12-30",
+          "requisitos_no_comprobados": [
+            "Inscripción de la unión de hecho en el Registro de Uniones de Hecho de la Comunidad de Madrid o en un registro análogo de otra Administración"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 26 DLeg 1/2010 (Madrid)",
+              "cita": "1. A efectos de la aplicación de lo dispuesto en este capítulo, se asimilarán a cónyuges los miembros de uniones de hecho que cumplan los requisitos establecidos en la Ley 11/2001, de 19 de diciembre, de Uniones de Hecho de la Comunidad de Madrid y se encuentren inscritas en el Registro de Uniones de Hecho de la Comunidad de Madrid o en registros análogos existentes en otras Administraciones públicas, dentro o fuera del ámbito español."
+            }
+          ]
+        }
+      ],
+      "reducciones": [
+        {
+          "clave": "parentesco",
+          "titulo": "Reducción por parentesco (Madrid)",
+          "clase": "parentesco",
+          "caracter": "mejora",
+          "articulo": "art. 21.Uno.1 DLeg 1/2010 (Madrid)",
+          "resumen": "Sustituye a la estatal: 16.000 € en los grupos I y II (más 4.000 € por año menos de 21 en el grupo I, hasta 48.000 €) y 8.000 € en el grupo III.",
+          "en_vigor_desde": "2026-07-01",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "tramos": [
+            {
+              "cuando": {
+                "grupos": [
+                  "I"
+                ]
+              },
+              "importe": "16000",
+              "incremento_por_ano": "4000",
+              "edad_referencia": 21,
+              "maximo": "48000"
+            },
+            {
+              "cuando": {
+                "grupos": [
+                  "II"
+                ]
+              },
+              "importe": "16000"
+            },
+            {
+              "cuando": {
+                "grupos": [
+                  "III"
+                ]
+              },
+              "importe": "8000"
+            }
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 21.Uno.1 DLeg 1/2010 (Madrid)",
+              "cita": "Grupo I: Adquisiciones por descendientes y adoptados menores de veintiún años, 16.000 euros, más 4.000 euros por cada año menos de veintiuno que tenga el causahabiente, sin que la reducción pueda exceder de 48.000 euros. Grupo II: Adquisiciones por descendientes y adoptados de veintiuno o más años, cónyuges, ascendientes y adoptantes, 16.000 euros. Grupo III: Adquisiciones por colaterales de segundo y tercer grado, ascendientes y descendientes por afinidad, 8.000 euros. Grupo IV: En las adquisiciones por colaterales de cuarto grado, grados más distantes y extraños, no habrá lugar a reducción."
+            }
+          ]
+        },
+        {
+          "clave": "discapacidad",
+          "titulo": "Reducción por discapacidad (Madrid)",
+          "clase": "discapacidad",
+          "caracter": "mejora",
+          "articulo": "art. 21.Uno.2 DLeg 1/2010 (Madrid)",
+          "resumen": "Sustituye a la estatal: 55.000 € con discapacidad igual o superior al 33 % y 153.000 € desde el 65 %.",
+          "en_vigor_desde": "2026-07-01",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "tramos": [
+            {
+              "cuando": {
+                "discapacidad_desde": 65
+              },
+              "importe": "153000"
+            },
+            {
+              "cuando": {
+                "discapacidad_desde": 33
+              },
+              "importe": "55000"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Que el grado de discapacidad esté reconocido (o se considere acreditado por pensión de incapacidad o resolución judicial)"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 21.Uno.2 DLeg 1/2010 (Madrid)",
+              "cita": "2. Se aplicará, además de las que pudieran corresponder en función del grado de parentesco con el causante, una reducción de 55.000 euros a las personas con un grado de discapacidad igual o superior al 33 por 100. La reducción será de 153.000 euros para aquellas personas que acrediten un grado de discapacidad igual o superior al 65 por 100."
+            }
+          ]
+        }
+      ],
+      "vivienda_habitual": [
+        {
+          "articulo": "art. 21.Uno.4 DLeg 1/2010 (Madrid)",
+          "resumen": "Reducción del 95 % del valor de la vivienda habitual del fallecido, con un límite de 123.000 € por adquirente y cinco años de mantenimiento.",
+          "en_vigor_desde": "2026-07-01",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "porcentaje": "0.95",
+          "limite_por_sujeto": "123000",
+          "anos_mantenimiento": 5,
+          "colateral_mayor_de": 65,
+          "colateral_anos_convivencia": 2,
+          "requisitos_no_comprobados": [
+            "Que el inmueble fuera la vivienda habitual del fallecido"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 21.Uno.4 DLeg 1/2010 (Madrid)",
+              "cita": "4. En los casos en los que en la base imponible de una adquisición mortis causa que corresponda a los cónyuges, ascendientes o adoptantes, descendientes o adoptados de la persona fallecida, o bien pariente colateral mayor de sesenta y cinco años que hubiese convivido con el causante durante los dos años anteriores al fallecimiento, estuviese incluida la vivienda habitual de la persona fallecida para obtener la base liquidable se aplicará en la base imponible, una reducción del 95 por 100 con el límite de 123.000 euros para cada sujeto, siempre que la adquisición se mantenga, durante los cinco años siguientes al fallecimiento del causante, salvo que falleciese el adquirente dentro de este plazo."
+            }
+          ]
+        }
+      ],
+      "seguro_vida": [
+        {
+          "articulo": "art. 21.Uno.3 DLeg 1/2010 (Madrid)",
+          "resumen": "Reducción del 100 % de lo percibido por seguros de vida, con un límite de 9.200 € por beneficiario, para cónyuge, ascendientes y descendientes del contratante.",
+          "en_vigor_desde": "2026-07-01",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "porcentaje": "1",
+          "limite": "9200",
+          "requisitos_no_comprobados": [
+            "En seguros colectivos o de empresa se atiende al parentesco con el asegurado"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 21.Uno.3 DLeg 1/2010 (Madrid)",
+              "cita": "3. Con independencia de las reducciones anteriores, se aplicará una reducción del 100 por 100, con un límite de 9.200 euros, a las cantidades percibidas por los beneficiarios de contratos de seguros sobre la vida cuando su parentesco con el contratante fallecido sea el de cónyuge, ascendiente, descendiente, adoptante o adoptado."
+            }
+          ]
+        }
+      ],
+      "tarifas": [
+        {
+          "articulo": "art. 23 DLeg 1/2010 (Madrid)",
+          "resumen": "Tarifa propia de la Comunidad de Madrid.",
+          "en_vigor_desde": "2010-10-26",
+          "escala": {
+            "tramos": [
+              {
+                "hasta": "8313.2",
+                "tipo": "0.0765",
+                "cuota_hasta_inicio": "0"
+              },
+              {
+                "hasta": "16001.35",
+                "tipo": "0.085",
+                "cuota_hasta_inicio": "635.96"
+              },
+              {
+                "hasta": "24002.01",
+                "tipo": "0.0935",
+                "cuota_hasta_inicio": "1289.45"
+              },
+              {
+                "hasta": "32002.7",
+                "tipo": "0.102",
+                "cuota_hasta_inicio": "2037.51"
+              },
+              {
+                "hasta": "40003.36",
+                "tipo": "0.1105",
+                "cuota_hasta_inicio": "2853.58"
+              },
+              {
+                "hasta": "48004.04",
+                "tipo": "0.119",
+                "cuota_hasta_inicio": "3737.66"
+              },
+              {
+                "hasta": "56004.71",
+                "tipo": "0.1275",
+                "cuota_hasta_inicio": "4689.74"
+              },
+              {
+                "hasta": "64005.39",
+                "tipo": "0.136",
+                "cuota_hasta_inicio": "5709.82"
+              },
+              {
+                "hasta": "72006.05",
+                "tipo": "0.1445",
+                "cuota_hasta_inicio": "6797.92"
+              },
+              {
+                "hasta": "80006.73",
+                "tipo": "0.153",
+                "cuota_hasta_inicio": "7954.01"
+              },
+              {
+                "hasta": "119947.58",
+                "tipo": "0.1615",
+                "cuota_hasta_inicio": "9178.12"
+              },
+              {
+                "hasta": "159888.45",
+                "tipo": "0.187",
+                "cuota_hasta_inicio": "15628.56"
+              },
+              {
+                "hasta": "239770.16",
+                "tipo": "0.2125",
+                "cuota_hasta_inicio": "23097.51"
+              },
+              {
+                "hasta": "399408.59",
+                "tipo": "0.255",
+                "cuota_hasta_inicio": "40072.37"
+              },
+              {
+                "hasta": "798817.2",
+                "tipo": "0.2975",
+                "cuota_hasta_inicio": "80780.17"
+              },
+              {
+                "hasta": null,
+                "tipo": "0.34",
+                "cuota_hasta_inicio": "199604.23"
+              }
+            ],
+            "fuente": {
+              "referencia": "art. 23 DLeg 1/2010 (Madrid)",
+              "en_vigor_desde": "2010-10-26",
+              "verificado": true
+            }
+          },
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 23 DLeg 1/2010 (Madrid)",
+              "cita": "0,00 0,00 8.313,20 7,65 8.313,20 635,96 7.688,15 8,50 16.001,35 1.289,45 8.000,66 9,35 24.002,01 2.037,51 8.000,69 10,20 32.002,70 2.853,58 8.000,66 11,05 40.003,36 3.737,66 8.000,68 11,90 48.004,04 4.689,74 8.000,67 12,75 56.004,71 5.709,82 8.000,68 13,60 64.005,39 6.797,92 8.000,66 14,45 72.006,05 7.954,01 8.000,68 15,30 80.006,73 9.178,12 39.940,85 16,15 119.947,58 15.628,56 39.940,87 18,70 159.888,45 23.097,51 79.881,71 21,25 239.770,16 40.072,37 159.638,43 25,50 399.408,59 80.780,17 399.408,61 29,75 798.817,20 199.604,23 En adelante 34,00"
+            }
+          ]
+        }
+      ],
+      "coeficientes": [
+        {
+          "articulo": "art. 24 DLeg 1/2010 (Madrid)",
+          "resumen": "Coeficientes multiplicadores de la Comunidad de Madrid según patrimonio preexistente y grupo.",
+          "en_vigor_desde": "2010-10-26",
+          "tramos": [
+            {
+              "patrimonio_hasta": "403000",
+              "coeficientes": {
+                "I": "1",
+                "II": "1",
+                "III": "1.5882",
+                "IV": "2"
+              }
+            },
+            {
+              "patrimonio_hasta": "2008000",
+              "coeficientes": {
+                "I": "1.05",
+                "II": "1.05",
+                "III": "1.6676",
+                "IV": "2.1"
+              }
+            },
+            {
+              "patrimonio_hasta": "4021000",
+              "coeficientes": {
+                "I": "1.1",
+                "II": "1.1",
+                "III": "1.7471",
+                "IV": "2.2"
+              }
+            },
+            {
+              "patrimonio_hasta": null,
+              "coeficientes": {
+                "I": "1.2",
+                "II": "1.2",
+                "III": "1.9059",
+                "IV": "2.4"
+              }
+            }
+          ],
+          "regla_exceso": true,
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 24.1 DLeg 1/2010 (Madrid)",
+              "cita": "De 0 a 403.000 1,00 1,5882 2,00 De más de 403.000 a 2.008.000 1,05 1,6676 2,1 De más de 2.008.000 a 4.021.000 1,10 1,7471 2,2 De más de 4.021.000 1,20 1,9059 2,4"
+            },
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 24.2 DLeg 1/2010 (Madrid)",
+              "cita": "2. Cuando la diferencia entre la cuota tributaria obtenida por aplicación del coeficiente multiplicador que corresponda y la que resultaría de aplicar a la misma cuota íntegra el coeficiente multiplicador inmediato inferior sea mayor que la que exista entre el importe del patrimonio preexistente tenido en cuenta para la liquidación y el importe máximo del tramo del patrimonio preexistente que motivaría la aplicación del citado coeficiente multiplicador inferior, aquella se reducirá en el importe del exceso."
+            }
+          ]
+        }
+      ],
+      "bonificaciones": [
+        {
+          "titulo": "Bonificación de Madrid para cónyuge, ascendientes y descendientes (herencias)",
+          "articulo": "art. 25.1 DLeg 1/2010 (Madrid)",
+          "resumen": "Bonificación del 99 % de la cuota en herencias y seguros de vida para los grupos I y II.",
+          "en_vigor_desde": "2025-07-01",
+          "cuando": {
+            "modo": "sucesion",
+            "grupos": [
+              "I",
+              "II"
+            ]
+          },
+          "porcentaje": "0.99",
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 25.1 DLeg 1/2010 (Madrid)",
+              "cita": "Los sujetos pasivos incluidos en los grupos I y II de los previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones, aplicarán una bonificación del 99 por ciento en la cuota tributaria derivada de adquisiciones mortis causa y de cantidades percibidas por beneficiarios de seguros sobre la vida que se acumulen al resto de bienes y derechos que integren la porción hereditaria del beneficiario."
+            }
+          ]
+        },
+        {
+          "titulo": "Bonificación de Madrid para hermanos, tíos y sobrinos (herencias)",
+          "articulo": "art. 25.1 DLeg 1/2010 (Madrid)",
+          "resumen": "Bonificación del 50 % de la cuota en herencias y seguros de vida para el grupo III.",
+          "en_vigor_desde": "2025-07-01",
+          "cuando": {
+            "modo": "sucesion",
+            "grupos": [
+              "III"
+            ]
+          },
+          "porcentaje": "0.5",
+          "requisitos_no_comprobados": [
+            "Solo alcanza a la parte de la cuota que corresponda a bienes y derechos declarados de forma completa en plazo voluntario o, fuera de él, sin requerimiento previo de la Administración"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 25.1 DLeg 1/2010 (Madrid)",
+              "cita": "Los sujetos pasivos incluidos en el grupo III de los previstos en el artículo 20.2.a) indicado en el párrafo anterior, aplicarán una bonificación del 50 por ciento, de la cuota tributaria derivada de las mismas adquisiciones a que se refiere el párrafo anterior. La bonificación a que se refiere este párrafo será aplicable, exclusivamente, sobre la parte de la cuota que proporcionalmente corresponda a los bienes y derechos declarados por el sujeto pasivo, considerándose como tales a los que se encuentren incluidos de forma completa en una autoliquidación o declaración presentada dentro del plazo voluntario o fuera de este sin que se haya efectuado un requerimiento previo de la Administración tributaria."
+            }
+          ]
+        },
+        {
+          "titulo": "Bonificación de Madrid para donaciones de hasta 1.000 euros",
+          "articulo": "art. 25.2.a) DLeg 1/2010 (Madrid)",
+          "resumen": "Bonificación del 100 % de la cuota en donaciones de personas físicas cuya base imponible no supere 1.000 €, cualquiera que sea el parentesco.",
+          "en_vigor_desde": "2025-07-01",
+          "cuando": {
+            "modo": "donacion",
+            "base_imponible_hasta": "1000"
+          },
+          "porcentaje": "1",
+          "requisitos_no_comprobados": [
+            "Que el donante sea una persona física",
+            "Para el límite de 1.000 € se suman todas las donaciones del mismo donante al mismo donatario en los tres años anteriores"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 25.2.a) DLeg 1/2010 (Madrid)",
+              "cita": "a) Los sujetos pasivos que realicen adquisiciones lucrativas inter vivos procedentes de personas físicas cuya base imponible no supere los 1.000 euros aplicarán una bonificación del 100 por cien de la cuota tributaria derivada de las mismas. A efectos de la aplicación del límite indicado en el párrafo anterior, se computarán todos los negocios lucrativos inter vivos efectuados por el mismo donante al mismo donatario en los tres años anteriores al momento del devengo, de forma que no podrá aplicarse la bonificación una vez superado el límite establecido por el conjunto de todas las adquisiciones lucrativas inter vivos computables."
+            }
+          ]
+        },
+        {
+          "titulo": "Bonificación de Madrid para cónyuge, ascendientes y descendientes (donaciones)",
+          "articulo": "art. 25.2.b) DLeg 1/2010 (Madrid)",
+          "resumen": "Bonificación del 99 % de la cuota en donaciones para el grupos I y II; si la base imponible supera 10.000 € y el bien no exige por sí mismo documento público, la donación debe formalizarse en documento público.",
+          "en_vigor_desde": "2025-07-01",
+          "cuando": {
+            "modo": "donacion",
+            "grupos": [
+              "I",
+              "II"
+            ],
+            "base_imponible_hasta": "10000"
+          },
+          "porcentaje": "0.99",
+          "requisitos_no_comprobados": [
+            "Solo alcanza a la parte de la cuota que corresponda a bienes y derechos declarados de forma completa en plazo voluntario o, fuera de él, sin requerimiento previo de la Administración",
+            "Si se dona dinero o bienes del art. 12 de la Ley del Impuesto sobre el Patrimonio (depósitos, cuentas…), el origen de los fondos ha de estar justificado y manifestarse en el propio documento de la donación",
+            "Para el umbral de 10.000 € se suman todas las donaciones del mismo donante al mismo donatario en los tres años anteriores",
+            "Si se eleva a público un documento privado, ha de hacerse dentro del plazo voluntario de declaración"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 25.2.b) DLeg 1/2010 (Madrid)",
+              "cita": "b) En las adquisiciones inter vivos, los sujetos pasivos incluidos en los grupos I y II de parentesco de los previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones, aplicarán una bonificación del 99 por ciento en la cuota tributaria derivada de las mismas."
+            },
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 25.2.b) DLeg 1/2010 (Madrid)",
+              "cita": "Será requisito necesario para la aplicación de estas bonificaciones previstas en el apartado 2.b), en relación a los elementos patrimoniales cuyas transmisiones a título gratuito no requieren para su eficacia el otorgamiento de documento público, que el negocio jurídico gratuito e inter vivos se formalice en documento público cuando su base imponible sea superior a 10.000 euros o su contravalor en moneda extranjera. A estos efectos, se computarán todos los negocios jurídicos gratuitos e inter vivos efectuados por el mismo donante al mismo donatario en los tres años anteriores al momento del devengo."
+            }
+          ]
+        },
+        {
+          "titulo": "Bonificación de Madrid para cónyuge, ascendientes y descendientes (donaciones)",
+          "articulo": "art. 25.2.b) DLeg 1/2010 (Madrid)",
+          "resumen": "Bonificación del 99 % de la cuota en donaciones para el grupos I y II; si la base imponible supera 10.000 € y el bien no exige por sí mismo documento público, la donación debe formalizarse en documento público.",
+          "en_vigor_desde": "2025-07-01",
+          "cuando": {
+            "modo": "donacion",
+            "grupos": [
+              "I",
+              "II"
+            ],
+            "requiere": [
+              "escritura_publica"
+            ]
+          },
+          "porcentaje": "0.99",
+          "requisitos_no_comprobados": [
+            "Solo alcanza a la parte de la cuota que corresponda a bienes y derechos declarados de forma completa en plazo voluntario o, fuera de él, sin requerimiento previo de la Administración",
+            "Si se dona dinero o bienes del art. 12 de la Ley del Impuesto sobre el Patrimonio (depósitos, cuentas…), el origen de los fondos ha de estar justificado y manifestarse en el propio documento de la donación",
+            "Para el umbral de 10.000 € se suman todas las donaciones del mismo donante al mismo donatario en los tres años anteriores",
+            "Si se eleva a público un documento privado, ha de hacerse dentro del plazo voluntario de declaración"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 25.2.b) DLeg 1/2010 (Madrid)",
+              "cita": "b) En las adquisiciones inter vivos, los sujetos pasivos incluidos en los grupos I y II de parentesco de los previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones, aplicarán una bonificación del 99 por ciento en la cuota tributaria derivada de las mismas."
+            },
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 25.2.b) DLeg 1/2010 (Madrid)",
+              "cita": "Será requisito necesario para la aplicación de estas bonificaciones previstas en el apartado 2.b), en relación a los elementos patrimoniales cuyas transmisiones a título gratuito no requieren para su eficacia el otorgamiento de documento público, que el negocio jurídico gratuito e inter vivos se formalice en documento público cuando su base imponible sea superior a 10.000 euros o su contravalor en moneda extranjera. A estos efectos, se computarán todos los negocios jurídicos gratuitos e inter vivos efectuados por el mismo donante al mismo donatario en los tres años anteriores al momento del devengo."
+            }
+          ]
+        },
+        {
+          "titulo": "Bonificación de Madrid para hermanos, tíos y sobrinos (donaciones)",
+          "articulo": "art. 25.2.b) DLeg 1/2010 (Madrid)",
+          "resumen": "Bonificación del 50 % de la cuota en donaciones para el grupo III; si la base imponible supera 10.000 € y el bien no exige por sí mismo documento público, la donación debe formalizarse en documento público.",
+          "en_vigor_desde": "2025-07-01",
+          "cuando": {
+            "modo": "donacion",
+            "grupos": [
+              "III"
+            ],
+            "base_imponible_hasta": "10000"
+          },
+          "porcentaje": "0.5",
+          "requisitos_no_comprobados": [
+            "Solo alcanza a la parte de la cuota que corresponda a bienes y derechos declarados de forma completa en plazo voluntario o, fuera de él, sin requerimiento previo de la Administración",
+            "Si se dona dinero o bienes del art. 12 de la Ley del Impuesto sobre el Patrimonio (depósitos, cuentas…), el origen de los fondos ha de estar justificado y manifestarse en el propio documento de la donación",
+            "Para el umbral de 10.000 € se suman todas las donaciones del mismo donante al mismo donatario en los tres años anteriores",
+            "Si se eleva a público un documento privado, ha de hacerse dentro del plazo voluntario de declaración"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 25.2.b) DLeg 1/2010 (Madrid)",
+              "cita": "Los sujetos pasivos incluidos en el grupo III de los previstos en el artículo 20.2.a) indicado en el párrafo anterior aplicarán una bonificación del 50 por ciento en la cuota tributaria derivada de las mismas adquisiciones a que se refiere el párrafo anterior."
+            },
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 25.2.b) DLeg 1/2010 (Madrid)",
+              "cita": "Será requisito necesario para la aplicación de estas bonificaciones previstas en el apartado 2.b), en relación a los elementos patrimoniales cuyas transmisiones a título gratuito no requieren para su eficacia el otorgamiento de documento público, que el negocio jurídico gratuito e inter vivos se formalice en documento público cuando su base imponible sea superior a 10.000 euros o su contravalor en moneda extranjera. A estos efectos, se computarán todos los negocios jurídicos gratuitos e inter vivos efectuados por el mismo donante al mismo donatario en los tres años anteriores al momento del devengo."
+            }
+          ]
+        },
+        {
+          "titulo": "Bonificación de Madrid para hermanos, tíos y sobrinos (donaciones)",
+          "articulo": "art. 25.2.b) DLeg 1/2010 (Madrid)",
+          "resumen": "Bonificación del 50 % de la cuota en donaciones para el grupo III; si la base imponible supera 10.000 € y el bien no exige por sí mismo documento público, la donación debe formalizarse en documento público.",
+          "en_vigor_desde": "2025-07-01",
+          "cuando": {
+            "modo": "donacion",
+            "grupos": [
+              "III"
+            ],
+            "requiere": [
+              "escritura_publica"
+            ]
+          },
+          "porcentaje": "0.5",
+          "requisitos_no_comprobados": [
+            "Solo alcanza a la parte de la cuota que corresponda a bienes y derechos declarados de forma completa en plazo voluntario o, fuera de él, sin requerimiento previo de la Administración",
+            "Si se dona dinero o bienes del art. 12 de la Ley del Impuesto sobre el Patrimonio (depósitos, cuentas…), el origen de los fondos ha de estar justificado y manifestarse en el propio documento de la donación",
+            "Para el umbral de 10.000 € se suman todas las donaciones del mismo donante al mismo donatario en los tres años anteriores",
+            "Si se eleva a público un documento privado, ha de hacerse dentro del plazo voluntario de declaración"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 25.2.b) DLeg 1/2010 (Madrid)",
+              "cita": "Los sujetos pasivos incluidos en el grupo III de los previstos en el artículo 20.2.a) indicado en el párrafo anterior aplicarán una bonificación del 50 por ciento en la cuota tributaria derivada de las mismas adquisiciones a que se refiere el párrafo anterior."
+            },
+            {
+              "boe_id": "BOCM-m-2010-90068",
+              "articulo": "art. 25.2.b) DLeg 1/2010 (Madrid)",
+              "cita": "Será requisito necesario para la aplicación de estas bonificaciones previstas en el apartado 2.b), en relación a los elementos patrimoniales cuyas transmisiones a título gratuito no requieren para su eficacia el otorgamiento de documento público, que el negocio jurídico gratuito e inter vivos se formalice en documento público cuando su base imponible sea superior a 10.000 euros o su contravalor en moneda extranjera. A estos efectos, se computarán todos los negocios jurídicos gratuitos e inter vivos efectuados por el mismo donante al mismo donatario en los tres años anteriores al momento del devengo."
+            }
+          ]
+        }
+      ],
+      "otras_reducciones": [
+        {
+          "articulo": "art. 21.Dos DLeg 1/2010 (Madrid)",
+          "titulo": "Indemnizaciones por el síndrome tóxico y prestaciones públicas extraordinarias por actos de terrorismo (99 %)",
+          "modo": "sucesion"
+        },
+        {
+          "articulo": "art. 22.Uno y Dos DLeg 1/2010 (Madrid)",
+          "titulo": "Reducción propia por adquisición mortis causa de empresa individual, negocio profesional o participaciones (incompatible con la estatal del art. 20.2.c)",
+          "modo": "sucesion"
+        },
+        {
+          "articulo": "art. 21.Uno.5 DLeg 1/2010 (Madrid)",
+          "titulo": "Bienes del Patrimonio Histórico Español o Cultural de las Comunidades Autónomas (95 %)",
+          "modo": "sucesion"
+        },
+        {
+          "articulo": "art. 22.Tres y Cuatro DLeg 1/2010 (Madrid)",
+          "titulo": "Reducción propia por donación de empresa individual, negocio profesional o participaciones (incompatible con la estatal del art. 20.6)",
+          "modo": "donacion"
+        },
+        {
+          "articulo": "art. 22 bis DLeg 1/2010 (Madrid)",
+          "titulo": "Reducción propia del 100 % por donaciones en metálico a familiares de los grupos I y II o hermanos para vivienda habitual, participaciones o empresa (límite 250.000 €)",
+          "modo": "donacion"
+        }
+      ],
+      "notas": [
+        "El art. 21 (reducciones) se lee en la redacción de la Ley 3/2026, en vigor desde el 1 de julio de 2026; la redacción aplicable a fallecimientos anteriores de 2026 no está cargada.",
+        "También se asimilan a descendientes los menores en tutela o acogimiento familiar (art. 26); la calculadora no tiene ese parentesco: indícalos como «hijo» si procede."
+      ],
+      "no_modelado": [
+        "Las reducciones propias por empresa familiar del art. 22: si declaras valor_empresa_familiar se aplica la reducción estatal del 95 %."
+      ]
+    },
+    "andalucia": {
+      "nombre": "Andalucía",
+      "alias": [
+        "andalucia",
+        "junta de andalucia",
+        "comunidad autonoma de andalucia"
+      ],
+      "fuente_principal": {
+        "norma": "Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía (texto consolidado)",
+        "boe_id": "BOE-A-2021-17915",
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2021-17915",
+        "consolidado_a": "2025-12-31",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "9f2dd5e37f2dfb8b4110af9c16284954542124e281ac407271239304c34a6051"
+      },
+      "equiparaciones": [
+        {
+          "parentesco": "pareja_de_hecho",
+          "equivale_a": "conyuge",
+          "articulo": "art. 26 Ley 5/2021 (Andalucía)",
+          "resumen": "Exige que la pareja de hecho esté inscrita en el Registro de Parejas de Hecho de Andalucía o en un registro análogo de otra Administración.",
+          "en_vigor_desde": "2022-01-01",
+          "requisitos_no_comprobados": [
+            "Inscripción de la pareja en el Registro de Parejas de Hecho de Andalucía o en un registro análogo"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 26.1.a) Ley 5/2021 (Andalucía)",
+              "cita": "a) Las parejas o uniones de hecho inscritas en el Registro de Parejas de Hecho de la Comunidad Autónoma de Andalucía o en registros análogos de otras administraciones públicas se equipararán a los cónyuges."
+            },
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 26.2 Ley 5/2021 (Andalucía)",
+              "cita": "2. Las equiparaciones previstas en el presente artículo se aplicarán a: a) Las reducciones en la base imponible, coeficientes multiplicadores y bonificaciones en la cuota previstas en el Capítulo III del Título I de la presente Ley. b) Las reducciones en la base imponible previstas en el artículo 20 de la Ley 29/1987, de 18 de diciembre, del impuesto sobre sucesiones y donaciones."
+            }
+          ]
+        }
+      ],
+      "reducciones": [
+        {
+          "clave": "parentesco",
+          "titulo": "Reducción por parentesco (Andalucía)",
+          "clase": "parentesco",
+          "caracter": "mejora",
+          "articulo": "art. 28 Ley 5/2021 (Andalucía)",
+          "resumen": "Sustituye a la estatal: 1.000.000 € en los grupos I y II y 10.000 € en el grupo III.",
+          "en_vigor_desde": "2022-01-01",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "tramos": [
+            {
+              "cuando": {
+                "grupos": [
+                  "I",
+                  "II"
+                ]
+              },
+              "importe": "1000000"
+            },
+            {
+              "cuando": {
+                "grupos": [
+                  "III"
+                ]
+              },
+              "importe": "10000"
+            }
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 28.1 Ley 5/2021 (Andalucía)",
+              "cita": "1. El importe de reducción previsto en el artículo 20.2 a) de la Ley 29/1987, de 18 de diciembre, del impuesto sobre sucesiones y donaciones en el supuesto de adquisiciones mortis causa, incluidas las de los beneficiarios de pólizas de seguros de vida, será el siguiente: a) Grupo I: adquisiciones por descendientes y adoptados menores de 21 años, 1.000.000 de euros. b) Grupo II: adquisiciones por descendientes y adoptados de 21 o más años, cónyuges, ascendientes y adoptantes, 1.000.000 euros. c) Grupo III: adquisiciones por colaterales de segundo y tercer grado, ascendientes y descendientes por afinidad, 10.000 euros."
+            }
+          ]
+        },
+        {
+          "clave": "discapacidad",
+          "titulo": "Reducción por discapacidad (Andalucía)",
+          "clase": "discapacidad",
+          "caracter": "mejora",
+          "articulo": "art. 29 Ley 5/2021 (Andalucía)",
+          "resumen": "Sustituye a la estatal: 250.000 € con discapacidad del 33 % al 65 % y 500.000 € desde el 65 %; compatible con la reducción por parentesco.",
+          "en_vigor_desde": "2022-01-01",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "tramos": [
+            {
+              "cuando": {
+                "discapacidad_desde": 65
+              },
+              "importe": "500000"
+            },
+            {
+              "cuando": {
+                "discapacidad_desde": 33,
+                "discapacidad_menor_de": 65
+              },
+              "importe": "250000"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Que el contribuyente tenga reconocida la consideración de persona con discapacidad"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 29.1 Ley 5/2021 (Andalucía)",
+              "cita": "a) 250.000 euros, si el grado de discapacidad fuera igual o superior al 33% e inferior al 65%. b) 500.000 euros, si el grado de discapacidad fuera igual o superior al 65%."
+            }
+          ]
+        }
+      ],
+      "vivienda_habitual": [
+        {
+          "articulo": "art. 27 Ley 5/2021 (Andalucía)",
+          "resumen": "Eleva al 99 % el porcentaje de la reducción estatal por la vivienda habitual del fallecido y baja a tres años el plazo de mantenimiento.",
+          "en_vigor_desde": "2022-01-01",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "porcentaje": "0.99",
+          "anos_mantenimiento": 3,
+          "colateral_mayor_de": 65,
+          "colateral_anos_convivencia": 2,
+          "requisitos_no_comprobados": [
+            "Que el inmueble fuera la vivienda habitual del fallecido"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 27 Ley 5/2021 (Andalucía)",
+              "cita": "1. El porcentaje de reducción previsto en el artículo 20.2 c) de la Ley 29/1987, de 18 de diciembre, del impuesto sobre sucesiones y donaciones en el supuesto de adquisición mortis causa de la vivienda habitual del causante será del 99%. 2. Esta reducción será de aplicación con los siguientes requisitos: a) Que los causahabientes sean el cónyuge, ascendientes o descendientes del causante o las personas equiparadas a éstos de acuerdo con lo establecido en el artículo 26, o bien pariente colateral mayor de 65 años que hubiese convivido con el mismo durante los dos años anteriores al fallecimiento. b) Que la adquisición se mantenga durante los tres años siguientes a la fecha del fallecimiento del causante, salvo que el adquirente falleciera dentro de ese plazo."
+            }
+          ]
+        }
+      ],
+      "reducciones_bienes": [
+        {
+          "clase": "empresa",
+          "articulo": "arts. 30 y 31 Ley 5/2021 (Andalucía)",
+          "resumen": "Mejora andaluza: 99 % para adquirentes de los grupos I, II y III; exige, entre otros requisitos, el ejercicio habitual, personal y directo de la actividad (o, en participaciones, porcentajes mínimos de participación y funciones de dirección) y mantener lo adquirido tres años.",
+          "en_vigor_desde": "2022-01-01",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "porcentaje": "0.99",
+          "anos_mantenimiento": 3,
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 30.1 Ley 5/2021 (Andalucía)",
+              "cita": "se aplicará en la base imponible una reducción del 99% del mencionado valor, siempre que se cumplan los siguientes requisitos:"
+            },
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 30.1.c) Ley 5/2021 (Andalucía)",
+              "cita": "c) Que durante los tres años siguientes a la fecha de fallecimiento del causante el adquirente mantenga en su patrimonio los bienes y derechos adquiridos, salvo que falleciera dentro de este plazo."
+            },
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 31.1 Ley 5/2021 (Andalucía)",
+              "cita": "se aplicará en la base imponible una reducción del 99% del valor de los citados derechos, siempre que se cumplan los siguientes requisitos:"
+            },
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 31.1.e) Ley 5/2021 (Andalucía)",
+              "cita": "e) Que el adquirente mantenga en su patrimonio las participaciones en la entidad durante los tres años siguientes a la fecha de fallecimiento del causante, salvo que falleciera dentro de este plazo."
+            }
+          ]
+        },
+        {
+          "clase": "empresa",
+          "articulo": "arts. 35 y 36 Ley 5/2021 (Andalucía)",
+          "resumen": "Mejora andaluza: 99 % del valor neto en donaciones de empresa individual, negocio profesional o participaciones entre parientes de los grupos I, II y III, con requisitos de ejercicio de la actividad o de participación y mantenimiento durante tres años.",
+          "en_vigor_desde": "2022-01-01",
+          "cuando": {
+            "modo": "donacion"
+          },
+          "porcentaje": "0.99",
+          "anos_mantenimiento": 3,
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 35.1 Ley 5/2021 (Andalucía)",
+              "cita": "1. En el supuesto de adquisición inter vivos de una empresa individual o negocio profesional, se establece una mejora de la reducción estatal en la base imponible del 99% del valor neto de los citados bienes y derechos, siempre que se cumplan los siguientes requisitos:"
+            },
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 35.1.c) Ley 5/2021 (Andalucía)",
+              "cita": "c) Que el donatario mantenga en su patrimonio los bienes y derechos adquiridos durante los tres años siguientes a la fecha de la donación, salvo que falleciera dentro de este plazo."
+            },
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 36.1 Ley 5/2021 (Andalucía)",
+              "cita": "1. En el supuesto de adquisición inter vivos de participaciones en una entidad se establece una mejora de la reducción en la base imponible del 99% del valor neto de los citados bienes y derechos, siempre que se cumplan los siguientes requisitos:"
+            },
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 36.1.e) Ley 5/2021 (Andalucía)",
+              "cita": "e) Que el donatario mantenga en su patrimonio las participaciones en la entidad durante los tres años siguientes a la fecha de la donación, salvo que falleciera dentro de este plazo."
+            }
+          ]
+        }
+      ],
+      "tarifas": [
+        {
+          "articulo": "art. 37 Ley 5/2021 (Andalucía)",
+          "resumen": "Tarifa propia de Andalucía.",
+          "en_vigor_desde": "2022-01-01",
+          "escala": {
+            "tramos": [
+              {
+                "hasta": "8000",
+                "tipo": "0.07",
+                "cuota_hasta_inicio": "0"
+              },
+              {
+                "hasta": "15000",
+                "tipo": "0.08",
+                "cuota_hasta_inicio": "560"
+              },
+              {
+                "hasta": "30000",
+                "tipo": "0.1",
+                "cuota_hasta_inicio": "1120"
+              },
+              {
+                "hasta": "50000",
+                "tipo": "0.12",
+                "cuota_hasta_inicio": "2620"
+              },
+              {
+                "hasta": "70000",
+                "tipo": "0.14",
+                "cuota_hasta_inicio": "5020"
+              },
+              {
+                "hasta": "100000",
+                "tipo": "0.16",
+                "cuota_hasta_inicio": "7820"
+              },
+              {
+                "hasta": "150000",
+                "tipo": "0.18",
+                "cuota_hasta_inicio": "12620"
+              },
+              {
+                "hasta": "200000",
+                "tipo": "0.2",
+                "cuota_hasta_inicio": "21620"
+              },
+              {
+                "hasta": "400000",
+                "tipo": "0.22",
+                "cuota_hasta_inicio": "31620"
+              },
+              {
+                "hasta": "800000",
+                "tipo": "0.24",
+                "cuota_hasta_inicio": "75620"
+              },
+              {
+                "hasta": null,
+                "tipo": "0.26",
+                "cuota_hasta_inicio": "171620"
+              }
+            ],
+            "fuente": {
+              "referencia": "art. 37 Ley 5/2021 (Andalucía)",
+              "en_vigor_desde": "2022-01-01",
+              "verificado": true
+            }
+          },
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 37 Ley 5/2021 (Andalucía)",
+              "cita": "0 0 8.000 7 8.000 560 7.000 8 15.000 1.120 15.000 10 30.000 2.620 20.000 12 50.000 5.020 20.000 14 70.000 7.820 30.000 16 100.000 12.620 50.000 18 150.000 21.620 50.000 20 200.000 31.620 200.000 22 400.000 75.620 400.000 24 800.000 171.620 En adelante 26"
+            }
+          ]
+        }
+      ],
+      "coeficientes": [
+        {
+          "articulo": "art. 38 Ley 5/2021 (Andalucía)",
+          "resumen": "Coeficientes multiplicadores de Andalucía: dependen solo del grupo de parentesco, no del patrimonio preexistente.",
+          "en_vigor_desde": "2022-01-01",
+          "tramos": [
+            {
+              "patrimonio_hasta": null,
+              "coeficientes": {
+                "I": "1",
+                "II": "1",
+                "III": "1.5",
+                "IV": "1.9"
+              }
+            }
+          ],
+          "regla_exceso": false,
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 38.1 Ley 5/2021 (Andalucía)",
+              "cita": "Grupos I y II Grupo III Grupo IV 1,0 1,5 1,9"
+            }
+          ]
+        }
+      ],
+      "bonificaciones": [
+        {
+          "titulo": "Bonificación de Andalucía para cónyuge, ascendientes y descendientes (herencias)",
+          "articulo": "art. 39 Ley 5/2021 (Andalucía)",
+          "resumen": "Bonificación del 99 % de la cuota en herencias y seguros de vida para los grupos I y II.",
+          "en_vigor_desde": "2022-01-01",
+          "cuando": {
+            "modo": "sucesion",
+            "grupos": [
+              "I",
+              "II"
+            ]
+          },
+          "porcentaje": "0.99",
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 39 Ley 5/2021 (Andalucía)",
+              "cita": "Los contribuyentes incluidos en los Grupos I y II de los previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del Impuesto sobre Sucesiones y Donaciones, o en los supuestos de equiparaciones establecidos en el artículo 26, aplicarán una bonificación del 99% en la cuota tributaria derivada de adquisiciones mortis causa, incluidas las de los beneficiarios de pólizas de seguro de vida."
+            }
+          ]
+        },
+        {
+          "titulo": "Bonificación de Andalucía para cónyuge, ascendientes y descendientes (donaciones)",
+          "articulo": "art. 40 Ley 5/2021 (Andalucía)",
+          "resumen": "Bonificación del 99 % de la cuota en donaciones para los grupos I y II; si la base imponible supera 5.000 € y el bien no exige por sí mismo documento público, la donación debe formalizarse en documento público.",
+          "en_vigor_desde": "2026-01-01",
+          "cuando": {
+            "modo": "donacion",
+            "grupos": [
+              "I",
+              "II"
+            ],
+            "base_imponible_hasta": "5000"
+          },
+          "porcentaje": "0.99",
+          "requisitos_no_comprobados": [
+            "Solo alcanza a la parte de la cuota que corresponda a bienes y derechos declarados de forma espontánea, sin requerimiento previo de la Administración",
+            "El documento público debe otorgarse con entrega simultánea del bien; si se dona dinero o bienes del art. 12 de la Ley del Impuesto sobre el Patrimonio por más de 5.000 €, en el plazo máximo de un mes desde la entrega, justificando y manifestando en él el origen de los fondos",
+            "Para el umbral de 5.000 € se suman las donaciones del mismo donante al mismo donatario en los tres años anteriores (salvo las de bienes que exigen documento público)"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 40.1 Ley 5/2021 (Andalucía)",
+              "cita": "1. Los contribuyentes incluidos en los Grupos I y II de los previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del impuesto sobre sucesiones y donaciones, o en los supuestos de equiparaciones establecidos en el artículo 26, aplicarán una bonificación del 99% en la cuota tributaria derivada de adquisiciones inter vivos."
+            },
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 40.2 Ley 5/2021 (Andalucía)",
+              "cita": "2. La bonificación a que se refiere el apartado anterior será aplicable, exclusivamente, sobre la parte de la cuota que proporcionalmente corresponda a los bienes y derechos declarados por el sujeto pasivo de forma espontánea, sin requerimiento previo de la Administración tributaria, y quedará sujeta a los siguientes requisitos: a) En relación con aquellos elementos patrimoniales cuyas transmisiones no requieran para su eficacia el otorgamiento de documento público, el negocio jurídico a título gratuito e inter vivos deberá formalizarse en documento público, con la entrega simultánea del bien, cuando la base imponible del impuesto sea superior a 5.000 euros o su contravalor en moneda extranjera."
+            }
+          ]
+        },
+        {
+          "titulo": "Bonificación de Andalucía para cónyuge, ascendientes y descendientes (donaciones)",
+          "articulo": "art. 40 Ley 5/2021 (Andalucía)",
+          "resumen": "Bonificación del 99 % de la cuota en donaciones para los grupos I y II; si la base imponible supera 5.000 € y el bien no exige por sí mismo documento público, la donación debe formalizarse en documento público.",
+          "en_vigor_desde": "2026-01-01",
+          "cuando": {
+            "modo": "donacion",
+            "grupos": [
+              "I",
+              "II"
+            ],
+            "requiere": [
+              "escritura_publica"
+            ]
+          },
+          "porcentaje": "0.99",
+          "requisitos_no_comprobados": [
+            "Solo alcanza a la parte de la cuota que corresponda a bienes y derechos declarados de forma espontánea, sin requerimiento previo de la Administración",
+            "El documento público debe otorgarse con entrega simultánea del bien; si se dona dinero o bienes del art. 12 de la Ley del Impuesto sobre el Patrimonio por más de 5.000 €, en el plazo máximo de un mes desde la entrega, justificando y manifestando en él el origen de los fondos",
+            "Para el umbral de 5.000 € se suman las donaciones del mismo donante al mismo donatario en los tres años anteriores (salvo las de bienes que exigen documento público)"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 40.1 Ley 5/2021 (Andalucía)",
+              "cita": "1. Los contribuyentes incluidos en los Grupos I y II de los previstos en el artículo 20.2.a) de la Ley 29/1987, de 18 de diciembre, del impuesto sobre sucesiones y donaciones, o en los supuestos de equiparaciones establecidos en el artículo 26, aplicarán una bonificación del 99% en la cuota tributaria derivada de adquisiciones inter vivos."
+            },
+            {
+              "boe_id": "BOE-A-2021-17915",
+              "articulo": "art. 40.2 Ley 5/2021 (Andalucía)",
+              "cita": "2. La bonificación a que se refiere el apartado anterior será aplicable, exclusivamente, sobre la parte de la cuota que proporcionalmente corresponda a los bienes y derechos declarados por el sujeto pasivo de forma espontánea, sin requerimiento previo de la Administración tributaria, y quedará sujeta a los siguientes requisitos: a) En relación con aquellos elementos patrimoniales cuyas transmisiones no requieran para su eficacia el otorgamiento de documento público, el negocio jurídico a título gratuito e inter vivos deberá formalizarse en documento público, con la entrega simultánea del bien, cuando la base imponible del impuesto sea superior a 5.000 euros o su contravalor en moneda extranjera."
+            }
+          ]
+        }
+      ],
+      "otras_reducciones": [
+        {
+          "articulo": "art. 32 Ley 5/2021 (Andalucía)",
+          "titulo": "Donación de dinero a descendientes para adquirir su vivienda habitual (99 %, menores de 35 años o con discapacidad)",
+          "modo": "donacion"
+        },
+        {
+          "articulo": "art. 33 Ley 5/2021 (Andalucía)",
+          "titulo": "Donación de vivienda habitual a descendientes (99 %)",
+          "modo": "donacion"
+        },
+        {
+          "articulo": "art. 34 Ley 5/2021 (Andalucía)",
+          "titulo": "Donación de dinero a parientes para constituir o ampliar una empresa individual o negocio profesional (99 %)",
+          "modo": "donacion"
+        }
+      ],
+      "notas": [
+        "También se equiparan a adoptados y adoptantes las personas en acogimiento familiar permanente o guarda con fines de adopción (art. 26); indícalos como «hijo» o «padre» si procede."
+      ]
+    },
+    "cataluna": {
+      "nombre": "Cataluña",
+      "alias": [
+        "cataluna",
+        "catalunya",
+        "generalitat de catalunya",
+        "generalitat de cataluna"
+      ],
+      "fuente_principal": {
+        "norma": "Decreto Legislativo 1/2024, de 12 de marzo, por el que se aprueba el libro sexto del Código tributario de Cataluña, que integra el texto refundido de los preceptos legales vigentes en Cataluña en materia de tributos cedidos (texto consolidado)",
+        "boe_id": "BOE-A-2024-6951",
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-6951",
+        "consolidado_a": "2026-05-22",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "bc994c0eac637ca386b63d8d3cdcf26be2a0dbcc54f5d92572749a071f52508a"
+      },
+      "equiparaciones": [
+        {
+          "parentesco": "pareja_de_hecho",
+          "equivale_a": "conyuge",
+          "articulo": "art. 634-1 Código tributario de Cataluña, libro sexto",
+          "resumen": "Exige acreditar la convivencia en pareja estable conforme a la normativa que regula estas uniones.",
+          "en_vigor_desde": "2024-03-15",
+          "requisitos_no_comprobados": [
+            "Acreditar la convivencia en pareja estable según su normativa reguladora"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 634-1 Código tributario de Cataluña, libro sexto",
+              "cita": "1. Los miembros de las parejas estables quedan asimilados a los cónyuges, a efectos del impuesto sobre sucesiones y donaciones. 2. Para poder disfrutar de la asimilación que establece el apartado 1, el sujeto pasivo ha de acreditar la convivencia en pareja estable, de acuerdo con los requisitos que se establezcan a tal efecto por la normativa reguladora de dichas uniones."
+            }
+          ]
+        },
+        {
+          "parentesco": "hijastro",
+          "equivale_a": "hijo",
+          "articulo": "art. 634-2 Código tributario de Cataluña, libro sexto",
+          "resumen": "La relación entre una persona y los hijos de su cónyuge o pareja estable se trata como la de ascendientes e hijos.",
+          "en_vigor_desde": "2024-03-15",
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 634-2 Código tributario de Cataluña, libro sexto",
+              "cita": "Las relaciones entre un cónyuge o un conviviente en pareja estable y los hijos de su cónyuge o del otro miembro de la pareja quedan asimiladas, a efectos del impuesto sobre sucesiones y donaciones, a las relaciones entre ascendientes e hijos."
+            }
+          ]
+        },
+        {
+          "parentesco": "padrastro",
+          "equivale_a": "padre",
+          "articulo": "art. 634-2 Código tributario de Cataluña, libro sexto",
+          "resumen": "La relación entre una persona y los hijos de su cónyuge o pareja estable se trata como la de ascendientes e hijos.",
+          "en_vigor_desde": "2024-03-15",
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 634-2 Código tributario de Cataluña, libro sexto",
+              "cita": "Las relaciones entre un cónyuge o un conviviente en pareja estable y los hijos de su cónyuge o del otro miembro de la pareja quedan asimiladas, a efectos del impuesto sobre sucesiones y donaciones, a las relaciones entre ascendientes e hijos."
+            }
+          ]
+        }
+      ],
+      "reducciones": [
+        {
+          "clave": "parentesco",
+          "titulo": "Reducción por parentesco (Cataluña)",
+          "clase": "parentesco",
+          "caracter": "mejora",
+          "articulo": "art. 631-2 Código tributario de Cataluña, libro sexto",
+          "resumen": "Sustituye a la estatal: grupo I, 100.000 € más 12.000 € por año menos de 21 (hasta 196.000 €); grupo II, 100.000 € cónyuge e hijos, 50.000 € resto de descendientes y 30.000 € ascendientes; grupo III, 8.000 €.",
+          "en_vigor_desde": "2024-03-15",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "tramos": [
+            {
+              "cuando": {
+                "grupos": [
+                  "I"
+                ]
+              },
+              "importe": "100000",
+              "incremento_por_ano": "12000",
+              "edad_referencia": 21,
+              "maximo": "196000"
+            },
+            {
+              "cuando": {
+                "grupos": [
+                  "II"
+                ],
+                "parentescos": [
+                  "conyuge",
+                  "hijo"
+                ]
+              },
+              "importe": "100000"
+            },
+            {
+              "cuando": {
+                "grupos": [
+                  "II"
+                ],
+                "parentescos": [
+                  "otro_descendiente"
+                ]
+              },
+              "importe": "50000"
+            },
+            {
+              "cuando": {
+                "grupos": [
+                  "II"
+                ],
+                "parentescos": [
+                  "padre",
+                  "otro_ascendiente"
+                ]
+              },
+              "importe": "30000"
+            },
+            {
+              "cuando": {
+                "grupos": [
+                  "III"
+                ]
+              },
+              "importe": "8000"
+            }
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 631-2 Código tributario de Cataluña, libro sexto",
+              "cita": "a) Grupo I (adquisiciones por descendientes menores de veintiún años): 100.000, más 12.000 euros por cada año de menos de veintiuno que tenga el causahabiente, hasta un límite de 196.000 euros. b) Grupo II (adquisiciones por descendientes de veintiún años o más, cónyuges y ascendientes): – Cónyuge: 100.000 euros. – Hijo o hija: 100.000 euros. – Resto de descendientes: 50.000 euros. – Ascendientes: 30.000 euros. c) Grupo III (adquisiciones por colaterales de segundo y tercer grado y por ascendientes y descendientes por afinidad): 8.000 euros."
+            }
+          ]
+        },
+        {
+          "clave": "discapacidad",
+          "titulo": "Reducción por discapacidad (Cataluña)",
+          "clase": "discapacidad",
+          "caracter": "mejora",
+          "articulo": "art. 631-3 Código tributario de Cataluña, libro sexto",
+          "resumen": "Sustituye a la estatal: 275.000 € con discapacidad igual o superior al 33 % y 650.000 € desde el 65 %.",
+          "en_vigor_desde": "2024-03-15",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "tramos": [
+            {
+              "cuando": {
+                "discapacidad_desde": 65
+              },
+              "importe": "650000"
+            },
+            {
+              "cuando": {
+                "discapacidad_desde": 33
+              },
+              "importe": "275000"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Que el grado de discapacidad esté reconocido conforme al baremo estatal"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 631-3 Código tributario de Cataluña, libro sexto",
+              "cita": "Junto con las reducciones que puedan corresponder en función del grado de parentesco entre el adquirente y el causante, en las adquisiciones por causa de muerte por parte de personas con discapacidad física, psíquica o sensorial con un grado de discapacidad igual o superior al 33 % se aplica una reducción de 275.000 euros. Si el grado de discapacidad es igual o superior al 65 %, la reducción es de 650.000 euros."
+            }
+          ]
+        },
+        {
+          "clave": "mayores",
+          "titulo": "Reducción para personas mayores (Cataluña)",
+          "clase": "edad",
+          "caracter": "propia",
+          "articulo": "art. 631-4 Código tributario de Cataluña, libro sexto",
+          "resumen": "Reducción propia de 275.000 € para adquirentes del grupo II de 75 años o más; incompatible con la reducción por discapacidad.",
+          "en_vigor_desde": "2024-03-15",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "tramos": [
+            {
+              "cuando": {
+                "grupos": [
+                  "II"
+                ],
+                "edad_desde": 75
+              },
+              "importe": "275000"
+            }
+          ],
+          "incompatible_con": [
+            "discapacidad"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 631-4 Código tributario de Cataluña, libro sexto",
+              "cita": "1. En les adquisiciones por causa de muerte por personas del grupo II de setenta y cinco años o más se aplica una reducción de 275.000 euros. 2. Esta reducción es incompatible con la reducción por discapacidad que establece el artículo 631-3."
+            }
+          ]
+        }
+      ],
+      "vivienda_habitual": [
+        {
+          "articulo": "arts. 631-17 a 631-19 Código tributario de Cataluña, libro sexto",
+          "resumen": "Reducción del 95 % del valor de la vivienda habitual del fallecido, con un límite conjunto de 500.000 € que se prorratea entre los adquirentes (mínimo individual de 180.000 €) y cinco años de mantenimiento.",
+          "en_vigor_desde": "2024-03-15",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "porcentaje": "0.95",
+          "limite_conjunto": "500000",
+          "limite_individual_minimo": "180000",
+          "anos_mantenimiento": 5,
+          "colateral_mayor_de": 65,
+          "colateral_anos_convivencia": 2,
+          "requisitos_no_comprobados": [
+            "Que el inmueble fuera la vivienda habitual del fallecido (admite un trastero y hasta dos plazas de aparcamiento, y la que lo fue en los diez años anteriores si residía en otro domicilio)",
+            "Si formaba parte de los gananciales, la reducción solo alcanza a la mitad de su valor (art. 631-32)"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 631-17 Código tributario de Cataluña, libro sexto",
+              "cita": "En las adquisiciones por causa de muerte que correspondan al cónyuge, a los descendientes, a los ascendientes o a los colaterales del causante, puede aplicarse en la base imponible una reducción del 95 % del valor de la vivienda habitual del causante, con un límite de 500.000 euros por el valor conjunto de la vivienda, que debe prorratearse entre los sujetos pasivos en proporción a su participación; en todo caso, el límite individual resultante del prorrateo entre los sujetos pasivos no puede ser menor de 180.000 euros."
+            },
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 631-18.2 Código tributario de Cataluña, libro sexto",
+              "cita": "2. Los parientes colaterales del causante, para poder disfrutar de la reducción establecida en el apartado 1, deben ser mayores de sesenta y cinco años y deben haber convivido con el causante como mínimo los dos años anteriores a su muerte."
+            },
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 631-19.1 Código tributario de Cataluña, libro sexto",
+              "cita": "1. El disfrute definitivo de la reducción establecida en esta subsección queda condicionado al mantenimiento de la vivienda, o de la vivienda subrogada de valor equivalente que pase a ser vivienda habitual del causahabiente, en el patrimonio del adquirente durante los cinco años siguientes a la muerte del causante, salvo que el adquirente fallezca en este plazo."
+            }
+          ]
+        }
+      ],
+      "seguro_vida": [
+        {
+          "articulo": "art. 631-5 Código tributario de Cataluña, libro sexto",
+          "resumen": "Reducción del 100 % de lo percibido por seguros de vida, con un límite de 25.000 € por beneficiario, para cónyuge, descendientes y ascendientes del contratante.",
+          "en_vigor_desde": "2024-03-15",
+          "cuando": {
+            "modo": "sucesion"
+          },
+          "porcentaje": "1",
+          "limite": "25000",
+          "requisitos_no_comprobados": [
+            "En seguros colectivos o de empresa se atiende al parentesco con el asegurado"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 631-5.1 Código tributario de Cataluña, libro sexto",
+              "cita": "1. En las adquisiciones por causa de muerte, se aplica una reducción del 100 %, con un límite de 25.000 euros, de las cantidades percibidas por las personas beneficiarias de contratos de seguros de vida, si su parentesco con el contratante muerto es el de cónyuge, de descendiente o de ascendiente."
+            }
+          ]
+        }
+      ],
+      "tarifas": [
+        {
+          "articulo": "art. 633-2 Código tributario de Cataluña, libro sexto",
+          "resumen": "Tarifa reducida de Cataluña para donaciones a contribuyentes de los grupos I y II formalizadas en escritura pública.",
+          "en_vigor_desde": "2024-03-15",
+          "cuando": {
+            "modo": "donacion",
+            "grupos": [
+              "I",
+              "II"
+            ],
+            "requiere": [
+              "escritura_publica"
+            ]
+          },
+          "escala": {
+            "tramos": [
+              {
+                "hasta": "200000",
+                "tipo": "0.05",
+                "cuota_hasta_inicio": "0"
+              },
+              {
+                "hasta": "600000",
+                "tipo": "0.07",
+                "cuota_hasta_inicio": "10000"
+              },
+              {
+                "hasta": null,
+                "tipo": "0.09",
+                "cuota_hasta_inicio": "38000"
+              }
+            ],
+            "fuente": {
+              "referencia": "art. 633-2 Código tributario de Cataluña, libro sexto",
+              "en_vigor_desde": "2024-03-15",
+              "verificado": true
+            }
+          },
+          "requisitos_no_comprobados": [
+            "Si la escritura no es requisito de validez, debe otorgarse en el plazo de un mes desde la entrega del bien o la celebración del negocio (también vale una sentencia judicial)",
+            "No se aplica a los contratos de seguro de vida y negocios del art. 12.e) del Reglamento del impuesto"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 633-2.1 Código tributario de Cataluña, libro sexto",
+              "cita": "0,00 0,00 200.000,00 5 200.000,00 10.000,00 600.000,00 7 600.000,00 38.000,00 En adelante 9"
+            },
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 633-2 Código tributario de Cataluña, libro sexto",
+              "cita": "1. La cuota íntegra del impuesto sobre sucesiones y donaciones en las transmisiones lucrativas entre vivos a favor de contribuyentes de los grupos I y II que define el artículo 631-2 se obtiene como resultado de aplicar a la base liquidable la siguiente escala:"
+            },
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 633-2.2 Código tributario de Cataluña, libro sexto",
+              "cita": "2. Para poder aplicar la tarifa que establece el apartado 1, la donación entre vivos, o el negocio jurídico equiparable, debe haberse formalizado en escritura pública o sentencia judicial. Si la escritura no es requisito de validez, es necesario que el otorgante u otorgantes la eleven a pública: a) En el plazo de un mes, a contar desde la fecha de entrega del bien. b) En el caso del negocio jurídico equiparable, en el plazo de un mes, a contar desde la celebración del negocio."
+            }
+          ]
+        },
+        {
+          "articulo": "art. 633-1 Código tributario de Cataluña, libro sexto",
+          "resumen": "Tarifa general de Cataluña.",
+          "en_vigor_desde": "2024-03-15",
+          "escala": {
+            "tramos": [
+              {
+                "hasta": "50000",
+                "tipo": "0.07",
+                "cuota_hasta_inicio": "0"
+              },
+              {
+                "hasta": "150000",
+                "tipo": "0.11",
+                "cuota_hasta_inicio": "3500"
+              },
+              {
+                "hasta": "400000",
+                "tipo": "0.17",
+                "cuota_hasta_inicio": "14500"
+              },
+              {
+                "hasta": "800000",
+                "tipo": "0.24",
+                "cuota_hasta_inicio": "57000"
+              },
+              {
+                "hasta": null,
+                "tipo": "0.32",
+                "cuota_hasta_inicio": "153000"
+              }
+            ],
+            "fuente": {
+              "referencia": "art. 633-1 Código tributario de Cataluña, libro sexto",
+              "en_vigor_desde": "2024-03-15",
+              "verificado": true
+            }
+          },
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 633-1 Código tributario de Cataluña, libro sexto",
+              "cita": "0,00 0,00 50.000,00 7 50.000,00 3.500,00 150.000,00 11 150.000,00 14.500,00 400.000,00 17 400.000,00 57.000,00 800.000,00 24 800.000,00 153.000,00 En adelante 32"
+            }
+          ]
+        }
+      ],
+      "coeficientes": [
+        {
+          "articulo": "art. 633-3 Código tributario de Cataluña, libro sexto",
+          "resumen": "Coeficientes multiplicadores de Cataluña según patrimonio preexistente y grupo.",
+          "en_vigor_desde": "2024-03-15",
+          "tramos": [
+            {
+              "patrimonio_hasta": "500000",
+              "coeficientes": {
+                "I": "1",
+                "II": "1",
+                "III": "1.5882",
+                "IV": "2"
+              }
+            },
+            {
+              "patrimonio_hasta": "2000000",
+              "coeficientes": {
+                "I": "1.1",
+                "II": "1.1",
+                "III": "1.5882",
+                "IV": "2"
+              }
+            },
+            {
+              "patrimonio_hasta": "4000000",
+              "coeficientes": {
+                "I": "1.15",
+                "II": "1.15",
+                "III": "1.5882",
+                "IV": "2"
+              }
+            },
+            {
+              "patrimonio_hasta": null,
+              "coeficientes": {
+                "I": "1.2",
+                "II": "1.2",
+                "III": "1.5882",
+                "IV": "2"
+              }
+            }
+          ],
+          "regla_exceso": false,
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 633-3 Código tributario de Cataluña, libro sexto",
+              "cita": "De 0 a 500.000. 1,0000 1,5882 2,0000 De 500.000,01 a 2.000.000,00. 1,1000 1,5882 2,0000 De 2.000.000,01 a 4.000.000,00. 1,1500 1,5882 2,0000 Más de 4.000.000,00. 1,2000 1,5882 2,0000"
+            }
+          ]
+        }
+      ],
+      "bonificaciones": [
+        {
+          "titulo": "Bonificación de Cataluña para el cónyuge (herencias)",
+          "articulo": "art. 633-4.1 Código tributario de Cataluña, libro sexto",
+          "resumen": "Bonificación del 99 % de la cuota para el cónyuge en herencias y seguros de vida.",
+          "en_vigor_desde": "2025-06-27",
+          "cuando": {
+            "modo": "sucesion",
+            "parentescos": [
+              "conyuge"
+            ]
+          },
+          "porcentaje": "0.99",
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 633-4.1 Código tributario de Cataluña, libro sexto",
+              "cita": "1. Los cónyuges pueden aplicar una bonificación del 99 % de la cuota tributaria del impuesto sobre sucesiones en las adquisiciones por causa de muerte, incluidas las cantidades percibidas por las personas beneficiarias de seguros de vida que se acumulan al resto de bienes y derechos que integran su porción hereditaria."
+            }
+          ]
+        },
+        {
+          "titulo": "Bonificación de Cataluña para descendientes menores de 21 años (herencias)",
+          "articulo": "art. 633-4.2.a) Código tributario de Cataluña, libro sexto",
+          "resumen": "Bonificación decreciente para el grupo I: del 99 % en los primeros 100.000 € de base imponible al 20 % a partir de 3.000.000 €; se aplica el porcentaje medio ponderado.",
+          "en_vigor_desde": "2025-06-27",
+          "cuando": {
+            "modo": "sucesion",
+            "grupos": [
+              "I"
+            ]
+          },
+          "tramos": [
+            {
+              "hasta": "100000",
+              "porcentaje": "0.99"
+            },
+            {
+              "hasta": "200000",
+              "porcentaje": "0.97"
+            },
+            {
+              "hasta": "300000",
+              "porcentaje": "0.95"
+            },
+            {
+              "hasta": "500000",
+              "porcentaje": "0.9"
+            },
+            {
+              "hasta": "750000",
+              "porcentaje": "0.8"
+            },
+            {
+              "hasta": "1000000",
+              "porcentaje": "0.7"
+            },
+            {
+              "hasta": "1500000",
+              "porcentaje": "0.6"
+            },
+            {
+              "hasta": "2000000",
+              "porcentaje": "0.5"
+            },
+            {
+              "hasta": "2500000",
+              "porcentaje": "0.4"
+            },
+            {
+              "hasta": "3000000",
+              "porcentaje": "0.25"
+            },
+            {
+              "hasta": null,
+              "porcentaje": "0.2"
+            }
+          ],
+          "tramos_sobre": "base_imponible",
+          "tramos_metodo": "medio_ponderado",
+          "redondeo_porcentaje": "dos_decimales_milesima_hasta_5_abajo",
+          "pierde_con": [
+            "empresa",
+            "patrimonio_historico",
+            "otras_reducciones"
+          ],
+          "requisitos_no_comprobados": [
+            "Se pierde si se opta por las reducciones de las subsecciones tercera a décima (empresa, participaciones, fincas forestales, explotación agraria, patrimonio cultural o natural; no la de vivienda habitual), por las de la Ley 19/1995 o por cualquier otra reducción o exención rogada que dependa de la voluntad del contribuyente (art. 633-4.4)",
+            "Con desmembramiento del dominio (usufructo, nuda propiedad) los tramos se miden sobre la base imponible teórica"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 633-4.2 Código tributario de Cataluña, libro sexto",
+              "cita": "2. El resto de contribuyentes de los grupos I y II pueden aplicar la bonificación en el porcentaje medio ponderado que resulte de la aplicación para cada tramo de base imponible de los siguientes porcentajes:"
+            },
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 633-4.2.a) Código tributario de Cataluña, libro sexto",
+              "cita": "0,00 0,00 100.000,00 99,00 100.000,00 99,00 100.000,00 97,00 200.000,00 98,00 100.000,00 95,00 300.000,00 97,00 200.000,00 90,00 500.000,00 94,20 250.000,00 80,00 750.000,00 89,47 250.000,00 70,00 1.000.000,00 84,60 500.000,00 60,00 1.500.000,00 76,40 500.000,00 50,00 2.000.000,00 69,80 500.000,00 40,00 2.500.000,00 63,84 500.000,00 25,00 3.000.000,00 57,37 En adelante 20,00"
+            },
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 633-4.5 Código tributario de Cataluña, libro sexto",
+              "cita": "5. El porcentaje medio ponderado resultante debe tener solo dos decimales, de modo que se aproximan las milésimas a la centésima más próxima: si la milésima es igual o inferior a 5, se mantiene la centésima; si es superior a 5, se aproxima a la centésima superior."
+            }
+          ]
+        },
+        {
+          "titulo": "Bonificación de Cataluña para el resto del grupo II (herencias)",
+          "articulo": "art. 633-4.2.b) Código tributario de Cataluña, libro sexto",
+          "resumen": "Bonificación decreciente para descendientes de 21 años o más y ascendientes: del 60 % en los primeros 100.000 € de base imponible al 0 % a partir de 3.000.000 €; se aplica el porcentaje medio ponderado.",
+          "en_vigor_desde": "2025-06-27",
+          "cuando": {
+            "modo": "sucesion",
+            "grupos": [
+              "II"
+            ],
+            "parentescos": [
+              "hijo",
+              "otro_descendiente",
+              "padre",
+              "otro_ascendiente"
+            ]
+          },
+          "tramos": [
+            {
+              "hasta": "100000",
+              "porcentaje": "0.6"
+            },
+            {
+              "hasta": "200000",
+              "porcentaje": "0.55"
+            },
+            {
+              "hasta": "300000",
+              "porcentaje": "0.5"
+            },
+            {
+              "hasta": "500000",
+              "porcentaje": "0.45"
+            },
+            {
+              "hasta": "750000",
+              "porcentaje": "0.4"
+            },
+            {
+              "hasta": "1000000",
+              "porcentaje": "0.35"
+            },
+            {
+              "hasta": "1500000",
+              "porcentaje": "0.3"
+            },
+            {
+              "hasta": "2000000",
+              "porcentaje": "0.25"
+            },
+            {
+              "hasta": "2500000",
+              "porcentaje": "0.2"
+            },
+            {
+              "hasta": "3000000",
+              "porcentaje": "0.1"
+            },
+            {
+              "hasta": null,
+              "porcentaje": "0"
+            }
+          ],
+          "tramos_sobre": "base_imponible",
+          "tramos_metodo": "medio_ponderado",
+          "redondeo_porcentaje": "dos_decimales_milesima_hasta_5_abajo",
+          "pierde_con": [
+            "empresa",
+            "patrimonio_historico",
+            "otras_reducciones"
+          ],
+          "requisitos_no_comprobados": [
+            "Se pierde si se opta por las reducciones de las subsecciones tercera a décima (empresa, participaciones, fincas forestales, explotación agraria, patrimonio cultural o natural; no la de vivienda habitual), por las de la Ley 19/1995 o por cualquier otra reducción o exención rogada que dependa de la voluntad del contribuyente (art. 633-4.4)",
+            "Con desmembramiento del dominio (usufructo, nuda propiedad) los tramos se miden sobre la base imponible teórica"
+          ],
+          "evidencia": [
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 633-4.2 Código tributario de Cataluña, libro sexto",
+              "cita": "2. El resto de contribuyentes de los grupos I y II pueden aplicar la bonificación en el porcentaje medio ponderado que resulte de la aplicación para cada tramo de base imponible de los siguientes porcentajes:"
+            },
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 633-4.2.b) Código tributario de Cataluña, libro sexto",
+              "cita": "0,00 0,00 100.000,00 60,00 100.000,00 60,00 100.000,00 55,00 200.000,00 57,50 100.000,00 50,00 300.000,00 55,00 200.000,00 45,00 500.000,00 51,00 250.000,00 40,00 750.000,00 47,33 250.000,00 35,00 1.000.000,00 44,25 500.000,00 30,00 1.500.000,00 39,50 500.000,00 25,00 2.000.000,00 35,88 500.000,00 20,00 2.500.000,00 32,70 500.000,00 10,00 3.000.000,00 28,92 En adelante 0,00"
+            },
+            {
+              "boe_id": "BOE-A-2024-6951",
+              "articulo": "art. 633-4.5 Código tributario de Cataluña, libro sexto",
+              "cita": "5. El porcentaje medio ponderado resultante debe tener solo dos decimales, de modo que se aproximan las milésimas a la centésima más próxima: si la milésima es igual o inferior a 5, se mantiene la centésima; si es superior a 5, se aproxima a la centésima superior."
+            }
+          ]
+        }
+      ],
+      "otras_reducciones": [
+        {
+          "articulo": "arts. 631-6 a 631-14 Código tributario de Cataluña, libro sexto",
+          "titulo": "Bienes afectos a una actividad económica y participaciones en entidades (95 %; 97 % en sociedades laborales)",
+          "modo": "sucesion"
+        },
+        {
+          "articulo": "arts. 631-15 y 631-16 Código tributario de Cataluña, libro sexto",
+          "titulo": "Participaciones adquiridas por personas con vínculos laborales o profesionales",
+          "modo": "sucesion"
+        },
+        {
+          "articulo": "arts. 631-20 y 631-21 Código tributario de Cataluña, libro sexto",
+          "titulo": "Fincas rústicas de dedicación forestal (95 %)",
+          "modo": "sucesion"
+        },
+        {
+          "articulo": "arts. 631-22 a 631-28 Código tributario de Cataluña, libro sexto",
+          "titulo": "Explotación agraria, bienes del patrimonio cultural y del patrimonio natural",
+          "modo": "sucesion"
+        },
+        {
+          "articulo": "art. 631-29 Código tributario de Cataluña, libro sexto",
+          "titulo": "Sobreimposición decenal (bienes transmitidos por herencia dos o más veces en diez años)",
+          "modo": "sucesion"
+        },
+        {
+          "articulo": "arts. 632-2 a 632-7 Código tributario de Cataluña, libro sexto",
+          "titulo": "Donación de negocio empresarial o profesional y de participaciones en entidades (95 %)",
+          "modo": "donacion"
+        },
+        {
+          "articulo": "sección única del capítulo II del título III Código tributario de Cataluña, libro sexto",
+          "titulo": "Donación de dinero para constituir o adquirir una empresa o participaciones; bienes del patrimonio cultural; fincas forestales; primera vivienda habitual; aportaciones a patrimonios protegidos de personas con discapacidad",
+          "modo": "donacion"
+        }
+      ],
+      "notas": [
+        "La Ley 19/2010 del impuesto sobre sucesiones y donaciones de Cataluña quedó derogada el 15 de marzo de 2024; sus reglas están ahora en el libro sexto del Código tributario de Cataluña (Decreto Legislativo 1/2024).",
+        "Las personas acogidas y sus acogedores se asimilan a hijos y ascendientes (art. 634-3); indícalos como «hijo» o «padre» si procede.",
+        "En las donaciones Cataluña no tiene bonificación en cuota: la ventaja para cónyuge, ascendientes y descendientes es la tarifa reducida (5 %-9 %) si hay escritura pública."
+      ],
+      "no_modelado": [
+        "Bonificación del 99 % para descendientes y ascendientes de una causante víctima de violencia machista (art. 633-4.1 bis).",
+        "Las reducciones catalanas por empresa y participaciones (95 %): si declaras valor_empresa_familiar se aplica la estatal, también del 95 %, y se pierde la bonificación de los grupos I y II."
+      ]
+    }
+  }
+}

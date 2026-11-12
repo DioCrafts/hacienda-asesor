@@ -424,6 +424,12 @@ def load_isd_params(ejercicio: int) -> ISDParams:
 # --- Self-check of the data against the law ---------------------------------
 
 
+_ETIQUETA_DE_BLOQUE = re.compile(
+    r"(?i)</?(?:p|div|br|hr|li|ul|ol|dl|dt|dd|h\d|table|thead|tbody|tfoot|tr|td|th|caption|blockquote|pre|"
+    r"section|article|header|footer|nav|form|select|option)\b[^>]*>"
+)
+
+
 def texto_plano(raw: str) -> str:
     """A boe.es page (or a text extract) as one line of text: tags out, entities decoded, single spaces.
 
@@ -431,7 +437,8 @@ def texto_plano(raw: str) -> str:
     cells and rows of a printed scale.
     """
     raw = re.sub(r"(?is)<(script|style)\b.*?</\1>", " ", raw)
-    raw = re.sub(r"<[^>]+>", " ", raw)
+    raw = re.sub(_ETIQUETA_DE_BLOQUE, " ", raw)
+    raw = re.sub(r"<[^>]+>", "", raw)  # inline markup (<em>a</em>) must not split a word
     return " ".join(html.unescape(raw).replace("\xa0", " ").split())
 
 

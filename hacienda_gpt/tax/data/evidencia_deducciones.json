@@ -45,11 +45,23 @@
    "b) Que la persona titular del hogar familiar, o, en su caso, su cónyuge o pareja inscrita en el Registro de Parejas de Hecho de la Comunidad Autónoma de Andalucía o en registros análogos de otras Administraciones públicas, sea de edad igual o superior a 75 años.",
    "3. Esta deducción será incompatible con la deducción autonómica regulada en el apartado 3 del artículo 18, cuando se trate de la misma persona empleada la que dé derecho a la aplicación de ambas deducciones."
   ],
-  "art. 18.3": [
-   "3. Asimismo, cuando se acredite que las personas con discapacidad necesitan ayuda de terceras personas y generen derecho a la aplicación del mínimo en concepto de gastos de asistencia, conforme a la normativa estatal reguladora del impuesto sobre la renta de las personas físicas, el contribuyente podrá deducirse de la cuota íntegra autonómica la cantidad resultante de aplicar el 20% del importe satisfecho a la Seguridad Social, en concepto de cuota fija que sea por cuenta del empleador o empleadora, de conformidad con lo establecido en el Sistema Especial del Régimen General de la Seguridad Social de Empleados del Hogar, con el límite de 500 euros anuales por contribuyente.",
-   "Únicamente tendrá derecho a esta deducción el contribuyente titular del hogar familiar que conste como tal en la Tesorería General de la Seguridad Social, por la afiliación en Andalucía al Sistema Especial del Régimen General de la Seguridad Social de Empleados del Hogar, de acuerdo con lo previsto en la normativa de aplicación.",
-   "Tendrán derecho a aplicar esta deducción aquellos contribuyentes cuando la suma de las bases imponibles general y del ahorro no sea superior a 80.000 euros, en tributación individual, o a 100.000 euros en caso de tributación conjunta.",
-   "3. Esta deducción será incompatible con la deducción autonómica regulada en el apartado 3 del artículo 18, cuando se trate de la misma persona empleada la que dé derecho a la aplicación de ambas deducciones."
+  "art. 9": [
+   "1. Sin perjuicio de la aplicación del tramo autonómico de la deducción por inversión en vivienda habitual establecida en la normativa estatal del impuesto sobre la renta de las personas físicas, en los casos que proceda, se establece una deducción del 6 % por las cantidades satisfechas en el período impositivo por la adquisición o rehabilitación del inmueble que constituya o vaya a constituir la vivienda habitual del contribuyente, siempre que concurra alguna de las siguientes condiciones en la fecha del devengo del impuesto:",
+   "b) Que el adquirente sea menor de 35 años. En caso de tributación conjunta, el requisito de la edad deberá cumplirlo, al menos, uno de los cónyuges o, en su caso, el padre o la madre en el supuesto de familias monoparentales.",
+   "2. Para la aplicación de la deducción es requisito que la suma de las bases imponibles general y del ahorro no sea superior a 25.000 euros, en tributación individual, o a 30.000 euros, en caso de tributación conjunta.",
+   "3. La base y el límite máximo de la deducción prevista en el apartado 1 se determinarán de acuerdo con los requisitos y circunstancias previstos en la normativa estatal del impuesto sobre la renta de las personas físicas vigente a 31 de diciembre de 2012. La base máxima de esta deducción será de 9.040 euros anuales y estará constituida por las cantidades satisfechas para la adquisición o rehabilitación de la vivienda, incluidos los gastos originados que hayan corrido a cargo del adquirente y, en el caso de financiación ajena, la amortización, los intereses, el coste de los instrumentos de cobertura del riesgo de tipo de interés variable de los préstamos hipotecarios regulados en el artículo decimonoveno de la Ley 36/2003, de 11 de noviembre, de medidas de reforma económica, y demás gastos derivados de la misma. En caso de aplicación de los citados instrumentos de cobertura, los intereses satisfechos por el contribuyente se minorarán en las cantidades obtenidas por la aplicación del citado instrumento."
+  ],
+  "art. 20": [
+   "1. Los contribuyentes podrán aplicar una deducción en la cuota íntegra autonómica del impuesto sobre la renta de las personas físicas del 20% de las cantidades invertidas durante el ejercicio en la adquisición de acciones o participaciones sociales como consecuencia de acuerdos de constitución de sociedades o de ampliación de capital, cuando se trate de sociedades mercantiles que revistan la forma de sociedad anónima, sociedad anónima laboral, sociedad de responsabilidad limitada, sociedad de responsabilidad limitada laboral o sociedad cooperativa.",
+   "2. En todo caso, el límite de deducción aplicable será de 4.000 euros anuales."
+  ],
+  "art. 22": [
+   "1. Los contribuyentes podrán aplicar una deducción en la cuota íntegra autonómica del impuesto sobre la renta de las personas físicas del 10% de las cantidades donadas durante el período impositivo a favor de cualquiera de las siguientes instituciones:",
+   "2. El límite de deducción aplicable será de 150 euros."
+  ],
+  "art. 22 bis": [
+   "1. Los contribuyentes podrán aplicar una deducción en la cuota íntegra autonómica del impuesto sobre la renta de las personas físicas del 15% de las cantidades satisfechas en el periodo impositivo en concepto de cuotas de pertenencia o adhesión a gimnasios, centros deportivos, clubes deportivos, federaciones deportivas y secciones deportivas o de recreación deportiva de otras entidades no deportivas, para el desarrollo de actividades de ejercicio físico o práctica deportiva por el contribuyente o por su cónyuge o pareja inscrita en el Registro de Parejas de Hecho de la Comunidad Autónoma de Andalucía o en registros análogos de otras Administraciones Públicas, o por aquellas personas que den derecho a la aplicación del mínimo por descendientes y ascendientes regulado en la normativa estatal del impuesto sobre la renta de las personas físicas.",
+   "2. El importe máximo de la deducción aplicable será de 100 euros anuales por contribuyente."
   ]
  },
  "aragon": {
@@ -139,6 +151,28 @@
    "c) En el supuesto de contribuyentes que formen parte de una unidad familiar que, a fecha de devengo del impuesto, ostente el título de familia numerosa expedido por la autoridad competente en materia de servicios sociales, el importe máximo de la deducción será de 150 euros en el supuesto de declaración conjunta y 75 euros cuando se opte por presentar declaración individual.",
    "2. Solo tendrá derecho a esta deducción el contribuyente cuya base imponible no resulte superior a 26 000 euros en tributación individual, ni a 37 000 euros en tributación conjunta.",
    "3. La deducción corresponderá al ascendiente que haya satisfecho las cantidades destinadas a la adquisición de los libros de texto y del material escolar. Cuando exista más de un contribuyente con derecho a la aplicación del beneficio fiscal, el importe de la deducción se prorrateará por partes iguales en la declaración de cada uno de ellos."
+  ],
+  "art. 13": [
+   "1. El contribuyente podrá aplicar una deducción de 500 euros por cada menor en régimen de acogimiento familiar, con exclusión de aquéllos que tengan finalidad preadoptiva, siempre que conviva con el menor 183 días durante el período impositivo. Si el tiempo de convivencia durante el período impositivo fuera superior a 90 e inferior a 183 días, el importe de la deducción por cada menor acogido será de 250 euros.",
+   "2. Cuando exista más de un contribuyente con derecho a la aplicación de la deducción y éstos realicen declaración individual del impuesto, la deducción se prorrateará por partes iguales en la declaración de cada uno de ellos."
+  ],
+  "art. 14 decies": [
+   "1. Los contribuyentes que adquieran o rehabiliten una vivienda que vaya a constituir su vivienda habitual y que se ubique en concejos en riesgo de despoblamiento o en crisis demográfica, así clasificados según lo dispuesto en el Decreto 83/2025, de 23 de junio, por el que establece la zonificación demográfica y se regula el Indicador Sintético de Estado Demográfico del Principado de Asturias, podrán aplicar una deducción del 5 por ciento de las cantidades satisfechas durante el ejercicio en concepto de adquisición o rehabilitación de la citada vivienda. El porcentaje de deducción será del 10 por ciento cuando la adquisición o rehabilitación se lleve a cabo por contribuyentes de hasta 35 años, así como por los miembros de familias numerosas o monoparentales.",
+   "2. Los contribuyentes de hasta 35 años de edad que adquieran o rehabiliten inmuebles que vaya a constituir su vivienda habitual y que no se ubique en un concejo en riesgo de despoblamiento o en crisis demográfica, podrán aplicar una deducción del 5 por ciento de las cantidades satisfechas durante el ejercicio en concepto de adquisición o rehabilitación de la citada vivienda siempre y cuando el valor de los mismos no exceda de 250.000 euros.",
+   "4. La base máxima de esta deducción será de 10.000 euros y vendrá constituida por las cantidades invertidas durante el ejercicio en la adquisición o rehabilitación de la vivienda, incluyéndose los importes destinados a la amortización de préstamos hipotecarios.",
+   "5. Para la aplicación de la presente deducción la base imponible del contribuyente no excederá de 35.000 euros en tributación individual ni de 45.000 euros en tributación conjunta. En el supuesto de que más de un contribuyente tenga derecho a la aplicación de la deducción por los mismos bienes para un mismo período impositivo, la base máxima de la deducción se prorrateará entre ellos por partes iguales, aplicándose el beneficio fiscal únicamente en la declaración de aquellos que cumplan las condiciones establecidas para ser beneficiarios de la misma."
+  ],
+  "art. 14 sexdecies": [
+   "1. Los contribuyentes de hasta 35 años de edad cuya base imponible no resulte superior a 28.000 euros anuales, podrán deducirse el importe de las cantidades satisfechas en concepto de:",
+   "e) Gastos deportivos.",
+   "f) Gastos culturales.",
+   "2.000 euros para los contribuyentes de hasta 25 años.",
+   "1.500 euros para los contribuyentes con edades comprendidas entre los 26 y los 30 años.",
+   "1.000 euros para los contribuyentes con edades comprendidas entre los 30 y los 35 años."
+  ],
+  "art. 14 octodecies": [
+   "1. Los contribuyentes podrán aplicar una deducción del 30 por ciento de las cantidades invertidas durante el ejercicio en la adquisición de acciones y participaciones sociales como consecuencia de acuerdos de constitución de sociedades o de ampliación de capital en las sociedades mercantiles que revistan la forma de sociedad anónima, sociedad de responsabilidad limitada y sociedad cooperativa, incluidas las sociedades laborales.",
+   "2. El límite de deducción aplicable será de 6.000 euros anuales."
   ]
  },
  "baleares": {
@@ -180,6 +214,9 @@
    "a) La base imponible total del contribuyente no puede superar el importe de 33.000 euros en el caso de tributación individual y de 52.800 euros en el de tributación conjunta.",
    "4. La deducción regulada en este artículo también es aplicable a los contribuyentes con un grado de discapacidad reconocido del 33 % o superior o que tengan a cargo personas con un grado de discapacidad reconocido del 33 % o superior, siempre que se verifiquen los requisitos establecidos en las diversas letras de los apartados 1 y 2 y los contribuyentes tengan derecho a aplicar cualesquiera de los componentes del mínimo por discapacidad que prevé el artículo 60 de la Ley 35/2006, de 28 de noviembre, del impuesto sobre la renta de las personas físicas y modificación parcial de las leyes de los impuestos sobre sociedades, sobre la renta de no residentes y sobre el patrimonio.",
    "6. En todo caso, la deducción regulada en este artículo es incompatible con la deducción por gastos relativos a los descendientes o acogidos menores de seis años por motivos de conciliación regulada en el artículo 6 bis de este texto refundido."
+  ],
+  "art. 7": [
+   "1. Se establece una deducción del 30 % de las cuantías invertidas durante el ejercicio en la adquisición de acciones, de participaciones sociales o de aportaciones obligatorias o voluntarias efectuadas por los socios como consecuencia de acuerdos de constitución de sociedades o de ampliación de capital en las sociedades a que se refiere el apartado 2 siguiente. El importe máximo de esta deducción es de 6.000 euros por ejercicio. En el caso de declaración conjunta, el importe máximo de deducción es de 6.000 euros por cada contribuyente de la unidad familiar que haya efectuado la inversión. Esta deducción se aplicará en el ejercicio en que se materialice la inversión y en los dos siguientes con el límite de 6.000 euros anuales."
   ]
  },
  "canarias": {
@@ -233,6 +270,19 @@
    "a) Los contribuyentes que a la fecha de devengo del impuesto tengan derecho a la aplicación del mínimo por descendientes regulado en la normativa del impuesto sobre la renta de las personas físicas, siempre que perciban rendimientos del trabajo o de actividades económicas.",
    "b) Los contribuyentes que tengan una edad igual o superior a 75 años.",
    "c) Los contribuyentes mayores de 65 años si tienen la consideración de personas con discapacidad física, orgánica o sensorial con un grado igual o superior al 65 por 100 o con discapacidad cognitiva, psicosocial, intelectual o del desarrollo con un grado igual o superior al 33 %."
+  ],
+  "art. 9": [
+   "1. Los contribuyentes podrán aplicar una deducción del 20 % de las cantidades invertidas durante el ejercicio en la adquisición de acciones y participaciones sociales como consecuencia de acuerdos de constitución de sociedades o de ampliación de capital en las sociedades mercantiles que revistan la forma de sociedad anónima y sociedad de responsabilidad limitada.",
+   "2. El límite de deducción aplicable será de 4.000 euros anuales.",
+   "4. La deducción contenida en este artículo será del 30 por 100 de las cantidades invertidas, con un límite de 6.000 euros, en el caso de sociedades creadas o participadas por universidades o centros de investigación."
+  ],
+  "art. 16 ter": [
+   "1. Los contribuyentes podrán deducir un 12% de los gastos y honorarios profesionales abonados durante el periodo impositivo por la prestación de servicios realizada por quienes tengan la condición de profesionales médicos o sanitarios, excepto farmacéuticos, conforme a lo dispuesto en los artículos 2 y 3 de la Ley 44/2003, de 21 de noviembre, de ordenación de las profesiones sanitarias, por motivo de la prevención, diagnóstico y tratamiento de enfermedades, salud dental, embarazo y nacimiento de hijos, accidentes e invalidez, tanto propios como de las personas que se incluyan en el mínimo familiar.",
+   "Los contribuyentes podrán deducir un 12% de los gastos en la adquisición de aparatos y complementos, incluidas las gafas graduadas y las lentillas, que por sus características objetivas solo puedan destinarse a suplir las deficiencias físicas de las personas.",
+   "Esta deducción tendrá un límite anual de 500 euros en tributación individual y 700 euros en tributación conjunta. Estos límites se incrementarán en 100 euros en tributación individual cuando el contribuyente sea una persona mayor de 65 años o con discapacidad y acredite un grado de discapacidad igual o superior al 65%.",
+   "4. Tendrán derecho a la aplicación de esta deducción los contribuyentes que no hayan obtenido rentas en el periodo impositivo en el que se origina el derecho a la deducción por importe superior a 46.455 euros; y, en el supuesto de tributación conjunta, cuando la unidad familiar no haya obtenido rentas por importe superior a 61.770 euros.",
+   "Para contribuyentes que hayan obtenido rentas superiores a 46.455 en tributación individual o superiores a 61.770 euros en el supuesto de tributación conjunta, el importe de la deducción tendrá un límite anual de 150 euros.",
+   "las referencias contenidas a la expresión “renta” en las normas reguladoras de las mismas deberán entenderse hechas a la base imponible general y del ahorro definida en la"
   ]
  },
  "cantabria": {
@@ -265,6 +315,41 @@
    "sea de edad igual o superior a setenta y cinco años.",
    "c) Que forme parte del hogar familiar una persona que tenga reconocido un grado de discapacidad física, psíquica o sensorial igual o superior al 65 %",
    "En este caso el empleador podrá ser la propia persona con discapacidad o un familiar con el que conviva, que sea ascendiente, descendiente, cónyuge o hermano."
+  ],
+  "art. 2.13 (gastos de educación)": [
+   "– El 100 por ciento de las cantidades satisfechas por los gastos destinados a la adquisición de libros de texto editados para las enseñanzas obligatorias cursada por sus hijos o descendientes.",
+   "La suma de las dos deducciones anteriores no podrá ser superior a 200 euros por unidad familiar, prorrateándose por mitad para cada progenitor en caso de declaración individual."
+  ],
+  "art. 2.3": [
+   "El contribuyente se podrá deducir un 15 por ciento de las cantidades satisfechas en obras realizadas, durante el ejercicio fiscal, en cualquier vivienda o viviendas de su propiedad, siempre que esté situada en la Comunidad de Cantabria, o en el edificio en la que la vivienda se encuentre, y que tengan por objeto:",
+   "b) La mejora de la eficiencia energética, la higiene, la salud y protección del medio ambiente y la accesibilidad a la vivienda o al edificio en que se encuentra.",
+   "c) La utilización de energías renovables, la seguridad y la estanqueidad y, en particular, la sustitución de instalaciones de electricidad, agua, gas o calefacción.",
+   "La deducción tendrá un límite anual de 1.000 euros en tributación individual y 1.500 en tributación conjunta. Estos límites se incrementarán en 500 euros en tributación individual cuando el contribuyente sea una persona con discapacidad y acredite un grado de discapacidad igual o superior al 65 %. En el caso de tributación conjunta el incremento será de 500 euros por cada contribuyente con dicha discapacidad.",
+   "En ningún caso darán derecho a la aplicación de esta deducción, las cantidades satisfechas por las que el contribuyente tenga derecho a practicarse alguna deducción estatal o que provengan de subvenciones no sujetas o exentas del impuesto sobre la renta de las personas físicas que, en su caso, se hubieran percibido o estuvieran asociadas a la realización de dichas obras."
+  ],
+  "art. 2.4": [
+   "Los contribuyentes podrán deducir el 15 por 100 de las cantidades donadas a fundaciones domiciliadas en la Comunidad Autónoma de Cantabria que cumplan con los requisitos de la Ley 50/2002, de 26 de diciembre, de Fundaciones que persigan fines culturales, asistenciales, deportivos o sanitarios o cualesquiera otros de naturaleza análoga a estos.",
+   "De igual manera, los contribuyentes podrán deducir el 12 por cien de las cantidades que donen al Fondo Cantabria Coopera.",
+   "Igualmente podrán deducir el 15 por 100 de las cantidades donadas a asociaciones domiciliadas en la Comunidad Autónoma de Cantabria que cumplan los requisitos de la Ley 49/2002, de 23 de diciembre, de régimen fiscal de las entidades sin fines lucrativos y de los incentivos fiscales al mecenazgo, y cuyo objeto sea el apoyo a personas con discapacidad.",
+   "La suma de la base de esta deducción y la base de las deducciones a las que se refieren los apartados 3 y 5 del artículo 68 de la Ley 35/2006, de 28 de noviembre, del Impuesto sobre la Renta de las Personas Físicas y de modificación parcial de las Leyes de los Impuestos sobre Sociedades, sobre la Renta de los no Residentes y sobre el Patrimonio, no podrá exceder del 10 por 100 de la base liquidable del contribuyente."
+  ],
+  "art. 2.5": [
+   "5. Por acogimiento familiar de menores. Los contribuyentes que reciban a menores en régimen de acogimiento familiar, siempre que hayan sido previamente seleccionados al efecto por una entidad pública de protección de menores y que no tengan relación de parentesco alguna, ni adopten durante el periodo impositivo al menor acogido, podrán deducir: a) 240 euros con carácter general, o b) el resultado de multiplicar 240 euros por el número máximo de menores que haya acogido de forma simultánea en el periodo impositivo. En todo caso, la cuantía de la deducción no podrá superar 1.200 euros. En el supuesto de acogimiento de menores por matrimonios, parejas de hecho o parejas que convivan de forma permanente en análoga relación de afectividad a las anteriores sin haber registrado su unión, el importe de la deducción se prorrateará por partes iguales en la declaración de cada uno de ellos si optaran por tributación individual."
+  ],
+  "art. 2.6": [
+   "1. Los contribuyentes podrán aplicar una deducción del 15% de las cantidades invertidas durante el ejercicio en la adquisición de acciones o participaciones sociales como consecuencia de acuerdos de constitución de sociedades o de ampliación de capital en las sociedades mercantiles que revistan la forma de Sociedad Anónima, Sociedad de Responsabilidad Limitada, Sociedad Anónima Laboral o Sociedad de Responsabilidad Limitada Laboral y que tengan la consideración de PYMES de acuerdo con la definición de las mismas dada por la Recomendación de la Comisión Europea de 6 de mayo de 2003.",
+   "2. El límite de deducción aplicable será de 1.000 euros anuales."
+  ],
+  "art. 2.7.1": [
+   "1. El contribuyente se podrá deducir un 10 % de los honorarios profesionales abonados durante el año por la prestación de servicios sanitarios por motivo de enfermedad, salud dental, embarazo y nacimiento de hijos, accidentes e invalidez, tanto propios como de las personas que se incluyan en el mínimo familiar, siempre y cuando estos honorarios no estén cubiertos por la Seguridad Social o en su caso por la Mutua o entidad aseguradora correspondiente del contribuyente.",
+   "Esta deducción tendrá un límite anual de 500 euros en tributación individual y 700 en tributación conjunta.",
+   "Estos límites se incrementarán en 100 euros en tributación individual cuando el contribuyente sea una persona con discapacidad y acredite un grado de discapacidad igual o superior al 65 %. En el caso de tributación conjunta el incremento será de 100 euros por cada contribuyente que se encuentre en dicha situación.",
+   "Requisito para la deducción: Que la base liquidable del periodo, después de las reducciones por mínimo personal y familiar sea inferior a 22.946 euros en tributación individual o a 31.485 euros en tributación conjunta."
+  ],
+  "art. 2.18": [
+   "El contribuyente se podrá deducir el 30 % de los gastos del contribuyente, del cónyuge y de aquellas personas que den derecho a la aplicación del mínimo personal y familiar en servicios relativos al ejercicio físico y la práctica deportiva.",
+   "El límite máximo de esta deducción será 150 euros anuales.",
+   "Requisito para la deducción: Que la base liquidable del periodo, después de las reducciones por mínimo personal y familiar sea inferior a 22.946 euros en tributación individual o a 31.485 euros en tributación conjunta."
   ]
  },
  "castilla_la_mancha": {
@@ -275,23 +360,6 @@
    "b) Cuando el contribuyente tenga su domicilio habitual en un municipio de Castilla-La Mancha con población superior a 2.500 habitantes y hasta 10.000 habitantes, que se encuentre a una distancia mayor de 30 kilómetros de un municipio con población superior a 50.000 habitantes.",
    "a) Que el contribuyente sea menor de treinta y seis años a la fecha del devengo del impuesto.",
    "b) Que la suma de la base imponible general y la del ahorro del contribuyente menos el mínimo por descendientes no supere la cuantía de 12.500 euros en tributación individual y 25.000 euros en tributación conjunta.",
-   "f) Las previstas en los artículos 9, 9 bis, 9 ter, 9 quáter y 9 quinquies."
-  ],
-  "art. 9 ter": [
-   "podrán deducirse de la cuota íntegra autonómica el 15 por ciento de las cantidades satisfechas por el arrendamiento de la vivienda que constituya o vaya a constituir su residencia habitual en Castilla-La Mancha durante el período impositivo, con un máximo de 500 euros.",
-   "c) Que a la fecha del devengo del impuesto tenga reconocida la condición de familia numerosa y se esté en posesión del título acreditativo de dicha condición.",
-   "a) Que la suma de la base imponible general y la del ahorro del contribuyente menos el mínimo por descendientes no supere la cuantía de 12.500 euros en tributación individual y 25.000 euros en tributación conjunta.",
-   "f) Las previstas en los artículos 9, 9 bis, 9 ter, 9 quáter y 9 quinquies."
-  ],
-  "art. 9 quáter": [
-   "1. El padre o la madre que integre una familia monoparental podrá deducirse de la cuota íntegra autonómica el 15 por ciento de las cantidades satisfechas por el arrendamiento de la vivienda que constituya o vaya a constituir su residencia habitual en Castilla-La Mancha durante el período impositivo, con un máximo de 500 euros.",
-   "a) Que la suma de la base imponible general y la del ahorro del contribuyente menos el mínimo por descendientes no supere la cuantía de 12.500 euros en tributación individual y 25.000 euros en tributación conjunta.",
-   "f) Las previstas en los artículos 9, 9 bis, 9 ter, 9 quáter y 9 quinquies."
-  ],
-  "art. 9 quinquies": [
-   "podrán deducirse de la cuota íntegra autonómica el 15 por ciento de las cantidades satisfechas por el arrendamiento de la vivienda que constituya o vaya a constituir su residencia habitual en Castilla-La Mancha durante el período impositivo, con un máximo de 500 euros.",
-   "1. Los contribuyentes que tengan un grado de discapacidad acreditado igual o superior al 65 por ciento",
-   "a) Que la suma de la base imponible general y la del ahorro del contribuyente menos el mínimo por descendientes no supere la cuantía de 12.500 euros en tributación individual y 25.000 euros en tributación conjunta.",
    "f) Las previstas en los artículos 9, 9 bis, 9 ter, 9 quáter y 9 quinquies."
   ],
   "art. 2": [
@@ -322,7 +390,8 @@
   "art. 3 bis": [
    "1. Los contribuyentes podrán deducirse de la cuota íntegra autonómica el 30 por ciento de las cantidades satisfechas en el periodo impositivo por los gastos de custodia de hijas o hijos menores de 3 años en guarderías o centros de educación infantil, con un máximo de 500 euros por cada hija o hijo inscrito en dichas guarderías o centros.",
    "2. Cuando las hijas o los hijos que den derecho a la deducción convivan con más de un contribuyente, el importe de la deducción se prorrateará conforme al hecho de que aquellas o aquellos den derecho al mínimo por descendientes a más de un contribuyente.",
-   "2. La aplicación de las deducciones a que se refieren los artículos 1, 2, 2 bis, 3 bis, 4, 5 y 6 de esta ley sólo podrá realizarse por aquellos contribuyentes cuya base imponible, entendiendo como tal la suma de la base imponible general y la del ahorro, no sea superior a 27.000 euros en tributación individual o a 36.000 euros en tributación conjunta."
+   "2. La aplicación de las deducciones a que se refieren los artículos 1, 2, 2 bis, 3 bis, 4, 5 y 6 de esta ley sólo podrá realizarse por aquellos contribuyentes cuya base imponible, entendiendo como tal la suma de la base imponible general y la del ahorro, no sea superior a 27.000 euros en tributación individual o a 36.000 euros en tributación conjunta.",
+   "3. El límite de la misma, en el período impositivo en el que la hija o el hijo cumpla los 3 años de edad, será de 250 euros."
   ],
   "art. 4": [
    "Los contribuyentes que tengan un grado de discapacidad acreditado igual o superior al 65 por ciento y tengan derecho a la aplicación del mínimo por discapacidad del contribuyente, previsto en la",
@@ -340,6 +409,35 @@
    "2. Los contribuyentes podrán deducirse de la cuota íntegra autonómica la cantidad de 150 euros por el cuidado de cada ascendiente mayor de 75 años, siempre que cause derecho a la aplicación del mínimo por ascendientes mayores de 75 años previsto en la",
    "3. No procederán las deducciones previstas en los anteriores apartados cuando los mayores de 75 años que generen el derecho a las mismas residan, durante más de treinta días naturales del período impositivo en Centros Residenciales de Mayores de la Junta de Comunidades de Castilla-La Mancha o en plazas concertadas o subvencionadas por esta en otros centros, a excepción de las estancias temporales derivadas de convalecencias debidamente acreditadas por el Servicio de Salud de Castilla-La Mancha.",
    "2. La aplicación de las deducciones a que se refieren los artículos 1, 2, 2 bis, 3 bis, 4, 5 y 6 de esta ley sólo podrá realizarse por aquellos contribuyentes cuya base imponible, entendiendo como tal la suma de la base imponible general y la del ahorro, no sea superior a 27.000 euros en tributación individual o a 36.000 euros en tributación conjunta."
+  ],
+  "art. 1": [
+   "a) 100 euros en el caso de partos o adopciones de un hijo.",
+   "b) 500 euros en el caso de partos o adopciones de dos hijos.",
+   "c) 900 euros en el caso de partos o adopciones de tres o más hijos.",
+   "2. La aplicación de las deducciones a que se refieren los artículos 1, 2, 2 bis, 3 bis, 4, 5 y 6 de esta ley sólo podrá realizarse por aquellos contribuyentes cuya base imponible, entendiendo como tal la suma de la base imponible general y la del ahorro, no sea superior a 27.000 euros en tributación individual o a 36.000 euros en tributación conjunta.",
+   "4. Para la aplicación de las deducciones establecidas en los artículos 1, 2, 2 bis, 3, 3 bis, 4, 5 y 6 se tendrán en cuenta las normas para la aplicación del mínimo del contribuyente, por descendientes, ascendientes y discapacidad contenidas en la"
+  ],
+  "art. 7": [
+   "1. Los contribuyentes podrán deducirse, por cada menor en régimen de acogimiento familiar no remunerado temporal, permanente o por delegación de guarda para la convivencia preadoptiva, por acuerdo administrativo o judicial, siempre que convivan con el menor durante más de ciento ochenta y tres días del período impositivo, las siguientes cantidades:",
+   "a) 500 euros si se trata del primer menor en régimen de acogimiento familiar no remunerado o por delegación de guarda para la convivencia preadoptiva.",
+   "b) 600 euros si se trata del segundo menor o sucesivo en régimen de acogimiento familiar no remunerado o por delegación de guarda para la convivencia preadoptiva.",
+   "4. En el supuesto de acogimiento de menores por matrimonios o uniones de hecho, el importe de la deducción se prorrateará por partes iguales en la declaración de cada uno de ellos si optaran por tributación individual.",
+   "a) Que la suma de la base imponible general y la del ahorro del contribuyente no sea superior a 12.500 euros en tributación individual o a 25.000 euros en tributación conjunta."
+  ],
+  "art. 10": [
+   "1. Los contribuyentes podrán deducirse de la cuota íntegra autonómica el 15 por ciento de las donaciones dinerarias efectuadas durante el período impositivo, destinadas a fundaciones, organizaciones no gubernamentales, asociaciones de ayuda a personas con discapacidad y otras entidades",
+   "4. La base de la deducción a la que refieren los apartados anteriores del presente artículo, no podrá exceder del 10 por ciento de la base liquidable del contribuyente."
+  ],
+  "art. 12 ter": [
+   "1. Los contribuyentes podrán deducirse de la cuota íntegra autonómica el 15 por ciento de las cantidades que durante el período impositivo satisfagan por la adquisición o rehabilitación de la vivienda que constituya o vaya a constituir su residencia habitual, siempre que se cumplan, simultáneamente, los siguientes requisitos:",
+   "a) Que la vivienda esté situada en alguno de los municipios incluidos en las zonas a que se refiere el artículo 12 de la",
+   "y que la población del mismo sea inferior a 5.000 habitantes.",
+   "b) Que la adquisición o rehabilitación de la vivienda se haya producido a partir del 1 de enero de 2021.",
+   "La base máxima total de la deducción será de 180.000 euros, o el importe de adquisición o rehabilitación de la vivienda que da origen a la deducción si este fuera menor, minorado por los importes recibidos de la Junta de Comunidades de Castilla-La Mancha en concepto de subvenciones por la adquisición o rehabilitación de la vivienda. A su vez, la base máxima a aplicar en cada ejercicio será de 12.000 euros."
+  ],
+  "art. 12 sexies": [
+   "1. Los contribuyentes podrán aplicar una deducción en la cuota íntegra autonómica del 20 por ciento de las cantidades invertidas durante el ejercicio por la adquisición de acciones o participaciones sociales, como consecuencia de acuerdos de constitución de sociedades o de ampliación de capital en las sociedades mercantiles que revistan la forma de Sociedad Anónima, Sociedad de Responsabilidad Limitada, Sociedad Anónima Laboral, Sociedad de Responsabilidad Limitada Laboral o Sociedad Cooperativa.",
+   "El límite de deducción aplicable será de 4.000 euros anuales."
   ]
  },
  "castilla_y_leon": {
@@ -362,7 +460,8 @@
    "– 3.300 euros si se trata del tercer hijo o sucesivos.",
    "b) A los efectos de determinar el número de orden del hijo nacido o adoptado se tendrá en cuenta al hijo nacido o adoptado y a los restantes hijos, de cualquiera de los progenitores, que convivan con el contribuyente en la fecha de devengo del impuesto, computándose a estos efectos tanto los que lo sean por naturaleza como por adopción.",
    "a) Cuando exista más de un contribuyente con derecho a practicar las deducciones establecidas en los artículos 3 a 5, ambos incluidos, el importe de las mismas se prorrateará en la declaración de cada uno de ellos.",
-   "c) Las deducciones autonómicas reguladas en los artículos 4 y 5 son incompatibles con la percepción de ayudas y prestaciones públicas otorgadas por la Junta de Castilla y León de análoga naturaleza por causa de nacimiento o adopción, por cuidado de hijos menores o por conciliación. En el supuesto de que se hubiera optado por solicitar las mencionadas ayudas y prestaciones públicas otorgadas por la Junta de Castilla y León y se hubieran concedido, no se tendrá derecho a la aplicación de estas deducciones."
+   "c) Las deducciones autonómicas reguladas en los artículos 4 y 5 son incompatibles con la percepción de ayudas y prestaciones públicas otorgadas por la Junta de Castilla y León de análoga naturaleza por causa de nacimiento o adopción, por cuidado de hijos menores o por conciliación. En el supuesto de que se hubiera optado por solicitar las mencionadas ayudas y prestaciones públicas otorgadas por la Junta de Castilla y León y se hubieran concedido, no se tendrá derecho a la aplicación de estas deducciones.",
+   "5. Por el arrendamiento de la vivienda habitual por jóvenes en el medio rural. El porcentaje establecido en el apartado anterior será el 25 % con un límite de 612 euros cuando la vivienda habitual se encuentre situada en un municipio o en una entidad local menor de la Comunidad de Castilla y León que no exceda de 10.000 habitantes, con carácter general, o de 3.000 habitantes, si dista menos de 30 kilómetros de la capital de la provincia."
   ],
   "art. 5.2": [
    "2. Los contribuyentes que a la fecha de devengo del impuesto tengan un hijo menor de 4 años, al que sea de aplicación el mínimo por descendiente, podrán deducirse el 15 por 100 de las cantidades que hayan satisfecho en el período impositivo por las cuotas a la Seguridad Social de un trabajador incluido en el Sistema Especial de Empleados de Hogar del Régimen General de la Seguridad Social, con el límite máximo de 300 euros.",
@@ -382,7 +481,31 @@
    "Los contribuyentes menores de 36 años que durante el período impositivo satisfagan cantidades en concepto de alquiler de su vivienda habitual situada en Castilla y León podrán deducirse el 20 % de las cantidades satisfechas con un límite de 459 euros, con carácter general.",
    "El porcentaje establecido en el apartado anterior será el 25 % con un límite de 612 euros cuando la vivienda habitual se encuentre situada en un municipio o en una entidad local menor de la Comunidad de Castilla y León que no exceda de 10.000 habitantes, con carácter general, o de 3.000 habitantes, si dista menos de 30 kilómetros de la capital de la provincia.",
    "1. Las deducciones reguladas en este capítulo, salvo las previstas en los artículos 3, 4, artículo 7 (apartado 2 y 3), artículo 8 y artículo 9 [letras f) y g)], no serán de aplicación a los contribuyentes cuya base imponible total, menos el mínimo personal y familiar, supere la cuantía de 18.900 euros en tributación individual o 31.500 euros en el caso de tributación conjunta.",
-   "h) La base imponible total es igual a la base imponible general más la base imponible del ahorro."
+   "h) La base imponible total es igual a la base imponible general más la base imponible del ahorro.",
+   "Los contribuyentes residentes en municipios o entidades locales menores cuya población no exceda de 5.000 habitantes podrán deducirse por cada hijo nacido o adoptado durante el periodo impositivo que genere el derecho a la aplicación del mínimo por descendiente las siguientes cantidades:"
+  ],
+  "art. 7.1": [
+   "Los contribuyentes que durante el período impositivo satisfagan cantidades por la adquisición o rehabilitación de la vivienda que vaya a constituir su residencia habitual en el territorio de la Comunidad de Castilla y León podrán deducirse el 15 % de las cantidades satisfechas siempre que se cumplan, simultáneamente, los siguientes requisitos:",
+   "a) Que los contribuyentes tengan su residencia habitual en la Comunidad de Castilla y León y que a la fecha de devengo del impuesto tengan menos de 36 años.",
+   "b) Que se trate de su primera vivienda.",
+   "c) Que la vivienda esté situada en un municipio o en una entidad local menor de la Comunidad de Castilla y León que en el momento de la adquisición o rehabilitación no exceda de 10.000 habitantes, con carácter general, o de 3.000 habitantes, si dista menos de 30 kilómetros de la capital de la provincia, y tenga un valor, a efectos del impuesto que grave su adquisición, menor de 150.000,00 euros.",
+   "d) Que se trate de una vivienda de nueva construcción o de una rehabilitación conforme al concepto establecido en el apartado 6 de este artículo.",
+   "e) Que la adquisición o rehabilitación de la vivienda se produzca a partir del 1 de enero de 2023.",
+   "La base máxima de esta deducción será de 10.000 euros anuales",
+   "1. Las deducciones reguladas en este capítulo, salvo las previstas en los artículos 3, 4, artículo 7 (apartado 2 y 3), artículo 8 y artículo 9 [letras f) y g)], no serán de aplicación a los contribuyentes cuya base imponible total, menos el mínimo personal y familiar, supere la cuantía de 18.900 euros en tributación individual o 31.500 euros en el caso de tributación conjunta."
+  ],
+  "art. 8": [
+   "1. Los contribuyentes podrán deducirse el 20% de las cantidades invertidas durante el ejercicio en la adquisición de acciones o participaciones como consecuencia de acuerdos de constitución de sociedades o de ampliación del capital en sociedades anónimas, limitadas o laborales cuando la sociedad destine la financiación recibida a proyectos de inversión realizados en el territorio de Castilla y León.",
+   "2. Darán derecho a aplicarse esta deducción las adquisiciones de acciones o participaciones por importe mínimo del 0,5 % y máximo del 45 % del capital de la sociedad, que se mantengan en el patrimonio del adquirente al menos tres años. El importe máximo de la deducción será de 10.000 euros."
+  ],
+  "art. 9 c) a f)": [
+   "Los contribuyentes podrán deducirse el 15 % de las siguientes cantidades:",
+   "c) Las cantidades donadas para la rehabilitación o conservación de bienes que se encuentren en el territorio de Castilla y León, que formen parte del Patrimonio Histórico Español, o del Patrimonio Cultural de Castilla y León y que estén inscritos en el Registro General de Bienes de Interés Cultural o incluidos en el Inventario General a que se refiere la Ley 16/1985, de Patrimonio Histórico Español o en los registros o inventarios equivalentes previstos en la Ley 12/2002, de 11 de julio, de Patrimonio Cultural de Castilla y León, cuando se realicen a favor de las siguientes entidades:",
+   "d) Las cantidades donadas para la recuperación, conservación o mejora de espacios naturales y lugares integrados en la Red Natura 2000, ubicados en el territorio de Castilla y León cuando se realicen a favor de las administraciones públicas así como de las entidades o instituciones dependientes de las mismas.",
+   "e) Las cantidades donadas a fundaciones inscritas en el Registro de Fundaciones de Castilla y León, en cuyos estatutos se prevea, para el cumplimiento de sus fines, la realización de actividades culturales, asistenciales o ecológicas.",
+   "f) Las cantidades donadas a las Universidades públicas de la Comunidad y las cantidades donadas a las fundaciones y otras instituciones cuya actividad principal sea la investigación, el desarrollo y la innovación empresarial para la financiación de proyectos desarrollados en Castilla y León con alguna de estas finalidades.",
+   "b) La suma de las bases de las deducciones previstas en las letras a) a f) del artículo 9 no podrá exceder del 10 por 100 de la base liquidable del contribuyente.",
+   "1. Las deducciones reguladas en este capítulo, salvo las previstas en los artículos 3, 4, artículo 7 (apartado 2 y 3), artículo 8 y artículo 9 [letras f) y g)], no serán de aplicación a los contribuyentes cuya base imponible total, menos el mínimo personal y familiar, supere la cuantía de 18.900 euros en tributación individual o 31.500 euros en el caso de tributación conjunta."
   ]
  },
  "cataluna": {
@@ -395,9 +518,13 @@
    "1. Los contribuyentes pueden deducir el 10 %, hasta un máximo de 500 euros anuales, de las cantidades satisfechas en el período impositivo en concepto de alquiler de la vivienda habitual, siempre que cumplan los siguientes requisitos:",
    "– Tener 35 años o menos en la fecha de devengo del impuesto.",
    "– Tener un grado de discapacidad igual o superior al 65 %.",
+   "– Ser viudo o viuda y tener 65 años o más.",
    "b) Que la suma de su base imponible general y del ahorro, menos el mínimo personal y familiar, no sea superior a 30.000 euros anuales.",
    "2. Los contribuyentes pueden deducir el 10 %, hasta un máximo de 1.000 euros anuales, de las cantidades satisfechas en el período impositivo en concepto de alquiler de la vivienda habitual, siempre que en la fecha de devengo pertenezcan a una familia numerosa o monoparental y cumplan el requisito establecido por la letra b del apartado 1.",
    "3. En el caso de tributación conjunta, si alguno de los declarantes se encuentra en alguna de las circunstancias especificadas por la letra a del apartado 1 y por el apartado 2, el importe máximo de la deducción es de 1.000 euros y el de la suma de la base imponible general y del ahorro, menos el mínimo personal y familiar, de la unidad familiar es de 45.000 euros."
+  ],
+  "art. 612-9": [
+   "1. Los contribuyentes se pueden aplicar una deducción del 40 % de las cantidades invertidas durante el ejercicio en la adquisición de acciones o participaciones sociales como consecuencia de acuerdos de constitución de sociedades o de ampliación de capital en las sociedades mercantiles a que se refiere el apartado 2. El importe máximo de esta deducción es de 12.000 euros. En caso de declaración conjunta estos límites se aplican a cada una de las personas contribuyentes."
   ]
  },
  "comunidad_valenciana": {
@@ -432,15 +559,51 @@
    "la suma de la base liquidable general y de la base liquidable del ahorro no podrá ser superior a los 30.000 euros, en tributación individual, o a 47.000 euros, en tributación conjunta.",
    "Cinco. 1. En los supuestos a los que se refiere el párrafo primero del apartado cuatro de este artículo, los importes y límites de deducción se aplicarán a los contribuyentes cuya suma de la base liquidable general y de la base liquidable del ahorro sea inferior a 27.000 euros, en tributación individual, o inferior a 44.000 euros, en tributación conjunta. Cuando la suma de la base liquidable general y de la base liquidable del ahorro del contribuyente esté comprendida entre 27.000 y 30.000 euros, en tributación individual, o entre 44.000 y 47.000 euros, en tributación conjunta, los importes y límites de deducción serán los siguientes: a) En tributación individual, el resultado de multiplicar el importe o límite de deducción por un porcentaje obtenido de la aplicación de la siguiente fórmula: 100 × (1 – el coeficiente resultante de dividir por 3.000 la diferencia entre la suma de la base liquidable general y del ahorro del contribuyente y 27.000). b) En tributación conjunta, el resultado de multiplicar el importe o límite de deducción por un porcentaje obtenido de la aplicación de la siguiente fórmula: 100 × (1 – el coeficiente resultante de dividir por 3.000 la diferencia entre la suma de la base liquidable general y del ahorro del contribuyente y 44.000)."
   ],
+  "art. 4.Uno.o)": [
+   "o) Los contribuyentes podrán deducirse un 40 % del importe de las cantidades invertidas en instalaciones realizadas en la vivienda habitual del contribuyente o en instalaciones colectivas del edificio donde este figure, si están destinadas a alguna de las finalidades que se indican a continuación:",
+   "La base máxima anual de esta deducción se establece en 8.800 euros por vivienda y ejercicio. La parte de la inversión apoyada, en su caso, con subvenciones públicas no dará derecho a deducción."
+  ],
+  "art. 4.Uno.z)": [
+   "z) 1. Los contribuyentes podrán deducir en la cuota íntegra autonómica, y con límite de 6.600 euros, el 30 % de las cantidades invertidas durante el ejercicio en la suscripción y desembolso de acciones o participaciones sociales como consecuencia de acuerdos de constitución o de ampliación de capital de sociedades anónimas, de responsabilidad limitada y sociedades laborales o de aportaciones voluntarias u obligatorias efectuadas por los socios a las sociedades cooperativas, siempre que se cumplan los siguientes requisitos:"
+  ],
   "art. 4.Uno.aa)": [
    "aa) Por residir habitualmente en un municipio en riesgo de despoblamiento: 330 euros. El importe anterior se incrementará en 132, 198 o 264 euros en el caso de que el contribuyente tenga derecho a la aplicación del mínimo por descendientes establecido por la normativa estatal reguladora del impuesto por una, dos o tres o más personas, respectivamente.",
    "Seis. A los efectos de esta ley, para que un municipio sea considerado en riesgo de despoblamiento deberá ser beneficiario del Fondo de Cooperación Municipal para la lucha contra el despoblamiento de los municipios de la Comunitat Valenciana en el ejercicio presupuestario en el que se produzca el devengo del impuesto, o en el anterior, por cumplir los requisitos establecidos en la Ley 5/2023, de 13 de abril, integral de medidas contra el despoblamiento y por la equidad territorial en la Comunitat Valenciana."
+  ],
+  "art. 4.Uno.ad)": [
+   "ad) Por las cantidades satisfechas en el periodo impositivo en gastos asociados a la práctica del deporte y actividades saludables: el 30 % con el límite de 150 euros de importe de la deducción. Si el declarante es mayor de sesenta y cinco años o tiene una discapacidad igual o superior al 33 %, el porcentaje de deducción será del 50 % y el importe máximo de la deducción será de 150 euros.",
+   "Si el declarante es mayor de setenta y cinco años o tiene una discapacidad igual o superior al 65 %, el porcentaje de deducción será del 100 % y el importe máximo de la deducción será de 150 euros.",
+   "a) Que la suma de la base liquidable general y de la base liquidable del ahorro no sea superior a 60.000 euros en tributación individual y a 78.000 euros en caso de tributación conjunta. El límite de deducción se aplicará a los contribuyentes cuya suma de la base liquidable general y de la base liquidable del ahorro sea inferior a 54.000 euros, en tributación individual, o inferior a 72.000 euros, en tributación conjunta. Cuando la suma de la base liquidable general y de la base liquidable del ahorro del contribuyente esté comprendida entre 54.000 y 60.000 euros, en tributación individual, o entre 72.000 y 78.000 euros, en tributación conjunta, el importe del límite de deducción será el siguiente: – En tributación individual, el resultado de multiplicar el límite de deducción por un porcentaje obtenido de la aplicación de la siguiente fórmula: 100 × (1 – el coeficiente resultante de dividir por 6.000 la diferencia entre la suma de la base liquidable general y del ahorro del contribuyente y 54.000). – En tributación conjunta, el resultado de multiplicar el límite de deducción por un porcentaje obtenido de la aplicación de la siguiente fórmula: 100 × (1 – el coeficiente resultante de dividir por 6.000 la diferencia entre la suma de la base liquidable general y del ahorro del contribuyente y 72.000)."
   ]
  },
  "extremadura": {
   "art. 3": [
    "1. En el caso de parto o adopción múltiple, los contribuyentes tendrán derecho a la aplicación de una deducción de 300 euros por hijo nacido o adoptado en el período impositivo, siempre que la suma de la base imponible general y del ahorro no sea superior a 30.000 euros en caso de tributación individual o a 55.000 euros en caso de tributación conjunta.",
    "Cuando los hijos que den derecho a la deducción convivan con más de un contribuyente, el importe de la deducción se prorrateará por partes iguales."
+  ],
+  "art. 3 bis": [
+   "1. Por cada hijo nacido o adoptado en el período impositivo, los contribuyentes podrán deducir de la cuota íntegra autonómica de dicho año y de los dos siguientes:",
+   "a) 500 euros por el primer hijo.",
+   "b) 1.000 euros por el segundo hijo.",
+   "c) 1.200 euros por el tercero y siguientes.",
+   "2. Para aplicar esta deducción, la suma de las bases imponibles general y del ahorro del contribuyente no podrá ser superior a 30.000 euros en tributación individual y 55.000 euros en tributación conjunta.",
+   "Cuando los hijos que den derecho a la deducción convivan con más de un contribuyente, el importe de la deducción se prorrateará por partes iguales.",
+   "4. La aplicación de esta deducción será compatible con la prevista en el artículo 3 de esta Ley."
+  ],
+  "art. 4": [
+   "Los contribuyentes podrán deducir de la cuota íntegra autonómica la cantidad de 250 euros por cada menor en régimen de acogimiento familiar temporal, permanente o de urgencia, siempre que convivan con el menor 183 días o más durante el período impositivo. Si el tiempo de convivencia durante el período impositivo, incluido el acogimiento familiar que sea de urgencia, fuera inferior a 183 días y superior a 90 días, el importe de la deducción por cada menor acogido será de 125 euros.",
+   "En el caso de acogimiento de menores por matrimonio, el importe de la deducción se prorrateará por partes iguales en la declaración de cada uno de ellos, si optaran por la declaración individual."
+  ],
+  "art. 7": [
+   "1. Los contribuyentes viudos tendrán derecho a aplicar una deducción de 100 euros en la cuota íntegra autonómica, siempre que la suma de las bases imponibles general y del ahorro no sea superior a 30.000 euros en caso de tributación individual y a 55.000 euros en caso de tributación conjunta.",
+   "2. El importe de la deducción se eleva a 200 euros si el contribuyente viudo tiene a su cargo uno o más descendientes que, de conformidad con el artículo 58 de la Ley 35/2006, de 28 de noviembre, del Impuesto sobre la Renta de las Personas Físicas y de modificación parcial de las leyes de los Impuestos sobre Sociedades, sobre la Renta de no Residentes y sobre el Patrimonio, computan a efectos de aplicar el mínimo por descendientes.",
+   "La deducción de 200 euros podrá aplicarse siempre y cuando los descendientes mantengan los requisitos para computar a efectos de aplicar dicho mínimo y siempre que estos no perciban ningún tipo de renta."
+  ],
+  "art. 11 bis": [
+   "1. Los contribuyentes podrán deducirse de la cuota íntegra autonómica el 10 por ciento de las cantidades que durante el período impositivo satisfagan por la adquisición o rehabilitación de la vivienda que constituya o vaya a constituir su residencia habitual, siempre que se cumplan, simultáneamente, los siguientes requisitos:",
+   "a) Que la vivienda esté situada en alguno de los municipios y entidades locales menores de Extremadura en los que la población de derecho a 31 de diciembre sea inferior a 3.000 habitantes.",
+   "A su vez, la base máxima a aplicar en cada ejercicio será de 9.040 euros.",
+   "1. La aplicación de las deducciones previstas en los artículos 8 y 11 quater anteriores no podrá simultanearse con la regulada en el artículo 11 bis de esta Ley."
   ],
   "art. 9": [
    "1. El contribuyente podrá aplicar sobre la cuota íntegra autonómica del Impuesto sobre la Renta de las Personas Físicas una deducción del 30 % de las cantidades satisfechas en el período impositivo en concepto de alquiler de su vivienda habitual, con el límite de 1.000 euros anuales, siempre y cuando se cumplan los requisitos siguientes:",
@@ -455,35 +618,101 @@
    "Los contribuyentes que tengan a su cargo hijos o descendientes en edad escolar obligatoria podrán deducir 30 euros de la cuota íntegra autonómica por la compra de material escolar, siempre que las sumas de las bases imponibles general y del ahorro no sea superior a 30.000 euros en caso de tributación individual o a 55.000 euros en caso de tributación conjunta.",
    "Se podrá aplicar la deducción por cada hijo o descendiente por los que tengan derecho al mínimo por descendientes",
    "Cuando un hijo o descendiente conviva con ambos padres o ascendientes el importe de la deducción se prorrateará por partes iguales en la declaración de cada uno de ellos, en el caso de que optaran por tributación individual."
+  ],
+  "art. 11": [
+   "1. Los contribuyentes podrán aplicar una deducción en la cuota íntegra autonómica del Impuesto sobre la Renta de las Personas Físicas del 20 % de las cantidades invertidas durante el ejercicio en la adquisición de acciones o participaciones sociales como consecuencia de acuerdos de constitución de sociedades o de ampliación de capital en las sociedades mercantiles que revistan la forma de Sociedad Anónima, Sociedad de Responsabilidad Limitada, Sociedad Anónima Laboral, Sociedad de Responsabilidad Limitada Laboral o Sociedad Cooperativa.",
+   "El límite de deducción aplicable será de 4.000 euros anuales."
+  ],
+  "art. 11 quinquies": [
+   "1. Los contribuyentes con residencia habitual en Extremadura podrán aplicar en la cuota íntegra autonómica una deducción del 20 por 100 de las cantidades donadas durante el ejercicio a entidades con domicilio fiscal en Extremadura que desarrollen en el territorio de la comunidad autónoma alguna de las siguientes actividades:",
+   "2. También podrán deducir de la cuota íntegra autonómica el 20 por 100 de las cantidades donadas durante el ejercicio con la finalidad de patrocinar a deportistas con domicilio fiscal en Extremadura",
+   "3. El importe máximo de las deducciones no podrá superar los 500 euros anuales por contribuyente."
   ]
  },
  "galicia": {
+  "art. 5.Tres": [
+   "1. El contribuyente que, en la fecha de devengo del impuesto, tenga dos descendientes que generen a su favor el derecho a la aplicación del correspondiente mínimo por descendientes establecido por la normativa reguladora del impuesto, podrá deducir de la cuota íntegra autonómica la cantidad de 250 euros.",
+   "a) en caso de que se trate de familias de hasta dos hijos/as, 250 euros, salvo que disfruten del título de categoría especial, en cuyo caso será de 400 euros.",
+   "b) en el resto de los casos, la deducción se incrementará en 250 euros adicionales por cada hijo/a.",
+   "3. Cuando más de un contribuyente tenga derecho a la aplicación de las deducciones previstas en este apartado respecto de los mismos descendientes, su importe será prorrateado entre ellos por partes iguales."
+  ],
+  "art. 5.Cuatro": [
+   "Los contribuyentes podrán deducir de la cuota íntegra autonómica la cantidad de 300 euros por cada menor en régimen de acogimiento familiar simple, permanente, provisional o preadoptivo, administrativo o judicial, formalizado por el órgano competente en materia de menores de la Xunta de Galicia.",
+   "En el caso de acogimiento de menores por matrimonios o por las parejas de hecho a que se refiere la disposición adicional tercera de la Ley 2/2006, de 14 de junio, de derecho civil de Galicia, el importe de la deducción se prorrateará por partes iguales en la declaración de cada uno de ellos, si optan por la declaración individual."
+  ],
   "art. 5.Siete": [
    "El contribuyente podrá deducir de la cuota íntegra autonómica el 10 %, con un límite de 300 euros por contrato de arrendamiento, que será del 20 % con un límite de 600 euros si tiene dos o más hijos menores de edad, de las cantidades que hubiese satisfecho durante el período impositivo en concepto de alquiler de su vivienda habitual, con la condición de que concurran los siguientes requisitos:",
    "a) Que su edad, en la fecha de devengo del impuesto, sea igual o inferior a 35 años.",
    "d) Que la base imponible del período, antes de la aplicación de las reducciones por mínimo personal o familiar, no sea superior a 22.000 euros.",
    "Las cuantías fijadas por esta deducción se duplicarán en el caso de que el arrendatario tenga reconocido un grado de discapacidad igual o superior al 33 %."
+  ],
+  "art. 5.Nueve": [
+   "1. Los contribuyentes podrán deducir en la cuota íntegra autonómica, y con límite de 6.000 euros, el 30 % de las cantidades invertidas durante el ejercicio en la adquisición de acciones o participaciones sociales como consecuencia de acuerdos de constitución de sociedades o de ampliación de capital en sociedades anónimas, limitadas, sociedades laborales y cooperativas, siempre que se cumplan los siguientes requisitos:"
+  ],
+  "art. 5.Trece": [
+   "1. Los contribuyentes podrán deducir en la cuota íntegra autonómica el 5 % de las cantidades satisfechas en el ejercicio por la instalación en la vivienda habitual de sistemas de climatización y/o agua caliente sanitaria en las edificaciones que empleen fuentes de energía renovables, y con un límite de 280 euros por sujeto pasivo."
   ]
  },
  "la_rioja": {
   "art. 32.1": [
    "1. Deducción por nacimiento y adopción de hijos. Por cada hijo nacido o adoptado en el periodo impositivo, que conviva con el contribuyente en la fecha de devengo del impuesto: a) 600 euros, cuando se trate del primero. b) 750 euros, cuando se trate del segundo. c) 900 euros, cuando se trate del tercero y sucesivos. Cuando los hijos nacidos o adoptados en el periodo impositivo convivan con ambos progenitores o adoptantes, el importe de la deducción se practicará por mitad en la declaración de cada uno de los progenitores o adoptantes, salvo que estos tributen presentando una única declaración conjunta, en cuyo caso se aplicará en la misma la totalidad del importe que corresponda por esta deducción. En el caso de que el número de hijos de cada progenitor dé lugar a la aplicación de un importe diferente, ambos se aplicarán la deducción que corresponda en función del número de hijos preexistente. Si dándose esta circunstancia la declaración fuere conjunta, la deducción será la suma de lo que a cada uno correspondería si la declaración fuera individual, según lo dispuesto en el párrafo anterior. En caso de nacimientos o adopciones múltiples, la deducción que corresponde a cada hijo se incrementará en 60 euros."
   ],
+  "art. 32.2": [
+   "Los contribuyentes con residencia habitual, a efectos fiscales, en la Comunidad Autónoma de La Rioja que hubieran adquirido, rehabilitado o iniciado la construcción de su vivienda habitual a partir del 1 de enero de 2017 en los pequeños municipios que se detallan en el anexo I de esta ley podrán deducir el 5 % de las cantidades satisfechas para ello en el presente ejercicio, con el límite máximo de 452 euros por declaración. La base máxima de esta deducción será de 9.040 euros."
+  ],
+  "art. 32.4": [
+   "Los contribuyentes con residencia en la Comunidad Autónoma de La Rioja que tengan en su domicilio un menor en régimen de acogimiento familiar de urgencia, temporal o permanente, o guarda con fines de adopción, formalizado por el órgano judicial o administrativo competente de la Comunidad Autónoma de La Rioja, podrán deducir la cantidad de 300 euros por cada uno de dichos menores. Si se optase por declaraciones individuales, cada uno de los contribuyentes con derecho a la deducción se aplicará el 50 % de la misma.",
+   "Para tener derecho a esta deducción, los contribuyentes deberán convivir con el menor 183 o más días durante el periodo impositivo. Si el tiempo de convivencia durante el periodo impositivo fuese inferior a 183 días y superior a 90 días, la deducción será de 150 euros por cada menor acogido."
+  ],
   "art. 32.6": [
    "Los contribuyentes con residencia habitual en La Rioja podrán deducir un 20% de los gastos de escolarización no subvencionados por cada hijo de 0 a 3 años matriculado en una escuela o centro de educación infantil de cualquier municipio de La Rioja, con el límite máximo de 600 euros por hijo.",
    "Solo podrán aplicarse esta deducción los contribuyentes cuya base liquidable general sometida a tributación, definida en el artículo 50 de la Ley 35/2006, de 28 de noviembre, del Impuesto sobre la Renta de las Personas Físicas y de modificación parcial de las leyes de los Impuestos sobre Sociedades, sobre la Renta de no Residentes y sobre el Patrimonio, no exceda de 18.030 euros en tributación individual o de 30.050 euros en tributación conjunta, siempre que la base liquidable del ahorro sometida a tributación, definida en el artículo 50 antes mencionado, no supere los 1.800 euros.",
    "En el caso de progenitores con derecho a deducción por el mismo descendiente y que presenten declaraciones individuales, el importe se prorrateará por partes iguales entre ambos."
   ],
+  "art. 32.11": [
+   "1. Los contribuyentes menores de 36 años a fecha de devengo del impuesto podrán deducir el 15 % de las cantidades satisfechas en el periodo de que se trate por la adquisición o rehabilitación de la vivienda situada en el territorio de la Comunidad Autónoma de La Rioja que constituya o vaya a constituir la residencia habitual del contribuyente.",
+   "La base máxima de esta deducción será de 9.000 euros anuales y estará constituida por las cantidades satisfechas para la adquisición o rehabilitación de la vivienda, incluidos los gastos originados que hayan corrido a cargo del adquirente y, en el caso de financiación ajena, la amortización, los intereses,",
+   "4. Solo podrán aplicarse esta deducción los contribuyentes cuya base liquidable general sometida a tributación, definida en el artículo 50 de la Ley 35/2006, de 28 de noviembre, del Impuesto sobre la Renta de las Personas Físicas y de modificación parcial de las leyes de los Impuestos sobre Sociedades, sobre la Renta de no Residentes y sobre el Patrimonio, no exceda de 18.030 euros en tributación individual o de 30.050 euros en tributación conjunta, siempre que la base liquidable del ahorro sometida a tributación, definida en el artículo 50 antes mencionado, no supere los 1.800 euros."
+  ],
   "art. 32.12": [
    "Los contribuyentes menores de 36 años que durante el periodo impositivo satisfagan cantidades en concepto de alquiler de su vivienda habitual situada en la Comunidad Autónoma La Rioja podrán aplicar sobre la cuota íntegra autonómica alguna de las siguientes deducciones: El 10 % de las cantidades no subvencionadas satisfechas en el ejercicio, con el límite anual de 300 € por contrato de arrendamiento, tanto en tributación individual como en conjunta, con carácter general o, en su caso, El 20 % de las cantidades no subvencionadas satisfechas en el ejercicio, con el límite anual de 400 € por contrato de arrendamiento, tanto en tributación individual como en conjunta, siempre y cuando la vivienda habitual se encuentre situada en uno de los pequeños municipios enumerados en el anexo I de esta ley.",
    "1) Que el contribuyente no haya cumplido los 36 años de edad a la fecha de devengo del impuesto. En caso de tributación conjunta el requisito de la edad habrá de cumplirlo al menos uno de los cónyuges.",
    "5) Que la base liquidable general sometida a tributación del contribuyente, definida en el artículo 50 de la Ley 35/2006, de 28 de noviembre, del Impuesto sobre la Renta de las Personas Físicas y de modificación parcial de las leyes de los Impuestos sobre Sociedades, sobre la Renta de no Residentes y sobre el Patrimonio, no exceda de 18.030 euros en tributación individual o de 30.050 euros en tributación conjunta, siempre que la base liquidable del ahorro sometida a tributación, definida en dicho artículo 50, no supere los 1.800 euros."
+  ],
+  "art. 32.14": [
+   "a) Los contribuyentes podrán aplicar una deducción del 15 % de las cantidades donadas durante el ejercicio para la promoción y estímulo de las actividades previstas en el artículo 1 de la Ley 3/2021, de 28 de abril, de Mecenazgo de la Comunidad Autónoma de La Rioja, y recogidas en la Estrategia Regional de Mecenazgo.",
+   "c) Las deducciones previstas en las letras a) y b) de este apartado 14 tendrán un límite conjunto de 500 euros anuales.",
+   "g) La suma de las deducciones de este apartado 14 no podrá exceder, en ningún caso, el límite del 30 % de la cuota íntegra autonómica del sujeto pasivo."
+  ],
+  "art. 32.17": [
+   "Con efectos desde el 1 de enero de 2023, los gastos del contribuyente, del cónyuge y de aquellas personas que den derecho a la aplicación del mínimo personal y familiar en servicios relativos al ejercicio físico y la práctica deportiva darán derecho a una deducción del 30 % o del 100 % en el caso de mayores de 65 años y de quienes acrediten un grado de discapacidad igual o superior al 33 %. El límite máximo de esta deducción será 300 euros anuales."
+  ]
+ },
+ "madrid": {
+  "art. 6": [
+   "1. Los contribuyentes podrán deducir, por cada menor en régimen de acogimiento familiar simple, permanente o preadoptivo, administrativo o judicial, siempre que convivan con el menor durante más de ciento ochenta y tres días del período impositivo, las siguientes cantidades: a) 618,60 euros si se trata del primer menor en régimen de acogimiento familiar. b) 773,25 euros si se trata del segundo menor en régimen de acogimiento familiar. c) 927,90 euros si se trata del tercer menor en régimen de acogimiento familiar o sucesivo.",
+   "4. En el supuesto de acogimiento de menores por matrimonios o uniones de hecho, el importe de la deducción se prorrateará por partes iguales en la declaración de cada uno de ellos si optaran por tributación individual.",
+   "1. Solo tendrán derecho a la aplicación de las deducciones establecidas en los artículos 6, 7 y 8 aquellos contribuyentes cuya base imponible, entendiendo como tal la suma de la base imponible general y la del ahorro, no sea superior a 26.414,22 euros en tributación individual o a 37.322,20 euros en tributación conjunta."
+  ],
+  "art. 7 bis": [
+   "1. Los contribuyentes podrán aplicar una deducción de 515,50 euros por cada ascendiente mayor de 65 años o con discapacidad, por el que puedan aplicarse el mínimo por ascendientes a que se refiere el artículo 59 de la Ley 35/2006, de 28 noviembre. 2. Cuando dos o más contribuyentes tengan derecho a la aplicación de la deducción respecto de los mismos ascendientes, su importe se prorrateará entre ellos por partes iguales."
+  ],
+  "art. 15": [
+   "1. Los contribuyentes podrán aplicar una deducción del 40 por ciento de las cantidades invertidas durante el ejercicio en la adquisición de acciones y participaciones sociales como consecuencia de acuerdos de constitución de sociedades o de ampliación de capital en las sociedades mercantiles que revistan la forma de sociedad anónima y sociedad de responsabilidad limitada. 2. El límite de deducción aplicable será de 9.279 euros anuales."
   ]
  },
  "murcia": {
+  "art. 1.Dos": [
+   "a) El importe a deducir será el 50 % de las cantidades donadas. b) Las donaciones deberán realizarse a favor de cualquiera de los titulares de los proyectos que reciben aportaciones del mecenas recogidos en el artículo 3 de la Ley de Mecenazgo de la Región de Murcia. c) En todo caso, las cantidades donadas deberán tener como destino la protección del patrimonio cultural de la Región de Murcia o la promoción de actividades culturales, artísticas, sociales, científico-tecnológicas y medioambientales.",
+   "d) En el caso de que por las cantidades donadas el contribuyente aplique las deducciones estatales por donativos previstas en la normativa reguladora del Impuesto sobre la Renta de las Personas Físicas, la base de deducción autonómica se minorará en las cantidades que constituyan la base de deducción en aquellas.",
+   "a) El importe a deducir será el 50 % de las cantidades donadas. b) En todo caso, las cantidades donadas deberán tener como destino la investigación biosanitaria a que se refiere la Ley 4/1994, de 26 de julio, de Salud de la Región de Murcia."
+  ],
   "art. 1.Tres": [
    "1. Los contribuyentes podrán deducir el 20 por 100 de las cantidades satisfechas por gastos educativos originados durante el período impositivo por los hijos o descendientes por los que tengan derecho al mínimo por descendientes regulado en el artículo 58 de la Ley 35/2006, de 28 de noviembre, del Impuesto sobre la Renta de las Personas Físicas, y de modificación parcial de las Leyes de los Impuestos sobre Sociedades, sobre la Renta de No Residentes y sobre el Patrimonio, correspondientes a la etapa de Primer Ciclo de Educación Infantil a que se refiere el artículo 14.1 de la Ley Orgánica 2/2006, de 3 de mayo, de Educación, cursada en centros autorizados e inscritos por la Consejería competente en materia de educación.",
    "3. La cantidad a deducir no excederá de 1.000 euros por cada uno de los hijos o descendientes que generen el derecho a la deducción. 4. Será requisito para la aplicación de esta deducción que la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro no supere la cantidad de 30.000 euros, en declaraciones individuales y 50.000 euros en declaraciones conjuntas. 5. Solo tendrán derecho a practicar la deducción los contribuyentes que convivan con los menores escolarizados. Cuando el menor conviva con más de un progenitor, tutor o adoptante, el importe de la deducción se prorrateará por partes iguales en la declaración de cada uno de ellos, en caso de que optaran por tributación individual."
+  ],
+  "art. 1.Seis": [
+   "1. Los contribuyentes podrán deducir en la cuota íntegra autonómica, y con un límite de 4.000 euros, el 20 % de las cantidades invertidas durante el ejercicio en la adquisición de acciones o participaciones sociales como consecuencia de acuerdos de constitución de sociedades o de ampliación de capital en sociedades anónimas, limitadas, anónimas laborales, limitadas laborales o cooperativas, siempre que se cumplan los siguientes requisitos:"
   ],
   "art. 1.Ocho": [
    "1. Los contribuyentes podrán aplicar una deducción autonómica por la adquisición de material escolar y libros de texto derivados de la escolarización de sus descendientes en el segundo ciclo de educación infantil, educación primaria y educación secundaria obligatoria. 2. El importe de la deducción será de 120 euros por cada descendiente. 3. Tendrán derecho a esta deducción quienes cumplan los siguientes requisitos: a) En el supuesto de contribuyentes que no formen parte de una unidad familiar que tenga la condición legal de familia numerosa: 1.º En caso de declaración individual, aquellos en que la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro no supere los 20.000 euros. 2.º En caso de declaración conjunta, aquellos en que la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro no supere los 40.000 euros. b) En el supuesto de contribuyentes que formen parte de una unidad familiar que tenga la condición legal de familia numerosa: 1.º En caso de declaración individual, aquellos en que la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro no supere los 33.000 euros. 2.º En caso de declaración conjunta, aquellos en que la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro no supere los 53.000 euros. 4. La deducción corresponderá al ascendiente que haya satisfecho las cantidades destinadas a la adquisición de los libros de texto y del material escolar. Cuando exista más de un declarante con derecho a la aplicación de la deducción, el importe de la misma se prorrateará por partes iguales en la declaración de cada uno de ellos."
@@ -512,6 +741,15 @@
   ],
   "art. 1.Diecisiete": [
    "1. El contribuyente cuya suma de la base imponible general y del ahorro sea inferior a 25.000 euros en declaraciones individuales y 40.000 euros en conjuntas puede aplicar una deducción del 15 % de las cantidades pagadas por los gastos de aprendizaje extraescolar de idiomas extranjeros por los hijos que cursen los estudios correspondientes al segundo ciclo de educación infantil, educación primaria, educación secundaria obligatoria, bachillerato y ciclos formativos de formación profesional específica, con el límite de 300 euros por hijo siempre que este dé derecho a la deducción del mínimo por descendientes. 2. Si los hijos conviven con ambos padres y estos optan por la tributación individual, la deducción se prorratea por partes iguales en la declaración de cada uno de ellos."
+  ],
+  "art. 1.Veintidós": [
+   "1. Los contribuyentes podrán deducir un 30 % de las cantidades satisfechas en el periodo impositivo en gastos asociados a los servicios relativos al ejercicio físico y a la práctica deportiva siguientes: los prestados en gimnasios y centros deportivos, por las cuotas de pertenencia a las federaciones deportivas, por servicios de entrenamiento prestados por técnicos y entrenadores deportivos y por la práctica de pilates y yoga. En el caso de mayores de sesenta y cinco años la deducción ascenderá al 100 % de estas cantidades. En ningún caso se integrarán en la base de esta deducción las cuotas estatutarias periódicas abonadas a entidades o clubes sociales o entidades deportivas sin ánimo de lucro. Esta deducción tendrá un límite máximo anual de 150 euros. El límite de deducción se establecerá por contribuyente y los desembolsos podrán ir destinados a actividades desarrolladas por el contribuyente, su cónyuge y aquellas personas que den derecho a la aplicación de los mínimos familiares por descendientes y ascendientes.",
+   "2. Será requisito para la aplicación de la deducción que la cantidad resultante de la suma de la base imponible general y del ahorro no supere la cantidad de 25.000 euros en declaraciones individuales y 40.000 euros en declaraciones conjuntas. 3. La base de esta deducción estará constituida por las cantidades justificadas con factura, que"
+  ],
+  "art. 1.Cinco": [
+   "2. Solo darán derecho a la deducción las inversiones en la adquisición e instalación en la vivienda habitual de sistemas que empleen energías renovables destinadas exclusivamente al autoconsumo para las que se haya presentado la declaración responsable ante el órgano competente, cuando esta venga exigida por la normativa aplicable.",
+   "En ningún caso el importe de la deducción podrá superar los 7.000 euros.",
+   "5. El importe de la deducción será el siguiente: a) En caso de declaración individual: 1.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es inferior a 35.000 euros, el 50 por 100 de la base de deducción. 2.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es igual o superior a 35.000 euros e inferior a 45.000 euros, el 37,50 por 100 de la base de deducción. 3.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es igual o superior a 45.000 euros e inferior a 60.000 euros, el 25 por 100 de la base de deducción. 4.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es igual o superior a 60.000 euros, no habrá derecho a la deducción. b) En caso de declaración conjunta: 1.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es inferior a 50.000 euros, el 50 por 100 de la base de deducción. 2.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es igual o superior a 50.000 euros e inferior a 75.000 euros, el 37,50 por 100 de la base de deducción. 3.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es igual o superior a 75.000 euros e inferior 95.000 euros, el 25 por 100 de la base de deducción. 4.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es igual o superior a 95.000 euros, no habrá derecho a la deducción."
   ]
  }
 }

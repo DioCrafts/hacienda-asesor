@@ -402,7 +402,61 @@
             "verificado": true
           }
         }
-      }
+      },
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 6",
+          "titulo": "Acogimiento familiar de menores",
+          "resumen": "618,60 euros por cada menor en régimen de acogimiento familiar con el que se conviva más de ciento ochenta y tres días del período impositivo (la ley eleva el importe a 773,25 euros por el segundo menor y 927,90 euros por el tercero y sucesivos, lo que no se calcula). Base imponible no superior a 26.414,22 euros (individual) o 37.322,20 euros (conjunta).",
+          "tipo": "fija",
+          "importe": "618.60",
+          "unidad": "menores_acogidos",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "26414.22",
+          "limite_conjunta": "37322.20",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "La calculadora aplica 618,60 euros por cada menor acogido; la ley concede 773,25 euros por el segundo y 927,90 euros por el tercero o sucesivos (con dos o más menores acogidos el cálculo da de menos).",
+            "Acogimiento familiar simple, permanente o preadoptivo, administrativo o judicial, con convivencia de más de ciento ochenta y tres días del período impositivo; se exige el certificado de formalización del acogimiento expedido por la Consejería competente.",
+            "No cuentan los menores adoptados por el contribuyente durante el período impositivo.",
+            "En acogimientos por matrimonios o uniones de hecho el importe se prorratea por partes iguales si declaran individualmente: la calculadora solo lo divide por dos si se ha indicado que los descendientes son compartidos."
+          ],
+          "en_vigor_desde": "2023-12-22"
+        },
+        {
+          "articulo": "art. 7 bis",
+          "titulo": "Cuidado de ascendientes",
+          "resumen": "515,50 euros por cada ascendiente mayor de 65 años (o con discapacidad) por el que se pueda aplicar el mínimo por ascendientes. Sin límite de renta.",
+          "tipo": "fija",
+          "importe": "515.50",
+          "unidad": "num_ascendientes_mayores_65",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "El ascendiente debe dar derecho al mínimo por ascendientes del artículo 59 de la Ley 35/2006 (convivencia al menos la mitad del período, rentas no superiores a 8.000 euros y no presentar declaración con rentas superiores a 1.800 euros).",
+            "Cuando dos o más contribuyentes tengan derecho respecto de los mismos ascendientes, el importe se prorratea entre ellos por partes iguales (no calculado).",
+            "También dan derecho los ascendientes con discapacidad de 65 años o menos por los que se aplique el mínimo por ascendientes; la calculadora solo cuenta los mayores de 65 años (da de menos)."
+          ],
+          "en_vigor_desde": "2023-12-22"
+        },
+        {
+          "articulo": "art. 15",
+          "titulo": "Inversión en acciones y participaciones de entidades nuevas o de reciente creación",
+          "resumen": "40 % de las cantidades invertidas en el ejercicio en acciones o participaciones por constitución o ampliación de capital de sociedades anónimas o limitadas con domicilio en la Comunidad de Madrid, con un límite de 9.279 euros anuales. Sin límite de renta.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.40",
+          "base": "inversion_empresas_nueva_creacion",
+          "maximo": "9279",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "La entidad debe tener domicilio social y fiscal en la Comunidad de Madrid y desarrollar una actividad económica (no gestión de patrimonio mobiliario o inmobiliario).",
+            "En constituciones, la entidad debe contar desde el primer ejercicio con al menos una persona contratada a jornada completa; en ampliaciones de capital, haberse constituido en los tres años anteriores y aumentar su plantilla media en al menos una persona durante los dos ejercicios siguientes, manteniéndolo otros veinticuatro meses.",
+            "La participación del contribuyente, junto con cónyuge y parientes hasta el tercer grado, no puede superar el 40 por 100 del capital o de los derechos de voto ningún día del año, y debe mantenerse un mínimo de tres años.",
+            "No se calcula el tipo incrementado del 50 por 100 con límite de 12.372,00 euros para sociedades creadas o participadas por universidades o centros de investigación, sociedades laborales y cooperativas (da de menos).",
+            "Incompatible, para las mismas inversiones, con las deducciones de los artículos 17 y 17 bis, que no se calculan."
+          ],
+          "en_vigor_desde": "2023-12-22"
+        }
+      ]
     },
     "andalucia": {
       "nombre": "Andalucía",
@@ -531,7 +585,8 @@
             "El contribuyente debe identificar al arrendador haciendo constar su NIF en la autoliquidación.",
             "Debe tratarse de la vivienda habitual del contribuyente (concepto del art. 2 de la Ley).",
             "En tributación conjunta basta con que cumpla el requisito uno de los cónyuges (o el padre o la madre en familias monoparentales); la calculadora solo comprueba la edad y discapacidad del contribuyente.",
-            "Si hay más de un contribuyente con derecho, cada uno aplica la deducción sobre las cantidades que haya satisfecho, con el límite máximo por contribuyente."
+            "Si hay más de un contribuyente con derecho, cada uno aplica la deducción sobre las cantidades que haya satisfecho, con el límite máximo por contribuyente.",
+            "«Mayores de 65 años»: la calculadora exige 66 años cumplidos a la fecha de devengo (lectura estricta; si bastara haber cumplido 65, da de menos a quien tiene exactamente 65)."
           ],
           "en_vigor_desde": "2026-01-01"
         },
@@ -562,7 +617,8 @@
             "Incompatible con la deducción para familia numerosa del art. 14 (la calculadora aplica esta y descarta la del art. 14) y con la deducción por adopción internacional del art. 12 (no calculada).",
             "Municipio con problemas de despoblación (art. 8): aquel cuya cifra de población sea de menos de 3.000 habitantes, según el art. 10.4 b) de la Ley 6/2010.",
             "En partos, adopciones o acogimientos múltiples la cuantía se incrementa en 200 euros por cada hijo o menor; incremento NO calculado.",
-            "También da derecho el acogimiento familiar de menores (simple, permanente o preadoptivo) con convivencia de al menos 90 días y sin ayudas de la Junta de Andalucía vinculadas al acogimiento; no incluido en el cómputo de hijos nacidos o adoptados."
+            "También da derecho el acogimiento familiar de menores (simple, permanente o preadoptivo) con convivencia de al menos 90 días y sin ayudas de la Junta de Andalucía vinculadas al acogimiento; no incluido en el cómputo de hijos nacidos o adoptados.",
+            "Solo se aplica en el período impositivo del nacimiento o la adopción."
           ],
           "en_vigor_desde": "2026-01-01"
         },
@@ -706,34 +762,81 @@
             "El requisito de edad puede cumplirlo el cónyuge o pareja de hecho inscrita; la calculadora solo comprueba la edad del contribuyente.",
             "El contribuyente (o su cónyuge/pareja) debe ser titular del hogar familiar, que debe ser su vivienda habitual, y constar en la Tesorería General de la Seguridad Social por la afiliación en Andalucía al Sistema Especial de Empleados del Hogar.",
             "Solo se computa la cotización correspondiente a un empleado o empleada.",
-            "Incompatible con la deducción del art. 18.3 cuando se trate de la misma persona empleada."
+            "Incompatible con la deducción del art. 18.3 (no calculada) cuando se trate de la misma persona empleada."
           ],
           "en_vigor_desde": "2023-01-01"
         },
         {
-          "articulo": "art. 18.3",
-          "titulo": "Asistencia a personas con discapacidad que necesitan ayuda de terceras personas (empleados de hogar)",
-          "resumen": "20 % de la cuota fija a la Seguridad Social por cuenta del empleador (Sistema Especial de Empleados del Hogar), con el límite de 500 euros anuales por contribuyente, cuando los ascendientes o descendientes con discapacidad necesiten ayuda de terceras personas y generen el mínimo por gastos de asistencia.",
+          "articulo": "art. 9",
+          "titulo": "Inversión en vivienda habitual por personas jóvenes",
+          "resumen": "6 % de las cantidades satisfechas por la adquisición o rehabilitación de la vivienda habitual, sobre una base máxima de 9.040 euros anuales (deducción máxima 542,40 euros), para adquirentes menores de 35 años con suma de bases imponibles general y del ahorro no superior a 25.000 euros (individual) o 30.000 euros (conjunta). El supuesto alternativo de vivienda protegida no se calcula.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.06",
+          "base": "inversion_vivienda_habitual",
+          "maximo": "542.40",
+          "edad_max": 34,
+          "base_limite": "base_imponible_total",
+          "limite_individual": "25000",
+          "limite_conjunta": "30000",
+          "requisitos_no_comprobados": [
+            "El máximo de 542,40 euros no figura literalmente en la ley: es el 6 % de la base máxima de 9.040 euros anuales (art. 9.3).",
+            "También tiene derecho, sin requisito de edad, quien adquiera o rehabilite una vivienda con calificación de protegida según la normativa andaluza (NO calculado: la calculadora exige ser menor de 35 años).",
+            "En tributación conjunta basta con que sea menor de 35 años uno de los cónyuges (o el padre o la madre en familias monoparentales); la calculadora solo comprueba la edad del contribuyente.",
+            "La base y el límite se determinan según la normativa estatal del IRPF vigente a 31-12-2012 (art. 68.1): cantidades satisfechas por adquisición o rehabilitación, gastos a cargo del adquirente, amortización e intereses de la financiación ajena.",
+            "Si se dedujo por viviendas habituales anteriores, no hay deducción hasta que lo invertido en la nueva supere lo invertido en aquellas; la base se minora en la ganancia patrimonial exenta por reinversión (NO calculado).",
+            "La rehabilitación debe cumplir los requisitos del art. 9.6 (actuaciones subvencionadas del plan de vivienda, o reconstrucción cuyo coste exceda del 25 % del precio de adquisición o valor de mercado).",
+            "Debe tratarse de la vivienda habitual en el sentido del art. 2 de la Ley (residencia continuada de al menos tres años, ocupada en doce meses)."
+          ],
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "articulo": "art. 20",
+          "titulo": "Inversión en acciones y participaciones de sociedades de nueva o reciente creación",
+          "resumen": "20 % de las cantidades invertidas en el ejercicio en la adquisición de acciones o participaciones por constitución o ampliación de capital de sociedades anónimas, limitadas, laborales o cooperativas con domicilio en Andalucía, con un límite de 4.000 euros anuales.",
           "tipo": "porcentaje",
           "porcentaje": "0.20",
-          "base": "cotizaciones_empleada_hogar",
-          "maximo": "500",
-          "unidades_min": {
-            "num_familiares_discapacidad_a_cargo": 1
-          },
+          "base": "inversion_empresas_nueva_creacion",
+          "maximo": "4000",
           "base_limite": "base_imponible_total",
-          "limite_individual": "80000",
-          "limite_conjunta": "100000",
-          "incompatible_con": [
-            "art. 19"
-          ],
           "requisitos_no_comprobados": [
-            "Requisito decisivo NO comprobado: la persona con discapacidad a cargo debe necesitar ayuda de terceras personas y generar derecho al mínimo en concepto de gastos de asistencia de la normativa estatal (no basta cualquier discapacidad).",
-            "Solo tiene derecho el contribuyente titular del hogar familiar que conste como tal en la Tesorería General de la Seguridad Social por la afiliación en Andalucía al Sistema Especial de Empleados del Hogar.",
-            "Se han aplicado los límites de renta del apartado 1 del artículo (80.000 / 100.000 euros); el texto no deja claro que rijan también para este apartado 3, por lo que podría darse de menos a rentas superiores.",
-            "Incompatible con la deducción por ayuda doméstica del art. 19 cuando se trate de la misma persona empleada (la calculadora supone que es la misma y no aplica ambas)."
+            "La sociedad debe tener domicilio social y fiscal en Andalucía, desarrollar una actividad económica (no la gestión de un patrimonio mobiliario o inmobiliario) y revestir forma de S.A., S.A.L., S.R.L., S.R.L.L. o cooperativa.",
+            "La participación del contribuyente, junto con la de su cónyuge y parientes hasta el tercer grado, no puede superar el 40 % del capital o de los derechos de voto ningún día del año, y debe mantenerse un mínimo de tres años.",
+            "El contribuyente no puede ejercer funciones ejecutivas ni de dirección ni mantener relación laboral con la entidad; la adquisición debe formalizarse en escritura pública.",
+            "Constitución: la entidad debe contar desde el primer ejercicio con al menos una persona contratada a jornada completa durante veinticuatro meses. Ampliación de capital: la entidad debe haberse constituido en los tres años anteriores e incrementar su plantilla media en al menos una persona.",
+            "En sociedades creadas o participadas por universidades o centros de investigación la deducción es del 50 % con límite de 12.000 euros (NO calculado: se aplica el 20 % con límite de 4.000 euros)."
           ],
           "en_vigor_desde": "2022-01-01"
+        },
+        {
+          "articulo": "art. 22",
+          "titulo": "Donativos con finalidad ecológica",
+          "resumen": "10 % de las cantidades donadas en el período impositivo a entidades públicas andaluzas o entidades sin fines lucrativos cuya finalidad sea la defensa y conservación del medio ambiente, con un límite de 150 euros.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.10",
+          "base": "donativos_autonomicos",
+          "maximo": "150",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Solo donativos a: a) entidades públicas dependientes de la Junta de Andalucía o de corporaciones locales andaluzas cuya finalidad sea la defensa y conservación del medio ambiente; b) entidades sin fines lucrativos o beneficiarias del mecenazgo (arts. 2 y 16 de la Ley 49/2002) cuyo fin exclusivo sea la defensa del medio ambiente e inscritas en los registros de la Comunidad Autónoma de Andalucía.",
+            "La donación debe justificarse conforme al art. 24 de la Ley 49/2002 (certificación de la entidad donataria)."
+          ],
+          "en_vigor_desde": "2022-01-01"
+        },
+        {
+          "articulo": "art. 22 bis",
+          "titulo": "Fomento del ejercicio físico y la práctica deportiva",
+          "resumen": "15 % de las cuotas de pertenencia o adhesión a gimnasios, centros y clubes deportivos, federaciones deportivas y secciones deportivas de otras entidades, con un máximo de 100 euros anuales por contribuyente.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "gastos_deporte_cultura",
+          "maximo": "100",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Solo cuentan las cuotas de pertenencia o adhesión a gimnasios, centros deportivos, clubes deportivos, federaciones deportivas y secciones deportivas o de recreación deportiva de otras entidades; los gastos culturales NO dan derecho a esta deducción aunque se hayan indicado en el mismo dato.",
+            "La actividad debe realizarla el contribuyente, su cónyuge o pareja de hecho inscrita, o personas que den derecho al mínimo por descendientes o ascendientes.",
+            "La aplica quien haya satisfecho efectivamente las cuotas, por las cantidades abonadas por cada uno; justificación conforme al art. 60 de la Ley."
+          ],
+          "en_vigor_desde": "2026-01-01"
         }
       ]
     },
@@ -873,7 +976,8 @@
           ],
           "requisitos_no_comprobados": [
             "El límite legal se refiere a la suma de base imponible general y del ahorro MENOS el mínimo del contribuyente y el mínimo por descendientes; la calculadora solo resta el mínimo por descendientes (criterio más estricto: puede dar de menos, nunca de más).",
-            "La deducción corresponde al contribuyente con quien convivan los hijos que den derecho a ella."
+            "La deducción corresponde al contribuyente con quien convivan los hijos que den derecho a ella.",
+            "El orden del hijo (tercero o sucesivos) se calcula con los descendientes indicados (los que dan derecho al mínimo por descendientes); si hay hijos mayores que ya no lo generan, la calculadora puede no apreciar que el nacido es el tercero (da de menos)."
           ],
           "en_vigor_desde": "2015-01-01"
         },
@@ -1480,6 +1584,143 @@
             "La ley se refiere a la «base imponible» sin más; se ha interpretado como suma de base imponible general y del ahorro."
           ],
           "en_vigor_desde": "2023-12-29"
+        },
+        {
+          "articulo": "art. 13",
+          "titulo": "Acogimiento familiar de menores",
+          "resumen": "500 euros por cada menor en régimen de acogimiento familiar (no preadoptivo) con el que se conviva al menos 183 días en el período impositivo; 250 euros si la convivencia es superior a 90 e inferior a 183 días. Sin límite de renta.",
+          "tipo": "fija",
+          "importe": "500",
+          "unidad": "menores_acogidos",
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Se han supuesto 183 días o más de convivencia con cada menor en el período impositivo. Si la convivencia fue superior a 90 e inferior a 183 días la deducción es de 250 euros por menor, y con 90 días o menos no hay deducción (NO comprobado: en esos casos la calculadora da de más).",
+            "Quedan excluidos los acogimientos con finalidad preadoptiva.",
+            "Cuando exista más de un contribuyente con derecho y declaren individualmente se prorratea por partes iguales (la calculadora solo lo reparte si se indican descendientes compartidos)."
+          ],
+          "en_vigor_desde": "2022-12-30"
+        },
+        {
+          "articulo": "art. 14 decies",
+          "titulo": "Adquisición o rehabilitación de vivienda habitual para determinados colectivos",
+          "resumen": "5 % de las cantidades satisfechas por la adquisición o rehabilitación de la vivienda habitual, sobre una base máxima de 10.000 euros (deducción máxima 500 euros), para viviendas en concejos en riesgo de despoblamiento o para contribuyentes de hasta 35 años (vivienda de valor no superior a 250.000 euros); 10 % (máximo 1.000 euros) en concejos en riesgo de despoblamiento para contribuyentes de hasta 35 años, familias numerosas o monoparentales. Base imponible no superior a 35.000 euros (individual) o 45.000 euros (conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.05",
+          "base": "inversion_vivienda_habitual",
+          "maximo": "500",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "35000",
+          "limite_conjunta": "45000",
+          "alternativas": [
+            {
+              "requiere": [
+                "vivienda_en_municipio_rural"
+              ]
+            },
+            {
+              "edad_max": 35
+            }
+          ],
+          "variantes": [
+            {
+              "descripcion": "vivienda en concejo en riesgo de despoblamiento, contribuyente de hasta 35 años: 10 %, máximo 1.000 euros",
+              "cuando": {
+                "requiere": [
+                  "vivienda_en_municipio_rural"
+                ],
+                "edad_max": 35
+              },
+              "porcentaje": "0.10",
+              "maximo": "1000"
+            },
+            {
+              "descripcion": "vivienda en concejo en riesgo de despoblamiento, familia numerosa: 10 %, máximo 1.000 euros",
+              "cuando": {
+                "requiere": [
+                  "vivienda_en_municipio_rural",
+                  "familia_numerosa"
+                ]
+              },
+              "porcentaje": "0.10",
+              "maximo": "1000"
+            },
+            {
+              "descripcion": "vivienda en concejo en riesgo de despoblamiento, familia monoparental: 10 %, máximo 1.000 euros",
+              "cuando": {
+                "requiere": [
+                  "vivienda_en_municipio_rural",
+                  "familia_monoparental"
+                ]
+              },
+              "porcentaje": "0.10",
+              "maximo": "1000"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Los máximos de 500 y 1.000 euros no figuran literalmente en la ley: son el 5 % y el 10 % de la base máxima de 10.000 euros (apartado 4).",
+            "Vivienda fuera de concejos en riesgo de despoblamiento (solo contribuyentes de hasta 35 años): el valor del inmueble no debe exceder de 250.000 euros (NO comprobado).",
+            "Concejos en riesgo de despoblamiento o en crisis demográfica: los así clasificados según el Decreto 83/2025, de 23 de junio (zonificación demográfica e Indicador Sintético de Estado Demográfico del Principado de Asturias). La vivienda debe ubicarse en uno de ellos y el domicilio fiscal debe mantenerse allí al menos tres años.",
+            "La vivienda debe ir a constituir la vivienda habitual del contribuyente; la base incluye la amortización de préstamos hipotecarios.",
+            "Si más de un contribuyente tiene derecho por los mismos bienes, la base máxima de 10.000 euros se prorratea entre ellos por partes iguales (NO calculado).",
+            "Familia numerosa: con título vigente a la fecha de devengo; familia monoparental: la que cumple los requisitos del art. 12.",
+            "La ley se refiere a la «base imponible» sin más; se ha interpretado como suma de base imponible general y del ahorro."
+          ],
+          "en_vigor_desde": "2025-12-31"
+        },
+        {
+          "articulo": "art. 14 sexdecies",
+          "titulo": "Gastos vitales de contribuyentes de hasta 35 años (gastos deportivos y culturales)",
+          "resumen": "Los contribuyentes de hasta 35 años con base imponible no superior a 28.000 euros pueden deducir el importe satisfecho por gastos deportivos y culturales (entre otros gastos vitales), con un máximo de 2.000 euros hasta los 25 años, 1.500 euros entre 26 y 30 y 1.000 euros entre 30 y 35.",
+          "tipo": "porcentaje",
+          "porcentaje": "1.00",
+          "base": "gastos_deporte_cultura",
+          "maximo": "1000",
+          "edad_max": 35,
+          "base_limite": "base_imponible_total",
+          "limite_individual": "28000",
+          "limite_conjunta": "28000",
+          "variantes": [
+            {
+              "descripcion": "contribuyentes de hasta 25 años: máximo 2.000 euros",
+              "cuando": {
+                "edad_max": 25
+              },
+              "maximo": "2000"
+            },
+            {
+              "descripcion": "contribuyentes de 26 a 29 años: máximo 1.500 euros",
+              "cuando": {
+                "edad_min": 26,
+                "edad_max": 29
+              },
+              "maximo": "1500"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Solo se computan los gastos deportivos y culturales. La ley incluye además, dentro del MISMO máximo, los gastos de vivienda y suministros asociados, educativos, de transporte y movilidad y en tecnología (NO calculados: la calculadora puede dar de menos).",
+            "La ley fija 1.500 euros «entre los 26 y los 30 años» y 1.000 euros «entre los 30 y los 35 años»: a los 30 años se ha aplicado el máximo menor (1.000 euros).",
+            "La ley fija un único límite de 28.000 euros de base imponible sin distinguir modalidad de tributación (se ha puesto el mismo importe en individual y conjunta).",
+            "Los gastos deben acreditarse mediante factura u otro medio admitido en Derecho.",
+            "La ley se refiere a la «base imponible» sin más; se ha interpretado como suma de base imponible general y del ahorro."
+          ],
+          "en_vigor_desde": "2024-12-31"
+        },
+        {
+          "articulo": "art. 14 octodecies",
+          "titulo": "Inversión en acciones y participaciones de nuevas entidades o de reciente creación",
+          "resumen": "30 % de las cantidades invertidas en el ejercicio en acciones o participaciones por constitución o ampliación de capital de sociedades anónimas, limitadas o cooperativas (incluidas laborales) con domicilio en Asturias, con un límite de 6.000 euros anuales.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.30",
+          "base": "inversion_empresas_nueva_creacion",
+          "maximo": "6000",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "La entidad debe tener domicilio social y fiscal en el Principado de Asturias, ser microempresa o pyme y desarrollar una actividad económica (no la gestión de un patrimonio mobiliario o inmobiliario).",
+            "La participación del contribuyente, junto con la de su cónyuge y parientes hasta el tercer grado, no puede superar el 40 % del capital o de los derechos de voto ningún día del año, y debe mantenerse un mínimo de tres años.",
+            "Constitución: la entidad debe contar desde el primer ejercicio con al menos una persona contratada a jornada completa. Ampliación de capital: la entidad debe haberse constituido en los tres años anteriores e incrementar su plantilla media en al menos una persona."
+          ],
+          "en_vigor_desde": "2024-12-31"
         }
       ]
     },
@@ -1684,7 +1925,8 @@
             "Arrendamiento de la vivienda habitual en las Illes Balears, ocupada efectivamente por el contribuyente, con contrato de duración igual o superior a un año.",
             "Durante al menos la mitad del período impositivo, ni el contribuyente ni ningún miembro de su unidad familiar pueden ser titulares (pleno dominio o derecho real de uso o disfrute) de otra vivienda a menos de 70 kilómetros de la arrendada, salvo que esté fuera de las Illes Balears o en otra isla o genere rendimientos del capital inmobiliario.",
             "El contribuyente no debe tener derecho en el mismo período a ninguna deducción por inversión en vivienda habitual.",
-            "En tributación conjunta solo se benefician los contribuyentes de la unidad familiar que cumplan las condiciones y por los importes efectivamente satisfechos por ellos."
+            "En tributación conjunta solo se benefician los contribuyentes de la unidad familiar que cumplan las condiciones y por los importes efectivamente satisfechos por ellos.",
+            "«Mayores de 65 años»: la calculadora exige 66 años cumplidos a la fecha de devengo (lectura estricta; si bastara haber cumplido 65, da de menos a quien tiene exactamente 65)."
           ],
           "en_vigor_desde": "2026-06-14"
         },
@@ -1836,9 +2078,30 @@
             "Se ha codificado un único límite de 660 euros por contribuyente (el texto podría entenderse por persona atendida; en tal caso la calculadora daría de menos).",
             "Los ascendientes deben dar derecho al mínimo por ascendientes, y en los supuestos de discapacidad el contribuyente debe tener derecho a algún componente del mínimo por discapacidad.",
             "El pago debe hacerse mediante tarjeta, transferencia bancaria, cheque nominativo o ingreso en cuenta; el cuidador contratado debe estar dado de alta en la Seguridad Social.",
-            "Respecto de descendientes comunes a cargo, si los dos contribuyentes declaran individualmente se prorratea por partes iguales (NO calculado); respecto de ascendientes comunes cada contribuyente la aplica íntegramente."
+            "Respecto de descendientes comunes a cargo, si los dos contribuyentes declaran individualmente se prorratea por partes iguales (NO calculado); respecto de ascendientes comunes cada contribuyente la aplica íntegramente.",
+            "«Mayores de 65 años»: la calculadora exige 66 años cumplidos a la fecha de devengo (lectura estricta; si bastara haber cumplido 65, da de menos a quien tiene exactamente 65)."
           ],
           "en_vigor_desde": "2024-12-13"
+        },
+        {
+          "articulo": "art. 7",
+          "titulo": "Inversión en acciones o participaciones de nuevas entidades o de reciente creación",
+          "resumen": "30 % de las cuantías invertidas en el ejercicio en acciones, participaciones o aportaciones sociales por constitución o ampliación de capital de sociedades con domicilio en las Illes Balears, con un importe máximo de 6.000 euros por ejercicio.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.30",
+          "base": "inversion_empresas_nueva_creacion",
+          "maximo": "6000",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "La entidad debe ser sociedad anónima, limitada, laboral o cooperativa, con domicilio social y fiscal en las Illes Balears, desarrollar una actividad económica (no la gestión de patrimonio ni el arrendamiento de inmuebles), ocupar al menos a una persona a jornada completa que no sea socia, mantener los puestos de trabajo y no superar 2.000.000 de euros de cifra anual de negocio.",
+            "Si la inversión es por ampliación de capital, la sociedad debe haberse constituido en los dos años anteriores (salvo pyme innovadora con sello vigente).",
+            "La participación del contribuyente, junto con la de su cónyuge y parientes hasta el tercer grado, no puede superar el 40 % del capital o de los derechos de voto; no puede ejercer funciones ejecutivas o de dirección ni mantener relación laboral con la entidad.",
+            "Formalización en escritura pública y mantenimiento de las participaciones durante un mínimo de cuatro años.",
+            "La deducción se aplica en el ejercicio de la inversión y en los dos siguientes con el límite de 6.000 euros anuales (el exceso trasladable a ejercicios posteriores NO se calcula).",
+            "En declaración conjunta el máximo es de 6.000 euros por cada contribuyente de la unidad familiar que haya invertido (la calculadora aplica un único máximo).",
+            "En sociedades participadas por centros de investigación o universidades la deducción es del 50 % con máximo de 12.000 euros (NO calculado: se aplica el 30 % con máximo de 6.000 euros)."
+          ],
+          "en_vigor_desde": "2023-04-14"
         }
       ]
     },
@@ -2036,20 +2299,23 @@
         {
           "articulo": "art. 12",
           "titulo": "Gastos de custodia en guarderías",
-          "resumen": "18 % de los gastos de guardería de descendientes menores de 3 años, con un máximo de 530 euros anuales por descendiente; rentas no superiores a 46.455 euros (61.770 en conjunta).",
+          "resumen": "18 % de los gastos de guardería de descendientes menores de 3 años, con un máximo de 530 euros anuales por descendiente; rentas no superiores a 46.455 euros (61.770 en conjunta). Solo se calcula si a 31 de diciembre hay algún descendiente menor de 3 años.",
           "tipo": "porcentaje",
           "unidad": "num_descendientes_menores_3",
           "porcentaje": "0.18",
           "base": "gastos_guarderia",
           "maximo_por_unidad": "530",
+          "unidades_min": {
+            "num_descendientes_menores_3": 1
+          },
           "base_limite": "base_imponible_total",
           "limite_individual": "46455",
           "limite_conjunta": "61770",
           "reparto_descendientes": true,
           "requisitos_no_comprobados": [
             "Guardería autorizada para su apertura y funcionamiento; gastos justificados con factura y declaración del NIF de la guardería.",
-            "El descendiente debe convivir con el contribuyente; el máximo de 530 euros se aplica a los gastos de cada descendiente por separado.",
-            "En el año en que el niño cumple 3 años la deducción y su límite se calculan en proporción a los meses en que se cumplen los requisitos (la calculadora no cuenta a ese niño como menor de 3 años).",
+            "El descendiente debe convivir con el contribuyente. El máximo de 530 euros se aplica a los gastos de cada descendiente por separado: la calculadora compara el gasto total con 530 euros por cada menor de 3 años, lo que solo coincide con la ley si el gasto se reparte de forma parecida entre ellos.",
+            "SUPUESTO NO CALCULADO: en el año en que el niño cumple 3 años la deducción y su límite se calculan en proporción a los meses en que se cumplen los requisitos; la calculadora no dispone de los meses y por eso exige que conste al menos un descendiente menor de 3 años a 31 de diciembre (si solo hay gastos de un niño que cumplió 3 años en el ejercicio, no la aplica aunque la ley concede la parte proporcional).",
             "Si dos o más contribuyentes tienen derecho y no tributan conjuntamente, se prorratea por partes iguales.",
             "Las bases de las deducciones se minoran en las ayudas públicas exentas que cubran los gastos (art. 18.3)."
           ],
@@ -2152,6 +2418,69 @@
             "No acumular sobre las mismas cuotas con la deducción del art. 16 quater.4 (art. 18.2)."
           ],
           "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "articulo": "art. 9",
+          "titulo": "Inversión en acciones y participaciones de entidades nuevas o de reciente creación",
+          "resumen": "20 % de las cantidades invertidas en el ejercicio en acciones o participaciones por constitución o ampliación de capital de sociedades anónimas o limitadas con domicilio en Canarias, con un límite de 4.000 euros anuales.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "inversion_empresas_nueva_creacion",
+          "maximo": "4000",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Sociedad anónima o de responsabilidad limitada con domicilio social y fiscal en Canarias que desarrolle una actividad económica (no la mera gestión de un patrimonio mobiliario o inmobiliario).",
+            "La participación, junto con la del cónyuge y parientes hasta el tercer grado, no puede superar ningún día del año el 40 % del capital o de los derechos de voto; el contribuyente no puede ejercer funciones ejecutivas ni de dirección; la participación debe mantenerse al menos tres años.",
+            "Constitución: la entidad debe contar desde el primer ejercicio con al menos una persona contratada a jornada completa. Ampliación de capital: entidad constituida en los tres años anteriores y que aumente su plantilla media en al menos una persona durante los dos ejercicios siguientes, manteniendo el aumento otros veinticuatro meses.",
+            "IMPORTE SUPERIOR NO CALCULADO: 30 % con límite de 6.000 euros si la sociedad ha sido creada o está participada por universidades o centros de investigación, o si se trata de sociedades laborales o cooperativas (art. 9.4 y 9.5)."
+          ],
+          "en_vigor_desde": "2026-01-01"
+        },
+        {
+          "articulo": "art. 16 ter",
+          "titulo": "Gastos de enfermedad",
+          "resumen": "12 % de los gastos y honorarios de profesionales médicos o sanitarios (no farmacéuticos) y de aparatos y complementos como gafas graduadas y lentillas, propios y de las personas del mínimo familiar; límite anual de 500 euros en tributación individual (600 con discapacidad igual o superior al 65 %) y 700 en conjunta, o de 150 euros si las rentas superan 46.455 euros (61.770 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.12",
+          "base": "gastos_salud",
+          "maximo": "150",
+          "base_limite": "base_imponible_total",
+          "variantes": [
+            {
+              "descripcion": "tributación conjunta con rentas no superiores a 61.770 euros",
+              "cuando": {
+                "tributacion": "conjunta",
+                "ingreso_max": "61770"
+              },
+              "maximo": "700"
+            },
+            {
+              "descripcion": "tributación individual, rentas no superiores a 46.455 euros y discapacidad igual o superior al 65 %",
+              "cuando": {
+                "tributacion": "individual",
+                "ingreso_max": "46455",
+                "discapacidad_min": 65
+              },
+              "maximo": "600"
+            },
+            {
+              "descripcion": "tributación individual con rentas no superiores a 46.455 euros",
+              "cuando": {
+                "tributacion": "individual",
+                "ingreso_max": "46455"
+              },
+              "maximo": "500"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Solo gastos y honorarios de profesionales médicos o sanitarios (Ley 44/2003), excepto farmacéuticos, por prevención, diagnóstico y tratamiento de enfermedades, salud dental, embarazo y nacimiento, accidentes e invalidez, y la compra de aparatos y complementos (gafas graduadas, lentillas) que solo sirvan para suplir deficiencias físicas; propios o de las personas incluidas en el mínimo familiar.",
+            "No cuentan los medicamentos, la asistencia con fines estéticos (salvo reparación de daños por accidentes o intervenciones y tratamientos de identidad sexual), las primas de seguros médicos ni las prestaciones reintegrables por la Seguridad Social o entidades que la sustituyan.",
+            "Gastos justificados con factura; para los honorarios hay que declarar el NIF del prestador de cada servicio y su importe anual.",
+            "El límite de 600 euros (500 + 100, solo en tributación individual) se ha aplicado únicamente a contribuyentes con discapacidad igual o superior al 65 %. La ley lo concede «cuando el contribuyente sea una persona mayor de 65 años o con discapacidad y acredite un grado de discapacidad igual o superior al 65%»: si se entiende que basta con ser mayor de 65 años, a esos contribuyentes les corresponderían 600 euros y la calculadora aplica 500.",
+            "La cifra de 600 euros no figura literalmente en la ley: resulta de 500 + 100.",
+            "Las bases de las deducciones se minoran en las ayudas públicas exentas que cubran los gastos (art. 18.3)."
+          ],
+          "en_vigor_desde": "2026-01-01"
         }
       ]
     },
@@ -2308,6 +2637,149 @@
             "La ley no fija un límite distinto para la tributación conjunta: se aplica el mismo de 31.485 euros."
           ],
           "en_vigor_desde": "2024-01-01"
+        },
+        {
+          "articulo": "art. 2.13 (gastos de educación)",
+          "titulo": "Gastos de educación: libros de texto",
+          "resumen": "100 % de lo pagado por libros de texto de las enseñanzas obligatorias de los hijos o descendientes, con un máximo de 200 euros por unidad familiar (la mitad para cada progenitor en declaración individual). El mismo máximo cubre el 15 % de la enseñanza extraescolar de idiomas, que no se calcula.",
+          "tipo": "porcentaje",
+          "porcentaje": "1",
+          "base": "gastos_libros_texto",
+          "maximo": "200",
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Solo libros de texto editados para las enseñanzas obligatorias que cursen los hijos o descendientes (no el material escolar ni los libros de otras etapas).",
+            "PARTE NO CALCULADA: el 15 % de la enseñanza de idiomas como actividad extraescolar durante las etapas obligatorias comparte el mismo máximo de 200 euros por unidad familiar; la calculadora solo computa los libros de texto.",
+            "El máximo de 200 euros es por unidad familiar y se prorratea por mitad entre los progenitores en declaración individual (la calculadora lo reduce a la mitad solo si has indicado que los descendientes son compartidos).",
+            "Cantidades justificadas con factura y pagadas por tarjeta, transferencia, cheque nominativo o ingreso en cuenta (nunca en efectivo)."
+          ],
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "articulo": "art. 2.3",
+          "titulo": "Obras de mejora en viviendas (eficiencia energética y energías renovables)",
+          "resumen": "15 % de lo pagado por obras de mejora de la eficiencia energética o de utilización de energías renovables en viviendas propias situadas en Cantabria, con un límite anual de 1.000 euros en tributación individual (1.500 con discapacidad igual o superior al 65 %) y 1.500 en conjunta.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "gastos_eficiencia_energetica",
+          "maximo": "1000",
+          "base_limite": "base_imponible_total",
+          "variantes": [
+            {
+              "descripcion": "tributación conjunta",
+              "cuando": {
+                "tributacion": "conjunta"
+              },
+              "maximo": "1500"
+            },
+            {
+              "descripcion": "tributación individual de contribuyente con discapacidad igual o superior al 65 %",
+              "cuando": {
+                "discapacidad_min": 65
+              },
+              "maximo": "1500"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Obras en una vivienda propiedad del contribuyente situada en Cantabria (o en su edificio) que tengan por objeto la mejora de la eficiencia energética o la utilización de energías renovables; la ley admite también rehabilitaciones calificadas, higiene, salud, medio ambiente, accesibilidad, seguridad, estanqueidad, sustitución de instalaciones e infraestructuras de telecomunicación, que puedes incluir en el mismo importe.",
+            "No dan derecho las obras en viviendas afectas a una actividad económica, plazas de garaje, jardines, parques, piscinas, instalaciones deportivas y elementos análogos.",
+            "No dan derecho las cantidades por las que se tenga derecho a una deducción estatal (por ejemplo, las deducciones estatales por obras de mejora de la eficiencia energética) ni las que procedan de subvenciones no sujetas o exentas.",
+            "En tributación conjunta el límite se incrementa en 500 euros por cada contribuyente con discapacidad igual o superior al 65 % (no calculado: se aplican 1.500 euros). El límite individual con discapacidad resulta de 1.000 + 500 euros.",
+            "Lo no deducido por exceder del límite anual puede deducirse en los dos ejercicios siguientes (no calculado).",
+            "Cantidades justificadas con factura y pagadas por tarjeta, transferencia, cheque nominativo o ingreso en cuenta (nunca en efectivo)."
+          ],
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "articulo": "art. 2.4",
+          "titulo": "Donativos a fundaciones de Cantabria y a asociaciones de apoyo a personas con discapacidad",
+          "resumen": "15 % de lo donado a fundaciones domiciliadas en Cantabria con fines culturales, asistenciales, deportivos, sanitarios o análogos, o a asociaciones domiciliadas en Cantabria cuyo objeto sea el apoyo a personas con discapacidad.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "donativos_autonomicos",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Solo donativos a fundaciones domiciliadas en Cantabria que cumplan la Ley 50/2002, persigan fines culturales, asistenciales, deportivos, sanitarios o análogos, estén inscritas en el Registro de Fundaciones y rindan cuentas al protectorado; o a asociaciones domiciliadas en Cantabria que cumplan la Ley 49/2002 y cuyo objeto sea el apoyo a personas con discapacidad.",
+            "NO INCLUYAS los donativos al Fondo Cantabria Coopera: deducen el 12 % (no calculado) y aquí se les aplicaría indebidamente el 15 %. Tampoco los donativos a entidades de la economía social (art. 2.12, no calculado).",
+            "La suma de la base de esta deducción y de las bases de las deducciones estatales por donativos (art. 68.3 y 68.5 de la Ley del IRPF) no puede exceder del 10 % de la base liquidable (no comprobado)."
+          ],
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "articulo": "art. 2.5",
+          "titulo": "Acogimiento familiar de menores",
+          "resumen": "240 euros por cada menor acogido (número máximo de menores acogidos de forma simultánea en el año), sin que la deducción pueda superar 1.200 euros; se prorratea entre los miembros de la pareja acogedora en declaración individual.",
+          "tipo": "fija",
+          "importe": "240",
+          "unidad": "menores_acogidos",
+          "unidades_max": {
+            "menores_acogidos": 5
+          },
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "El dato debe ser el número máximo de menores acogidos de forma simultánea en el periodo impositivo.",
+            "Acogedores previamente seleccionados por una entidad pública de protección de menores, sin relación de parentesco con el menor y que no lo adopten durante el periodo impositivo.",
+            "La deducción no puede superar 1.200 euros (cinco menores): con más de cinco menores acogidos la calculadora no la aplica, aunque la ley concede 1.200 euros.",
+            "En acogimientos por matrimonios o parejas, el importe se prorratea por partes iguales si tributan individualmente (la calculadora lo reduce a la mitad solo si has indicado que los descendientes son compartidos).",
+            "SUPUESTO NO CALCULADO: personas exacogedoras que siguen conviviendo con quien tuvieron acogido hasta su mayoría de edad."
+          ],
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "articulo": "art. 2.6",
+          "titulo": "Inversión en acciones y participaciones de entidades nuevas o de reciente creación",
+          "resumen": "15 % de lo invertido en el ejercicio en acciones o participaciones por constitución o ampliación de capital de pymes (S.A., S.L. o sociedades laborales) con domicilio en Cantabria, con un límite de 1.000 euros anuales.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "inversion_empresas_nueva_creacion",
+          "maximo": "1000",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Sociedad anónima, limitada o laboral que sea pyme (Recomendación de la Comisión Europea de 6 de mayo de 2003), con domicilio social y fiscal en Cantabria y que desarrolle una actividad económica (no la mera gestión de un patrimonio).",
+            "La participación, junto con la del cónyuge y parientes hasta el tercer grado, no puede superar ningún día del año el 40 % del capital o de los derechos de voto, y debe mantenerse al menos tres años.",
+            "Constitución: al menos una persona contratada a jornada completa, de alta en la Seguridad Social y residente en Cantabria desde el primer ejercicio. Ampliación: entidad constituida en los tres años anteriores que aumente su plantilla media en al menos una persona durante los dos ejercicios siguientes y lo mantenga otros veinticuatro meses.",
+            "El contribuyente puede ser consejero, pero no ejercer funciones ejecutivas o de dirección ni tener relación laboral con la entidad; la operación debe formalizarse en escritura pública."
+          ],
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "articulo": "art. 2.7.1",
+          "titulo": "Gastos de enfermedad (honorarios de servicios sanitarios)",
+          "resumen": "10 % de los honorarios profesionales pagados por servicios sanitarios (enfermedad, salud dental, embarazo y nacimiento, accidentes e invalidez), propios y de las personas del mínimo familiar, no cubiertos por la Seguridad Social o el seguro; límite anual de 500 euros en tributación individual (600 con discapacidad igual o superior al 65 %) y 700 en conjunta; base liquidable menos mínimo personal y familiar inferior a 22.946 euros (31.485 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.10",
+          "base": "gastos_salud",
+          "maximo": "500",
+          "base_limite": "base_liquidable_total_menos_minimos",
+          "limite_individual": "22946",
+          "limite_conjunta": "31485",
+          "limite_es_estricto": true,
+          "variantes": [
+            {
+              "descripcion": "tributación conjunta",
+              "cuando": {
+                "tributacion": "conjunta"
+              },
+              "maximo": "700"
+            },
+            {
+              "descripcion": "tributación individual de contribuyente con discapacidad igual o superior al 65 %",
+              "cuando": {
+                "discapacidad_min": 65
+              },
+              "maximo": "600"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Solo honorarios profesionales por la prestación de servicios sanitarios por enfermedad, salud dental, embarazo y nacimiento de hijos, accidentes e invalidez, propios o de las personas incluidas en el mínimo familiar. NO INCLUYAS gafas, lentillas, medicamentos ni otros productos: la ley habla solo de honorarios por servicios.",
+            "No cuentan los honorarios cubiertos por la Seguridad Social, la mutua o la aseguradora, las primas de seguros médicos, las prestaciones reintegrables ni las cantidades pagadas a asociaciones de utilidad pública que den derecho a la deducción estatal por donativos.",
+            "El límite de 600 euros no figura literalmente en la ley: resulta de 500 + 100. En tributación conjunta el incremento es de 100 euros por cada contribuyente con esa discapacidad (no calculado: se aplican 700 euros).",
+            "NO CALCULADAS las deducciones del 20 % (enfermedades raras, art. 2.7.2) y del 50 % (esclerosis lateral amiotrófica, art. 2.7.3).",
+            "Cantidades justificadas con factura y pagadas por tarjeta, transferencia, cheque nominativo o ingreso en cuenta (nunca en efectivo)."
+          ],
+          "en_vigor_desde": "2026-05-01"
         }
       ]
     },
@@ -2420,87 +2892,7 @@
             "Consignar en la autoliquidación el NIF del arrendador.",
             "Vivienda que constituya o vaya a constituir la residencia habitual en Castilla-La Mancha.",
             "Variante del 20 % / 612 euros: el domicilio habitual debe estar en un municipio de Castilla-La Mancha de hasta 2.500 habitantes, o de más de 2.500 y hasta 10.000 habitantes que diste más de 30 kilómetros de un municipio de más de 50.000 habitantes (padrón a 1 de enero del año de devengo).",
-            "Incompatible con las demás deducciones por arrendamiento (arts. 9 bis, 9 ter, 9 quáter y 9 quinquies).",
-            "No se calcula la deducción incompatible por arrendamiento vinculado a dación en pago (art. 9 bis)."
-          ],
-          "en_vigor_desde": "2026-03-31"
-        },
-        {
-          "articulo": "art. 9 ter",
-          "titulo": "Arrendamiento de vivienda habitual por familias numerosas",
-          "resumen": "Para miembros de familia numerosa: 15 % del alquiler de la vivienda habitual, con un máximo de 500 euros; base imponible general más ahorro menos el mínimo por descendientes no superior a 12.500 euros (25.000 en conjunta).",
-          "tipo": "porcentaje",
-          "porcentaje": "0.15",
-          "base": "alquiler_vivienda_habitual",
-          "maximo": "500",
-          "requiere": [
-            "familia_numerosa"
-          ],
-          "base_limite": "base_imponible_total_menos_minimo_descendientes",
-          "limite_individual": "12500",
-          "limite_conjunta": "25000",
-          "incompatible_con": [
-            "art. 9"
-          ],
-          "requisitos_no_comprobados": [
-            "Consignar en la autoliquidación el NIF del arrendador.",
-            "Vivienda que constituya o vaya a constituir la residencia habitual en Castilla-La Mancha.",
-            "Tener reconocida la condición de familia numerosa a la fecha de devengo y poseer el título.",
-            "El límite de la deducción se prorratea por los días de vigencia del arrendamiento en el periodo impositivo y, si dos o más declarantes tienen derecho por la misma vivienda, a partes iguales entre ellos (la calculadora aplica el máximo íntegro).",
-            "No se calcula la deducción incompatible por arrendamiento vinculado a dación en pago (art. 9 bis)."
-          ],
-          "en_vigor_desde": "2026-03-31"
-        },
-        {
-          "articulo": "art. 9 quáter",
-          "titulo": "Arrendamiento de vivienda habitual por familias monoparentales",
-          "resumen": "Para el padre o la madre de una familia monoparental: 15 % del alquiler de la vivienda habitual, con un máximo de 500 euros; base imponible general más ahorro menos el mínimo por descendientes no superior a 12.500 euros (25.000 en conjunta).",
-          "tipo": "porcentaje",
-          "porcentaje": "0.15",
-          "base": "alquiler_vivienda_habitual",
-          "maximo": "500",
-          "requiere": [
-            "familia_monoparental"
-          ],
-          "base_limite": "base_imponible_total_menos_minimo_descendientes",
-          "limite_individual": "12500",
-          "limite_conjunta": "25000",
-          "incompatible_con": [
-            "art. 9",
-            "art. 9 ter"
-          ],
-          "requisitos_no_comprobados": [
-            "Consignar en la autoliquidación el NIF del arrendador.",
-            "Vivienda que constituya o vaya a constituir la residencia habitual en Castilla-La Mancha.",
-            "Familia monoparental en los términos del art. 2 bis (madre o padre separados legalmente o sin vínculo matrimonial, con hijos que dependan económicamente de forma exclusiva).",
-            "El límite de la deducción se prorratea por los días de vigencia del arrendamiento en el periodo impositivo y, si dos o más declarantes tienen derecho por la misma vivienda, a partes iguales entre ellos (la calculadora aplica el máximo íntegro).",
-            "No se calcula la deducción incompatible por arrendamiento vinculado a dación en pago (art. 9 bis)."
-          ],
-          "en_vigor_desde": "2026-03-31"
-        },
-        {
-          "articulo": "art. 9 quinquies",
-          "titulo": "Arrendamiento de vivienda habitual por personas con discapacidad",
-          "resumen": "Para contribuyentes con discapacidad igual o superior al 65 %: 15 % del alquiler de la vivienda habitual, con un máximo de 500 euros; base imponible general más ahorro menos el mínimo por descendientes no superior a 12.500 euros (25.000 en conjunta).",
-          "tipo": "porcentaje",
-          "porcentaje": "0.15",
-          "base": "alquiler_vivienda_habitual",
-          "maximo": "500",
-          "discapacidad_min": 65,
-          "base_limite": "base_imponible_total_menos_minimo_descendientes",
-          "limite_individual": "12500",
-          "limite_conjunta": "25000",
-          "incompatible_con": [
-            "art. 9",
-            "art. 9 ter",
-            "art. 9 quáter"
-          ],
-          "requisitos_no_comprobados": [
-            "Consignar en la autoliquidación el NIF del arrendador.",
-            "Vivienda que constituya o vaya a constituir la residencia habitual en Castilla-La Mancha.",
-            "Tener derecho al mínimo por discapacidad del contribuyente.",
-            "El límite de la deducción se prorratea por los días de vigencia del arrendamiento en el periodo impositivo y, si dos o más declarantes tienen derecho por la misma vivienda, a partes iguales entre ellos (la calculadora aplica el máximo íntegro).",
-            "No se calcula la deducción incompatible por arrendamiento vinculado a dación en pago (art. 9 bis)."
+            "Incompatible con las demás deducciones por arrendamiento (arts. 9 bis, 9 ter, 9 quáter y 9 quinquies), que la calculadora no calcula."
           ],
           "en_vigor_desde": "2026-03-31"
         },
@@ -2528,14 +2920,11 @@
               "importe": "400"
             }
           ],
-          "incompatible_con": [
-            "art. 9 ter"
-          ],
           "requisitos_no_comprobados": [
             "IMPORTE SUPERIOR NO CALCULADO: 300 euros (general) o 900 euros (especial) si algún cónyuge o descendiente tiene discapacidad igual o superior al 65 % y genera el mínimo por discapacidad.",
             "Tener reconocida la condición de familia numerosa a la fecha de devengo.",
-            "Incompatible con la deducción por arrendamiento por familias numerosas (art. 9 ter): si se ha aplicado esta, la calculadora no aplica la del art. 2 aunque pudiera ser mayor.",
-            "Se aplican las normas del mínimo por descendientes (prorrateo entre contribuyentes con derecho); si alguno supera el límite de renta, el importe de los demás se reduce a su proporción (art. 13.4)."
+            "Se aplican las normas del mínimo por descendientes (prorrateo entre contribuyentes con derecho); si alguno supera el límite de renta, el importe de los demás se reduce a su proporción (art. 13.4).",
+            "Incompatible con la deducción por arrendamiento de vivienda habitual por familias numerosas (art. 9 ter), que la calculadora no calcula: no pueden aplicarse las dos."
           ],
           "en_vigor_desde": "2022-02-08"
         },
@@ -2551,12 +2940,9 @@
           "base_limite": "base_imponible_total",
           "limite_individual": "27000",
           "limite_conjunta": "36000",
-          "incompatible_con": [
-            "art. 9 quáter"
-          ],
           "requisitos_no_comprobados": [
             "Familia monoparental: madre o padre separados legalmente o sin vínculo matrimonial con hijos menores (o mayores con medidas de apoyo a su capacidad jurídica) que convivan y dependan económicamente de forma exclusiva: derecho a la totalidad del mínimo por descendientes y no percibir anualidades por alimentos por ellos.",
-            "Incompatible con la deducción por arrendamiento por familias monoparentales (art. 9 quáter): si se ha aplicado esta, la calculadora no aplica la del art. 2 bis aunque pudiera ser mayor."
+            "Incompatible con la deducción por arrendamiento de vivienda habitual por familias monoparentales (art. 9 quáter), que la calculadora no calcula: no pueden aplicarse las dos."
           ],
           "en_vigor_desde": "2022-02-08"
         },
@@ -2646,7 +3032,7 @@
         {
           "articulo": "art. 3 bis",
           "titulo": "Gastos de guardería",
-          "resumen": "30 % de los gastos de custodia de hijos menores de 3 años en guarderías o centros de educación infantil, con un máximo de 500 euros por hijo inscrito; base imponible general más ahorro no superior a 27.000 euros (36.000 en conjunta).",
+          "resumen": "30 % de los gastos de custodia de hijos menores de 3 años en guarderías o centros de educación infantil, con un máximo de 500 euros por hijo inscrito (250 euros en el año en que el hijo cumple 3 años); base imponible general más ahorro no superior a 27.000 euros (36.000 en conjunta).",
           "tipo": "porcentaje",
           "unidad": "num_descendientes_menores_3",
           "porcentaje": "0.30",
@@ -2656,9 +3042,20 @@
           "limite_individual": "27000",
           "limite_conjunta": "36000",
           "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "sin hijos menores de 3 años a 31 de diciembre (hijo que cumple 3 años en el ejercicio)",
+              "cuando": {
+                "unidades_max": {
+                  "num_descendientes_menores_3": 0
+                }
+              },
+              "maximo_por_unidad": "250"
+            }
+          ],
           "requisitos_no_comprobados": [
-            "El máximo de 500 euros es por cada hija o hijo inscrito en la guardería (se aplica a los gastos de cada uno por separado) y solo cuentan los que den derecho al mínimo por descendientes.",
-            "En el período impositivo en que el hijo cumple 3 años el límite es de 250 euros (la calculadora no cuenta a ese hijo como menor de 3 años).",
+            "El máximo de 500 euros es por cada hija o hijo inscrito en la guardería y solo cuentan los que den derecho al mínimo por descendientes: la calculadora compara el gasto total con 500 euros por cada menor de 3 años, lo que solo coincide con la ley si el gasto se reparte de forma parecida entre ellos.",
+            "En el período impositivo en que el hijo cumple 3 años el límite es de 250 euros: si no consta ningún descendiente menor de 3 años a 31 de diciembre, la calculadora supone que el gasto es de un único hijo que cumplió 3 años y aplica 250 euros. Si hay a la vez hijos menores de 3 años y otro que cumplió 3 en el ejercicio, solo cuenta 500 euros por cada menor de 3 años (puede dar menos, o más si el gasto corresponde sobre todo al que cumplió 3 años).",
             "Centro autorizado por la consejería competente en educación; gastos de preinscripción, matrícula, asistencia y alimentación por meses completos, que no sean retribución en especie exenta.",
             "Se restan las becas o ayudas públicas que cubran los gastos de custodia.",
             "Si los hijos conviven con más de un contribuyente, la deducción se prorratea conforme al derecho al mínimo por descendientes."
@@ -2675,13 +3072,10 @@
           "base_limite": "base_imponible_total",
           "limite_individual": "27000",
           "limite_conjunta": "36000",
-          "incompatible_con": [
-            "art. 9 quinquies"
-          ],
           "requisitos_no_comprobados": [
             "Tener derecho al mínimo por discapacidad del contribuyente.",
-            "Incompatible con la deducción por arrendamiento por personas con discapacidad (art. 9 quinquies): si se ha aplicado esta, la calculadora no aplica la del art. 4 aunque pudiera ser mayor.",
-            "Incompatible, respecto de la misma persona, con la deducción por discapacidad de ascendientes o descendientes (art. 5)."
+            "Incompatible, respecto de la misma persona, con la deducción por discapacidad de ascendientes o descendientes (art. 5).",
+            "Incompatible con la deducción por arrendamiento de vivienda habitual por personas con discapacidad (art. 9 quinquies), que la calculadora no calcula: no pueden aplicarse las dos."
           ],
           "en_vigor_desde": "2022-02-08"
         },
@@ -2718,6 +3112,101 @@
             "Si el ascendiente tiene discapacidad igual o superior al 65 % corresponde la deducción del art. 5 (300 euros, no calculada) en lugar de esta."
           ],
           "en_vigor_desde": "2022-02-08"
+        },
+        {
+          "articulo": "art. 1",
+          "titulo": "Nacimiento o adopción de hijos",
+          "resumen": "100 euros por cada hijo nacido o adoptado en el periodo impositivo que genere el mínimo por descendientes (500 euros si el parto o la adopción es de dos hijos y 900 si es de tres o más, no calculado); base imponible general más ahorro no superior a 27.000 euros (36.000 en conjunta).",
+          "tipo": "fija",
+          "importe": "100",
+          "unidad": "hijos_nacidos_en_el_ejercicio",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "27000",
+          "limite_conjunta": "36000",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "IMPORTE SUPERIOR NO CALCULADO: la ley fija el importe por parto o adopción (100 euros si es de un hijo, 500 si es de dos y 900 si es de tres o más). La calculadora aplica 100 euros por cada hijo nacido o adoptado en el año, que es exacto cuando cada parto o adopción es de un solo hijo y se queda corto en partos o adopciones múltiples.",
+            "Los hijos deben generar el derecho al mínimo por descendientes.",
+            "Se aplican las normas del mínimo por descendientes (prorrateo entre contribuyentes con derecho); si alguno supera el límite de renta, el importe de los demás se reduce a su proporción (art. 13.4)."
+          ],
+          "en_vigor_desde": "2022-02-08"
+        },
+        {
+          "articulo": "art. 7",
+          "titulo": "Acogimiento familiar no remunerado de menores",
+          "resumen": "500 euros por cada menor en acogimiento familiar no remunerado (o delegación de guarda preadoptiva) con el que se conviva más de 183 días del año (600 euros por el segundo y sucesivos, no calculado); base imponible general más ahorro no superior a 12.500 euros (25.000 en conjunta).",
+          "tipo": "fija",
+          "importe": "500",
+          "unidad": "menores_acogidos",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "12500",
+          "limite_conjunta": "25000",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Acogimiento familiar no remunerado temporal, permanente o por delegación de guarda para la convivencia preadoptiva, por acuerdo administrativo o judicial, y convivencia con el menor durante más de 183 días del período impositivo: cuenta solo a los menores que cumplan ese plazo.",
+            "IMPORTE SUPERIOR NO CALCULADO: 600 euros (en lugar de 500) por el segundo menor acogido y sucesivos.",
+            "No da derecho el acogimiento temporal o la guarda preadoptiva si el menor es adoptado durante el período impositivo.",
+            "La Consejería competente debe acreditar la formalización del acogimiento y que el contribuyente no ha recibido ayudas de la Junta de Comunidades vinculadas con el acogimiento.",
+            "En acogimientos por matrimonios o uniones de hecho, el importe se prorratea por partes iguales si tributan individualmente (la calculadora lo reduce a la mitad solo si has indicado que los descendientes son compartidos)."
+          ],
+          "en_vigor_desde": "2023-02-01"
+        },
+        {
+          "articulo": "art. 10",
+          "titulo": "Donativos para cooperación internacional, lucha contra la pobreza y la exclusión social y ayuda a personas con discapacidad",
+          "resumen": "15 % de las donaciones dinerarias a entidades sin fines lucrativos inscritas en los registros de Castilla-La Mancha cuyos fines principales sean la cooperación internacional, la lucha contra la pobreza, la ayuda a personas con discapacidad y la exclusión social.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "donativos_autonomicos",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Donaciones dinerarias a fundaciones, ONG, asociaciones de ayuda a personas con discapacidad y otras entidades sin fines lucrativos (arts. 2 y 3 de la Ley 49/2002) que tengan entre sus fines principales la cooperación internacional, la lucha contra la pobreza, la ayuda a personas con discapacidad y la exclusión social y estén inscritas en los registros correspondientes de Castilla-La Mancha; las fundaciones deben además rendir cuentas al Protectorado.",
+            "La base de la deducción no puede exceder del 10 % de la base liquidable del contribuyente (no comprobado).",
+            "Aportación acreditada mediante certificación de la entidad donataria.",
+            "Las donaciones para investigación, desarrollo e innovación (art. 11) y para el patrimonio y fines culturales (art. 11 bis) también deducen el 15 %, pero con sus propios límites (el 10 % de la cuota íntegra autonómica en el art. 11; el 10 % de la base liquidable para la suma de bases en el art. 11 bis), que la calculadora no comprueba: no se calculan por separado."
+          ],
+          "en_vigor_desde": "2013-11-30"
+        },
+        {
+          "articulo": "art. 12 ter",
+          "titulo": "Adquisición o rehabilitación de la vivienda habitual en zonas rurales",
+          "resumen": "15 % de lo pagado en el año por la adquisición o rehabilitación (desde el 1 de enero de 2021) de la vivienda habitual situada en un municipio de menos de 5.000 habitantes de las zonas del art. 12 de la Ley 2/2021, con una base máxima anual de 12.000 euros (deducción máxima de 1.800 euros).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "inversion_vivienda_habitual",
+          "maximo": "1800",
+          "requiere": [
+            "vivienda_en_municipio_rural"
+          ],
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Vivienda en municipio rural a estos efectos: situada en alguno de los municipios incluidos en las zonas a que se refiere el artículo 12 de la Ley 2/2021, de 7 de mayo, de Medidas frente a la Despoblación y para el Desarrollo del Medio Rural en Castilla-La Mancha, y con población inferior a 5.000 habitantes.",
+            "La adquisición o rehabilitación debe haberse producido a partir del 1 de enero de 2021.",
+            "El máximo de 1.800 euros no figura literalmente en la ley: resulta de aplicar el 15 % a la base máxima anual de 12.000 euros.",
+            "La base máxima total es de 180.000 euros (o el importe de adquisición o rehabilitación si es menor), minorada en las subvenciones de la Junta de Comunidades; se reduce también por deducciones anteriores por otras viviendas y por ganancias exentas por reinversión (no comprobado).",
+            "El patrimonio del contribuyente al final del período debe exceder del inicial al menos en el importe de las inversiones realizadas, sin computar intereses ni gastos de financiación.",
+            "Rehabilitación: obras de reconstrucción (estructuras, fachadas, cubiertas) cuyo coste exceda del 25 % del precio de adquisición o del valor de mercado de la vivienda, descontado el suelo.",
+            "Incompatible con la deducción por intereses de financiación de la primera vivienda por menores de 40 años (art. 12), que la calculadora no calcula."
+          ],
+          "en_vigor_desde": "2021-06-01"
+        },
+        {
+          "articulo": "art. 12 sexies",
+          "titulo": "Inversión en acciones y participaciones por constitución o ampliación de capital de sociedades",
+          "resumen": "20 % de lo invertido en el ejercicio en acciones o participaciones por constitución o ampliación de capital de sociedades anónimas, limitadas, laborales o cooperativas con domicilio en Castilla-La Mancha, con un límite de 4.000 euros anuales.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "inversion_empresas_nueva_creacion",
+          "maximo": "4000",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Sociedad anónima, de responsabilidad limitada, laboral o cooperativa con domicilio social y fiscal en Castilla-La Mancha que desarrolle una actividad económica (no la mera gestión de un patrimonio).",
+            "La participación, junto con la del cónyuge y parientes hasta el tercer grado, no puede superar ningún día del año el 40 % del capital o de los derechos de voto; debe mantenerse al menos tres años y el contribuyente no puede ejercer funciones ejecutivas ni de dirección.",
+            "Constitución: al menos una persona con contrato a jornada completa (o dos a tiempo parcial equivalentes) desde el primer ejercicio, mantenida 24 meses. Ampliación: entidad constituida en los tres años anteriores que aumente su plantilla media en al menos una persona durante los dos ejercicios siguientes y lo mantenga otros veinticuatro meses.",
+            "La operación debe formalizarse en escritura pública que identifique a los inversores y el importe invertido.",
+            "Incompatible, para las mismas inversiones, con la deducción por inversión en entidades de la economía social (art. 12 septies), no calculada."
+          ],
+          "en_vigor_desde": "2023-02-01"
         }
       ]
     },
@@ -2883,7 +3372,7 @@
             }
           ],
           "requisitos_no_comprobados": [
-            "Variante rural: el contribuyente debe residir en un municipio o entidad local menor cuya población no exceda de 5.000 habitantes.",
+            "«Municipio rural» en Castilla y León: la calculadora usa una sola casilla para dos definiciones legales distintas (nacimiento en el medio rural, art. 4.2: municipio o entidad local menor de hasta 5.000 habitantes; alquiler de jóvenes en el medio rural, art. 7.5: hasta 10.000 habitantes, o hasta 3.000 si dista menos de 30 kilómetros de la capital de la provincia). Márcala solo si tu municipio o entidad local menor cumple las dos: no excede de 5.000 habitantes y, si dista menos de 30 kilómetros de la capital de la provincia, no excede de 3.000. Quien cumpla solo la definición del art. 4.2 tiene derecho a los importes rurales (1.420 / 2.070 / 3.300 euros) aunque la calculadora aplique los generales.",
             "El hijo debe generar el derecho al mínimo por descendiente; el número de orden cuenta al nacido y a los restantes hijos de cualquiera de los progenitores que convivan con el contribuyente a la fecha de devengo.",
             "IMPORTES ADICIONALES NO CALCULADOS: las cantidades se duplican si el nacido o adoptado tiene discapacidad igual o superior al 33 %; partos o adopciones múltiples (50 % o 100 % más y 901 euros durante los dos años siguientes); gastos de adopción (784 euros, o 3.625 en adopción internacional).",
             "Incompatible con haber obtenido ayudas o prestaciones públicas de la Junta de Castilla y León de análoga naturaleza (nacimiento o adopción, cuidado de hijos menores o conciliación).",
@@ -2974,9 +3463,69 @@
             }
           ],
           "requisitos_no_comprobados": [
-            "Variante rural (art. 7.5): la vivienda habitual debe estar situada en un municipio o entidad local menor de Castilla y León que no exceda de 10.000 habitantes, con carácter general, o de 3.000 habitantes si dista menos de 30 kilómetros de la capital de la provincia.",
+            "«Municipio rural» en Castilla y León: la calculadora usa una sola casilla para dos definiciones legales distintas (nacimiento en el medio rural, art. 4.2: municipio o entidad local menor de hasta 5.000 habitantes; alquiler de jóvenes en el medio rural, art. 7.5: hasta 10.000 habitantes, o hasta 3.000 si dista menos de 30 kilómetros de la capital de la provincia). Márcala solo si tu municipio o entidad local menor cumple las dos: no excede de 5.000 habitantes y, si dista menos de 30 kilómetros de la capital de la provincia, no excede de 3.000. Quien cumpla solo la definición del art. 7.5 tiene derecho al 25 % con límite de 612 euros aunque la calculadora aplique el 20 % con límite de 459.",
             "El importe deducible no puede superar la diferencia entre el alquiler pagado y las ayudas públicas percibidas por ese concepto.",
             "Vivienda habitual situada en Castilla y León."
+          ],
+          "en_vigor_desde": "2024-05-15"
+        },
+        {
+          "articulo": "art. 7.1",
+          "titulo": "Adquisición o rehabilitación de la vivienda habitual por jóvenes en el medio rural",
+          "resumen": "15 % de lo pagado en el año por la adquisición (vivienda de nueva construcción) o rehabilitación de la primera vivienda habitual por menores de 36 años, en municipios de hasta 10.000 habitantes (3.000 si distan menos de 30 km de la capital) y con valor inferior a 150.000 euros; base máxima anual de 10.000 euros (deducción máxima de 1.500); base imponible menos mínimo personal y familiar no superior a 18.900 euros (31.500 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "inversion_vivienda_habitual",
+          "maximo": "1500",
+          "edad_max": 35,
+          "requiere": [
+            "vivienda_en_municipio_rural"
+          ],
+          "base_limite": "base_imponible_total_menos_minimos",
+          "limite_individual": "18900",
+          "limite_conjunta": "31500",
+          "requisitos_no_comprobados": [
+            "Vivienda en municipio rural a estos efectos: situada en un municipio o entidad local menor de Castilla y León que en el momento de la adquisición o rehabilitación no exceda de 10.000 habitantes, con carácter general, o de 3.000 habitantes si dista menos de 30 kilómetros de la capital de la provincia, y con un valor, a efectos del impuesto que grave su adquisición, menor de 150.000 euros.",
+            "Debe ser la primera vivienda del contribuyente (no haber dispuesto de plena propiedad igual o superior al 50 % de otra vivienda) y de nueva construcción (primera transmisión en los tres años siguientes a la declaración de obra nueva, o construcción directa) o una rehabilitación en el sentido del art. 20.Uno.22.B de la Ley del IVA.",
+            "La adquisición o rehabilitación debe haberse producido a partir del 1 de enero de 2023, y el contribuyente debe tener su residencia habitual en Castilla y León.",
+            "El máximo de 1.500 euros no figura literalmente en la ley: resulta de aplicar el 15 % a la base máxima anual de 10.000 euros.",
+            "El patrimonio del contribuyente al final del período debe exceder del inicial al menos en el importe de las inversiones realizadas, sin computar intereses ni gastos de financiación."
+          ],
+          "en_vigor_desde": "2024-05-15"
+        },
+        {
+          "articulo": "art. 8",
+          "titulo": "Fomento del emprendimiento (inversión en acciones o participaciones)",
+          "resumen": "20 % de lo invertido en el ejercicio en acciones o participaciones por constitución o ampliación de capital de sociedades anónimas, limitadas o laborales que destinen la financiación a proyectos de inversión en Castilla y León, con un máximo de 10.000 euros.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "inversion_empresas_nueva_creacion",
+          "maximo": "10000",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "La sociedad (anónima, limitada o laboral) debe destinar la financiación a proyectos de inversión realizados en Castilla y León; la ley no exige que sea de nueva creación.",
+            "La adquisición debe representar como mínimo el 0,5 % y como máximo el 45 % del capital de la sociedad y mantenerse en el patrimonio al menos tres años.",
+            "La sociedad debe aumentar, en el año de la inversión o en el siguiente, su plantilla, sus contratos con autónomos económicamente dependientes o las altas de familiares colaboradores, y mantenerlos al menos tres años; la inversión computable está limitada a 100.000 euros por cada persona/año de aumento de plantilla y 50.000 euros por cada contrato o alta (no comprobado).",
+            "Hace falta una certificación de la entidad sobre el cumplimiento de estos requisitos."
+          ],
+          "en_vigor_desde": "2017-07-07"
+        },
+        {
+          "articulo": "art. 9 c) a f)",
+          "titulo": "Donaciones para el patrimonio cultural y natural, a fundaciones de Castilla y León y para investigación, desarrollo e innovación",
+          "resumen": "15 % de las cantidades donadas para la rehabilitación o conservación de bienes del patrimonio histórico o cultural, para espacios naturales de la Red Natura 2000, a fundaciones inscritas en el Registro de Fundaciones de Castilla y León con actividades culturales, asistenciales o ecológicas, o a universidades públicas de la Comunidad y entidades de I+D+i; base imponible menos mínimo personal y familiar no superior a 18.900 euros (31.500 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "donativos_autonomicos",
+          "base_limite": "base_imponible_total_menos_minimos",
+          "limite_individual": "18900",
+          "limite_conjunta": "31500",
+          "requisitos_no_comprobados": [
+            "Donaciones de las letras c) a f) del art. 9: para la rehabilitación o conservación de bienes del Patrimonio Histórico Español o del Patrimonio Cultural de Castilla y León situados en la Comunidad (a administraciones públicas, Iglesia católica y confesiones con acuerdo, o fundaciones y asociaciones de la Ley 49/2002 dedicadas al patrimonio); para espacios naturales y lugares de la Red Natura 2000 en Castilla y León (a administraciones públicas); a fundaciones inscritas en el Registro de Fundaciones de Castilla y León con actividades culturales, asistenciales o ecológicas; y a universidades públicas de la Comunidad o entidades de investigación, desarrollo e innovación para proyectos en Castilla y León.",
+            "La suma de las bases de las deducciones de las letras a) a f) del art. 9 no puede exceder del 10 % de la base liquidable del contribuyente (no comprobado).",
+            "El límite de renta (18.900 / 31.500 euros) NO se aplica a las donaciones de la letra f) (universidades públicas e I+D+i): la calculadora lo exige a todas porque no distingue el destinatario, de modo que por encima del límite no aplica una deducción a la que esas donaciones sí dan derecho.",
+            "Justificación documental conforme a la Ley 49/2002.",
+            "NO CALCULADAS las letras a) y b) (obras del titular en bienes de interés cultural o en espacios naturales) ni la g) (vehículo eléctrico o híbrido enchufable, hasta 4.000 euros)."
           ],
           "en_vigor_desde": "2024-05-15"
         }
@@ -3125,7 +3674,7 @@
         {
           "articulo": "art. 612-3",
           "titulo": "Deducción por alquiler de la vivienda habitual",
-          "resumen": "10 % del alquiler de la vivienda habitual, hasta 500 euros (1.000 euros para familias numerosas o monoparentales y en tributación conjunta), para quien tenga 35 años o menos, discapacidad del 65 % o más, haya estado en paro 183 días o sea viudo de 65 años o más, o pertenezca a familia numerosa o monoparental, si la base imponible menos el mínimo personal y familiar no supera 30.000 euros (45.000 en conjunta).",
+          "resumen": "10 % del alquiler de la vivienda habitual, hasta 500 euros (1.000 euros para familias numerosas o monoparentales y en tributación conjunta), para quien tenga 35 años o menos, discapacidad del 65 % o más, sea viudo de 65 años o más, haya estado en paro 183 días, o pertenezca a familia numerosa o monoparental, si la base imponible menos el mínimo personal y familiar no supera 30.000 euros (45.000 en conjunta).",
           "tipo": "porcentaje",
           "porcentaje": "0.10",
           "base": "alquiler_vivienda_habitual",
@@ -3149,6 +3698,12 @@
               "requiere": [
                 "familia_monoparental"
               ]
+            },
+            {
+              "requiere": [
+                "viudedad"
+              ],
+              "edad_min": 65
             }
           ],
           "variantes": [
@@ -3179,7 +3734,7 @@
             }
           ],
           "requisitos_no_comprobados": [
-            "También dan derecho a la deducción (no comprobado aquí, puede corresponderte aunque el cálculo la deniegue): haber estado en paro 183 días o más durante el ejercicio, o ser viudo o viuda y tener 65 años o más.",
+            "También da derecho a la deducción (no comprobado aquí, puede corresponderte aunque el cálculo la deniegue): haber estado en paro 183 días o más durante el ejercicio.",
             "En tributación conjunta basta con que alguno de los declarantes se encuentre en alguna de las circunstancias; aquí solo se comprueban las del contribuyente principal.",
             "La pertenencia a familia numerosa (Ley 40/2003) o monoparental se refiere a la fecha de devengo.",
             "Una misma vivienda no puede dar lugar a más de 1.000 euros de deducción: si varios contribuyentes tienen derecho por la misma vivienda, cada uno aplica el resultado de dividir el 10 % del gasto total, o el límite de 1.000 euros, entre el número de declarantes con derecho.",
@@ -3187,6 +3742,26 @@
             "La deducción solo puede aplicarse una vez aunque concurran varias circunstancias, y exige justificación documental adecuada y suficiente."
           ],
           "en_vigor_desde": "2025-08-20"
+        },
+        {
+          "articulo": "art. 612-9",
+          "titulo": "Deducción en concepto de inversión por un ángel inversor por la adquisición de acciones o participaciones sociales de entidades nuevas o de creación reciente",
+          "resumen": "40 % de las cantidades invertidas en el ejercicio en acciones o participaciones de sociedades nuevas o de creación reciente con domicilio en Cataluña (constitución o ampliación de capital), con un máximo de 12.000 euros.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.40",
+          "base": "inversion_empresas_nueva_creacion",
+          "maximo": "12000",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "La participación del contribuyente, junto con la del cónyuge y parientes hasta el tercer grado, no puede superar el 35 % del capital social o de los derechos de voto, y debe mantenerse así durante tres años.",
+            "La sociedad debe ser anónima, limitada, anónima laboral o limitada laboral, con domicilio social y fiscal en Cataluña, desarrollar una actividad económica (no la gestión de un patrimonio mobiliario o inmobiliario), tener al menos una persona contratada a jornada completa y de alta en el régimen general de la Seguridad Social, y un volumen de facturación anual no superior a un millón de euros.",
+            "Si la inversión es en una ampliación de capital, la sociedad debe haberse constituido en los tres años anteriores y no cotizar en el mercado nacional de valores ni en el mercado alternativo bursátil.",
+            "El contribuyente no puede ejercer funciones ejecutivas o de dirección ni mantener una relación laboral con la sociedad.",
+            "La operación debe formalizarse en escritura pública que identifique a los inversores y el importe invertido, y las participaciones deben mantenerse al menos tres años.",
+            "En las sociedades creadas o participadas por universidades o centros de investigación la deducción es del 50 %, con el mismo límite de 12.000 euros (no calculado aquí: se aplica el 40 %).",
+            "En declaración conjunta el límite de 12.000 euros se aplica a cada contribuyente; aquí se aplica un único límite a la declaración."
+          ],
+          "en_vigor_desde": "2024-03-15"
         }
       ]
     },
@@ -3425,7 +4000,7 @@
           "requisitos_no_comprobados": [
             "Entre 27.000 y 30.000 euros (individual) o 44.000 y 47.000 euros (conjunta) la ley reduce linealmente \"el importe o límite de deducción\" (art. 4.Cinco.1). En esta deducción lo que se reduce es el LÍMITE máximo, no el resultado de aplicar el porcentaje.",
             "Los progenitores, adoptantes, acogedores o guardadores deben desarrollar actividades por cuenta propia o ajena por las que perciban rendimientos del trabajo o de actividades económicas.",
-            "El límite de 297 euros se prorratea por el número de días del periodo impositivo en que el niño o niña sea menor de 3 años, y es por cada menor efectivamente en guardería o centro de primer ciclo.",
+            "El límite de 297 euros es por cada menor de 3 años efectivamente en guardería o centro de primer ciclo, y se prorratea por los días del periodo en que sea menor de 3 años. La calculadora lo multiplica por el número de descendientes menores de 3 años y no prorratea: si alguno no va a la guardería, o cumple 3 años en el ejercicio (no se cuenta), el tope calculado puede ser superior o inferior al legal.",
             "Cuando dos contribuyentes declarantes tengan derecho por el mismo menor, el límite se prorratea entre ellos por partes iguales.",
             "El pago debe hacerse mediante tarjeta de crédito o débito, transferencia bancaria, cheque nominativo o ingreso en cuenta (disposición adicional decimosexta).",
             "Incompatible con la deducción de la letra i), no calculada por la calculadora (contratación de personas empleadas de hogar para el cuidado de personas)."
@@ -3544,6 +4119,45 @@
           "en_vigor_desde": "2025-12-30"
         },
         {
+          "articulo": "art. 4.Uno.o)",
+          "titulo": "Instalaciones de autoconsumo eléctrico o de energías renovables en la vivienda habitual",
+          "resumen": "40 % de las cantidades invertidas en instalaciones de autoconsumo eléctrico o de aprovechamiento de energías renovables (solar, eólica, biomasa, geotermia) en la vivienda habitual o en instalaciones colectivas del edificio, sobre una base máxima anual de 8.800 euros por vivienda (deducción máxima de 3.520 euros). Sin límite de renta.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.40",
+          "base": "gastos_eficiencia_energetica",
+          "maximo": "3520",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "SOLO instalaciones de autoconsumo eléctrico inscritas en el Registro administrativo de autoconsumo de la Comunitat Valenciana, de producción eléctrica fotovoltaica o eólica para viviendas aisladas, o de energía térmica solar, de biomasa o geotérmica. Las demás obras de eficiencia energética, conservación o mejora de la vivienda NO van por esta letra sino por la letra w) (20 %, con límite de renta), que no se calcula.",
+            "El máximo de 3.520 euros no figura en la ley: resulta de aplicar el 40 % a la base máxima anual de 8.800 euros por vivienda y ejercicio.",
+            "No dan derecho las instalaciones obligatorias según el Código Técnico de la Edificación ni la parte de la inversión apoyada con subvenciones públicas.",
+            "Vivienda situada en la Comunitat Valenciana; en segundas residencias el porcentaje es del 20 % (no calculado: indique solo la vivienda habitual).",
+            "Pago mediante tarjeta, transferencia bancaria, cheque nominativo o ingreso en cuenta (disposición adicional decimosexta); deben conservarse los justificantes.",
+            "El patrimonio del contribuyente al final del periodo debe exceder del inicial al menos en la cuantía de la inversión (art. 4.Dos).",
+            "En propiedad horizontal, cada contribuyente aplica la deducción según su coeficiente de participación. Lo no deducido por insuficiencia de cuota puede aplicarse en los cuatro años siguientes (no calculado)."
+          ],
+          "en_vigor_desde": "2021-01-01"
+        },
+        {
+          "articulo": "art. 4.Uno.z)",
+          "titulo": "Suscripción de acciones o participaciones en sociedades nuevas o de reciente creación",
+          "resumen": "30 % de las cantidades invertidas en el ejercicio en la suscripción y desembolso de acciones o participaciones por constitución o ampliación de capital de sociedades anónimas, limitadas, laborales o cooperativas con domicilio en la Comunitat Valenciana, con un límite de 6.600 euros. Sin límite de renta.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.30",
+          "base": "inversion_empresas_nueva_creacion",
+          "maximo": "6600",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "La entidad debe tener domicilio social y fiscal en la Comunitat Valenciana y mantenerlo tres años, ejercer una actividad económica (no gestión de patrimonio) y contar con al menos una persona contratada a jornada completa durante tres años (esto último no se exige a sociedades laborales ni a cooperativas de trabajo asociado).",
+            "En ampliaciones de capital, la sociedad debe haberse constituido en los cinco años anteriores (siete en ciertas empresas emergentes) y aumentar su plantilla media en al menos una persona durante veinticuatro meses, manteniéndolo otros veinticuatro.",
+            "No puede tratarse de una entidad a través de la cual se ejerza la misma actividad que se venía ejerciendo antes bajo otra titularidad.",
+            "Formalización en escritura pública (o certificación en cooperativas) y mantenimiento de las participaciones al menos tres años; pago por los medios de la disposición adicional decimosexta.",
+            "No se calcula el incremento adicional del 15 %, con límite de 15.000 euros, para pymes innovadoras, entidades participadas por universidades u organismos de investigación, domiciliadas en municipios en riesgo de despoblamiento o empresas emergentes de la Comunitat Valenciana (da de menos).",
+            "Lo no deducido por insuficiencia de cuota íntegra autonómica puede aplicarse en los tres períodos siguientes (no calculado)."
+          ],
+          "en_vigor_desde": "2025-12-30"
+        },
+        {
           "articulo": "art. 4.Uno.aa)",
           "titulo": "Residencia habitual en un municipio en riesgo de despoblamiento",
           "resumen": "330 euros por residir habitualmente en un municipio en riesgo de despoblamiento (beneficiario del Fondo de Cooperación Municipal para la lucha contra el despoblamiento). Sin límite de renta.",
@@ -3559,6 +4173,63 @@
             "Se atiende al concepto de residencia habitual de la normativa estatal del impuesto."
           ],
           "en_vigor_desde": "2024-01-01"
+        },
+        {
+          "articulo": "art. 4.Uno.ad)",
+          "titulo": "Gastos asociados a la práctica del deporte y actividades saludables",
+          "resumen": "30 % de lo pagado en cuotas de gimnasios, clubes y federaciones deportivas, equipamiento obligatorio del deporte federado, entrenadores y ciertos profesionales sanitarios, con un límite de 150 euros por contribuyente; 50 % si es mayor de sesenta y cinco años o tiene discapacidad igual o superior al 33 %, y 100 % si es mayor de setenta y cinco años o tiene discapacidad igual o superior al 65 %. Suma de bases liquidables no superior a 60.000 euros (individual) o 78.000 euros (conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.30",
+          "base": "gastos_deporte_cultura",
+          "maximo": "150",
+          "base_limite": "base_liquidable_total",
+          "limite_individual": "60000",
+          "limite_conjunta": "78000",
+          "reduccion_progresiva": {
+            "desde_individual": "54000",
+            "hasta_individual": "60000",
+            "desde_conjunta": "72000",
+            "hasta_conjunta": "78000",
+            "aplica_a": "maximo"
+          },
+          "variantes": [
+            {
+              "descripcion": "Mayor de setenta y cinco años: 100 %",
+              "cuando": {
+                "edad_min": 76
+              },
+              "porcentaje": "1"
+            },
+            {
+              "descripcion": "Discapacidad igual o superior al 65 %: 100 %",
+              "cuando": {
+                "discapacidad_min": 65
+              },
+              "porcentaje": "1"
+            },
+            {
+              "descripcion": "Mayor de sesenta y cinco años: 50 %",
+              "cuando": {
+                "edad_min": 66
+              },
+              "porcentaje": "0.50"
+            },
+            {
+              "descripcion": "Discapacidad igual o superior al 33 %: 50 %",
+              "cuando": {
+                "discapacidad_min": 33
+              },
+              "porcentaje": "0.50"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "SOLO gastos deportivos: cuotas de pertenencia o adhesión a gimnasios, clubes deportivos, federaciones y entidades análogas; equipamiento obligatorio para el deporte federado; servicios personales de técnicos y entrenadores deportivos; y servicios de traumatólogos, dietistas-nutricionistas, fisioterapeutas, podólogos o técnicos superiores en Dietética. Los abonos culturales (letra x, 21 %) y los gastos de formación musical (letra ae) son deducciones distintas que no se calculan: no deben incluirse aquí.",
+            "Entre 54.000 y 60.000 euros (individual) o 72.000 y 78.000 euros (conjunta) la ley reduce linealmente el LÍMITE de 150 euros.",
+            "Factura y justificante de pago por los medios de la disposición adicional decimosexta (tarjeta, transferencia, cheque nominativo o ingreso en cuenta).",
+            "El límite es por contribuyente; los gastos pueden ser del contribuyente, su cónyuge y las personas por las que aplique los mínimos por descendientes y ascendientes; si dos declarantes tienen derecho por gastos de otras personas, la base se prorratea por partes iguales.",
+            "«Mayor de sesenta y cinco» y «mayor de setenta y cinco» años se han tomado como 66 y 76 años cumplidos a la fecha de devengo (criterio prudente)."
+          ],
+          "en_vigor_desde": "2026-03-04"
         }
       ]
     },
@@ -3655,7 +4326,87 @@
       "notas": [
         "Para 2025 se aplica la escala extremeña anterior a la Ley 2/2026 (redacción del Decreto-ley 4/2023)."
       ],
-      "deducciones_calculables": []
+      "deducciones_calculables": [
+        {
+          "articulo": "art. 4",
+          "titulo": "Deducción autonómica por acogimiento de menores",
+          "resumen": "250 euros por cada menor en régimen de acogimiento familiar temporal, permanente o de urgencia con el que se conviva 183 días o más en el período (125 euros si la convivencia es de más de 90 y menos de 183 días). Sin límite de renta.",
+          "tipo": "fija",
+          "importe": "250",
+          "unidad": "menores_acogidos",
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Los 250 euros exigen convivir con el menor 183 días o más durante el período impositivo. Si la convivencia fue inferior a 183 días y superior a 90, la deducción es de 125 euros por menor, y con 90 días o menos no hay deducción: aquí se aplican siempre 250 euros por menor indicado.",
+            "Debe tratarse de acogimiento familiar temporal, permanente o de urgencia.",
+            "En el acogimiento por un matrimonio o una pareja de hecho, el importe se prorratea por partes iguales en la declaración individual de cada uno; aquí solo se reduce a la mitad si has indicado que compartes los descendientes con el otro progenitor.",
+            "Justificación documental adecuada (art. 13.2)."
+          ],
+          "en_vigor_desde": "2018-05-24"
+        },
+        {
+          "articulo": "art. 11 bis",
+          "titulo": "Deducción por adquisición o rehabilitación de la vivienda habitual en zonas rurales",
+          "resumen": "10 % de las cantidades satisfechas en el período (incluidos amortización e intereses del préstamo) por la adquisición o rehabilitación de la vivienda habitual situada en un municipio o entidad local menor de Extremadura de menos de 3.000 habitantes, con una base máxima anual de 9.040 euros (deducción máxima de 904 euros). Sin límite de renta ni de edad.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.10",
+          "base": "inversion_vivienda_habitual",
+          "maximo": "904",
+          "requiere": [
+            "vivienda_en_municipio_rural"
+          ],
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "La vivienda debe estar situada en alguno de los municipios y entidades locales menores de Extremadura en los que la población de derecho a 31 de diciembre sea inferior a 3.000 habitantes.",
+            "La adquisición o rehabilitación debe haberse producido a partir de la entrada en vigor de la ley de Medidas ante el reto demográfico y territorial de Extremadura (Ley 3/2022, de 17 de marzo; el artículo se aplica a hechos imponibles devengados desde el 1 de enero de 2022).",
+            "El máximo de 904 euros resulta de aplicar el 10 % a la base máxima anual de 9.040 euros. Además hay una base máxima total de 180.000 euros (o el importe de adquisición o rehabilitación si es menor), minorada por las subvenciones de la Junta de Extremadura, que aquí no se controla.",
+            "El patrimonio del contribuyente al final del período debe exceder del inicial al menos en la cuantía de las inversiones realizadas, sin computar intereses y gastos de financiación.",
+            "Si antes se disfrutó de esta deducción por otra vivienda, o hubo ganancia exenta por reinversión, la base se minora (no calculado).",
+            "La rehabilitación debe cumplir la definición del artículo (obras de reconstrucción cuyo coste supere el 25 % del precio de adquisición o del valor de mercado, descontado el suelo); la vivienda debe ser habitada en doce meses y serlo durante tres años.",
+            "No puede simultanearse con las deducciones de los arts. 8 y 11 quater (no calculadas aquí).",
+            "Justificación documental adecuada (art. 13.2)."
+          ],
+          "en_vigor_desde": "2022-03-22"
+        },
+        {
+          "articulo": "art. 11",
+          "titulo": "Deducción autonómica por inversión en la adquisición de acciones y participaciones sociales como consecuencia de acuerdos de constitución de sociedades o ampliación de capital en las sociedades mercantiles",
+          "resumen": "20 % de las cantidades invertidas en el ejercicio en acciones o participaciones por constitución o ampliación de capital de sociedades con domicilio en Extremadura, con un límite de 4.000 euros anuales.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "inversion_empresas_nueva_creacion",
+          "maximo": "4000",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "La sociedad debe ser anónima, de responsabilidad limitada, anónima laboral, de responsabilidad limitada laboral o cooperativa, tener su domicilio social y fiscal en Extremadura y desarrollar una actividad económica (no la gestión de un patrimonio mobiliario o inmobiliario).",
+            "La participación del contribuyente, junto con la de su cónyuge y parientes hasta el tercer grado, no puede superar ningún día del año el 40 % del capital social o de los derechos de voto.",
+            "Las participaciones deben mantenerse al menos tres años y el contribuyente no debe ejercer funciones ejecutivas ni de dirección en la entidad.",
+            "En la constitución, la entidad debe contar desde el primer ejercicio con al menos una persona contratada a jornada completa (o dos a tiempo parcial equivalentes) durante al menos 24 meses; en la ampliación de capital, la entidad debe haberse constituido en los tres años anteriores e incrementar su plantilla media en al menos una persona.",
+            "La operación debe formalizarse en escritura pública que identifique a los inversores y el importe invertido.",
+            "Justificación documental adecuada (art. 13.2)."
+          ],
+          "en_vigor_desde": "2018-05-24"
+        },
+        {
+          "articulo": "art. 11 quinquies",
+          "titulo": "Deducción en la cuota íntegra autonómica por donaciones de dinero a entidades culturales, artísticas y para patrocinio a deportistas",
+          "resumen": "20 % de las cantidades donadas en el ejercicio a entidades con domicilio fiscal en Extremadura que desarrollen actividades culturales o artísticas, o para patrocinar a deportistas con domicilio fiscal en Extremadura, con un máximo de 500 euros anuales por contribuyente.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "donativos_autonomicos",
+          "maximo": "500",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Solo cuentan las donaciones de dinero a entidades con domicilio fiscal en Extremadura que desarrollen en la comunidad alguna de estas actividades: cinematografía, artes audiovisuales y multimedia; artes escénicas, música, danza, teatro y circo; artes plásticas, fotografía y diseño; ediciones literarias, fonográficas y cinematográficas; patrimonio cultural de Extremadura; folclore y tradiciones populares; artes aplicadas; o las donadas para patrocinar a deportistas con domicilio fiscal en Extremadura (art. 21.2 de la Ley 39/2022, del Deporte).",
+            "Contribuyente con residencia habitual en Extremadura.",
+            "Las donaciones deben ser puras, simples e irrevocables y formalizarse por escrito con constancia expresa de ese carácter.",
+            "No dan derecho las donaciones de socios, asociados o partícipes de la entidad (o de su cónyuge, pareja de hecho, ascendientes o descendientes) con una participación igual o superior al 50 %, ni las hechas a deportistas por su cónyuge, pareja de hecho, ascendiente o descendiente.",
+            "El máximo de 500 euros es por contribuyente; en declaración conjunta aquí se aplica un único máximo.",
+            "Justificación documental adecuada (art. 13.2)."
+          ],
+          "en_vigor_desde": "2025-04-08"
+        }
+      ]
     },
     "galicia": {
       "nombre": "Galicia",
@@ -3756,6 +4507,57 @@
       ],
       "deducciones_calculables": [
         {
+          "articulo": "art. 5.Tres",
+          "titulo": "Deducción para familias con hijos e hijas",
+          "resumen": "250 euros para el contribuyente con dos descendientes que le den derecho al mínimo por descendientes (400 euros si la familia tiene título de familia numerosa de categoría especial). Aquí solo se calcula el caso de dos descendientes; las familias numerosas con más hijos tienen una deducción mayor no calculada.",
+          "tipo": "fija",
+          "importe": "250",
+          "unidades_min": {
+            "num_descendientes": 2
+          },
+          "unidades_max": {
+            "num_descendientes": 2
+          },
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "familia numerosa de categoría especial de hasta dos hijos: 400 euros",
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa_especial"
+                ]
+              },
+              "importe": "400"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Solo se calcula con exactamente dos descendientes con derecho al mínimo por descendientes. Con título de familia numerosa y más de dos hijos la ley incrementa la deducción en 250 euros adicionales por cada hijo o hija (no calculado aquí).",
+            "Si el contribuyente o alguno de los descendientes tiene un grado de discapacidad igual o superior al 65 %, la deducción se duplica (no calculado aquí).",
+            "Los 400 euros exigen poseer el título de familia numerosa de categoría especial en la fecha de devengo.",
+            "Cuando más de un contribuyente tenga derecho por los mismos descendientes, el importe se prorratea por partes iguales; aquí se reduce a la mitad si has indicado que compartes los descendientes y tributas individualmente.",
+            "Justificación documental adecuada y suficiente (art. 5.Uno)."
+          ],
+          "en_vigor_desde": "2024-01-01"
+        },
+        {
+          "articulo": "art. 5.Cuatro",
+          "titulo": "Deducción por acogimiento",
+          "resumen": "300 euros por cada menor en régimen de acogimiento familiar formalizado por el órgano competente en materia de menores de la Xunta de Galicia. Sin límite de renta.",
+          "tipo": "fija",
+          "importe": "300",
+          "unidad": "menores_acogidos",
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "El acogimiento familiar (simple, permanente, provisional o preadoptivo, administrativo o judicial) debe estar formalizado por el órgano competente en materia de menores de la Xunta de Galicia.",
+            "No da derecho el acogimiento preadoptivo cuando se produce la adopción del menor durante el período impositivo.",
+            "En el acogimiento por matrimonios o parejas de hecho, el importe se prorratea por partes iguales en la declaración individual de cada uno; aquí solo se reduce a la mitad si has indicado que compartes los descendientes con el otro progenitor.",
+            "Justificación documental adecuada y suficiente (art. 5.Uno)."
+          ],
+          "en_vigor_desde": "2024-01-01"
+        },
+        {
           "articulo": "art. 5.Siete",
           "titulo": "Deducción por alquiler de vivienda habitual",
           "resumen": "10 % del alquiler de la vivienda habitual, con un límite de 300 euros por contrato (20 % y 600 euros con dos o más hijos menores de edad), para contribuyentes de 35 años o menos cuya base imponible no supere 22.000 euros; las cuantías se duplican con discapacidad del 33 % o más.",
@@ -3786,6 +4588,44 @@
             "El límite es por contrato de arrendamiento: si dos contribuyentes tienen derecho a la deducción, el importe total, sin exceder ese límite, se prorratea por partes iguales entre ellos.",
             "En tributación conjunta basta con que cumpla el requisito de edad uno de los cónyuges o, en su caso, el padre o la madre; aquí solo se comprueba la edad del contribuyente principal.",
             "La ley no fija un límite de renta distinto para la tributación conjunta: se aplica el de 22.000 euros de base imponible del período (general más ahorro, antes de mínimos).",
+            "Justificación documental adecuada y suficiente (art. 5.Uno)."
+          ],
+          "en_vigor_desde": "2015-01-01"
+        },
+        {
+          "articulo": "art. 5.Nueve",
+          "titulo": "Deducción por inversión en la adquisición de acciones o participaciones sociales en entidades nuevas o de reciente creación",
+          "resumen": "30 % de las cantidades invertidas en el ejercicio en acciones o participaciones por constitución o ampliación de capital de sociedades con domicilio en Galicia, con un límite de 6.000 euros.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.30",
+          "base": "inversion_empresas_nueva_creacion",
+          "maximo": "6000",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "La participación del contribuyente, junto con la del cónyuge y parientes hasta el tercer grado, no puede ser superior al 40 % ni inferior al 1 % del capital social o de los derechos de voto durante los tres años siguientes (el máximo no se aplica a sociedades laborales o cooperativas de solo dos socios).",
+            "La entidad (sociedad anónima, limitada, laboral o cooperativa) debe tener y mantener tres años el domicilio social y fiscal en Galicia, desarrollar una actividad económica (no la gestión de un patrimonio mobiliario o inmobiliario) y contar al menos con una persona contratada a jornada completa, de alta en el régimen general y residente en Galicia.",
+            "Si la inversión es en una ampliación de capital, la sociedad debe haberse constituido en los tres años anteriores e incrementar su plantilla media residente en Galicia al menos en una persona, manteniéndola.",
+            "La operación debe formalizarse en escritura pública y las participaciones mantenerse al menos tres años.",
+            "La deducción puede incrementarse en un 15 % adicional, con límite de 9.000 euros, en pymes innovadoras, iniciativas de empleo de base tecnológica o sociedades participadas por universidades u organismos de investigación (no calculado aquí).",
+            "Alternativamente, el art. 5.Diez permite deducir el 30 % con un límite conjunto de 20.000 euros (incluye préstamos y garantías) con requisitos propios; es incompatible con esta para las mismas inversiones y no se calcula aquí. Tampoco es compatible con el art. 5.Once para las mismas inversiones.",
+            "Justificación documental adecuada y suficiente (art. 5.Uno)."
+          ],
+          "en_vigor_desde": "2020-01-01"
+        },
+        {
+          "articulo": "art. 5.Trece",
+          "titulo": "Deducción por inversión en instalaciones de climatización y/o agua caliente sanitaria que empleen energías renovables en la vivienda habitual y destinadas exclusivamente al autoconsumo",
+          "resumen": "5 % de las cantidades satisfechas en el ejercicio por la instalación en la vivienda habitual de sistemas de climatización y/o agua caliente sanitaria que empleen energías renovables, con un límite de 280 euros por contribuyente.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.05",
+          "base": "gastos_eficiencia_energetica",
+          "maximo": "280",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Solo cuentan las cantidades satisfechas por la instalación en la vivienda habitual de sistemas de climatización y/o agua caliente sanitaria que empleen fuentes de energía renovables (sistema de generación, de emisión térmica y de captación), pagadas a instaladores habilitados por medios distintos del dinero en efectivo.",
+            "La instalación debe estar registrada por el instalador habilitado en la Oficina Virtual de Industria (OVI), debe aportarse a través de la OVI el presupuesto, las facturas y los justificantes de pago antes de que termine el plazo de declaración, y debe constar en la declaración el código de la instalación.",
+            "Si en lugar de ello se trata de obras de mejora de eficiencia energética que suban una letra en la calificación energética del inmueble, terminadas en el ejercicio y registradas, corresponde la deducción del art. 5.Dieciocho (15 % sobre una base máxima de 9.000 euros por contribuyente, más los honorarios del certificado hasta 150 euros), incompatible con esta y mayor: no se calcula aquí.",
+            "El límite de 280 euros es por sujeto pasivo; en declaración conjunta aquí se aplica un único límite.",
             "Justificación documental adecuada y suficiente (art. 5.Uno)."
           ],
           "en_vigor_desde": "2015-01-01"
@@ -3909,6 +4749,45 @@
           "en_vigor_desde": "2020-02-01"
         },
         {
+          "articulo": "art. 32.2",
+          "titulo": "Adquisición, construcción o rehabilitación de vivienda habitual en pequeños municipios",
+          "resumen": "5 % de las cantidades satisfechas en el ejercicio por la adquisición, rehabilitación o construcción de la vivienda habitual (adquirida, rehabilitada o iniciada desde el 1 de enero de 2017) en un pequeño municipio del anexo I, con el límite máximo de 452 euros por declaración. Sin límite de renta ni de edad.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.05",
+          "base": "inversion_vivienda_habitual",
+          "maximo": "452",
+          "requiere": [
+            "vivienda_en_municipio_rural"
+          ],
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "«Pequeño municipio» es exclusivamente uno de los municipios de La Rioja enumerados en el anexo I de la Ley 10/2017. La vivienda habitual debe estar en uno de ellos.",
+            "La vivienda debe haberse adquirido o rehabilitado, o su construcción haberse iniciado, a partir del 1 de enero de 2017.",
+            "Contribuyente con residencia habitual en La Rioja. Los conceptos de vivienda habitual, adquisición, construcción y rehabilitación son los de la normativa del IRPF vigente a 31 de diciembre de 2012.",
+            "El patrimonio del contribuyente al final del período debe exceder del inicial al menos en la cuantía de las inversiones realizadas, sin computar intereses y gastos de financiación.",
+            "La ley no declara esta deducción incompatible con la del art. 32.11 (jóvenes menores de 36 años): si se cumplen las condiciones de ambas, aquí se aplican las dos sobre las mismas cantidades."
+          ],
+          "en_vigor_desde": "2020-02-01"
+        },
+        {
+          "articulo": "art. 32.4",
+          "titulo": "Acogimiento familiar de menores o guarda con fines de adopción",
+          "resumen": "300 euros por cada menor en acogimiento familiar de urgencia, temporal o permanente, o guarda con fines de adopción, formalizado por el órgano competente de La Rioja, con el que se conviva 183 días o más en el periodo (150 euros si la convivencia es de más de 90 y menos de 183 días). Sin límite de renta.",
+          "tipo": "fija",
+          "importe": "300",
+          "unidad": "menores_acogidos",
+          "base_limite": "base_imponible_total",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Los 300 euros exigen convivir con el menor 183 o más días durante el periodo impositivo. Si la convivencia fue inferior a 183 días y superior a 90, la deducción es de 150 euros por menor: aquí se aplican siempre 300 euros por menor indicado.",
+            "El acogimiento familiar (de urgencia, temporal o permanente) o la guarda con fines de adopción debe estar formalizado por el órgano judicial o administrativo competente en materia de menores de La Rioja; contribuyente residente en La Rioja.",
+            "No procede cuando la misma familia adopta al menor durante el periodo impositivo.",
+            "Si se opta por declaraciones individuales, cada contribuyente con derecho aplica el 50 %; aquí solo se reduce a la mitad si has indicado que compartes los descendientes con el otro progenitor.",
+            "Quien acoja en el ejercicio a distintos menores sin que ninguno supere los 90 días puede deducir si la suma de los periodos sí los supera (no calculado)."
+          ],
+          "en_vigor_desde": "2020-02-01"
+        },
+        {
           "articulo": "art. 32.6",
           "titulo": "Gastos en escuelas infantiles o centros de educación infantil (hijos de 0 a 3 años)",
           "resumen": "20 % de los gastos de escolarización no subvencionados de cada hijo de 0 a 3 años matriculado en una escuela o centro de educación infantil de La Rioja, máximo 600 euros por hijo. Base liquidable general no superior a 18.030 euros (individual) o 30.050 euros (conjunta) y base liquidable del ahorro no superior a 1.800 euros.",
@@ -3930,6 +4809,29 @@
             "Contribuyente con residencia habitual en La Rioja.",
             "En declaraciones individuales de progenitores con derecho por el mismo descendiente el importe se prorratea por partes iguales.",
             "Existe una deducción alternativa del 30 % (art. 32.3) para quienes fijen su residencia en pequeños municipios del anexo I; no codificada."
+          ],
+          "en_vigor_desde": "2020-02-01"
+        },
+        {
+          "articulo": "art. 32.11",
+          "titulo": "Inversión en vivienda habitual de jóvenes menores de 36 años",
+          "resumen": "15 % de las cantidades satisfechas en el periodo (incluidos amortización e intereses del préstamo) por la adquisición o rehabilitación de la vivienda habitual situada en La Rioja, sobre una base máxima de 9.000 euros anuales (deducción máxima de 1.350 euros), para contribuyentes menores de 36 años. Base liquidable general no superior a 18.030 euros (individual) o 30.050 euros (conjunta) y base liquidable del ahorro no superior a 1.800 euros.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "inversion_vivienda_habitual",
+          "maximo": "1350",
+          "edad_max": 35,
+          "base_limite": "base_liquidable_general",
+          "limite_individual": "18030",
+          "limite_conjunta": "30050",
+          "base_ahorro_max": "1800",
+          "requisitos_no_comprobados": [
+            "El límite de 1.800 euros se refiere a la base liquidable del ahorro sometida a tributación; la calculadora lo comprueba sobre la base imponible del ahorro.",
+            "El máximo de 1.350 euros resulta de aplicar el 15 % a la base máxima de 9.000 euros anuales.",
+            "La vivienda debe estar situada en La Rioja y constituir o ir a constituir la residencia habitual (residencia continuada de tres años); la rehabilitación debe cumplir las condiciones de la normativa del IRPF vigente a 31 de diciembre de 2012; no son adquisición los gastos de conservación o reparación ni las mejoras (art. 58 bis).",
+            "Incompatible con las deducciones de la disposición transitoria primera a) y b) para los jóvenes que adquirieron o rehabilitaron su vivienda antes del 1 de enero de 2013, que siguen aplicando aquellas.",
+            "Si antes se dedujo por otras viviendas habituales, o hubo ganancia exenta por reinversión, no se puede deducir hasta superar esos importes (no calculado).",
+            "El patrimonio del contribuyente al final del período debe exceder del inicial al menos en la cuantía de las inversiones realizadas, sin computar intereses y gastos de financiación."
           ],
           "en_vigor_desde": "2020-02-01"
         },
@@ -3958,17 +4860,72 @@
               "maximo": "400"
             }
           ],
+          "incompatible_con": [
+            "art. 32.2",
+            "art. 32.11"
+          ],
           "requisitos_no_comprobados": [
             "El límite de 1.800 euros se refiere a la base liquidable del ahorro sometida a tributación; la calculadora lo comprueba sobre la base imponible del ahorro.",
             "«Pequeño municipio» es exclusivamente uno de los municipios de La Rioja enumerados en el anexo I de la Ley 10/2017. Para el 20 % / 400 euros es la vivienda arrendada la que debe estar situada en uno de ellos.",
             "Vivienda habitual ocupada efectivamente por el contribuyente y situada en La Rioja.",
             "Ser titular de un contrato de arrendamiento por el que se haya presentado el modelo del impuesto sobre transmisiones patrimoniales y actos jurídicos documentados.",
-            "No tener derecho en el mismo periodo a deducción alguna por inversión en vivienda habitual.",
+            "No tener derecho en el mismo periodo a deducción alguna por inversión en vivienda habitual (aquí solo se excluye cuando se ha aplicado la del art. 32.2 o la del art. 32.11; no se comprueban la estatal transitoria ni las de la disposición transitoria primera).",
             "Solo cuentan las cantidades no subvencionadas; la deducción queda condicionada a su justificación documental.",
             "El límite de 300 euros es por contrato de arrendamiento (tanto en individual como en conjunta); si dos contribuyentes tienen derecho, el importe total se prorratea por partes iguales (en gananciales corresponde a los cónyuges por mitad).",
             "En tributación conjunta basta con que uno de los cónyuges no haya cumplido 36 años."
           ],
           "en_vigor_desde": "2020-02-01"
+        },
+        {
+          "articulo": "art. 32.14",
+          "titulo": "Donaciones irrevocables, puras y simples en materia de mecenazgo",
+          "resumen": "15 % de las cantidades donadas en el ejercicio para actividades de la Estrategia Regional de Mecenazgo de La Rioja o para bienes del patrimonio de titularidad autonómica o de interés cultural, con un límite conjunto de 500 euros anuales.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "donativos_autonomicos",
+          "maximo": "500",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Solo cuentan las donaciones irrevocables, puras y simples para la promoción y estímulo de las actividades del art. 1 de la Ley 3/2021, de Mecenazgo de La Rioja, recogidas en la Estrategia Regional de Mecenazgo, o para la investigación, conservación, restauración, difusión o adquisición de bienes ubicados en La Rioja de titularidad de la Administración autonómica o declarados bienes de interés cultural.",
+            "Las donaciones a empresas culturales con fondos propios inferiores a 300.000 euros y domicilio fiscal en La Rioja dan derecho al 20 % (límite 500 euros), y las de bienes culturales por sus autores al 20 % de su valoración (límite 500 euros); son incompatibles con las anteriores y no se calculan aquí (se aplica el 15 %).",
+            "La suma de las deducciones de este apartado no puede exceder del 30 % de la cuota íntegra autonómica (no comprobado aquí).",
+            "Incompatible con el crédito fiscal de la Ley de Mecenazgo de La Rioja mientras esté vigente.",
+            "El límite de 500 euros se aplica aquí una sola vez por declaración."
+          ],
+          "en_vigor_desde": "2026-01-01"
+        },
+        {
+          "articulo": "art. 32.17",
+          "titulo": "Fomento del ejercicio físico y la práctica deportiva",
+          "resumen": "30 % de los gastos en servicios de ejercicio físico y práctica deportiva en La Rioja (100 % para mayores de 65 años o con discapacidad igual o superior al 33 %), con un límite máximo de 300 euros anuales. Sin límite de renta.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.30",
+          "base": "gastos_deporte_cultura",
+          "maximo": "300",
+          "base_limite": "base_imponible_total",
+          "variantes": [
+            {
+              "descripcion": "mayores de 65 años: 100 % de los gastos",
+              "cuando": {
+                "edad_min": 66
+              },
+              "porcentaje": "1.00"
+            },
+            {
+              "descripcion": "discapacidad igual o superior al 33 %: 100 % de los gastos",
+              "cuando": {
+                "discapacidad_min": 33
+              },
+              "porcentaje": "1.00"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Solo cuentan los gastos en servicios de ejercicio físico y práctica deportiva (no los culturales): los prestados en gimnasios e instalaciones deportivas, los de entidades inscritas en el Registro del Deporte de La Rioja, las clases para la práctica del deporte o la educación física y las licencias de federaciones riojanas, originados en el periodo y realizados en La Rioja.",
+            "Incluye los gastos del contribuyente, del cónyuge y de las personas que den derecho al mínimo personal y familiar. El 100 % se aplica aquí según la edad y la discapacidad del contribuyente; la ley dice «mayores de 65 años»: se ha codificado como 66 años cumplidos o más (si tienes 65 puede corresponderte el 100 %).",
+            "Exige factura completa u ordinaria (no vale la factura simplificada).",
+            "Cuando varios contribuyentes tengan derecho, las cantidades satisfechas y el límite se prorratean por partes iguales (no calculado)."
+          ],
+          "en_vigor_desde": "2024-01-01"
         }
       ]
     },
@@ -4054,6 +5011,23 @@
       ],
       "deducciones_calculables": [
         {
+          "articulo": "art. 1.Dos",
+          "titulo": "Donaciones dinerarias (mecenazgo regional e investigación biosanitaria)",
+          "resumen": "50 % de las donaciones dinerarias puras y simples a titulares de proyectos de mecenazgo de la Región de Murcia (patrimonio cultural, actividades culturales, artísticas, sociales, científico-tecnológicas y medioambientales) o destinadas a la investigación biosanitaria. Sin límite de renta ni tope propio.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.50",
+          "base": "donativos_autonomicos",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "Si por las mismas cantidades se aplican las deducciones estatales por donativos, la base autonómica se minora en lo que constituya base de aquellas: no deben indicarse aquí las cantidades por las que ya se aplique la deducción estatal (la calculadora no lo cruza y podría duplicar el beneficio).",
+            "Solo donaciones dinerarias puras y simples, hechas por transferencia bancaria, a los titulares de proyectos del artículo 3 de la Ley de Mecenazgo de la Región de Murcia (destino: protección del patrimonio cultural regional o promoción de actividades culturales, artísticas, sociales, científico-tecnológicas y medioambientales), o bien destinadas a la investigación biosanitaria de la Ley 4/1994 a favor de la Comunidad Autónoma, su sector público y universidades públicas, o de entidades sin fines lucrativos de la Ley 49/2002 inscritas en los registros de la Región de Murcia.",
+            "Se exige certificación de la entidad beneficiaria con los datos del apartado 5.",
+            "Incompatible con el crédito fiscal del artículo 12 de la Ley de Mecenazgo de la Región de Murcia mientras permanezca vigente.",
+            "No incluye la deducción del 15 % por donaciones de bienes inscritos en el Inventario del Patrimonio Cultural (apartado Dos.3), que no se calcula."
+          ],
+          "en_vigor_desde": "2023-01-01"
+        },
+        {
           "articulo": "art. 1.Tres",
           "titulo": "Gastos de guardería (primer ciclo de educación infantil)",
           "resumen": "20 % de los gastos de custodia, alimentación y vestuario escolar del primer ciclo de educación infantil de hijos o descendientes, máximo 1.000 euros por cada uno. Suma de base imponible general y del ahorro no superior a 30.000 euros (individual) o 50.000 euros (conjunta).",
@@ -4067,13 +5041,31 @@
           "limite_conjunta": "50000",
           "reparto_descendientes": true,
           "requisitos_no_comprobados": [
-            "El límite de 1.000 euros es por cada hijo o descendiente que curse el primer ciclo de educación infantil y dé derecho al mínimo por descendientes (solo cuentan los efectivamente escolarizados).",
+            "El límite de 1.000 euros es por cada hijo o descendiente que curse el primer ciclo de educación infantil y dé derecho al mínimo por descendientes. La calculadora multiplica el límite por el número de descendientes menores de 3 años: si alguno de ellos NO está escolarizado en ese ciclo, el tope calculado es superior al legal (puede dar de más); si un niño escolarizado ya ha cumplido 3 años a 31 de diciembre, no se cuenta (puede dar de menos).",
             "Centro autorizado e inscrito por la Consejería competente en materia de educación.",
             "Solo son base de deducción los gastos de custodia (incluida preinscripción y matrícula), alimentación y vestuario de uso exclusivo escolar, minorados en las becas y ayudas públicas recibidas.",
             "El contribuyente debe convivir con el menor; si convive con más de un progenitor, tutor o adoptante, la deducción se prorratea por partes iguales en tributación individual.",
             "Deben conservarse las facturas acreditativas."
           ],
           "en_vigor_desde": "2019-01-01"
+        },
+        {
+          "articulo": "art. 1.Seis",
+          "titulo": "Inversión en acciones o participaciones de entidades nuevas o de reciente creación",
+          "resumen": "20 % de las cantidades invertidas en el ejercicio en acciones o participaciones por constitución o ampliación de capital de sociedades anónimas, limitadas, laborales o cooperativas con domicilio en la Región de Murcia, con un límite de 4.000 euros.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.20",
+          "base": "inversion_empresas_nueva_creacion",
+          "maximo": "4000",
+          "base_limite": "base_imponible_total",
+          "requisitos_no_comprobados": [
+            "La entidad debe tener domicilio social y fiscal en la Región de Murcia y mantenerlo tres años, desarrollar una actividad económica (no gestión de patrimonio) y contar desde el primer ejercicio con al menos una persona contratada a jornada completa durante tres años.",
+            "En ampliaciones de capital, la sociedad debe haberse constituido en los tres años anteriores y aumentar su plantilla media en al menos dos personas durante veinticuatro meses, manteniéndolo otros veinticuatro.",
+            "La participación del contribuyente, junto con cónyuge y parientes hasta el tercer grado, no puede superar el 40 % del capital o de los derechos de voto; no puede ejercer funciones ejecutivas ni de dirección ni tener relación laboral con la entidad durante diez años.",
+            "Formalización en escritura pública, mantenimiento de las participaciones al menos tres años y comunicación previa a la Administración regional.",
+            "Incompatible, para las mismas inversiones, con las deducciones por inversión en el mercado alternativo bursátil (Siete) y en entidades de economía social (Veinticuatro), que no se calculan."
+          ],
+          "en_vigor_desde": "2013-07-11"
         },
         {
           "articulo": "art. 1.Ocho",
@@ -4155,11 +5147,11 @@
           "base_limite": "base_imponible_total",
           "limite_unidad_familiar": "34000",
           "requisitos_no_comprobados": [
+            "REQUISITO DECISIVO NO COMPROBADO: debe haber al menos un hijo menor de 12 años por el que se aplique el mínimo por descendientes; la calculadora solo comprueba que haya algún descendiente, de cualquier edad (con hijos de 12 años o más da de más).",
             "Solo cuentan las cotizaciones de los meses en que el contribuyente tenga al menos un hijo menor de 12 años por el que aplique el mínimo por descendientes.",
             "La persona debe estar contratada para atender o cuidar a descendientes menores por razones de conciliación.",
             "El contribuyente debe estar de alta en la Seguridad Social como empleador titular de un hogar familiar y cotizar por el Sistema Especial de Empleados de Hogar.",
             "El titular del hogar familiar y, en su caso, su cónyuge o pareja de hecho deben ser madres o padres de hijos que formen parte de la unidad familiar y percibir rendimientos del trabajo o de actividades económicas.",
-            "La calculadora solo comprueba que haya algún descendiente, no que sea menor de 12 años.",
             "Si además se contrata a otra persona distinta para cuidar a ascendientes mayores de 65 años (art. 1.Once.3), el límite conjunto es de 800 euros; la calculadora aplica una sola de las dos modalidades (puede dar de menos en ese caso)."
           ],
           "en_vigor_desde": "2025-07-25"
@@ -4266,6 +5258,89 @@
             "Debe tratarse de aprendizaje extraescolar de idiomas extranjeros.",
             "Si los hijos conviven con ambos padres y estos tributan individualmente, la deducción se prorratea por partes iguales.",
             "Deben conservarse los justificantes de pago."
+          ],
+          "en_vigor_desde": "2025-07-25"
+        },
+        {
+          "articulo": "art. 1.Veintidós",
+          "titulo": "Gastos asociados a la práctica del deporte y actividades saludables",
+          "resumen": "30 % (100 % para mayores de sesenta y cinco años) de lo pagado en gimnasios y centros deportivos, cuotas de federaciones deportivas, entrenadores y pilates o yoga, con un máximo anual de 150 euros por contribuyente. Suma de bases imponibles no superior a 25.000 euros (individual) o 40.000 euros (conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.30",
+          "base": "gastos_deporte_cultura",
+          "maximo": "150",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "25000",
+          "limite_conjunta": "40000",
+          "variantes": [
+            {
+              "descripcion": "Mayores de sesenta y cinco años: 100 % de las cantidades",
+              "cuando": {
+                "edad_min": 66
+              },
+              "porcentaje": "1"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "SOLO gastos deportivos: servicios de gimnasios y centros deportivos, cuotas de pertenencia a federaciones deportivas, entrenamiento por técnicos y entrenadores deportivos, pilates y yoga. Los gastos culturales no dan derecho, ni las cuotas estatutarias periódicas a clubes sociales o entidades deportivas sin ánimo de lucro.",
+            "Gastos justificados con factura; pueden corresponder a actividades del contribuyente, su cónyuge y las personas por las que aplique los mínimos por descendientes y ascendientes.",
+            "El 100 % se aplica «en el caso de mayores de sesenta y cinco años»: la calculadora lo decide por la edad del contribuyente (66 años o más a la fecha de devengo, criterio prudente), no por la de quien practica la actividad."
+          ],
+          "en_vigor_desde": "2025-07-25"
+        },
+        {
+          "articulo": "art. 1.Cinco",
+          "titulo": "Instalaciones de energías renovables para autoconsumo en la vivienda",
+          "resumen": "50 %, 37,50 % o 25 % (según la suma de bases imponibles general y del ahorro) de lo invertido en instalar en la vivienda habitual sistemas de energías renovables destinados exclusivamente al autoconsumo, con un máximo de 7.000 euros. Sin derecho desde 60.000 euros (individual) o 95.000 euros (conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.25",
+          "base": "gastos_eficiencia_energetica",
+          "maximo": "7000",
+          "base_limite": "base_imponible_total",
+          "limite_individual": "60000",
+          "limite_conjunta": "95000",
+          "limite_es_estricto": true,
+          "variantes": [
+            {
+              "descripcion": "Declaración individual con bases inferiores a 35.000 euros: 50 %",
+              "cuando": {
+                "tributacion": "individual",
+                "ingreso_max": "34999.99"
+              },
+              "porcentaje": "0.50"
+            },
+            {
+              "descripcion": "Declaración individual con bases de 35.000 a menos de 45.000 euros: 37,50 %",
+              "cuando": {
+                "tributacion": "individual",
+                "ingreso_max": "44999.99"
+              },
+              "porcentaje": "0.375"
+            },
+            {
+              "descripcion": "Declaración conjunta con bases inferiores a 50.000 euros: 50 %",
+              "cuando": {
+                "tributacion": "conjunta",
+                "ingreso_max": "49999.99"
+              },
+              "porcentaje": "0.50"
+            },
+            {
+              "descripcion": "Declaración conjunta con bases de 50.000 a menos de 75.000 euros: 37,50 %",
+              "cuando": {
+                "tributacion": "conjunta",
+                "ingreso_max": "74999.99"
+              },
+              "porcentaje": "0.375"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "SOLO instalaciones de sistemas de energías renovables destinadas exclusivamente al autoconsumo (no otras obras de eficiencia energética: ventanas, aislamiento, calderas…); en fotovoltaica no vale la modalidad con excedentes no acogida a compensación.",
+            "Vivienda radicada en la Región de Murcia; presentación de la declaración responsable ante el órgano competente cuando la normativa la exija.",
+            "La base excluye las ayudas y subvenciones percibidas; factura de instalador habilitado y pago por tarjeta, transferencia, cheque nominativo o ingreso en cuenta (nunca en efectivo).",
+            "Si hay más de un contribuyente con derecho por la misma vivienda, el importe y el límite se prorratean en proporción a lo invertido; en comunidades de propietarios, según el coeficiente de participación.",
+            "También vale para viviendas destinadas al arrendamiento que no sea actividad económica (la calculadora solo recoge la vivienda habitual).",
+            "Lo que no quepa en la cuota íntegra autonómica puede aplicarse en los dos períodos siguientes (no calculado); esta deducción se aplica en último lugar."
           ],
           "en_vigor_desde": "2025-07-25"
         }

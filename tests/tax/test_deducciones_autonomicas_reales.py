@@ -26,10 +26,9 @@ def _unica(deducciones: dict[str, Decimal], fragmento: str) -> Decimal:
 def test_every_other_community_has_computable_deductions() -> None:
     comunidades = load_params(2026).comunidades
     assert [k for k, c in comunidades.items() if k != "madrid" and not c.deducciones_calculables] == []
-    # Extremadura's are all 2026 wording (Ley 2/2026): none is carried back to 2025.
-    sin_2025 = [k for k, c in load_params(2025).comunidades.items() if k != "madrid" and not c.deducciones_calculables]
-    assert sin_2025 == ["extremadura"]
-    assert sum(len(c.deducciones_calculables) for c in load_params(2026).comunidades.values()) >= 80
+    # Madrid's extra deductions are data-driven too, on top of the six hand-coded ones.
+    assert comunidades["madrid"].deducciones_calculables
+    assert sum(len(c.deducciones_calculables) for c in comunidades.values()) >= 125
 
 
 def test_cataluna_rent_art_612_3() -> None:

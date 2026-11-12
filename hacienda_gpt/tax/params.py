@@ -316,6 +316,7 @@ CAMPOS_UNIDAD = frozenset(
         "num_ascendientes_mayores_65",
         "num_ascendientes_mayores_75",
         "num_hijos_gastos_educativos",
+        "num_hijos_primer_ciclo_infantil",
         "num_familiares_discapacidad_a_cargo",
         "menores_acogidos",
         "hijos_adoptados_en_el_ejercicio",
