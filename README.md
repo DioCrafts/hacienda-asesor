@@ -561,6 +561,55 @@ pasaje que la justifican.
 El grafo es un indicio deducido del texto, no una fuente: nunca se cita, y sin
 `--llm` solo detecta relaciones dichas con redacción expresa.
 
+### Modo equipo: planificador, dos investigadores y un crítico
+
+Para una pregunta sencilla trabaja un solo agente. Solo en consultas complejas
+se reparte el trabajo, porque cuesta más llamadas y más tiempo:
+
+1. **Planificador** — descompone la consulta en encargos.
+2. **Investigador de normativa** e **investigador de doctrina** — buscan en
+   paralelo (solo pueden buscar y consultar la vigencia; no calculan ni tocan el
+   expediente) y dejan sus fragmentos en el mismo registro de evidencia.
+3. **Asesor** — redacta la respuesta con ese material.
+4. **Crítico** — la revisa buscando el fallo; si objeta, el asesor la corrige.
+   Después pasa el verificador de siempre.
+
+Se activa cuando la consulta toca **dos o más impuestos** o cuando la primera
+respuesta encuentra **conflicto entre fuentes** y no queda verificada.
+
+```bash
+export AGENT_TEAM_MODE="auto"       # auto (por defecto) | always | never
+export SUBAGENT_MAX_STEPS="6"       # pasos de herramienta por investigador
+export SUBAGENTS_PARALLEL="true"    # false si tu servidor local solo atiende una petición a la vez
+```
+
+### Agentes proactivos: avisos sin preguntar
+
+El asesor escribe avisos en el expediente (campana de la interfaz, o
+`GET /cases/{id}/notifications`). Hay tres tipos:
+
+| Aviso | Qué hace | ¿Usa LLM? |
+|-------|----------|-----------|
+| `plazo` | Recuerda los vencimientos del calendario fiscal que te tocan según tu perfil | No |
+| `fin_de_ejercicio` | Del 1 de octubre al 31 de diciembre recorre tus palancas (plan de pensiones, donativos, deducciones autonómicas…) con la calculadora y dice cuánto ahorra cada una antes del 31 de diciembre | No |
+| `cambio_normativo` | Cuando `boe_watch` detecta que una norma ha cambiado, lee qué artículos cambian y avisa solo a los perfiles afectados | Una llamada por norma cambiada, ninguna por usuario |
+
+Los dos primeros se recalculan también al abrir la aplicación y al cambiar un
+dato del expediente (`POST /cases/{id}/proactive/run`). Para que lleguen sin
+abrirla, prográmalos:
+
+```cron
+# Detectar normas cambiadas, avisar a los afectados y, después, plazos y plan de fin de año
+30 6 * * *  cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.boe_watch >> logs/boe_watch.log 2>&1
+45 6 * * *  cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.proactive boe-impact --changes-log data/html/_boe_changes.jsonl --snapshot-dir data/html --yes >> logs/proactive.log 2>&1
+0 7 * * *   cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.proactive run-daily >> logs/proactive.log 2>&1
+```
+
+Repetir una ejecución no duplica avisos. Los importes son estimaciones de la
+calculadora con los datos del expediente, y los plazos no tienen en cuenta
+festivos. Los avisos solo se guardan en la base de datos: todavía no se envían
+por correo ni al móvil.
+
 ### Evaluación del agente con consultas de la DGT
 
 Cada consulta vinculante de la DGT es un caso de prueba ya resuelto por un

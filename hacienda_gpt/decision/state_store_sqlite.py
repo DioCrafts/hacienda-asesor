@@ -174,6 +174,12 @@ class SQLiteCaseStateStore(CaseStateStore):
             ).fetchall()
         return [CaseState.model_validate_json(row["payload_json"]) for row in rows]
 
+    def list_all_cases(self) -> list[CaseState]:
+        """Every stored case, newest first. For batch jobs; not part of the abstract contract."""
+        with self._lock, self._connect() as conn:
+            rows = conn.execute("SELECT payload_json FROM case_states ORDER BY updated_at DESC").fetchall()
+        return [CaseState.model_validate_json(row["payload_json"]) for row in rows]
+
     def append_audit_event(self, case_id: str, event: dict[str, Any]) -> None:
         now = datetime.now(UTC).isoformat()
         event_payload = {"event_time": now, **event}

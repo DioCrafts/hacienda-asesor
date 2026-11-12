@@ -93,6 +93,8 @@ from hacienda_gpt.decision.state_store import CaseVersionConflictError
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.decision.turn_service import process_turn
 from hacienda_gpt.llm.grounding import AnswerEnvelope
+from hacienda_gpt.proactive.jobs import ejecutar_para_caso, hoy_en_espana
+from hacienda_gpt.proactive.store import Notification, NotificationStore
 from hacienda_gpt.settings import API_RATE_LIMIT_PER_MIN, DECISION_STATE_DB_PATH
 from hacienda_gpt.tax.calendario import Vencimiento, aviso_festivos, proximos_vencimientos
 from hacienda_gpt.tax.documentos import AnalisisDocumento, DocumentoNoLegibleError, analizar_documento, decode_upload
@@ -790,6 +792,90 @@ def post_case_document(
         },
     )
     return analysis
+
+
+@_thread_safe_singleton
+def _build_notification_store() -> NotificationStore:
+    # Same SQLite file as the cases, so one backup covers both.
+    return NotificationStore(DECISION_STATE_DB_PATH)
+
+
+def get_notification_store() -> NotificationStore:
+    # Thin wrapper so tests can override it via app.dependency_overrides.
+    return _build_notification_store()
+
+
+class NotificationsResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str
+    unread: int
+    notifications: list[Notification]
+
+
+class ProactiveRunResponse(NotificationsResponse):
+    # Notifications created by this run, per kind.
+    created: dict[str, int]
+
+
+@app.get(
+    "/cases/{case_id}/notifications", response_model=NotificationsResponse, dependencies=[Depends(require_api_key)]
+)
+def get_case_notifications(
+    case_id: str,
+    store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+    notifications: Annotated[NotificationStore, Depends(get_notification_store)],
+    unread_only: bool = False,
+) -> NotificationsResponse:
+    """Notifications the proactive jobs wrote for this case, newest first."""
+    if store.get_case(case_id) is None:
+        raise HTTPException(status_code=404, detail="case not found")
+    return NotificationsResponse(
+        case_id=case_id,
+        unread=notifications.count_unread(case_id),
+        notifications=notifications.list(case_id, unread_only=unread_only),
+    )
+
+
+@app.post(
+    "/cases/{case_id}/notifications/{notification_id}/read",
+    response_model=NotificationsResponse,
+    dependencies=[Depends(require_api_key)],
+)
+def post_notification_read(
+    case_id: str,
+    notification_id: str,
+    store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+    notifications: Annotated[NotificationStore, Depends(get_notification_store)],
+) -> NotificationsResponse:
+    if store.get_case(case_id) is None:
+        raise HTTPException(status_code=404, detail="case not found")
+    if not notifications.mark_read(case_id, notification_id):
+        raise HTTPException(status_code=404, detail="notification not found")
+    return NotificationsResponse(
+        case_id=case_id, unread=notifications.count_unread(case_id), notifications=notifications.list(case_id)
+    )
+
+
+@app.post(
+    "/cases/{case_id}/proactive/run", response_model=ProactiveRunResponse, dependencies=[Depends(require_api_key)]
+)
+def post_case_proactive_run(
+    case_id: str,
+    store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+    notifications: Annotated[NotificationStore, Depends(get_notification_store)],
+) -> ProactiveRunResponse:
+    """Run the deterministic proactive jobs (deadlines + year-end plan) for this case now. No LLM."""
+    case = store.get_case(case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="case not found")
+    created = ejecutar_para_caso(case, hoy=hoy_en_espana(), store=notifications)
+    return ProactiveRunResponse(
+        case_id=case_id,
+        unread=notifications.count_unread(case_id),
+        notifications=notifications.list(case_id),
+        created=created,
+    )
 
 
 @app.get("/cases/{case_id}/audit/export", dependencies=[Depends(require_api_key)])

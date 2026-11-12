@@ -597,3 +597,54 @@ export function analyzeDocument(opts: {
     { signal: opts.signal, timeoutMs: DOCUMENT_TIMEOUT_MS },
   );
 }
+
+// ---- Proactive notifications -------------------------------------------------
+
+export type NotificationKind = "plazo" | "fin_de_ejercicio" | "cambio_normativo";
+export type NotificationSeverity = "info" | "aviso" | "urgente";
+
+// Mirrors hacienda_gpt/proactive/store.py -> Notification.
+export interface AdvisorNotification {
+  id: string;
+  case_id: string;
+  kind: NotificationKind;
+  title: string;
+  body: string;
+  severity: NotificationSeverity;
+  actions: string[];
+  sources: string[];
+  amount?: string | null; // estimated saving in euros, as a decimal string
+  due_date?: string | null;
+  created_at: string;
+  read_at?: string | null;
+}
+
+export interface NotificationsResponse {
+  case_id: string;
+  unread: number;
+  notifications: AdvisorNotification[];
+}
+
+function isNotifications(value: unknown): value is NotificationsResponse {
+  return isRecord(value) && typeof value.unread === "number" && Array.isArray(value.notifications);
+}
+
+export function getNotifications(opts: { caseId: string; signal?: AbortSignal }): Promise<NotificationsResponse> {
+  return request(`/cases/${encodeURIComponent(opts.caseId)}/notifications`, undefined, isNotifications, {
+    signal: opts.signal,
+    method: "GET",
+  });
+}
+
+export function markNotificationRead(opts: { caseId: string; notificationId: string }): Promise<NotificationsResponse> {
+  return request(
+    `/cases/${encodeURIComponent(opts.caseId)}/notifications/${encodeURIComponent(opts.notificationId)}/read`,
+    {},
+    isNotifications,
+  );
+}
+
+/** Run the deterministic proactive jobs (deadlines, year-end plan) for this case now. */
+export function runProactive(opts: { caseId: string; signal?: AbortSignal }): Promise<NotificationsResponse> {
+  return request(`/cases/${encodeURIComponent(opts.caseId)}/proactive/run`, {}, isNotifications, { signal: opts.signal });
+}

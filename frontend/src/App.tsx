@@ -5,13 +5,24 @@ import { Check, Copy, RotateCcw, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ProgressEvent } from "./api";
-import { ApiError, createCase, deleteCaseFact, streamAgent, updateCaseFact } from "./api";
+import type { AdvisorNotification } from "./api";
+import {
+  ApiError,
+  createCase,
+  deleteCaseFact,
+  getNotifications,
+  markNotificationRead,
+  runProactive,
+  streamAgent,
+  updateCaseFact,
+} from "./api";
 import { ActivitySummary, LiveActivity } from "./components/ActivityPanel";
 import { CasePanel } from "./components/CasePanel";
 import { DoctrineNotice } from "./components/DoctrineNotice";
 import { AssistantBubble, UserBubble } from "./components/ChatBubbles";
 import { Composer } from "./components/Composer";
 import { EmptyState } from "./components/EmptyState";
+import { NotificationsPanel } from "./components/NotificationsPanel";
 import { ObligationCardList } from "./components/ObligationCard";
 import { RichText } from "./components/RichText";
 import { SimulatorPanel } from "./components/SimulatorPanel";
@@ -78,6 +89,11 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [caseOpen, setCaseOpen] = useState(false);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<{ caseId: string; items: AdvisorNotification[] } | null>(null);
+  // Key of the last request that finished; while it differs from the current one we are loading.
+  const [notificationsSettled, setNotificationsSettled] = useState<string | null>(null);
+  const [notificationsError, setNotificationsError] = useState<string | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [removingFact, setRemovingFact] = useState<string | null>(null);
   const [caseError, setCaseError] = useState<string | null>(null);
@@ -306,6 +322,45 @@ export default function App() {
     }
   }
 
+  // The advisor speaks first: whenever the case or what we know about the user
+  // changes, re-run the deterministic jobs (deadlines, year-end plan) and load
+  // the notifications. No model call is involved.
+  const factsKey = active.facts.map((f) => `${f.name}=${String(f.value)}`).join("&");
+  const [notificationsTick, setNotificationsTick] = useState(0);
+  const activeCaseId = active.caseId;
+  const notificationsKey = `${activeCaseId ?? ""}|${factsKey}|${notificationsTick}`;
+  const notificationsLoading = activeCaseId !== null && notificationsSettled !== notificationsKey;
+  useEffect(() => {
+    if (!activeCaseId) return;
+    const controller = new AbortController();
+    runProactive({ caseId: activeCaseId, signal: controller.signal })
+      .catch(() => getNotifications({ caseId: activeCaseId, signal: controller.signal }))
+      .then(
+        (resp) => {
+          setNotifications({ caseId: activeCaseId, items: resp.notifications });
+          setNotificationsError(null);
+        },
+        (err: unknown) => {
+          if (!controller.signal.aborted) setNotificationsError(`No se pudieron cargar los avisos. ${errorMessage(err)}`);
+        },
+      )
+      .finally(() => {
+        if (!controller.signal.aborted) setNotificationsSettled(notificationsKey);
+      });
+    return () => controller.abort();
+  }, [activeCaseId, notificationsKey]);
+
+  const currentNotifications = notifications && notifications.caseId === activeCaseId ? notifications.items : [];
+  const unreadNotifications = currentNotifications.filter((n) => !n.read_at).length;
+
+  function handleMarkRead(notificationId: string) {
+    if (!activeCaseId) return;
+    markNotificationRead({ caseId: activeCaseId, notificationId }).then(
+      (resp) => setNotifications({ caseId: activeCaseId, items: resp.notifications }),
+      (err: unknown) => setNotificationsError(`No se pudo marcar como leído. ${errorMessage(err)}`),
+    );
+  }
+
   const visibleFactCount = active.facts.filter((f) => f.name !== "periodo_fiscal" && f.name !== "menciona_ingresos").length;
 
   return (
@@ -325,6 +380,8 @@ export default function App() {
           factCount={visibleFactCount}
           onOpenCase={() => setCaseOpen(true)}
           onOpenSimulator={() => setSimulatorOpen(true)}
+          onOpenNotifications={() => setNotificationsOpen(true)}
+          unreadNotifications={unreadNotifications}
           onOpenMenu={() => setMenuOpen(true)}
           theme={theme}
           onToggleTheme={toggleTheme}
@@ -431,6 +488,20 @@ export default function App() {
         saving={removingFact}
         error={caseError}
         disabled={busy}
+      />
+      <NotificationsPanel
+        open={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        notifications={currentNotifications}
+        hasCase={activeCaseId !== null}
+        loading={notificationsLoading}
+        error={notificationsError}
+        onMarkRead={handleMarkRead}
+        onRefresh={() => setNotificationsTick((n) => n + 1)}
+        onAsk={(question) => {
+          setNotificationsOpen(false);
+          void handleSubmit(question);
+        }}
       />
       {/* Keyed by conversation: figures typed for one consultation never leak into another. */}
       <SimulatorPanel

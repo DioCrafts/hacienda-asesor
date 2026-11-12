@@ -1,7 +1,7 @@
 // Top bar: menu (mobile), the conversation title, and the two global actions —
 // open the user's case file and switch theme.
 
-import { Calculator, ClipboardList, Menu, Moon, Sun } from "lucide-react";
+import { Bell, Calculator, ClipboardList, Menu, Moon, Sun } from "lucide-react";
 
 import type { Theme } from "../lib/theme";
 
@@ -10,18 +10,34 @@ interface TopBarProps {
   factCount: number;
   onOpenCase: () => void;
   onOpenSimulator: () => void;
+  onOpenNotifications: () => void;
+  unreadNotifications: number;
   onOpenMenu: () => void;
   theme: Theme;
   onToggleTheme: () => void;
 }
 
-export function TopBar({ title, factCount, onOpenCase, onOpenSimulator, onOpenMenu, theme, onToggleTheme }: TopBarProps) {
+export function TopBar({ title, factCount, onOpenCase, onOpenSimulator, onOpenNotifications, unreadNotifications, onOpenMenu, theme, onToggleTheme }: TopBarProps) {
   return (
     <header className="flex items-center gap-2 border-b border-line bg-paper px-3 py-3 sm:px-6">
       <button type="button" onClick={onOpenMenu} aria-label="Abrir el menú" className="rounded-lg p-2 text-ink-soft hover:bg-line/60 lg:hidden">
         <Menu size={20} />
       </button>
       <h1 className="min-w-0 flex-1 truncate font-serif text-[18px] font-bold text-ink sm:text-[20px]">{title}</h1>
+      <button
+        type="button"
+        onClick={onOpenNotifications}
+        aria-label={unreadNotifications > 0 ? `Avisos: ${unreadNotifications} sin leer` : "Avisos"}
+        title="Avisos de tu asesor"
+        className="relative rounded-lg border border-line bg-surface p-2 text-ink-soft transition hover:border-primary hover:text-primary-dark"
+      >
+        <Bell size={17} aria-hidden />
+        {unreadNotifications > 0 && (
+          <span className="absolute -right-1.5 -top-1.5 min-w-[18px] rounded-pill bg-risk-high-fg px-1 text-center text-[11px] font-bold leading-[18px] text-white">
+            {unreadNotifications}
+          </span>
+        )}
+      </button>
       <button
         type="button"
         onClick={onOpenSimulator}
