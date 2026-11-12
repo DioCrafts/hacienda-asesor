@@ -36,6 +36,7 @@ INCOME_FACTS = (
     "rendimiento_trabajo_bruto",
     "rendimiento_actividad_neto",
     "rendimiento_alquiler_neto",
+    "rendimiento_alquiler_vivienda_sin_reducir",
     "rendimiento_capital_mobiliario",
     "ganancias_patrimoniales",
 )

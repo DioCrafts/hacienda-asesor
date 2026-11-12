@@ -488,6 +488,22 @@ ejercicio (escala, mínimos si los tiene, deducciones y `fuente_principal`),
 tomando la de Madrid como plantilla. `cuota_hasta_inicio` es la columna de
 cuota acumulada que imprime la ley; se usa tal cual para cuadrar al céntimo.
 
+#### Alquiler: la reducción del arrendador y la deducción del inquilino
+
+- **Arrendador** — aporta `rendimiento_alquiler_vivienda_sin_reducir` (rentas menos
+  gastos) y `arrendamiento_fecha_contrato`; la calculadora elige la redacción del
+  art. 23.2 LIRPF que toca según la fecha (disposición transitoria 38.ª): 60 % para
+  contratos anteriores al 26-5-2023; 90/70/60/50 % hasta el 1-12-2026; y la escala
+  del Real Decreto-ley 29/2026 (del 100 % al 15 %, según rebaja o subida de la
+  renta, índice de referencia, zona tensionada, edad del inquilino y gran tenedor)
+  para los posteriores. Los demás datos del contrato son los campos `arrendamiento_*`.
+- **Inquilino** — con `alquiler_vivienda_habitual`, la deducción estatal del
+  art. 68.6 LIRPF (10 %, base máxima 11.630 €, hasta 33.007,20 € de base imponible),
+  desde 2026.
+
+Ambas dependen del Real Decreto-ley 29/2026, que el 12-11-2026 no constaba
+convalidado; `irpf_2026.json` guarda en `revisiones` las normas contrastadas.
+
 ### Simulador, calendario y documentos
 
 - **`POST /simulate`** — la misma calculadora, sin modelo de lenguaje: devuelve

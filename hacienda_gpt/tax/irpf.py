@@ -15,11 +15,13 @@ figures the user supplies).
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from hacienda_gpt.tax.arrendamiento import DatosArrendamiento, reduccion_arrendamiento
 from hacienda_gpt.tax.params import (
     DeduccionesMadrid,
     Escala,
@@ -65,6 +67,21 @@ class IRPFInput(BaseModel):
     otros_gastos_deducibles_trabajo: Decimal = Field(default=ZERO, ge=0)  # art. 19.2 b) to e)
     rendimiento_actividad_neto: Decimal = ZERO
     rendimiento_alquiler_neto: Decimal = ZERO  # net and already reduced
+    # Letting a dwelling: net income (rent minus deductible expenses) BEFORE the
+    # art. 23.2 reduction, which the calculator works out from the contract facts.
+    rendimiento_alquiler_vivienda_sin_reducir: Decimal = ZERO
+    arrendamiento_fecha_contrato: date | None = None
+    arrendamiento_gran_tenedor: bool = False
+    arrendamiento_primer_alquiler: bool = False
+    # Initial rent vs the last rent of the previous contract, in percent (-6 = lowered by 6 %).
+    arrendamiento_variacion_renta: Decimal | None = None
+    arrendamiento_mismo_inquilino: bool = False
+    arrendamiento_renta_bajo_indice: bool | None = None
+    arrendamiento_zona_tensionada: bool = False
+    arrendamiento_inquilino_joven: bool = False
+    arrendamiento_alquiler_social: bool = False
+    arrendamiento_vivienda_rehabilitada: bool = False
+    arrendamiento_prorroga_tacita: bool = False
     otras_rentas_base_general: Decimal = ZERO
 
     # Savings base
@@ -392,6 +409,57 @@ def _deducciones_madrid(
     return total
 
 
+def _alquiler_vivienda_reducido(inp: IRPFInput, p: IRPFParams, t: _Trace) -> Decimal:
+    """Net income from letting a dwelling after the art. 23.2 reduction."""
+    neto = inp.rendimiento_alquiler_vivienda_sin_reducir
+    if not neto:
+        return ZERO
+    t.linea("Rendimiento neto del alquiler de vivienda, antes de la reducción (dato aportado)", neto)
+    if neto < 0:
+        t.aviso("El rendimiento del alquiler es negativo: la reducción del art. 23.2 LIRPF solo se aplica al positivo.")
+        return neto
+    ra = p.reduccion_arrendamiento
+    if ra is None or inp.arrendamiento_fecha_contrato is None:
+        t.aviso(
+            "Falta la fecha del contrato de alquiler: sin ella no se sabe qué redacción del art. 23.2 LIRPF se aplica y "
+            "NO se ha aplicado ninguna reducción, de modo que el resultado puede ser peor que el real."
+        )
+        return neto
+    r = reduccion_arrendamiento(
+        DatosArrendamiento(
+            fecha_contrato=inp.arrendamiento_fecha_contrato,
+            gran_tenedor=inp.arrendamiento_gran_tenedor,
+            primer_alquiler=inp.arrendamiento_primer_alquiler,
+            variacion_renta=inp.arrendamiento_variacion_renta,
+            mismo_inquilino=inp.arrendamiento_mismo_inquilino,
+            renta_bajo_indice=inp.arrendamiento_renta_bajo_indice,
+            zona_tensionada=inp.arrendamiento_zona_tensionada,
+            inquilino_joven=inp.arrendamiento_inquilino_joven,
+            alquiler_social=inp.arrendamiento_alquiler_social,
+            vivienda_rehabilitada=inp.arrendamiento_vivienda_rehabilitada,
+            prorroga_tacita=inp.arrendamiento_prorroga_tacita,
+        ),
+        ra,
+    )
+    for aviso in r.avisos:
+        t.aviso(aviso)
+    reduccion = _round(neto * r.porcentaje)
+    if reduccion:
+        t.linea(
+            f"Reducción por arrendamiento de vivienda ({r.porcentaje * 100:.0f} %: {r.motivo})",
+            -reduccion,
+            r.referencia,
+        )
+    else:
+        t.aviso(f"No se aplica reducción por arrendamiento de vivienda: {r.motivo} ({r.regimen}).")
+    t.aviso(
+        f"Reducción por arrendamiento calculada como {r.regimen}. Solo vale para vivienda (no locales ni alquiler "
+        "turístico), para el rendimiento declarado en la autoliquidación y con un único contrato durante todo el año; "
+        "los gastos deducibles y la amortización los aportas tú ya restados."
+    )
+    return neto - reduccion
+
+
 def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResult:
     p = params or load_params(inp.ejercicio)
     t = _Trace()
@@ -402,12 +470,14 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
     bruto = inp.rendimiento_trabajo_bruto
     neto_trabajo = ZERO
     neto_trabajo_sin_reduccion = ZERO
+    alquiler_vivienda = _alquiler_vivienda_reducido(inp, p, t)
     otras_rentas = sum(
         (
             max(ZERO, value)
             for value in (
                 inp.rendimiento_actividad_neto,
                 inp.rendimiento_alquiler_neto,
+                alquiler_vivienda,
                 inp.otras_rentas_base_general,
                 inp.rendimiento_capital_mobiliario,
                 inp.ganancias_patrimoniales,
@@ -433,7 +503,11 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
 
     # ---- 2. Taxable bases -------------------------------------------------
     general = (
-        neto_trabajo + inp.rendimiento_actividad_neto + inp.rendimiento_alquiler_neto + inp.otras_rentas_base_general
+        neto_trabajo
+        + inp.rendimiento_actividad_neto
+        + inp.rendimiento_alquiler_neto
+        + alquiler_vivienda
+        + inp.otras_rentas_base_general
     )
     if inp.rendimiento_actividad_neto:
         t.linea("Rendimiento neto de actividades económicas (dato aportado)", inp.rendimiento_actividad_neto)
@@ -444,8 +518,9 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
     if inp.rendimiento_alquiler_neto:
         t.linea("Rendimiento neto reducido del alquiler (dato aportado)", inp.rendimiento_alquiler_neto)
         t.aviso(
-            "El rendimiento del alquiler se toma como cifra neta y ya reducida: la reducción por arrendamiento de "
-            "vivienda (art. 23.2 LIRPF) depende del contrato y no se calcula aquí."
+            "El rendimiento del alquiler se toma como cifra neta y ya reducida. Para que la calculadora aplique la "
+            "reducción por arrendamiento de vivienda (art. 23.2 LIRPF), aporta el rendimiento antes de la reducción "
+            "y la fecha del contrato."
         )
     if inp.otras_rentas_base_general:
         t.linea("Otras rentas de la base general (dato aportado)", inp.otras_rentas_base_general)

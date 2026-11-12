@@ -441,7 +441,7 @@
       "norma": "Real Decreto-ley 29/2026, de 6 de octubre",
       "boe_id": "BOE-A-2026-20823",
       "revisado_el": "2026-11-12",
-      "resultado": "Añadida la deducción estatal por alquiler de vivienda habitual (art. 68.6). El resto de parámetros de este fichero no cambia. No modelado por la calculadora: nueva reducción por arrendamiento de vivienda (art. 23.2, contratos desde el 1-12-2026; DT 38.ª), prórroga a 2026 de la imputación de rentas inmobiliarias al 1,1 % (DA 55.ª), Planes de Ahorro a Largo Plazo y Cuenta de Ahorro e Inversión Financia Europa (art. 7.ñ, DA 26.ª, art. 95 ter, DA 66.ª), exención por transmisión de vivienda a entes públicos (DA 65.ª), y cambios con efectos desde 2027 (arts. 24 y 85.1)."
+      "resultado": "Añadidas la deducción estatal por alquiler de vivienda habitual (art. 68.6) y la reducción por arrendamiento de vivienda (art. 23.2 y DT 38.ª). El resto de parámetros de este fichero no cambia. No modelado por la calculadora: prórroga a 2026 de la imputación de rentas inmobiliarias al 1,1 % (DA 55.ª), Planes de Ahorro a Largo Plazo y Cuenta de Ahorro e Inversión Financia Europa (art. 7.ñ, DA 26.ª, art. 95 ter, DA 66.ª), exención por transmisión de vivienda a entes públicos (DA 65.ª), y cambios con efectos desde 2027 (arts. 24 y 85.1)."
     },
     {
       "norma": "Real Decreto-ley 22/2026, de 1 de septiembre (Ceuta)",
@@ -461,5 +461,71 @@
       "revisado_el": "2026-11-12",
       "resultado": "Sin cambios en los parámetros. En vigor desde el 12-11-2026; sin acuerdo de convalidación publicado en la fecha de revisión. Con efectos desde el 1-1-2025 añade los apartados 5 y 6 a la DA 5.ª LIRPF: exención de las ayudas públicas por daños personales causados por catástrofes naturales en zonas declaradas gravemente afectadas por una emergencia de protección civil, y de las ayudas autonómicas y locales análogas a una estatal exenta. No modelado: afecta también al ejercicio 2025."
     }
-  ]
+  ],
+  "reduccion_arrendamiento": {
+    "fecha_ley_vivienda": "2023-05-26",
+    "regimen_2021": {
+      "porcentaje": "0.60",
+      "fuente": {
+        "referencia": "art. 23.2 LIRPF en su redacción a 31-12-2021 (Ley 11/2021, BOE-A-2021-11473), aplicable por la disposición transitoria 38.ª",
+        "en_vigor_desde": "2021-07-11",
+        "verificado": true
+      }
+    },
+    "regimen_2023": {
+      "rebaja_zona_tensionada": "0.90",
+      "joven_o_social": "0.70",
+      "rehabilitada": "0.60",
+      "resto": "0.50",
+      "rebaja_minima": "5",
+      "fuente": {
+        "referencia": "art. 23.2 LIRPF en su redacción a 31-12-2025 (disposición final 2.ª de la Ley 12/2023, BOE-A-2023-12203), aplicable por la disposición transitoria 38.ª.2",
+        "en_vigor_desde": "2024-01-01",
+        "verificado": true,
+        "nota": "La disposición final 2.ª de la Ley 12/2023 entró en vigor el 1-1-2024 y se refiere a contratos celebrados «a partir de la entrada en vigor de esta ley»; la calculadora toma como frontera el 26-5-2023, fecha de entrada en vigor general de la ley, que es la que usa la disposición transitoria 38.ª."
+      }
+    },
+    "regimen_2026": {
+      "contratos_posteriores_a": "2026-12-01",
+      "rebaja_minima": "5",
+      "maxima": "1.00",
+      "zona_tensionada_joven": "0.95",
+      "zona_tensionada": "0.90",
+      "joven": "0.85",
+      "rebaja_resto": "0.70",
+      "renta_no_superior": "0.50",
+      "incrementos": [
+        [
+          "5",
+          "0.40"
+        ],
+        [
+          "10",
+          "0.30"
+        ],
+        [
+          "15",
+          "0.25"
+        ],
+        [
+          "20",
+          "0.20"
+        ],
+        [
+          null,
+          "0.15"
+        ]
+      ],
+      "primer_alquiler_sobre_indice": "0.50",
+      "social": "0.70",
+      "rehabilitada": "0.60",
+      "prorroga_tacita": "0.80",
+      "fuente": {
+        "referencia": "art. 23.2 LIRPF en la redacción del art. 6.2.2 del Real Decreto-ley 29/2026 (BOE-A-2026-20823) y disposición transitoria 38.ª",
+        "en_vigor_desde": "2026-10-08",
+        "verificado": true,
+        "nota": "Leído en el BOE el 12-11-2026; el Real Decreto-ley no constaba convalidado ni derogado en esa fecha."
+      }
+    }
+  }
 }

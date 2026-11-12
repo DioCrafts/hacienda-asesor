@@ -359,7 +359,7 @@ CRITERIOS: dict[str, Callable[[dict[str, Any]], bool]] = {
     or f.get("regimen_cotizacion") == "RETA"
     or _hay(f, "rendimiento_actividad_neto"),
     "pensionistas": lambda f: _categoria(f) == "pensionista",
-    "arrendadores": lambda f: _hay(f, "rendimiento_alquiler_neto"),
+    "arrendadores": lambda f: _hay(f, "rendimiento_alquiler_neto", "rendimiento_alquiler_vivienda_sin_reducir"),
     "inquilinos": lambda f: _hay(f, "alquiler_vivienda_habitual"),
     "inversores": lambda f: _hay(f, "rendimiento_capital_mobiliario", "ganancias_patrimoniales"),
     "familias_con_hijos": lambda f: _hay(f, "num_descendientes", "num_descendientes_menores_3"),

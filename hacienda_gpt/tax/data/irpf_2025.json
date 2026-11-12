@@ -420,5 +420,29 @@
       "revisado_el": "2026-11-12",
       "resultado": "Sin cambios en los parámetros. Con efectos desde el 1-1-2025 añade los apartados 5 y 6 a la DA 5.ª LIRPF (exención de ayudas públicas por daños personales de catástrofes naturales y de ayudas autonómicas y locales análogas). No modelado; sin acuerdo de convalidación publicado en la fecha de revisión."
     }
-  ]
+  ],
+  "reduccion_arrendamiento": {
+    "fecha_ley_vivienda": "2023-05-26",
+    "regimen_2021": {
+      "porcentaje": "0.60",
+      "fuente": {
+        "referencia": "art. 23.2 LIRPF en su redacción a 31-12-2021 (Ley 11/2021, BOE-A-2021-11473), aplicable por la disposición transitoria 38.ª",
+        "en_vigor_desde": "2021-07-11",
+        "verificado": true
+      }
+    },
+    "regimen_2023": {
+      "rebaja_zona_tensionada": "0.90",
+      "joven_o_social": "0.70",
+      "rehabilitada": "0.60",
+      "resto": "0.50",
+      "rebaja_minima": "5",
+      "fuente": {
+        "referencia": "art. 23.2 LIRPF en la redacción de la disposición final 2.ª de la Ley 12/2023 (BOE-A-2023-12203)",
+        "en_vigor_desde": "2024-01-01",
+        "verificado": true,
+        "nota": "La disposición final 2.ª de la Ley 12/2023 entró en vigor el 1-1-2024 y se refiere a contratos celebrados «a partir de la entrada en vigor de esta ley»; la calculadora toma como frontera el 26-5-2023, fecha de entrada en vigor general de la ley, que es la que usa la disposición transitoria 38.ª."
+      }
+    }
+  }
 }

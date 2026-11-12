@@ -9,6 +9,7 @@ result that used it.
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 from functools import lru_cache
 import json
@@ -157,6 +158,48 @@ class AlquilerViviendaHabitual(_Model):
     fuente: Fuente
 
 
+class _Arrendamiento2021(_Model):
+    porcentaje: Decimal
+    fuente: Fuente
+
+
+class _Arrendamiento2023(_Model):
+    rebaja_zona_tensionada: Decimal
+    joven_o_social: Decimal
+    rehabilitada: Decimal
+    resto: Decimal
+    rebaja_minima: Decimal  # percent the rent must drop by, exclusive
+    fuente: Fuente
+
+
+class _Arrendamiento2026(_Model):
+    # Applies to contracts signed after this date (transitional provision 38).
+    contratos_posteriores_a: date
+    rebaja_minima: Decimal
+    maxima: Decimal
+    zona_tensionada_joven: Decimal
+    zona_tensionada: Decimal
+    joven: Decimal
+    rebaja_resto: Decimal
+    renta_no_superior: Decimal
+    # (rent increase up to, in percent; reduction). None = any larger increase.
+    incrementos: list[tuple[Decimal | None, Decimal]]
+    primer_alquiler_sobre_indice: Decimal
+    social: Decimal
+    rehabilitada: Decimal
+    prorroga_tacita: Decimal
+    fuente: Fuente
+
+
+class ReduccionArrendamiento(_Model):
+    """Reduction of net income from letting a dwelling (art. 23.2 LIRPF), by contract date."""
+
+    fecha_ley_vivienda: date
+    regimen_2021: _Arrendamiento2021
+    regimen_2023: _Arrendamiento2023
+    regimen_2026: _Arrendamiento2026 | None = None
+
+
 class ObligacionDeclarar(_Model):
     limite_trabajo_un_pagador: Decimal
     limite_trabajo_varios_pagadores: Decimal
@@ -295,6 +338,7 @@ class IRPFParams(_Model):
     # None = the deduction does not exist in that year.
     alquiler_vivienda_habitual: AlquilerViviendaHabitual | None = None
     obligacion_declarar: ObligacionDeclarar
+    reduccion_arrendamiento: ReduccionArrendamiento | None = None
 
     def comunidad(self, nombre: str | None) -> Comunidad | None:
         """Look a community up by key or any of its aliases."""

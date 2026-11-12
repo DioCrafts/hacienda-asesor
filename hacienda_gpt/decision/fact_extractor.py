@@ -219,7 +219,19 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     cotizaciones_seguridad_social       → cotizaciones a la Seguridad Social pagadas por el trabajador
     retenciones                         → IRPF retenido en el año
     rendimiento_actividad_neto          → beneficio neto anual de la actividad económica
-    rendimiento_alquiler_neto           → rendimiento neto de inmuebles alquilados
+    rendimiento_alquiler_neto           → rendimiento neto de inmuebles alquilados, YA con la reducción aplicada
+    rendimiento_alquiler_vivienda_sin_reducir → alquiler de vivienda cobrado menos gastos, ANTES de la reducción
+    arrendamiento_fecha_contrato        → fecha de firma del contrato de alquiler (AAAA-MM-DD)
+    arrendamiento_gran_tenedor          → el arrendador es gran tenedor
+    arrendamiento_primer_alquiler       → es la primera vez que alquila esa vivienda
+    arrendamiento_variacion_renta       → % de variación de la renta respecto del contrato anterior (-6 = la bajó un 6 %)
+    arrendamiento_mismo_inquilino       → nuevo contrato con el mismo inquilino al acabar el plazo
+    arrendamiento_renta_bajo_indice     → la renta queda por debajo del índice de precios de referencia
+    arrendamiento_zona_tensionada       → la vivienda está en zona de mercado residencial tensionado
+    arrendamiento_inquilino_joven       → el inquilino tiene entre 18 y 35 años
+    arrendamiento_alquiler_social       → alquilada a una Administración o entidad sin fines lucrativos para alquiler social, o con renta limitada
+    arrendamiento_vivienda_rehabilitada → rehabilitada en los dos años anteriores al contrato
+    arrendamiento_prorroga_tacita       → el contrato está en prórroga tácita
     rendimiento_capital_mobiliario      → intereses y dividendos
     ganancias_patrimoniales             → ganancias (o pérdidas, en negativo) por ventas de acciones, fondos, inmuebles…
     aportacion_plan_pensiones           → aportado por él a planes de pensiones en el año
