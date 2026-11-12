@@ -233,6 +233,8 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     arrendamiento_vivienda_rehabilitada → rehabilitada en los dos años anteriores al contrato
     arrendamiento_prorroga_tacita       → el contrato está en prórroga tácita
     rendimiento_capital_mobiliario      → intereses y dividendos
+    rendimientos_negativos_pendientes   → rendimientos del ahorro negativos de años anteriores aún sin compensar
+    perdidas_patrimoniales_pendientes   → pérdidas patrimoniales de años anteriores aún sin compensar
     ganancias_patrimoniales             → ganancias (o pérdidas, en negativo) por ventas de acciones, fondos, inmuebles…
     aportacion_plan_pensiones           → aportado por él a planes de pensiones en el año
     contribucion_empresa_plan_pensiones → aportado por su empresa

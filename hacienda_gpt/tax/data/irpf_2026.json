@@ -4616,5 +4616,14 @@
         "condicionada_a": "BOE-A-2026-20823"
       }
     }
+  },
+  "compensacion_ahorro": {
+    "limite_cruzado": "0.25",
+    "fuente": {
+      "referencia": "art. 49.1 LIRPF",
+      "en_vigor_desde": "2015-01-01",
+      "verificado": true,
+      "nota": "El saldo negativo no compensado puede compensarse en los cuatro años siguientes (art. 49.1 y 2)."
+    }
   }
 }

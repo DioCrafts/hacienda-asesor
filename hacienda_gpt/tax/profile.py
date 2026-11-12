@@ -45,6 +45,8 @@ PROFILE_FACT_TYPES: dict[str, str] = {
     "arrendamiento_prorroga_tacita": "boolean",
     "rendimiento_capital_mobiliario": "number",
     "ganancias_patrimoniales": "number",
+    "rendimientos_negativos_pendientes": "number",
+    "perdidas_patrimoniales_pendientes": "number",
     "aportacion_plan_pensiones": "number",
     "contribucion_empresa_plan_pensiones": "number",
     "donativos": "number",

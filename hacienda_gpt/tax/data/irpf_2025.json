@@ -4311,5 +4311,14 @@
         "nota": "La disposición final 2.ª de la Ley 12/2023 entró en vigor el 1-1-2024 y se refiere a contratos celebrados «a partir de la entrada en vigor de esta ley»; la calculadora toma como frontera el 26-5-2023, fecha de entrada en vigor general de la ley, que es la que usa la disposición transitoria 38.ª."
       }
     }
+  },
+  "compensacion_ahorro": {
+    "limite_cruzado": "0.25",
+    "fuente": {
+      "referencia": "art. 49.1 LIRPF",
+      "en_vigor_desde": "2015-01-01",
+      "verificado": true,
+      "nota": "El saldo negativo no compensado puede compensarse en los cuatro años siguientes (art. 49.1 y 2)."
+    }
   }
 }

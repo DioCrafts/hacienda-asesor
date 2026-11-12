@@ -23,6 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from hacienda_gpt.tax import autonomicas
 from hacienda_gpt.tax.arrendamiento import DatosArrendamiento, reduccion_arrendamiento
+from hacienda_gpt.tax.compensacion import compensar_ahorro
 from hacienda_gpt.tax.params import (
     DeduccionesMadrid,
     Escala,
@@ -89,6 +90,9 @@ class IRPFInput(BaseModel):
     # Savings base
     rendimiento_capital_mobiliario: Decimal = ZERO
     ganancias_patrimoniales: Decimal = ZERO
+    # Negative savings balances brought forward from the four previous years (positive figures).
+    rendimientos_negativos_pendientes: Decimal = Field(default=ZERO, ge=0)
+    perdidas_patrimoniales_pendientes: Decimal = Field(default=ZERO, ge=0)
 
     # Reductions and deductions
     aportacion_plan_pensiones: Decimal = Field(default=ZERO, ge=0)
@@ -161,6 +165,9 @@ class IRPFResult(BaseModel):
     # Positive: to pay. Negative: refund.
     resultado: Decimal
     tipo_medio_efectivo: Decimal  # cuota líquida / total base liquidable, in %
+    # Negative savings balances left for the following years.
+    rendimientos_negativos_a_compensar: Decimal = ZERO
+    perdidas_patrimoniales_a_compensar: Decimal = ZERO
     lineas: list[Linea]
     avisos: list[str]
     parametros_no_verificados: list[str]
@@ -559,18 +566,44 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
     if general < 0:
         t.aviso("La base imponible general sale negativa; se toma como cero y no se calcula su compensación futura.")
         general = ZERO
-    ahorro = inp.rendimiento_capital_mobiliario + inp.ganancias_patrimoniales
-    if ahorro < 0:
-        t.aviso(
-            "La base del ahorro sale negativa; se toma como cero. La compensación de pérdidas entre rendimientos y "
-            "ganancias y con ejercicios futuros (art. 49 LIRPF) no se calcula."
+    ca = p.compensacion_ahorro
+    pendiente_rendimientos = pendiente_perdidas = ZERO
+    if ca is None:
+        ahorro = max(ZERO, inp.rendimiento_capital_mobiliario + inp.ganancias_patrimoniales)
+        t.aviso("No se ha calculado la compensación de saldos negativos del ahorro (art. 49 LIRPF).")
+    else:
+        comp = compensar_ahorro(
+            rendimientos=inp.rendimiento_capital_mobiliario,
+            ganancias=inp.ganancias_patrimoniales,
+            rendimientos_negativos_anteriores=inp.rendimientos_negativos_pendientes,
+            perdidas_anteriores=inp.perdidas_patrimoniales_pendientes,
+            limite_cruzado=ca.limite_cruzado,
         )
-        ahorro = ZERO
-    elif inp.rendimiento_capital_mobiliario < 0 or inp.ganancias_patrimoniales < 0:
-        t.aviso(
-            "Hay un saldo negativo en el ahorro que se ha compensado íntegramente con el positivo; la ley limita esa "
-            "compensación entre rendimientos y ganancias al 25 % (art. 49 LIRPF), así que el resultado puede diferir."
-        )
+        ahorro = comp.base_ahorro
+        pendiente_rendimientos = comp.rendimientos_negativos_pendientes
+        pendiente_perdidas = comp.perdidas_pendientes
+        if comp.compensado_del_ejercicio:
+            t.linea(
+                f"Compensación entre rendimientos y ganancias del ahorro (límite del {ca.limite_cruzado * 100:.0f} %)",
+                -comp.compensado_del_ejercicio,
+                ca.fuente,
+            )
+        if comp.compensado_de_anteriores:
+            t.linea(
+                "Compensación de saldos negativos de ejercicios anteriores", -comp.compensado_de_anteriores, ca.fuente
+            )
+        if pendiente_rendimientos or pendiente_perdidas:
+            t.aviso(
+                "Quedan saldos negativos del ahorro sin compensar: "
+                f"{pendiente_rendimientos:.2f} € de rendimientos y {pendiente_perdidas:.2f} € de pérdidas patrimoniales. "
+                "Podrás compensarlos en los cuatro ejercicios siguientes al que se generaron (art. 49 LIRPF); la "
+                "calculadora no sabe de qué año es cada uno, así que comprueba que no hayan caducado."
+            )
+        if inp.rendimientos_negativos_pendientes or inp.perdidas_patrimoniales_pendientes:
+            t.aviso(
+                "Los saldos negativos de ejercicios anteriores se toman tal como los indicas y se aplican después de "
+                "los del propio ejercicio, dentro del mismo límite conjunto; solo valen los de los cuatro años anteriores."
+            )
     t.linea("Base imponible general", general)
     t.linea("Base imponible del ahorro", ahorro)
     base_imponible_general, base_imponible_ahorro = general, ahorro
@@ -872,6 +905,8 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
         base_imponible_ahorro=_round(base_imponible_ahorro),
         base_liquidable_general=_round(general),
         base_liquidable_ahorro=_round(ahorro),
+        rendimientos_negativos_a_compensar=_round(pendiente_rendimientos),
+        perdidas_patrimoniales_a_compensar=_round(pendiente_perdidas),
         minimo_personal_familiar=_round(minimo),
         minimo_autonomico=_round(minimo_autonomico),
         comunidad_aplicada=comunidad.nombre if comunidad is not None else None,

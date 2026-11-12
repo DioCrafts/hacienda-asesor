@@ -200,6 +200,8 @@ const FACT_LABEL: Record<string, string> = {
   arrendamiento_prorroga_tacita: "Contrato en prórroga tácita",
   rendimiento_capital_mobiliario: "Intereses y dividendos",
   ganancias_patrimoniales: "Ganancias patrimoniales",
+  rendimientos_negativos_pendientes: "Rendimientos negativos de años anteriores",
+  perdidas_patrimoniales_pendientes: "Pérdidas patrimoniales de años anteriores",
   aportacion_plan_pensiones: "Aportación a plan de pensiones",
   contribucion_empresa_plan_pensiones: "Aportación de la empresa al plan",
   donativos: "Donativos",

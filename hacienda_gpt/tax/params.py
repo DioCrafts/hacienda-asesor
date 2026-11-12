@@ -207,6 +207,12 @@ class ReduccionArrendamiento(_Model):
     regimen_2026: _Arrendamiento2026 | None = None
 
 
+class CompensacionAhorroParams(_Model):
+    # Share of a positive savings balance that negatives of the other kind may absorb (art. 49.1).
+    limite_cruzado: Decimal
+    fuente: Fuente
+
+
 class ObligacionDeclarar(_Model):
     limite_trabajo_un_pagador: Decimal
     limite_trabajo_varios_pagadores: Decimal
@@ -531,6 +537,7 @@ class IRPFParams(_Model):
     alquiler_vivienda_habitual: AlquilerViviendaHabitual | None = None
     obligacion_declarar: ObligacionDeclarar
     reduccion_arrendamiento: ReduccionArrendamiento | None = None
+    compensacion_ahorro: CompensacionAhorroParams | None = None
 
     def comunidad(self, nombre: str | None) -> Comunidad | None:
         """Look a community up by key or any of its aliases."""
