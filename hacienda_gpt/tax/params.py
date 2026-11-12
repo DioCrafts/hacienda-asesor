@@ -13,6 +13,7 @@ from decimal import Decimal
 from functools import lru_cache
 import json
 from pathlib import Path
+import unicodedata
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -42,6 +43,10 @@ class FuentePrincipal(_Model):
 class Tramo(_Model):
     hasta: Decimal | None  # None = "en adelante"
     tipo: Decimal
+    # The cumulative tax the law prints for the start of this bracket ("cuota
+    # íntegra" column). When given it is used as printed — published scales
+    # round it to the cent, and recomputing it from the rates can differ by one.
+    cuota_hasta_inicio: Decimal | None = None
 
 
 class Escala(_Model):
@@ -55,6 +60,8 @@ class Escala(_Model):
         for tramo in self.tramos:
             if base <= previous:
                 break
+            if tramo.cuota_hasta_inicio is not None:
+                total = tramo.cuota_hasta_inicio
             upper = base if tramo.hasta is None else min(base, tramo.hasta)
             total += (upper - previous) * tramo.tipo
             if tramo.hasta is None:
@@ -145,6 +152,44 @@ class ObligacionDeclarar(_Model):
     fuente: Fuente
 
 
+class DeduccionAutonomica(_Model):
+    """A regional deduction, summarised from the article that creates it.
+
+    Listed in the benefit catalogue for the user to check; NOT applied by the
+    calculator (their requirements go beyond what the profile captures).
+    """
+
+    articulo: str
+    titulo: str
+    resumen: str
+    limites: str
+    # Income ceilings (general + savings taxable base), when the law sets a plain one.
+    limite_base_individual: Decimal | None = None
+    limite_base_conjunta: Decimal | None = None
+    en_vigor_desde: str
+
+
+class Comunidad(_Model):
+    """What an autonomous community legislates for its share of the IRPF."""
+
+    nombre: str
+    alias: list[str] = Field(default_factory=list)
+    fuente_principal: FuentePrincipal
+    escala_general: Escala
+    # Regional personal/family minimums (art. 56.3 LIRPF); None = the state ones apply.
+    minimos: Minimos | None = None
+    deducciones: list[DeduccionAutonomica] = Field(default_factory=list)
+    # Other deductions the community has, by article and title only.
+    otras_deducciones: list[str] = Field(default_factory=list)
+
+
+def normalizar_comunidad(nombre: str) -> str:
+    """'Comunidad de Madrid ' → 'comunidad de madrid' (case/accents/spacing-insensitive)."""
+    decomposed = unicodedata.normalize("NFKD", nombre)
+    plain = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    return " ".join(plain.lower().split())
+
+
 class IRPFParams(_Model):
     ejercicio: int
     fuente_principal: FuentePrincipal
@@ -156,14 +201,24 @@ class IRPFParams(_Model):
     escala_general_estatal: Escala
     escala_ahorro_estatal: Escala
     escala_ahorro_autonomica: Escala
-    # Keyed by autonomous community code. Each community legislates its own
-    # general scale; one that is not loaded here is approximated (and flagged).
-    escalas_generales_autonomicas: dict[str, Escala] = Field(default_factory=dict)
+    # Each community legislates its own general scale, minimums and deductions;
+    # one that is not loaded here is approximated by the calculator (and flagged).
+    comunidades: dict[str, Comunidad] = Field(default_factory=dict)
     deduccion_rendimientos_trabajo: DeduccionTrabajo | None = None
     donativos: Donativos
     maternidad: Maternidad
     vivienda_habitual_transitoria: ViviendaTransitoria
     obligacion_declarar: ObligacionDeclarar
+
+    def comunidad(self, nombre: str | None) -> Comunidad | None:
+        """Look a community up by key or any of its aliases."""
+        if not nombre:
+            return None
+        wanted = normalizar_comunidad(nombre)
+        for key, comunidad in self.comunidades.items():
+            if wanted == key or wanted in {normalizar_comunidad(alias) for alias in comunidad.alias}:
+                return comunidad
+        return None
 
 
 class EjercicioNoDisponibleError(ValueError):

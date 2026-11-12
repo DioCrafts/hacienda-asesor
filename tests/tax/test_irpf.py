@@ -16,12 +16,17 @@ def _calc(**kwargs):
     return calcular_irpf(IRPFInput(ejercicio=2026, **kwargs))
 
 
+def _cents(value: D) -> D:
+    return value.quantize(D("0.01"))
+
+
 def _linea(result, prefix: str) -> D:
     return next(line.importe for line in result.lineas if line.concepto.startswith(prefix))
 
 
 def test_params_load_with_sources_and_scale_matches_the_laws_cumulative_column() -> None:
     assert ejercicios_disponibles() == [2025, 2026]
+    assert list(load_params(2026).comunidades) == ["madrid"]
     params = load_params(2026)
     assert params.fuente_principal.boe_id == "BOE-A-2006-20764"
     escala = params.escala_general_estatal
@@ -172,18 +177,54 @@ def test_deductions_donations_housing_maternity_and_withholdings() -> None:
     assert refund.cuota_liquida == 0 and refund.resultado == D("-1200.00")
 
 
-def test_regional_scale_is_used_when_loaded() -> None:
-    params = load_params(2026)
-    flat = params.escala_general_estatal.model_copy(
-        update={"tramos": [params.escala_general_estatal.tramos[-1].model_copy(update={"tipo": D("0.10")})]}
+def test_madrid_scale_matches_the_laws_cumulative_column() -> None:
+    madrid = load_params(2026).comunidad("Comunidad de Madrid")
+    assert madrid is not None and madrid.fuente_principal.boe_id == "BOCM-m-2010-90068"
+    escala = madrid.escala_general
+    # Art. 1 DLeg. 1/2010 prints the cumulative tax at each bracket start.
+    assert [_cents(escala.cuota(D(x))) for x in ("13362.22", "19004.63", "35425.68", "57320.40")] == [
+        D("1135.79"),
+        D("1739.53"),
+        D("3841.42"),
+        D("7651.10"),
+    ]
+    assert load_params(2026).comunidad(" MADRID ") is madrid
+    assert load_params(2026).comunidad("Cataluña") is None and load_params(2026).comunidad(None) is None
+
+
+def test_madrid_resident_uses_regional_scale_and_minimums() -> None:
+    # General base 26.095 (see test_mid_salary_single_taxpayer).
+    # Regional: 1.739,53 + (26.095 − 19.004,63) × 12,8 % = 2.647,10; minimum 5.956,65 × 8,5 % = 506,32.
+    r = _calc(
+        comunidad_autonoma="Madrid",
+        rendimiento_trabajo_bruto=D(30000),
+        cotizaciones_seguridad_social=D(1905),
+        retenciones=D(4500),
     )
-    custom = params.model_copy(update={"escalas_generales_autonomicas": {"testlandia": flat}})
-    r = calcular_irpf(
-        IRPFInput(ejercicio=2026, comunidad_autonoma="Testlandia", rendimiento_trabajo_bruto=D(32000)), custom
-    )
-    assert r.cuota_integra_autonomica == D("2445.00")  # (30.000 − 5.550) × 10 %
+    assert r.comunidad_aplicada == "Comunidad de Madrid"
+    assert r.cuota_integra_estatal == D("2469.75")  # unchanged
+    assert r.minimo_personal_familiar == D("5550.00") and r.minimo_autonomico == D("5956.65")
+    assert r.cuota_integra_autonomica == D("2140.78")
+    assert r.cuota_liquida == D("4610.53") and r.resultado == D("110.53")
     assert not any("aproximado" in aviso for aviso in r.avisos)
-    assert any("no los mínimos ni las deducciones propios" in aviso for aviso in r.avisos)
+    assert any("deducciones autonómicas NO están incluidas" in aviso for aviso in r.avisos)
+    assert "BOCM-m-2010-90068" in r.fuente and r.parametros_no_verificados == []
+
+    # Regional family minimums: 5.956,65 + 2.575,85 + 2.897,83 + 3.005,16 (one child under three).
+    family = _calc(
+        comunidad_autonoma="madrid",
+        rendimiento_trabajo_bruto=D(60000),
+        num_descendientes=2,
+        num_descendientes_menores_3=1,
+    )
+    assert family.minimo_autonomico == D("14435.49")
+    assert family.minimo_personal_familiar == D("13450.00")  # state: 5.550 + 2.400 + 2.700 + 2.800
+
+
+def test_unloaded_community_is_still_approximated_and_flagged() -> None:
+    r = _calc(comunidad_autonoma="Cataluña", rendimiento_trabajo_bruto=D(30000), cotizaciones_seguridad_social=D(1905))
+    assert r.comunidad_aplicada is None and r.cuota_integra_autonomica == r.cuota_integra_estatal
+    assert any("«Cataluña» no está cargada" in aviso for aviso in r.avisos)
 
 
 def test_2025_omits_the_unverifiable_work_deduction_and_says_so() -> None:

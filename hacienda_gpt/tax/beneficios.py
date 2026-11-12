@@ -325,20 +325,58 @@ def evaluar_beneficios(inp: IRPFInput, *, conocidos: set[str], params: IRPFParam
             faltan=["pagos_vivienda_habitual_pre2013"],
         )
 
-    # --- Regional deductions: look them up, never recite them ---------------
+    # --- Regional deductions ------------------------------------------------
+    # Only what was read from the community's own law is stated; everything
+    # else is a pointer to look it up, never an amount recited from memory.
     ccaa = inp.comunidad_autonoma
-    add(
-        "deducciones_autonomicas",
-        "Deducciones autonómicas",
-        "por_confirmar",
-        (
-            f"{ccaa} tiene deducciones propias (alquiler, nacimiento, guardería, donativos, etc.) que no están en este "
-            f"catálogo. Búscalas en el corpus con buscar_fuentes (ámbito 'autonomico:{ccaa}') antes de mencionarlas."
-            if ccaa
-            else "Cada comunidad autónoma tiene deducciones propias. Hace falta saber en cuál resides para buscarlas."
-        ),
-        ["Varían por comunidad y por ejercicio; suelen tener límites de renta."],
-        "Normativa autonómica del IRPF (Ley 22/2009, art. 46)",
-        faltan=faltan("comunidad_autonoma"),
-    )
+    comunidad = p.comunidad(ccaa)
+    if comunidad is None:
+        add(
+            "deducciones_autonomicas",
+            "Deducciones autonómicas",
+            "por_confirmar",
+            (
+                f"{ccaa} tiene deducciones propias (alquiler, nacimiento, guardería, donativos, etc.) que no están en "
+                f"este catálogo. Búscalas en el corpus con buscar_fuentes (ámbito 'autonomico:{ccaa}') antes de "
+                "mencionarlas."
+                if ccaa
+                else "Cada comunidad autónoma tiene deducciones propias. Hace falta saber en cuál resides para buscarlas."
+            ),
+            ["Varían por comunidad y por ejercicio; suelen tener límites de renta."],
+            "Normativa autonómica del IRPF (Ley 22/2009, art. 46)",
+            faltan=faltan("comunidad_autonoma"),
+        )
+        return out
+
+    base_imponible = base.base_imponible_general + base.base_imponible_ahorro
+    norma = f"DLeg. 1/2010 de la {comunidad.nombre}" if "Madrid" in comunidad.nombre else comunidad.nombre
+    for deduccion in comunidad.deducciones:
+        limite = deduccion.limite_base_individual if inp.tributacion == "individual" else deduccion.limite_base_conjunta
+        supera = limite is not None and base_imponible > limite
+        add(
+            f"autonomica_{deduccion.articulo.replace('art. ', 'art_').replace(' ', '_')}",
+            f"{comunidad.nombre}: {deduccion.titulo}",
+            "no_aplica" if supera else "por_confirmar",
+            (
+                f"No te corresponde con los datos actuales: tu base imponible ({base_imponible:.2f} €) supera el "
+                f"límite de {limite:.2f} €. "
+                if supera
+                else ""
+            )
+            + deduccion.resumen
+            + " No está incluida en la simulación.",
+            [deduccion.limites, "Requiere justificación documental (art. 18.4)."],
+            f"{deduccion.articulo} {norma} ({comunidad.fuente_principal.boe_id})",
+        )
+    if comunidad.otras_deducciones:
+        add(
+            "autonomicas_otras",
+            f"{comunidad.nombre}: otras deducciones",
+            "por_confirmar",
+            "La comunidad tiene además estas deducciones, de las que aquí solo consta el título: "
+            + "; ".join(comunidad.otras_deducciones)
+            + ". Consulta sus requisitos e importes con buscar_fuentes antes de mencionarlas.",
+            ["Cada una tiene sus propios requisitos y límites de renta (art. 18)."],
+            f"arts. 3 a 18 {norma} ({comunidad.fuente_principal.boe_id})",
+        )
     return out

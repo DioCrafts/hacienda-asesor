@@ -102,6 +102,9 @@ def test_simulator_compares_scenarios_and_lists_levers() -> None:
     assert sim.escenarios[2].ahorro_frente_a_base < 0  # earning more costs more tax
     assert sim.datos_no_aportados == ["comunidad_autonoma"]
     assert {b.id for b in sim.beneficios} >= {"plan_pensiones", "donativos", "deducciones_autonomicas"}
+    madrid = simular(ejercicio=2026, datos={"rendimiento_trabajo_bruto": 50000, "comunidad_autonoma": "Madrid"})
+    assert madrid.escenarios[0].resultado.comunidad_aplicada == "Comunidad de Madrid"
+    assert madrid.datos_no_aportados == ["cotizaciones_seguridad_social", "retenciones"]
 
     # An interactive simulator judges the levers on the scenario being edited:
     # once the plan is maxed out there, it is no longer offered.

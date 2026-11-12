@@ -461,9 +461,15 @@ Los parámetros de 2026 se leyeron del texto consolidado de la Ley 35/2006
 (BOE-A-2006-20764, consolidado a 11-11-2026) y de la Ley 49/2002. **Límites
 actuales**, que la calculadora declara en los `avisos` de cada resultado:
 
-- **Parte autonómica aproximada.** No hay cargada ninguna escala autonómica
-  (`escalas_generales_autonomicas` está vacío): se usa una igual a la estatal.
-  Tampoco se modelan mínimos ni deducciones autonómicas.
+- **Parte autonómica: solo Madrid está cargada.** Para residentes en la
+  Comunidad de Madrid se aplican su escala (art. 1) y sus mínimos personales y
+  familiares (arts. 2 a 2 quater) del Decreto Legislativo 1/2010
+  (BOCM-m-2010-90068, consolidado a 10-07-2026). Para el resto de comunidades
+  se usa una escala igual a la estatal como aproximación, y se avisa.
+- **Deducciones autonómicas no aplicadas.** De Madrid, el catálogo describe
+  cuatro (nacimiento, alquiler de menores de 40, gastos educativos y cuidado
+  de menores o dependientes) con su límite de renta, y lista el resto por
+  título; ninguna se resta en el cálculo.
 - **2025** usa los mismos parámetros salvo la deducción de la DA 61.ª, cuyas
   cuantías de ese año no se pudieron contrastar y por eso no se aplica.
 - Rendimientos de actividades económicas y de alquileres entran como cifra
@@ -471,8 +477,10 @@ actuales**, que la calculadora declara en los `avisos` de cada resultado:
 - El porcentaje y la base máxima de la deducción por vivienda proceden de la
   redacción de 2012 y están marcados como no verificados.
 
-Para añadir una escala autonómica, incluye sus tramos bajo
-`escalas_generales_autonomicas.<comunidad en minúsculas>` con su `fuente`.
+Para añadir otra comunidad, crea su entrada bajo `comunidades` en el JSON del
+ejercicio (escala, mínimos si los tiene, deducciones y `fuente_principal`),
+tomando la de Madrid como plantilla. `cuota_hasta_inicio` es la columna de
+cuota acumulada que imprime la ley; se usa tal cual para cuadrar al céntimo.
 
 ### Simulador, calendario y documentos
 

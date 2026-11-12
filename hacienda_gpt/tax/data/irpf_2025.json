@@ -158,7 +158,6 @@
       "verificado": true
     }
   },
-  "escalas_generales_autonomicas": {},
   "deduccion_rendimientos_trabajo": null,
   "donativos": {
     "tramo_primero": "250",
@@ -203,5 +202,136 @@
       "verificado": true
     }
   },
-  "nota_ejercicio": "Parámetros de 2025 tomados del texto consolidado vigente en los preceptos que no han cambiado desde el 1-1-2025. No incluye la deducción por rendimientos del trabajo de la disposición adicional 61.ª, cuyas cuantías para 2025 no se han podido contrastar."
+  "nota_ejercicio": "Parámetros de 2025 tomados del texto consolidado vigente en los preceptos que no han cambiado desde el 1-1-2025. No incluye la deducción por rendimientos del trabajo de la disposición adicional 61.ª, cuyas cuantías para 2025 no se han podido contrastar.",
+  "comunidades": {
+    "madrid": {
+      "nombre": "Comunidad de Madrid",
+      "alias": [
+        "madrid",
+        "comunidad de madrid",
+        "cam"
+      ],
+      "fuente_principal": {
+        "norma": "Decreto Legislativo 1/2010, de 21 de octubre, texto refundido de las disposiciones legales de la Comunidad de Madrid en materia de tributos cedidos por el Estado (texto consolidado)",
+        "boe_id": "BOCM-m-2010-90068",
+        "url": "https://www.boe.es/buscar/act.php?id=BOCM-m-2010-90068",
+        "consolidado_a": "2026-07-10",
+        "consultado_el": "2026-11-12",
+        "sha256_html": "68d5550136fd72acf28a42b9a2a60ab167a8a4ecea3d3dbe67032abd4992b820"
+      },
+      "escala_general": {
+        "tramos": [
+          {
+            "hasta": "13362.22",
+            "tipo": "0.085",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "19004.63",
+            "tipo": "0.107",
+            "cuota_hasta_inicio": "1135.79"
+          },
+          {
+            "hasta": "35425.68",
+            "tipo": "0.128",
+            "cuota_hasta_inicio": "1739.53"
+          },
+          {
+            "hasta": "57320.40",
+            "tipo": "0.174",
+            "cuota_hasta_inicio": "3841.42"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.205",
+            "cuota_hasta_inicio": "7651.10"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 1 DLeg. 1/2010 de la Comunidad de Madrid",
+          "en_vigor_desde": "2023-12-22",
+          "verificado": true
+        }
+      },
+      "minimos": {
+        "contribuyente": "5956.65",
+        "incremento_mayor_65": "1234.26",
+        "incremento_mayor_75": "1502.58",
+        "descendientes": [
+          "2575.85",
+          "2897.83",
+          "4400",
+          "4950"
+        ],
+        "incremento_descendiente_menor_3": "3005.16",
+        "ascendiente": "1234.26",
+        "incremento_ascendiente_mayor_75": "1502.58",
+        "discapacidad": "3219.81",
+        "discapacidad_65": "9659.44",
+        "gastos_asistencia": "3219.81",
+        "fuente": {
+          "referencia": "arts. 2 a 2 quater DLeg. 1/2010 de la Comunidad de Madrid",
+          "en_vigor_desde": "2023-12-22",
+          "verificado": true
+        }
+      },
+      "deducciones": [
+        {
+          "articulo": "art. 4",
+          "titulo": "Nacimiento o adopción de hijos",
+          "resumen": "721,70 € por cada hijo nacido o adoptado, en el ejercicio del nacimiento o adopción y en los dos siguientes. Si el hijo convive con ambos progenitores y declaran por separado, se reparte a partes iguales.",
+          "limites": "Base imponible (general más ahorro) no superior a 30.930 € en individual o 37.322,20 € en conjunta, y suma de bases de la unidad familiar no superior a 61.860 € (art. 18.1).",
+          "limite_base_individual": "30930",
+          "limite_base_conjunta": "37322.20",
+          "en_vigor_desde": "2023-12-22"
+        },
+        {
+          "articulo": "art. 8",
+          "titulo": "Alquiler de vivienda habitual (menores de 40 años)",
+          "resumen": "30 % de lo pagado por el alquiler de la vivienda habitual, con un máximo de 1.237,20 €, para menores de cuarenta años. Solo si el alquiler pagado supera el 20 % de la base imponible.",
+          "limites": "Base imponible no superior a 26.414,22 € en individual o 37.322,20 € en conjunta, y suma de bases de la unidad familiar no superior a 61.860 € (art. 18.1).",
+          "limite_base_individual": "26414.22",
+          "limite_base_conjunta": "37322.20",
+          "en_vigor_desde": "2024-11-29"
+        },
+        {
+          "articulo": "art. 11",
+          "titulo": "Gastos educativos",
+          "resumen": "15 % de los gastos de escolaridad y de enseñanza de idiomas y 5 % de los de vestuario de uso exclusivo escolar de los hijos por los que se aplica el mínimo por descendientes, minorados en becas y ayudas. Máximo de 412,40 € por hijo, que sube a 927,90 € si hay gastos de escolaridad; el art. 11.4 fija otro límite para el primer ciclo de Educación Infantil.",
+          "limites": "Base imponible conjunta de la unidad familiar no superior a 30.930 € multiplicados por el número de miembros (art. 18.2).",
+          "limite_base_individual": null,
+          "limite_base_conjunta": null,
+          "en_vigor_desde": "2023-12-22"
+        },
+        {
+          "articulo": "art. 11 bis",
+          "titulo": "Cuidado de hijos menores de tres años, mayores dependientes y personas con discapacidad",
+          "resumen": "25 % de las cotizaciones ingresadas por una persona contratada en el Sistema Especial de Empleados de Hogar, con un máximo de 463,95 € anuales (40 % y 618,60 € para familias numerosas), por los meses en que se tenga un hijo menor de tres años o se conviva con un mayor dependiente o una persona con discapacidad en los términos del artículo.",
+          "limites": "Base imponible conjunta de la unidad familiar no superior a 30.930 € multiplicados por el número de miembros (art. 18.2).",
+          "limite_base_individual": null,
+          "limite_base_conjunta": null,
+          "en_vigor_desde": "2023-12-22"
+        }
+      ],
+      "otras_deducciones": [
+        "art. 5: adopción internacional de niños",
+        "art. 6: acogimiento familiar de menores",
+        "art. 7: acogimiento no remunerado de mayores de 65 años o con discapacidad",
+        "art. 7 bis: cuidado de ascendientes",
+        "art. 8 bis: gastos derivados del arrendamiento de viviendas",
+        "art. 8 ter: arrendamiento de viviendas vacías",
+        "art. 9: donativos a fundaciones y clubes deportivos",
+        "art. 10: incremento de los costes de financiación ajena de la vivienda habitual",
+        "art. 10 bis y 10 ter: cambio de residencia y adquisición de vivienda en municipios en riesgo de despoblación",
+        "art. 12: intereses de préstamos para la adquisición de vivienda por menores de 30 años",
+        "art. 12 bis y 12 ter: préstamos y estudios de Grado, Máster y Doctorado de jóvenes",
+        "art. 13: adquisición de vivienda habitual por nacimiento o adopción de hijos",
+        "art. 13 bis: obtención de la condición de familia numerosa",
+        "art. 14: familias con dos o más descendientes e ingresos reducidos",
+        "art. 15 y 17: inversión en acciones de entidades nuevas o cotizadas en el Mercado Alternativo Bursátil",
+        "art. 16: fomento del autoempleo de menores de 35 años",
+        "art. 17 bis: inversiones de nuevos contribuyentes procedentes del extranjero"
+      ]
+    }
+  }
 }

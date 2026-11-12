@@ -20,7 +20,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from hacienda_gpt.tax.params import Escala, Fuente, IRPFParams, load_params
+from hacienda_gpt.tax.params import Escala, Fuente, IRPFParams, Minimos, load_params
 
 CENT = Decimal("0.01")
 ZERO = Decimal(0)
@@ -96,6 +96,10 @@ class IRPFResult(BaseModel):
     base_liquidable_general: Decimal
     base_liquidable_ahorro: Decimal
     minimo_personal_familiar: Decimal
+    # Minimum used for the regional share (differs when the community sets its own).
+    minimo_autonomico: Decimal
+    # Community whose scale and minimums were applied; None = approximated.
+    comunidad_aplicada: str | None = None
     cuota_integra_estatal: Decimal
     cuota_integra_autonomica: Decimal
     cuota_liquida: Decimal
@@ -138,14 +142,16 @@ def _reduccion_trabajo(neto_previo: Decimal, otras_rentas: Decimal, p: IRPFParam
     return r.importe_tramo_2 - r.pendiente_tramo_2 * (neto_previo - r.umbral_medio)
 
 
-def _minimo(inp: IRPFInput, p: IRPFParams, t: _Trace) -> Decimal:
-    m = p.minimos
+def _minimo(inp: IRPFInput, m: Minimos, t: _Trace | None = None) -> Decimal:
+    """Personal and family minimum under ``m`` (state amounts, or a community's).
+
+    With a trace, each component is recorded as its own line.
+    """
     total = m.contribuyente
     if inp.edad is not None and inp.edad > 65:
         total += m.incremento_mayor_65
     if inp.edad is not None and inp.edad > 75:
         total += m.incremento_mayor_75
-    t.linea("Mínimo del contribuyente", total, m.fuente)
 
     descendientes = ZERO
     for index in range(inp.num_descendientes):
@@ -153,26 +159,29 @@ def _minimo(inp: IRPFInput, p: IRPFParams, t: _Trace) -> Decimal:
     descendientes += m.incremento_descendiente_menor_3 * min(inp.num_descendientes_menores_3, inp.num_descendientes)
     if descendientes and inp.descendientes_compartidos:
         descendientes /= 2
-    if descendientes:
-        label = "Mínimo por descendientes" + (" (50 %, compartido)" if inp.descendientes_compartidos else "")
-        t.linea(label, descendientes, m.fuente)
-        t.aviso(
-            "El mínimo por descendientes exige que convivan contigo, sean menores de 25 años (o con discapacidad) "
-            "y no tengan rentas superiores a 8.000 €; el cálculo da por cumplidos esos requisitos."
-        )
 
     mayores_75 = min(inp.num_ascendientes_mayores_75, inp.num_ascendientes_mayores_65)
     ascendientes = m.ascendiente * inp.num_ascendientes_mayores_65 + m.incremento_ascendiente_mayor_75 * mayores_75
-    if ascendientes:
-        t.linea("Mínimo por ascendientes", ascendientes, m.fuente)
 
     discapacidad = ZERO
     if inp.grado_discapacidad >= 65:
         discapacidad = m.discapacidad_65 + m.gastos_asistencia
     elif inp.grado_discapacidad >= 33:
         discapacidad = m.discapacidad
-    if discapacidad:
-        t.linea("Mínimo por discapacidad del contribuyente", discapacidad, m.fuente)
+
+    if t is not None:
+        t.linea("Mínimo del contribuyente", total, m.fuente)
+        if descendientes:
+            label = "Mínimo por descendientes" + (" (50 %, compartido)" if inp.descendientes_compartidos else "")
+            t.linea(label, descendientes, m.fuente)
+            t.aviso(
+                "El mínimo por descendientes exige que convivan contigo, sean menores de 25 años (o con discapacidad) "
+                "y no tengan rentas superiores a 8.000 €; el cálculo da por cumplidos esos requisitos."
+            )
+        if ascendientes:
+            t.linea("Mínimo por ascendientes", ascendientes, m.fuente)
+        if discapacidad:
+            t.linea("Mínimo por discapacidad del contribuyente", discapacidad, m.fuente)
 
     return total + descendientes + ascendientes + discapacidad
 
@@ -308,18 +317,18 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
     t.linea("Base liquidable del ahorro", ahorro)
 
     # ---- 4. Personal and family minimum ----------------------------------
-    minimo = _minimo(inp, p, t)
+    minimo = _minimo(inp, p.minimos, t)
     minimo_general = min(minimo, general)
     minimo_ahorro = min(minimo - minimo_general, ahorro)
 
     # ---- 5. Gross tax ------------------------------------------------------
-    ccaa = (inp.comunidad_autonoma or "").strip().lower()
-    escala_autonomica = p.escalas_generales_autonomicas.get(ccaa)
-    if escala_autonomica is None:
+    comunidad = p.comunidad(inp.comunidad_autonoma)
+    if comunidad is None:
         escala_autonomica = p.escala_general_estatal
+        minimo_autonomico = minimo
         t.aviso(
             (
-                f"La escala autonómica de «{inp.comunidad_autonoma}» no está cargada"
+                f"La normativa autonómica de «{inp.comunidad_autonoma}» no está cargada"
                 if inp.comunidad_autonoma
                 else "No se ha indicado comunidad autónoma"
             )
@@ -327,22 +336,39 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
             "distinta (cada comunidad aprueba su escala, sus mínimos y sus deducciones)."
         )
     else:
+        escala_autonomica = comunidad.escala_general
+        # Art. 56.3 LIRPF: a community may set its own minimums for its share.
+        minimo_autonomico = _minimo(inp, comunidad.minimos) if comunidad.minimos is not None else minimo
+        if comunidad.minimos is not None:
+            t.linea(
+                f"Mínimo personal y familiar para el gravamen autonómico ({comunidad.nombre})",
+                minimo_autonomico,
+                comunidad.minimos.fuente,
+            )
         t.aviso(
-            "Se aplica la escala autonómica general, pero no los mínimos ni las deducciones propios de la comunidad."
+            f"Se aplican la escala y los mínimos de {comunidad.nombre}. Sus deducciones autonómicas NO están "
+            "incluidas en el cálculo: si tienes derecho a alguna, la cuota será menor."
         )
+    minimo_autonomico_general = min(minimo_autonomico, general)
+    minimo_autonomico_ahorro = min(minimo_autonomico - minimo_autonomico_general, ahorro)
 
     estatal = _cuota_con_minimo(p.escala_general_estatal, general, minimo_general) + _cuota_con_minimo(
         p.escala_ahorro_estatal, ahorro, minimo_ahorro
     )
-    autonomica = _cuota_con_minimo(escala_autonomica, general, minimo_general) + _cuota_con_minimo(
-        p.escala_ahorro_autonomica, ahorro, minimo_ahorro
+    autonomica = _cuota_con_minimo(escala_autonomica, general, minimo_autonomico_general) + _cuota_con_minimo(
+        p.escala_ahorro_autonomica, ahorro, minimo_autonomico_ahorro
     )
     t.linea(
         "Cuota íntegra estatal",
         estatal,
         f"{p.escala_general_estatal.fuente.referencia} y {p.escala_ahorro_estatal.fuente.referencia}",
     )
-    t.linea("Cuota íntegra autonómica", autonomica, escala_autonomica.fuente.referencia + " (escala aplicada)")
+    t.linea(
+        "Cuota íntegra autonómica",
+        autonomica,
+        f"{escala_autonomica.fuente.referencia} y {p.escala_ahorro_autonomica.fuente.referencia}"
+        + ("" if comunidad is not None else " (escala estatal usada como aproximación)"),
+    )
     cuota_integra = estatal + autonomica
 
     # ---- 6. Deductions from gross tax -------------------------------------
@@ -419,6 +445,8 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
         base_liquidable_general=_round(general),
         base_liquidable_ahorro=_round(ahorro),
         minimo_personal_familiar=_round(minimo),
+        minimo_autonomico=_round(minimo_autonomico),
+        comunidad_aplicada=comunidad.nombre if comunidad is not None else None,
         cuota_integra_estatal=estatal,
         cuota_integra_autonomica=autonomica,
         cuota_liquida=_round(cuota_liquida),
@@ -428,5 +456,11 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
         lineas=t.lineas,
         avisos=t.avisos,
         parametros_no_verificados=t.no_verificados,
-        fuente=f"{fp.norma}, {fp.boe_id}, consolidado a {fp.consolidado_a}",
+        fuente=f"{fp.norma}, {fp.boe_id}, consolidado a {fp.consolidado_a}"
+        + (
+            f"; {comunidad.fuente_principal.norma}, {comunidad.fuente_principal.boe_id}, "
+            f"consolidado a {comunidad.fuente_principal.consolidado_a}"
+            if comunidad is not None
+            else ""
+        ),
     )

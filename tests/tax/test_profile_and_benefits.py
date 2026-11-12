@@ -68,14 +68,22 @@ def test_benefits_quantify_levers_with_the_calculator_and_flag_missing_data() ->
     by_id = {b.id: b for b in evaluar_beneficios(inp, conocidos={"rendimiento_trabajo_bruto", "comunidad_autonoma"})}
 
     plan = by_id["plan_pensiones"]
-    assert plan.estado == "disponible" and plan.ahorro_estimado == D("555.00")  # 1.500 × 37 %
+    # 1.500 × 35,9 %: marginal rates of 18,5 % (state) + 17,4 % (Madrid) at this income.
+    assert plan.estado == "disponible" and plan.ahorro_estimado == D("538.50")
     assert any("ilíquido" in requisito for requisito in plan.requisitos)  # the non-tax cost is stated
     assert by_id["donativos"].ahorro_estimado == D("200.00")  # 250 × 80 %
     assert by_id["minimo_descendientes"].estado == "por_confirmar"
     assert by_id["minimo_descendientes"].datos_que_faltan == ["num_descendientes", "num_descendientes_menores_3"]
     assert by_id["tributacion_conjunta"].datos_que_faltan == ["estado_civil"]
-    regional = by_id["deducciones_autonomicas"]
-    assert regional.estado == "por_confirmar" and "autonomico:Madrid" in regional.detalle
+    # Madrid is loaded: its deductions are listed from its own law, with the
+    # income ceiling checked against this profile (base 40.100 € > 30.930 € / 26.414,22 €).
+    birth, rent = by_id["autonomica_art_4"], by_id["autonomica_art_8"]
+    assert birth.estado == "no_aplica" and "supera el límite de 30930.00 €" in birth.detalle
+    assert rent.estado == "no_aplica" and "1.237,20 €" in rent.detalle
+    assert by_id["autonomica_art_11"].estado == "por_confirmar" and "412,40 €" in by_id["autonomica_art_11"].detalle
+    assert "BOCM-m-2010-90068" in birth.referencia
+    assert "art. 9: donativos a fundaciones" in by_id["autonomicas_otras"].detalle
+    assert "deducciones_autonomicas" not in by_id
     assert "reduccion_trabajo" not in by_id  # not applicable at this salary: not listed as noise
 
     # A stated zero is not "unknown": no need to ask again.
@@ -159,3 +167,21 @@ def test_benefits_tool_uses_case_facts() -> None:
     assert "Mínimo por descendientes" not in by_name  # the user said they have none
     assert by_name["Tributación conjunta"]["datos_que_faltan"] == []
     assert "calcular_irpf" in payload["nota"]
+
+
+def test_regional_deductions_stay_open_under_the_income_ceiling_and_unloaded_regions_point_to_the_corpus() -> None:
+    low = IRPFInput(ejercicio=2026, rendimiento_trabajo_bruto=D(24000), comunidad_autonoma="Madrid")
+    by_id = {b.id: b for b in evaluar_beneficios(low, conocidos={"comunidad_autonoma"})}
+    assert by_id["autonomica_art_4"].estado == "por_confirmar" and "721,70 €" in by_id["autonomica_art_4"].detalle
+    assert by_id["autonomica_art_8"].estado == "por_confirmar"
+    assert all(
+        "No está incluida en la simulación" in by_id[k].detalle for k in ("autonomica_art_4", "autonomica_art_8")
+    )
+
+    other = IRPFInput(ejercicio=2026, rendimiento_trabajo_bruto=D(24000), comunidad_autonoma="Galicia")
+    regional = {b.id: b for b in evaluar_beneficios(other, conocidos={"comunidad_autonoma"})}["deducciones_autonomicas"]
+    assert "autonomico:Galicia" in regional.detalle and not any(k.startswith("autonomica_art") for k in by_id if False)
+    unknown = {b.id: b for b in evaluar_beneficios(IRPFInput(ejercicio=2026), conocidos=set())}[
+        "deducciones_autonomicas"
+    ]
+    assert unknown.datos_que_faltan == ["comunidad_autonoma"]
