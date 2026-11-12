@@ -473,19 +473,28 @@ actuales**, que la calculadora declara en los `avisos` de cada resultado:
   como avisos del cálculo. **Navarra y País Vasco** tienen impuesto foral
   propio y no están cubiertos: se aproximan con la escala estatal y se avisa.
   **Ceuta y Melilla**: no se aplica su deducción del art. 68.4 LIRPF.
-- **Deducciones autonómicas con importe: 83 en las otras 14 comunidades y
-  seis en Madrid.** Las de las 14 se describen con datos (`deducciones_calculables`
-  en el JSON): importe fijo o porcentaje de un gasto, topes, límites de renta,
-  edad, discapacidad, condiciones alternativas («menor de 36, o familia
-  numerosa»), variantes de importe (categoría especial, municipio rural,
-  tramos de renta), importe según el orden del hijo, incompatibilidades y
-  reducción progresiva. Cubren nacimiento, familia numerosa y monoparental,
-  alquiler, guardería, gastos escolares, cuidado de familiares, edad y
-  discapacidad; cada una se codificó desde su artículo en el BOE con cita
-  literal comprobada. Lo que la calculadora no puede comprobar (fianza
-  depositada, que ambos progenitores trabajen, definición de municipio
-  rural…) viaja con la deducción y se repite como aviso cada vez que se
-  aplica. El resto de deducciones de cada comunidad figura solo por título.
+- **Deducciones autonómicas con importe: 220 descritas con datos en las 15
+  comunidades (194 en 2025), más seis de Madrid programadas a mano.** Las
+  primeras viven en `deducciones_calculables` del JSON: importe fijo o
+  porcentaje de un gasto, topes, base máxima, límites de renta, edad,
+  discapacidad, condiciones alternativas, variantes de importe, importe según
+  el orden del hijo y reducción progresiva. El esquema recoge además lo que
+  antes obligaba a aproximar: tope aplicado hijo a hijo cuando se da el
+  detalle de cada hijo (edad, etapa educativa, gastos), prorrateo por días de
+  alquiler, de acogimiento o de desempleo, topes como porcentaje de la cuota
+  íntegra autonómica o de la base liquidable, tramos de tipo, reparto del tope
+  entre quienes comparten alquiler o vivienda, edad o discapacidad del
+  cónyuge, límites de renta ampliados para familias numerosas, habitantes del
+  municipio en vez de una casilla «rural», y grupos de deducciones
+  incompatibles de los que se aplica la combinación más favorable. Los gastos
+  amplios se desglosan (salud, deporte y cultura, donativos por destino,
+  compra, rehabilitación e intereses de la vivienda) y cada deducción toma
+  solo la parte que su ley cubre. Cada una se codificó desde su artículo en el
+  BOE con cita literal comprobada, sin cifras derivadas. Si falta un dato
+  decisivo (los días de alquiler, el detalle de los hijos) la deducción no se
+  aplica y se dice qué falta. Lo que la calculadora no puede comprobar viaja
+  con la deducción como aviso. El resto de deducciones de cada comunidad
+  figura solo por título.
   En Madrid, la calculadora resta de la
   cuota autonómica las de nacimiento o adopción (art. 4), alquiler de menores
   de 40 años (art. 8), donativos a fundaciones madrileñas (art. 9), gastos

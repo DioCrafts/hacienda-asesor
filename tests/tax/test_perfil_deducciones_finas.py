@@ -382,14 +382,13 @@ def test_simulate_endpoint_answers_422_with_a_readable_message() -> None:
     assert "fecha_nacimiento: debe ser una fecha" in detalle({DESCENDIENTES: [{"fecha_nacimiento": "ayer"}]})
     assert "edad_conyuge: debe ser menor o igual que 130" in detalle({"edad_conyuge": 200})
 
-    # A detail saved wrong by hand: every later simulation says what to do, with a 422.
+    # A detail typed wrong by hand is refused when saved, so the case never holds an unreadable one.
     case_id = client.post("/cases", json={"user_id": "u-roto", "jurisdiction": "ES", "tax_period": "2026"}).json()[
         "case_id"
     ]
-    client.put(f"/cases/{case_id}/facts/{DESCENDIENTES}", json={"value": "tres"})
-    roto = client.post("/simulate", json={"case_id": case_id})
-    assert roto.status_code == 422 and "vuelve a guardarlo desde el simulador" in roto.json()["detail"]
-    # ...and the simulator can always override it.
+    assert client.put(f"/cases/{case_id}/facts/{DESCENDIENTES}", json={"value": "tres"}).status_code == 422
+    assert client.post("/simulate", json={"case_id": case_id}).status_code == 200
+    # ...and the simulator can always set it.
     arreglado = client.post(
         "/simulate", json={"case_id": case_id, "datos": {DESCENDIENTES: [{"edad": 1}]}, "escenarios": None}
     )

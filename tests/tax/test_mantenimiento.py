@@ -52,7 +52,7 @@ def test_every_group_of_parameters_has_a_check(checks_2026: list[Comprobacion]) 
     assert len(citas) >= 80 and all(c.citas for c in citas)  # every regional deduction carries its quote
     # A scale read from a superseded wording is checked against that wording.
     historicas = {c.version for c in comprobaciones(load_params(2025)) if c.version}
-    assert historicas == {"20230915", "20221231"}
+    assert historicas == {"20230915", "20221231", "20241230"}  # the last: Canarias' 2025 income ceilings
 
 
 def test_text_is_normalised_before_matching() -> None:
@@ -112,8 +112,17 @@ def test_rollover_keeps_what_matches_and_flags_what_does_not(checks_2026: list[C
         2026, 2027, lambda b, v=None: {**leyes, (LEY_GALLEGA, None): pagina}.get((b, v)), hoy=hoy
     )
     assert data["comunidades"]["galicia"]["escala_general"]["fuente"]["verificado"] is False
-    assert len(data["comunidades"]["galicia"]["deducciones_calculables"]) == len(galicia.deducciones_calculables) - 1
-    assert any("Galicia: escala" in s for s in informe.sin_verificar) and len(informe.deducciones_retiradas) == 1
+    # Every deduction resting on the rewritten passage goes (two entries may quote the same paragraph).
+    afectadas = sum(
+        1
+        for c in checks_2026
+        if c.ruta[:3] == ["comunidades", "galicia", "deducciones_calculables"] and deduccion.citas[0] in c.citas
+    )
+    restantes = len(data["comunidades"]["galicia"]["deducciones_calculables"])
+    assert afectadas >= 1 and restantes == len(galicia.deducciones_calculables) - afectadas
+    assert (
+        any("Galicia: escala" in s for s in informe.sin_verificar) and len(informe.deducciones_retiradas) == afectadas
+    )
     # Everything else is untouched and the calculator reports the unverified scale.
     assert data["comunidades"]["murcia"]["escala_general"]["fuente"]["verificado"] is True
     r = calcular_irpf(

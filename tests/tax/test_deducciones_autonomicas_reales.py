@@ -41,16 +41,17 @@ def test_cataluna_rent_art_612_3() -> None:
 
 
 def test_valencia_rent_art_4_uno_n() -> None:
-    # 20 %/800 in general; 25 %/950 for those aged 35 or under.
+    # 20 %/800 in general; 25 %/950 for those aged 35 or under. The cap is prorated by the days of the lease.
+    anual = dict(dias_alquiler_vivienda_habitual=365)
     assert _unica(
-        _deducciones("Comunidad Valenciana", edad=50, alquiler_vivienda_habitual=D(8400)), "arrendamiento"
+        _deducciones("Comunidad Valenciana", edad=50, alquiler_vivienda_habitual=D(8400), **anual), "arrendamiento"
     ) == D(800)
     assert _unica(
-        _deducciones("Comunidad Valenciana", edad=32, alquiler_vivienda_habitual=D(8400)), "arrendamiento"
+        _deducciones("Comunidad Valenciana", edad=32, alquiler_vivienda_habitual=D(8400), **anual), "arrendamiento"
     ) == D(950)
     # Above 30.000 € of taxable income it is lost.
     rica = _deducciones(
-        "Comunidad Valenciana", edad=32, alquiler_vivienda_habitual=D(8400), rendimiento_trabajo_bruto=D(45000)
+        "Comunidad Valenciana", edad=32, alquiler_vivienda_habitual=D(8400), rendimiento_trabajo_bruto=D(45000), **anual
     )
     assert rica == {}
 
@@ -64,7 +65,7 @@ def test_castilla_y_leon_birth_by_child_order_art_4() -> None:
     )
     assert _unica(segundo, "nacimiento") == D("737.50")
     rural = _deducciones(
-        "Castilla y León", hijos_nacidos_en_el_ejercicio=1, num_descendientes=3, municipio_rural_o_despoblacion=True
+        "Castilla y León", hijos_nacidos_en_el_ejercicio=1, num_descendientes=3, habitantes_municipio=3000
     )
     assert _unica(rural, "nacimiento") == D("3300.00")
 

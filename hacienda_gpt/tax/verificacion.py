@@ -158,9 +158,9 @@ def _como_se_imprimen(node: Any) -> list[Decimal]:
 
 
 @lru_cache(maxsize=1)
-def _evidencia_deducciones() -> dict[str, dict[str, list[str]]]:
+def _evidencia_deducciones() -> dict[str, dict[str, Any]]:
     path = DATA_DIR / "evidencia_deducciones.json"
-    data: dict[str, dict[str, list[str]]] = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    data: dict[str, dict[str, Any]] = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
     return data
 
 
@@ -221,11 +221,17 @@ def comprobaciones(params: IRPFParams) -> list[Comprobacion]:
                     cifras=_como_se_imprimen(comunidad.deducciones_madrid),
                 )
             )
+        # A year whose wording differs from today's keeps its own quotes, checked on that version.
+        del_ejercicio: dict[str, Any] = evidencia.get(f"{clave}@{params.ejercicio}", {})
         for indice, deduccion in enumerate(comunidad.deducciones_calculables):
-            citas = evidencia.get(clave, {}).get(deduccion.articulo, [])
+            historica = deduccion.articulo in del_ejercicio
+            citas = (
+                del_ejercicio[deduccion.articulo] if historica else evidencia.get(clave, {}).get(deduccion.articulo, [])
+            )
             out.append(
                 Comprobacion(
                     boe_id=boe_id,
+                    version=del_ejercicio.get("_version") if historica else None,
                     ruta=[*base, "deducciones_calculables", str(indice)],
                     descripcion=f"{comunidad.nombre}: {deduccion.articulo} {deduccion.titulo}",
                     tipo="cita" if citas else "cifras",

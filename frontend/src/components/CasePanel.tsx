@@ -202,19 +202,21 @@ export function CasePanel({ open, onClose, facts, taxPeriod, obligations, caseId
                         <p className="text-[12px] text-muted">{label}</p>
                         <p className="truncate text-[14px] font-medium text-ink">{factValue(row)}</p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setConfirming(null);
-                          setEditing(row.name);
-                        }}
-                        disabled={locked}
-                        aria-label={`Editar «${label}»`}
-                        title="Editar"
-                        className="rounded-lg p-2 text-muted transition hover:bg-primary-soft hover:text-primary-dark disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        <Pencil size={15} />
-                      </button>
+{row.name !== "descendientes" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setConfirming(null);
+                            setEditing(row.name);
+                          }}
+                          disabled={locked}
+                          aria-label={`Editar «${label}»`}
+                          title="Editar"
+                          className="rounded-lg p-2 text-muted transition hover:bg-primary-soft hover:text-primary-dark disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                      )}
                       {row.removable && (
                         <button
                           type="button"

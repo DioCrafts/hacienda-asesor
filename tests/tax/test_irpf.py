@@ -381,7 +381,7 @@ def test_madrid_education_expenses_child_by_child() -> None:
 def test_madrid_low_income_deduction_is_computed_after_the_data_driven_ones() -> None:
     # Art. 14: 10 % of the regional tax left after the other regional deductions, the fostering one included.
     base = dict(rendimiento_trabajo_bruto=D(22000), cotizaciones_seguridad_social=D(1397), num_descendientes=2)
-    sin, con = _madrid(**base), _madrid(menores_acogidos=1, **base)
+    sin, con = _madrid(**base), _madrid(menores_acogidos=1, dias_acogimiento=365, **base)
     familias = "Deducción autonómica para familias con dos o más descendientes"
     acogimiento = _aplicada(con, "Deducción autonómica: Acogimiento familiar de menores")
     assert acogimiento > 0

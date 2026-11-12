@@ -108,7 +108,7 @@ from hacienda_gpt.settings import API_RATE_LIMIT_PER_MIN, DECISION_STATE_DB_PATH
 from hacienda_gpt.tax.calendario import Vencimiento, aviso_festivos, proximos_vencimientos
 from hacienda_gpt.tax.documentos import AnalisisDocumento, DocumentoNoLegibleError, analizar_documento, decode_upload
 from hacienda_gpt.tax.params import EjercicioNoDisponibleError, ejercicios_disponibles
-from hacienda_gpt.tax.profile import DatosInvalidosError
+from hacienda_gpt.tax.profile import DatosInvalidosError, descendientes_a_texto
 from hacienda_gpt.tax.simulador import Simulacion, simular
 
 app = FastAPI(title="HaciendaGPT Decision API", version="1.0.0")
@@ -660,6 +660,12 @@ def put_case_fact(
         raise HTTPException(
             status_code=422, detail=f"El valor no es válido para este dato (se espera {expected.value})."
         )
+    if fact_name == "descendientes":
+        # The children's detail is JSON text: stored only when it parses, in its canonical form.
+        try:
+            value = descendientes_a_texto(value)
+        except DatosInvalidosError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
     tax_period: str | None = None
     if fact_name == "periodo_fiscal":
         year = parse_fiscal_year(str(value))
