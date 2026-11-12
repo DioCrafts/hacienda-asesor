@@ -41,7 +41,7 @@ tranquilo. Este inventario existe para que deje de serlo.
 | Listados de boletines autonómicos: BOCM, BOJA, DOGC (`boletin_madrid_bocm`, `boletin_andalucia_boja`, `boletin_cataluna_dogc`) | `crawler/boletin_autonomico.py::parse_listing` | Resultados servidos sin JavaScript; cuatro XPath por boletín | Marcado cambiado → `results: []` en el `listing_*.json`; la araña termina sin error | **Spec + canarios** (los cuatro XPath por boletín son datos): cero resultados; más de la mitad sin título; ninguno con fecha (aviso). **Aviso**: no hay constancia de que los selectores incorporados se hayan validado contra los sitios reales (el único *fixture* es sintético) |
 | Buscador de consultas DGT, Petete/Knosys (`dgt_busqueda`) | `cli/dgt_seed.py::_search_month` | `<td id="doc_N">` con `class="NUM-CONSULTA"`; `id="total_pages"`; campo oculto `id="query"` | Sin filas → «mes sin consultas»; sin `query` → cada descarga de documento falla una a una | **Spec + canarios** (las cuatro expresiones son datos): página sin filas, paginación ni `query`; filas sin `query`; filas sin número (aviso) |
 | Documento de consulta DGT (`dgt_documento`) | `cli/dgt_seed.py::_fetch_document` y `_parse_doc_num` | `class="NUM-CONSULTA"` en el documento; número `V0000-00` | Documento sin número reconocible → se guarda como `unknown-<id>` y no se deduplica | **Spec + canarios** (las dos expresiones son datos). Se observa un documento por página de resultados (el archivo tiene ~68 000): sin número, número de otra consulta, documento casi vacío |
-| Sentencias CENDOJ (`cendoj_documento`) | `crawler/cendoj.py::parse_cendoj_document`, llamado por `cli/supremo_seed.py` (ficheros locales o URL indicadas una a una) y por `CENDOJCrawler` | «ROJ: STS n/aaaa», «ECLI:…», una fecha `DD/MM/AAAA`, «Ponente:», «Sala Tercera…» | Sin ROJ/ECLI/fecha → metadatos `null`; la sentencia se guarda con otro nombre o pierde prioridad | **Spec + canarios** (XPath del texto, patrones de ROJ, ECLI, fecha y sala, y la etiqueta del ponente son datos): página casi vacía (el armazón de JavaScript del portal); ni ROJ ni ECLI; sin fecha (grave); sin ROJ, sala o ponente (avisos). **Solo se observan lecturas que el operador ya ha pedido: la vigilancia no añade ningún acceso al CENDOJ** (sus condiciones prohíben la descarga masiva sin autorización del CGPJ) |
+| Sentencias CENDOJ (`cendoj_documento`) | `crawler/cendoj.py::parse_cendoj_document`, llamado por `cli/supremo_seed.py` (ficheros locales o URL indicadas una a una) y por `CENDOJCrawler` | «ROJ: STS n/aaaa», «ECLI:…», una fecha `DD/MM/AAAA`, «Ponente:», «Sala Tercera…» | Sin ROJ/ECLI/fecha → metadatos `null`; la sentencia se guarda con otro nombre o pierde prioridad | **Spec + canarios** (XPath del texto, patrones de ROJ, ECLI, fecha y sala, y la etiqueta del ponente son datos): página casi vacía (el armazón de JavaScript del portal); ni ROJ ni ECLI; sin fecha (grave); sin ROJ, sala o ponente (avisos). **Restricción del CGPJ**: sus condiciones prohíben la descarga masiva y crear una base de datos de resoluciones sin autorización. Por eso la vigilancia no hace ninguna petición al CENDOJ (solo observa lo que el operador ya ha pedido) y **no guarda ni envía al modelo el texto de ninguna resolución**: solo su *esqueleto* estructural (`ops/formatos_esqueleto.py`: etiquetas y nombres de atributo, los rótulos de una lista cerrada —«ROJ», «ECLI», «Ponente», «Fecha», «Sala», «Sección», «Nº de Recurso»…—, `_` en lugar de cualquier otra palabra, `1` en lugar de cada cifra; 20 000 caracteres como mucho). Lo esperado de la muestra buena es la **forma** de lo extraído (qué campos aparecen y con qué forma: «STS ####/####», «####-##-##»), y el ensayo de una spec propuesta compara formas sobre esqueletos, nunca valores. El contexto de una lectura es la URL, nunca la ruta de un fichero local |
 | Cabecera de las sentencias del Supremo (`supremo_lote`) | `doctrine/supremo.py` (sección, tipo de recurso, doctrina), contado en `cli/supremo_seed.py` | «Sección: N» o «Sección Segunda» o el Id Cendoj; «Procedimiento: …»; frases con que se fija doctrina | Sin sección reconocible ninguna sentencia es «objetivo»: todas se descartan, como en una ejecución sin nada de interés | **Canarios** (recuentos por ejecución, sin muestras): con 3 o más leídas, ninguna con fecha o con tipo de recurso; con 3 o más de la Sala Tercera, ninguna con sección; con 5 o más casaciones nuevas, ninguna fija doctrina (aviso). Las ~20 expresiones de `supremo.py` siguen en el código: un fallo acaba en informe para un desarrollador |
 | Sede de la AEAT, páginas de entrada (`aeat_sede`) | `crawler/crawlers.py::AgenciaTributariaWebCrawler.parse` | Rutas `/Sede/irpf`, `/Sede/iva`…; enlaces seguibles | Reorganización de la sede → se guardan pocas o ninguna página; la araña termina bien | **Spec + canarios** (rutas permitidas y dominio son datos; el rastreador las lee de la spec): página de entrada casi vacía; ninguno de sus enlaces casa con las rutas. La muestra guarda la dirección (`<base>`) para repetir la extracción |
 | Ejecución del rastreador de la sede (`aeat_rastreo`) | `AgenciaTributariaWebCrawler` (`_semilla_fallida`, `closed`) | Que las páginas de entrada existen | Un 404 de una página de entrada solo queda en el registro de Scrapy | **Canarios** (recuentos): página de entrada que ya no existe (aviso; grave si son más de la mitad); ninguna página guardada; caída de más del 50 % de las páginas frente a la mediana. Las páginas de entrada siguen en el código |
@@ -81,8 +81,10 @@ descartados. Nada más, salvo que el operador active `FORMAT_DOCUMENT_SKELETONS`
    Los datos propios que caducan (calendario, tabla de precios) los comprueba `ops formatos check`;
    `ops formatos probe` añade el contraste del calendario con el BOE.
 3. **Muestras** (`FORMAT_DIR/muestras/<fuente>/`): la última muestra buena, recortada, con la
-   extracción que produjo; la anterior; y la última mala. Solo de fuentes públicas (de una sentencia
-   del CENDOJ, solo su comienzo sin *scripts*: tres como mucho, nunca una colección).
+   extracción que produjo; la anterior; y la última mala. Solo de fuentes públicas, y de las
+   sentencias del CENDOJ solo el esqueleto (ni una palabra de la resolución fuera de la lista de
+   rótulos; ni una cifra: solo su forma). Las fuentes de recuentos (`supremo_lote`, `aeat_rastreo`,
+   `aeat_pdf`, `corpus_docling`) no guardan ninguna muestra.
 4. **Diagnóstico agéntico** (`hacienda_gpt/ops/formatos_agente.py`): diagnóstico con cita literal
    de la muestra nueva → ensayo determinista de la spec propuesta → reflexión independiente. Si no
    converge o no es un cambio de datos: informe para un desarrollador con las muestras adjuntas.
@@ -108,17 +110,19 @@ descartados. Nada más, salvo que el operador active `FORMAT_DOCUMENT_SKELETONS`
 
 ## Lo que queda
 
-1. `cli/proactive.py::_sumario` hace `json.loads` de la respuesta: si la API devuelve HTML de error
-   con código 200, la excepción queda en `errores` de `boe-novedades` (visible), pero no llega a la
-   vigilancia de formatos porque el lector no llega a ejecutarse. (Ese fichero es de otro equipo.)
-2. El aplanado de HTML a líneas (`proactive/impacto.py::_lineas`) sigue siendo código: es un
+1. El aplanado de HTML a líneas (`proactive/impacto.py::_lineas`) sigue siendo código: es un
    recorrido de etiquetas, no un selector, y `impacto.py` es de otro equipo. Para hacerlo dato habría
    que extraer la lista de etiquetas de bloque y las que se descartan a `ReglasConsolidado`, con prueba
    de identidad contra `legacy_parsers._lineas`.
-3. Las ~20 expresiones de cabecera y doctrina de `doctrine/supremo.py` siguen en el código (solo hay
+2. Las ~20 expresiones de cabecera y doctrina de `doctrine/supremo.py` siguen en el código (solo hay
    canarios por ejecución). Las semillas de la sede de la AEAT y el catálogo de códigos autonómicos
    (`DEFAULT_CCAA_CODES`) también: un fallo es un informe, porque la muestra de un 404 no dice cuál es
    la dirección nueva.
+3. Sobre un esqueleto del CENDOJ el agente solo puede proponer cambios que se vean en la estructura y
+   los rótulos (un separador, un rótulo nuevo, otro XPath). Si el cambio estuviera en palabras que el
+   esqueleto oculta, no hay propuesta posible: informe para un desarrollador, que mirará una sentencia
+   concreta por su cuenta. Si hiciera falta un rótulo nuevo, se añade a `PALABRAS_CENDOJ`
+   (`ops/formatos_fuentes.py`) por revisión de código, nunca por propuesta del agente.
 4. El marcado del BOE del que depende `formatos_calendario.texto_articulo` (`<div class="bloque"`,
    `class="articulo"`) no es una spec; si cambia, el contraste dice «artículo no encontrado» y acaba
    en informe. Un artículo renumerado tampoco se adapta con datos (la muestra no contiene el nuevo).

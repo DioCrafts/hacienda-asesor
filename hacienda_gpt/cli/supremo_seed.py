@@ -195,7 +195,8 @@ def procesar_documento(
     html = _decodificar(contenido)
     sentencia, base = analizar_documento(html, source_url=source_url)
     # Format watch (never raises): a page in another layout reads as a ruling without ROJ, date or section.
-    observar_documento(html, contexto=origen)
+    # The context names the URL, never a local path (a file name may carry a party's name).
+    observar_documento(html, contexto=source_url or "fichero local")
     if lote is not None:
         contar_para_vigilancia(lote, sentencia)
     slug = slug_documento(sentencia.roj, sentencia.ecli, contenido)

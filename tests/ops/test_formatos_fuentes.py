@@ -144,8 +144,96 @@ def test_cendoj_crawler_reports_each_ruling_and_writes_the_same_files(vigilancia
 
     assert con_vigilancia == sin_vigilancia and list(con_vigilancia) == ["STS_1234_2024.json"]
     assert _estado("cendoj_documento") == "ok" and _ultima("cendoj_documento").contexto == url
-    # Only the trimmed start of the ruling is kept, without scripts.
-    assert "ROJ: STS 1234/2024" in formatos.leer_muestra("cendoj_documento", "buena").texto
+    # Only the skeleton is kept, and what is expected of it is a shape, not a value.
+    buena = formatos.leer_muestra("cendoj_documento", "buena")
+    assert buena is not None and "ROJ: STS 1111/1111" in buena.texto and "1234" not in buena.texto
+    assert (buena.esperado["roj"], buena.esperado["fecha_resolucion"]) == ("STS ####/####", "####-##-##")
+
+
+def test_the_skeleton_keeps_markup_labels_and_shapes_only() -> None:
+    from hacienda_gpt.ops.formatos_esqueleto import esqueleto_html, lista_permitida
+
+    html = (
+        '<html><head><script>var nombre = "Pérez";</script><style>p{}</style></head><body>'
+        '<div class="cabecera doc-1" id="c7" title="María Pérez" data-x="12345">'
+        "<p>Roj: STS 1234/2024 - ECLI:ES:TS:2024:1234</p><p>Sala 3ª. Ponente: María Pérez López</p>"
+        '<!-- García --><p><a href="/x?nombre=Garcia">Fecha: 15/03/2024</a> &amp; Ayuntamiento &lt;b&gt;</p>'
+        "</div></body></html>"
+    )
+
+    esqueleto = esqueleto_html(html, lista_permitida(["roj", "sts", "ecli", "es", "ts", "sala", "ponente", "fecha"]))
+
+    assert esqueleto == (
+        '<html><head></head><body><div class="cabecera doc-1" id="c1" title="_" data-x="_">'
+        "<p>Roj: STS 1111/1111 - ECLI:ES:TS:1111:1111</p><p>Sala 3ª. Ponente: _ _ _</p>"
+        '<p><a href="_">Fecha: 11/11/1111</a> &amp; _ &lt;_&gt;</p></div></body></html>'
+    )
+    assert len(esqueleto_html("<p>" + "palabra " * 20_000 + "</p>", frozenset(), max_chars=1000)) <= 1000
+
+
+def _palabras(html: str) -> set[str]:
+    import re
+
+    import parsel
+
+    texto = " ".join(parsel.Selector(text=html).xpath("//body//text()").getall())
+    return set(re.findall(r"[^\W\d_]+", texto))
+
+
+def test_no_word_of_a_ruling_reaches_the_disk_or_the_model(vigilancia) -> None:
+    import re
+
+    from hacienda_gpt.ops import formatos_fuentes
+    from hacienda_gpt.ops.formatos_esqueleto import plano
+
+    tributaria = (CENDOJ / "sentencia_tributaria.html").read_text(encoding="utf-8")
+    otra = (CENDOJ / "sentencia_no_tributaria.html").read_text(encoding="utf-8")
+    cendoj.observar_documento(otra, contexto="https://www.poderjudicial.es/a")
+    cendoj.observar_documento(tributaria, contexto="https://www.poderjudicial.es/b")
+    cendoj.observar_documento(tributaria.replace("ROJ: STS", "ROJ - STS"), contexto="https://www.poderjudicial.es/c")
+    v1 = formatos.spec_incorporada("cendoj_documento").reglas
+    reglas = {**v1, "patron_roj": r"(?i)\bROJ\s*[:\-]\s*(STS\s*\d+/\d{4})\b"}
+    diagnostico = {
+        "que_ha_cambiado": "El separador entre el rótulo ROJ y su valor es ahora un guion.",
+        "causa": "formato_cambiado",
+        "evidencia": "ROJ - STS 1111/1111",
+        "adaptable_con_datos": True,
+        "reglas_json": json.dumps(reglas),
+        "justificacion": "Se admite el guion además de los dos puntos.",
+    }
+    conforme = {"conforme": True, "objeciones": [], "riesgo": "Bajo."}
+    proveedor = util.ProveedorGuionizado(
+        [{**diagnostico, "adaptable_con_datos": False, "reglas_json": ""}, conforme, diagnostico, conforme]
+    )
+
+    informe = formatos_agente.diagnosticar("cendoj_documento", proveedor)
+    propuesta = formatos_agente.diagnosticar("cendoj_documento", proveedor)
+
+    # The pipeline still works on skeletons: a report with both samples attached, then a spec that passes the gate.
+    assert informe.tipo == "informe" and informe.informe and Path(informe.informe).exists()
+    assert propuesta.tipo == "spec" and propuesta.ensayo is not None and propuesta.ensayo.ok
+    en_disco = "".join(p.read_text(encoding="utf-8") for p in vigilancia.rglob("*") if p.is_file())
+    # Timestamps and hashes are ours; by chance they may contain a run of digits like "1234".
+    en_disco = re.sub(r"\d{4}-\d{2}-\d{2}T[\d:.+]+|\b[0-9a-f]{16,64}\b", "", en_disco)
+    enviado = proveedor.texto_recibido
+    # Every word of the rulings outside the allow-list, except those our own code also writes (prompts,
+    # expectations, canaries): what is left can only have come from a ruling.
+    propio = " ".join(
+        Path(m.__file__).read_text(encoding="utf-8") for m in (formatos, formatos_agente, formatos_fuentes)  # type: ignore[arg-type]
+    ) + " ".join([*json.dumps(diagnostico, ensure_ascii=False).split(), "Bajo"])
+    propias = {plano(p) for p in re.findall(r"[^\W\d_]+", propio)}
+    ajenas = {
+        p for p in _palabras(tributaria) | _palabras(otra) if plano(p) not in formatos_fuentes.PALABRAS_CENDOJ | propias
+    }
+    assert len(ajenas) >= 30 and {"García", "Pérez", "deducibilidad", "Ayuntamiento"} <= ajenas
+    for palabra in ajenas:
+        patron = re.compile(rf"(?<![^\W\d_]){re.escape(palabra)}(?![^\W\d_])", re.IGNORECASE)
+        assert not patron.search(en_disco), palabra
+        assert not patron.search(enviado), palabra
+    for cifra in ("1234", "5678", "15/03/2024", "22/04/2024", "2024"):
+        assert cifra not in en_disco and cifra not in enviado, cifra
+    # What the model did get: structure, labels and shapes.
+    assert "ROJ - STS 1111/1111" in enviado and "Ponente: _. _. _. _ _ _" in enviado and "STS ####/####" in enviado
 
 
 def _directorio_supremo(tmp_path: Path, n: int = 4, **kwargs: Any) -> Path:

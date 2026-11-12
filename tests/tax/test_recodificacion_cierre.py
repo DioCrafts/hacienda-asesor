@@ -41,7 +41,6 @@ from hacienda_gpt.tax.recodificacion import (
 )
 from hacienda_gpt.tax.recodificacion.adaptadores import CIFRAS
 from hacienda_gpt.tax.verificacion import url_de
-
 from .test_recodificacion_irpf import (
     ANTIGUA,
     EFECTOS,
@@ -51,7 +50,6 @@ from .test_recodificacion_irpf import (
     LEY,
     NOMBRE_LEY,
     NORMA,
-    NUEVA,
     P1,
     P2,
     P3,
@@ -160,9 +158,7 @@ SIN_CAMBIOS = lectura(None, [], resultado="sin_cambios", valor_json="", desde=""
 
 def _revision_vigente(**cambios: Any) -> dict[str, Any]:
     """A reviewer who checks the encoding in force (10 %, 500 euros, 22.000 euros) against the old wording."""
-    return revision(
-        casos_alquiler(P1, P2, nueva=False), base_limite_segun_ley="base_imponible_total", **cambios
-    )
+    return revision(casos_alquiler(P1, P2, nueva=False), base_limite_segun_ley="base_imponible_total", **cambios)
 
 
 # --------------------------------------------------------------------------- #
@@ -183,10 +179,22 @@ ART_77 = (
 def ley_estatal_reparto() -> str:
     return (
         "<html><body>"
-        + _articulo("67", "Cuota líquida estatal.", ["1. La cuota líquida estatal será el resultado de disminuir:", ART_67, ART_67_OTRA], [EFECTOS_ESTATAL], "30/06/2026")
-        + _articulo("77", "Cuota líquida autonómica.", ["1. La cuota líquida autonómica será:", ART_77], [EFECTOS_ESTATAL], "30/06/2026")
+        + _articulo(
+            "67",
+            "Cuota líquida estatal.",
+            ["1. La cuota líquida estatal será el resultado de disminuir:", ART_67, ART_67_OTRA],
+            [EFECTOS_ESTATAL],
+            "30/06/2026",
+        )
+        + _articulo(
+            "77",
+            "Cuota líquida autonómica.",
+            ["1. La cuota líquida autonómica será:", ART_77],
+            [EFECTOS_ESTATAL],
+            "30/06/2026",
+        )
         + "</body></html>"
-    )  # fmt: skip
+    )
 
 
 def _casos_reparto() -> list[dict[str, str]]:
@@ -258,8 +266,10 @@ def test_the_offsetting_of_savings_balances_is_tested_through_the_lines_of_the_i
     anteriores["perdidas_patrimoniales_pendientes"] = "3000"
     assert evaluar(anteriores, "Compensación de saldos negativos de ejercicios anteriores") == D("2125.00")
     # A wrong ceiling gives another amount through the same calculator.
-    otro = adaptador.controlar({"limite_cruzado": "0.30"}, [cita[0].replace("25", "30")], objetivo, efectos_desde=None, datos={})[0]
-    assert evaluar(perdidas, "Compensación entre rendimientos y ganancias del ahorro", otro) == D("600.00")  # fmt: skip
+    otro = adaptador.controlar(
+        {"limite_cruzado": "0.30"}, [cita[0].replace("25", "30")], objetivo, efectos_desde=None, datos={}
+    )[0]
+    assert evaluar(perdidas, "Compensación entre rendimientos y ganancias del ahorro", otro) == D("600.00")
 
 
 # --------------------------------------------------------------------------- #
@@ -281,7 +291,8 @@ def test_every_parameter_file_says_which_text_of_each_law_it_read() -> None:
     # Sources pinned to a dated version or a PDF are never touched: they record texts that do not change.
     fijadas = {f.donde for f in fuentes if f.fijada}
     assert {d for d in fijadas if d.startswith("autonomos_2025.json")} == {
-        f"autonomos_2025.json:fuentes_principales/{b}" for b in ("BOE-A-2006-20764", "BOE-A-2007-6820", "BOE-A-1992-28740")
+        f"autonomos_2025.json:fuentes_principales/{b}"
+        for b in ("BOE-A-2006-20764", "BOE-A-2007-6820", "BOE-A-1992-28740")
     }
     assert any(d.startswith("sociedades_2026.json:fuentes_complementarias/") for d in fijadas)
     # Nested sources are found too (a community's own law in the inheritance tax file).
@@ -298,7 +309,12 @@ def test_recording_a_reading_writes_every_file_that_cites_the_law_and_nothing_el
     shutil.copytree(DATA_DIR, datos)
     antes = {p.name: json.loads(p.read_text(encoding="utf-8")) for p in procedencia.ficheros_de_parametros(datos)}
     hecho = procedencia.refrescar(
-        "BOE-A-2006-20764", consolidado_a="2026-11-20", pagina="<html>x</html>", data_dir=datos, hoy=DESPUES, motivo="m."
+        "BOE-A-2006-20764",
+        consolidado_a="2026-11-20",
+        pagina="<html>x</html>",
+        data_dir=datos,
+        hoy=DESPUES,
+        motivo="m.",
     )
     assert hecho["ficheros"] == ["autonomos_2026.json", "irpf_2025.json", "irpf_2026.json", "sociedades_2026.json"]
     # The four other files have no log of revisions: the reading is in the report only.
@@ -323,7 +339,12 @@ def test_recording_a_reading_writes_every_file_that_cites_the_law_and_nothing_el
 def test_params_check_does_not_wait_for_a_pinned_reading(monkeypatch: pytest.MonkeyPatch) -> None:
     def fuente(url: str, consultado: str) -> FuentePrincipal:
         return FuentePrincipal(
-            norma="Ley", boe_id="BOE-A-1", url=url, consolidado_a="2025-12-31", consultado_el=consultado, sha256_html="0"
+            norma="Ley",
+            boe_id="BOE-A-1",
+            url=url,
+            consolidado_a="2025-12-31",
+            consultado_el=consultado,
+            sha256_html="0",
         )
 
     class Params:
@@ -334,8 +355,10 @@ def test_params_check_does_not_wait_for_a_pinned_reading(monkeypatch: pytest.Mon
     vigente = fuente(url_de("BOE-A-1"), "2026-11-25")
     monkeypatch.setattr(fuentes_mod, "ejercicios_disponibles", lambda: [])
     monkeypatch.setattr(
-        fuentes_mod, "_OTRAS_FAMILIAS", lambda: [(lambda e: Params(fijada) if e == 2025 else Params(vigente), lambda: [2025, 2026])]
-    )  # fmt: skip
+        fuentes_mod,
+        "_OTRAS_FAMILIAS",
+        lambda: [(lambda e: Params(fijada) if e == 2025 else Params(vigente), lambda: [2025, 2026])],
+    )
     fuentes_mod.normas_de_parametros.cache_clear()
     try:
         (norma,) = fuentes_mod.normas_de_parametros()
@@ -345,9 +368,7 @@ def test_params_check_does_not_wait_for_a_pinned_reading(monkeypatch: pytest.Mon
         fuentes_mod.normas_de_parametros.cache_clear()
 
 
-def test_a_stale_law_is_recorded_only_when_every_check_matches_and_nothing_is_open(
-    datos: Path, tmp_path: Path
-) -> None:
+def test_a_stale_law_is_recorded_only_when_every_check_matches_and_nothing_is_open(datos: Path, tmp_path: Path) -> None:
     almacen = AlmacenPropuestas(tmp_path / "propuestas")
 
     def refrescar(pagina: str, **kw: Any) -> procedencia.InformeProcedencia:
@@ -387,9 +408,7 @@ def test_a_stale_law_is_recorded_only_when_every_check_matches_and_nothing_is_op
     assert LEY in refrescar(consolidada()).al_dia and refrescar(consolidada()).refrescadas == []
 
 
-def test_a_law_changed_in_an_article_a_group_reads_waits_until_the_group_is_reread(
-    datos: Path, tmp_path: Path
-) -> None:
+def test_a_law_changed_in_an_article_a_group_reads_waits_until_the_group_is_reread(datos: Path, tmp_path: Path) -> None:
     almacen = AlmacenPropuestas(tmp_path / "propuestas")
     # Article 5 has a wording published after the files read the law; its quotes are untouched.
     pagina = consolidada(parrafos5=(P1, P2, P3, P4), version5=ACTUALIZADA)
@@ -408,6 +427,29 @@ def test_a_law_changed_in_an_article_a_group_reads_waits_until_the_group_is_rere
     aplicar_propuesta(propuesta, texto_de, almacen=almacen, data_dir=datos, hoy=DESPUES, automatica=True)
     informe = procedencia.refrescar_lo_que_se_pueda(texto_de, hoy=DESPUES, data_dir=datos, almacen=almacen)
     assert [r["boe_id"] for r in informe.refrescadas] == [LEY], informe.bloqueadas
+    # A group the loop never re-reads (figures computed from others) in a changed article: a person must look.
+    for ejercicio in (2025, 2026):
+        path = datos / f"irpf_{ejercicio}.json"
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        calculados = {k: v for k, v in raw["minimos"].items() if k != "fuente"}
+        raw["comunidades"]["galicia"]["minimos"] = {
+            **calculados,
+            "fuente": {
+                "referencia": "art. 5 de la ley sintética",
+                "en_vigor_desde": "2020-01-02",
+                "verificado": True,
+                "nota": "Importes calculados: los estatales incrementados; la ley no los imprime.",
+            },
+        }
+        path.write_text(json.dumps(raw, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    assert procedencia.fuera_del_bucle(LEY, ["5"], data_dir=datos) == ["comunidades/galicia/minimos (art. 5)"]
+    bloqueada = procedencia.diagnosticar(
+        # Updated again after the reading just recorded.
+        boe(datos, consolidada=consolidada(cabecera="28/11/2026", parrafos5=(P1, P2, P3, P4), version5="28/11/2026")),
+        data_dir=datos,
+        almacen=almacen,
+    )[LEY]
+    assert any("no relee (cifras calculadas" in m for m in bloqueada.motivos)
     # The BOE's metadata may say "updated" when the page's date does not: the date never goes backwards.
     viejo = consolidada(cabecera="01/11/2026")
     estados = procedencia.diagnosticar(
@@ -446,12 +488,15 @@ def test_cli_verify_records_readings_only_from_todays_boe(datos: Path, monkeypat
     (carpeta / f"{LEY}.html").write_text(consolidada(), encoding="utf-8")
     simulada = json.loads(CliRunner().invoke(cli_module.cli, [*args, "--snapshot-dir", str(carpeta)]).output)
     assert simulada["procedencia"]["refrescadas"] == [{"boe_id": LEY, "consolidado_a": "2026-11-20", "simulado": True}]
-    assert "solo se simula" in simulada["procedencia"]["omitido"] and _fuente_gallega(datos, 2026)["consultado_el"] == "2026-11-12"
+    assert (
+        "solo se simula" in simulada["procedencia"]["omitido"]
+        and _fuente_gallega(datos, 2026)["consultado_el"] == "2026-11-12"
+    )
     # From today's BOE: recorded (and not with --no-anotar-lecturas).
     assert "procedencia" not in json.loads(CliRunner().invoke(cli_module.cli, [*args, "--no-anotar-lecturas"]).output)
     hecho = json.loads(CliRunner().invoke(cli_module.cli, args).output)
     assert hecho["procedencia"]["refrescadas"][0]["ficheros"] == ["irpf_2025.json", "irpf_2026.json"]
-    assert _fuente_gallega(datos, 2026)["consultado_el"] == DESPUES.isoformat()  # fmt: skip
+    assert _fuente_gallega(datos, 2026)["consultado_el"] == DESPUES.isoformat()
 
 
 # --------------------------------------------------------------------------- #
@@ -524,7 +569,9 @@ def test_a_model_may_only_list_the_blocks_and_its_list_is_checked() -> None:
     assert lista.descartados == ["«8»: su cita no es literal", "«12»: su cita no lo nombra"]
     assert "tasa de 30 euros" not in lector.llamadas[0]["user"]  # only the passages about the amended law
     assert lector.llamadas[0]["schema_name"] == "recodificacion_preceptos"
-    nada = nucleo.listar_preceptos(Guion(), pagina=raro, norma=NORMA, ley=LEY, nombre_ley=NOMBRE_LEY, ley_citada="7/2001")
+    nada = nucleo.listar_preceptos(
+        Guion(), pagina=raro, norma=NORMA, ley=LEY, nombre_ley=NOMBRE_LEY, ley_citada="7/2001"
+    )
     assert nada.preceptos == [] and "no nombra la ley 7/2001" in nada.descartados[0]
 
 
@@ -540,7 +587,9 @@ def test_an_amended_article_may_leave_the_group_as_it_is_if_the_gate_and_the_rev
     assert propuesta.estado == "propuesta" and propuesta.resultado == "sin_cambios" and propuesta.despues is None
     assert propuesta.aplicable_sin_persona and propuesta.ejercicios == [2025, 2026] and propuesta.citas == [P1, P2]
     # The reviewer was shown the encoding in force and asked to find what it misses; its cases ran with it.
-    assert "revision_sin_cambios" in revisor.llamadas[0]["user"] and '"porcentaje": "0.10"' in revisor.llamadas[0]["user"]
+    assert (
+        "revision_sin_cambios" in revisor.llamadas[0]["user"] and '"porcentaje": "0.10"' in revisor.llamadas[0]["user"]
+    )
     assert [str(c.obtenido) for c in propuesta.casos] == ["200.00", "0.00", "500.00", "100.00", "0.00"]
     antes = {e: (datos / f"irpf_{e}.json").read_bytes() for e in (2025, 2026)}
     almacen = AlmacenPropuestas(tmp_path / "propuestas")
@@ -613,14 +662,17 @@ def test_autopilot_finds_the_articles_of_an_unconsolidated_norm_in_its_own_text(
     # The law has not changed yet, and the norm is followed: nothing recorded either way.
     assert informe.procedencia is not None and informe.procedencia["refrescadas"] == []
 
-    # With a model the group is re-read from the norm's text, whole, and "no change" may be the answer.
-    lector, revisor = Guion(SIN_CAMBIOS), Guion(_revision_vigente())
-    informe, nuevas = _pilotar(datos, tmp_path, texto_de, lector, revisor)
+    # With a model the group is re-read from the norm's text. "No change" cannot be proven from it: the norm prints
+    # only the apartado it rewrites, not the passages the encoding rests on (that waits for the consolidated text).
+    lector = Guion(SIN_CAMBIOS)
+    informe, nuevas = _pilotar(datos, tmp_path, texto_de, lector, Guion(), max_iter=1)
     (propuesta,) = nuevas
-    assert propuesta.norma_texto == NORMA and propuesta.admite_sin_cambios and propuesta.resultado == "sin_cambios"
-    assert "revision_tras_modificacion" in lector.llamadas[0]["user"] and "TODAVÍA SIN CONSOLIDAR" in lector.llamadas[0]["user"]
-    # Read from an unconsolidated norm: never accepted without a person.
-    assert not propuesta.aplicable_sin_persona  # fmt: skip
+    assert propuesta.norma_texto == NORMA and propuesta.admite_sin_cambios and propuesta.estado == "sin_converger"
+    assert "ya no está en el texto" in propuesta.objeciones_abiertas[0] and P1[:40] in propuesta.objeciones_abiertas[0]
+    assert (
+        "revision_tras_modificacion" in lector.llamadas[0]["user"]
+        and "TODAVÍA SIN CONSOLIDAR" in lector.llamadas[0]["user"]
+    )
 
 
 def test_autopilot_asks_a_model_to_list_only_when_nothing_else_names_the_articles(datos: Path, tmp_path: Path) -> None:
@@ -668,7 +720,9 @@ def test_autopilot_rereads_a_group_whose_article_a_consolidated_norm_changed_alt
     # Everything about the law is settled: its new reading is recorded in both years' files, and the norm closed.
     assert [r["boe_id"] for r in informe.procedencia["refrescadas"]] == [LEY], informe.procedencia  # type: ignore[index]
     assert _fuente_gallega(datos, 2026)["consolidado_a"] == "2026-11-20"
-    assert piloto.leer_estado(tmp_path / "estado" / "_params_autopilot.json").normas[f"{NORMA}|{LEY}"].etapa == "cerrada"
+    assert (
+        piloto.leer_estado(tmp_path / "estado" / "_params_autopilot.json").normas[f"{NORMA}|{LEY}"].etapa == "cerrada"
+    )
     assert "Leyes cuya lectura se anota hoy" in piloto.texto_del_parte(informe, nuevas)
     # Next day: nothing to do, no model called.
     informe, nuevas = _pilotar(datos, tmp_path, texto_de, Guion(), Guion())
@@ -682,11 +736,16 @@ def test_autopilot_rereads_what_changed_in_a_law_no_norm_announced(datos: Path, 
     assert informe.normas == [] and informe.no_coinciden == [] and informe.objetivos == 1
     assert informe.releidos_por_cambio == ["Galicia: art. 5 Deducción por alquiler de vivienda habitual: 5"]
     lector = Guion(SIN_CAMBIOS)
-    informe, nuevas = _pilotar(datos, tmp_path, texto_de, lector, Guion(_revision_vigente()), registro={}, auto_aplicar=True)
+    informe, nuevas = _pilotar(
+        datos, tmp_path, texto_de, lector, Guion(_revision_vigente()), registro={}, auto_aplicar=True
+    )
     assert nuevas[0].origen == "relectura" and nuevas[0].estado == "aplicada" and nuevas[0].resultado == "sin_cambios"
     assert [r["boe_id"] for r in informe.procedencia["refrescadas"]] == [LEY]  # type: ignore[index]
-    # With --procedencia simulated (texts from a folder) nothing is written.
+    # Texts that were not read from the BOE today (a folder of pages): the reading is only simulated.
+    (tmp_path / "otro").mkdir()
     otro = _datos(tmp_path / "otro")
-    informe, _ = _pilotar(otro, tmp_path / "otro", boe(otro, consolidada=consolidada()), registro={}, procedencia="simular")
+    informe, _ = _pilotar(
+        otro, tmp_path / "otro", boe(otro, consolidada=consolidada()), registro={}, procedencia="simular"
+    )
     assert informe.procedencia["refrescadas"] == [{"boe_id": LEY, "consolidado_a": "2026-11-20", "simulado": True}]  # type: ignore[index]
-    assert _fuente_gallega(otro, 2026)["consultado_el"] == "2026-11-12"  # fmt: skip
+    assert _fuente_gallega(otro, 2026)["consultado_el"] == "2026-11-12"

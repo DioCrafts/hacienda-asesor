@@ -827,7 +827,9 @@ def _mensaje_lector(objetivo: Objetivo, texto: TextoLegal, indice: list[str], pr
     if previas:
         ultima = previas[-1]
         if ultima.resultado_lector == "sin_cambios":
-            rechazada = json.dumps({"resultado": "sin_cambios", "evidencia": ultima.citas}, ensure_ascii=False, indent=1)
+            rechazada = json.dumps(
+                {"resultado": "sin_cambios", "evidencia": ultima.citas}, ensure_ascii=False, indent=1
+            )
         else:
             rechazada = json.dumps(
                 {"valor": ultima.valor, "evidencia": ultima.citas, "efectos_desde": ultima.efectos_desde},
@@ -1545,7 +1547,9 @@ class ListaDePreceptos(_Registro):
     caracteres_enviados: int = 0
 
 
-def listar_preceptos(lector: Any, *, pagina: str, norma: str, ley: str, nombre_ley: str, ley_citada: str) -> ListaDePreceptos:
+def listar_preceptos(
+    lector: Any, *, pagina: str, norma: str, ley: str, nombre_ley: str, ley_citada: str
+) -> ListaDePreceptos:
     """Ask a reader which blocks of ``ley`` the amending ``norma`` changes, when its text could not be parsed for them.
 
     The last resort for a norm whose analysis names no article and whose sentences the deterministic parser

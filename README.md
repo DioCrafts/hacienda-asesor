@@ -800,11 +800,15 @@ que sale. Ningún grupo de cifras legales queda sin adaptador:
 Los casos límite del revisor pasan por la calculadora real: para un grupo de
 cifras del IRPF, el caso es un contribuyente y **una línea del resultado de
 `calcular_irpf`** («Reducción por tributación conjunta», «Mínimo por
-descendientes»…), y se compara su importe. Donde ninguna línea aísla el grupo
-(obligación de declarar, reparto de deducciones) no hay casos: el grupo pasa el
-control de cifras y la lectura del revisor y **siempre queda para confirmación
-humana**, igual que un grupo con cifras que imprime otra ley (el límite del
-10 % de los donativos) o un mínimo autonómico que deja importes al Estado.
+descendientes», «Compensación entre rendimientos y ganancias del ahorro»…), y
+se compara su importe; el reparto de las deducciones estatales entre las dos
+cuotas, que no tiene línea propia, se prueba con **la misma función de la
+calculadora** (`repartir_deducciones_estatales`). Solo la obligación de
+declarar no tiene casos, porque **ninguna calculadora usa esas cifras**: pasa
+el control de cifras y la lectura del revisor y **siempre queda para
+confirmación humana**, igual que un grupo con cifras que imprime otra ley (el
+límite del 10 % de los donativos) o un mínimo autonómico que deja importes al
+Estado.
 Si la nueva redacción cambia la *estructura* de la regla (otro tramo, otra
 fórmula), el lector debe responder «no calculable»: eso exige cambiar la
 calculadora y lo decide una persona. Lo que procede de un real decreto-ley
@@ -834,10 +838,23 @@ pensado para cron diario, encadena todo:
 1. **Detecta**: lee el BOE de los días pendientes (lo mismo que
    `boe-novedades`) y se queda con las normas cuyo análisis jurídico dice que
    modifican una ley de la que salen parámetros.
-2. **Localiza**: de los artículos que nombra ese análisis («MODIFICA los
-   arts. 5 y 9…») saca los grupos afectados, en cualquier fichero. Si la norma
-   *añade* un artículo a la ley de una comunidad, lo desglosa en deducciones
-   nuevas.
+2. **Localiza** los artículos que cambia: los que nombra ese análisis
+   («MODIFICA los arts. 5 y 9…»); si dice «determinados preceptos», los que
+   las notas del texto consolidado atribuyen a la norma («Se modifica por…
+   Ref. BOE-A-…») o, antes de consolidarse, los que nombran las frases de la
+   propia norma («Se modifica el artículo…», «Uno. El artículo 9 queda
+   redactado…», «Se añade…»), sin modelo; solo si nada de eso da un artículo,
+   un modelo los **lista** con una cita literal que el programa comprueba. El
+   parte dice cada artículo y por qué vía se supo. Después, **todos** los
+   grupos que se leen de esos artículos —por su artículo o porque sus citas
+   están allí—, en cualquier fichero, se releen **aunque su comprobación
+   pase** (una condición nueva puede estar fuera de los pasajes citados): el
+   lector recibe el artículo entero y la codificación vigente y puede
+   responder «sin cambios», que solo vale si siguen todas las citas
+   anteriores, cada cifra está en una cita y el revisor, que busca una
+   condición nueva y prueba sus casos con la codificación vigente, está
+   conforme. Si la norma *añade* un artículo a la ley de una comunidad, lo
+   desglosa en deducciones nuevas.
 3. **Lee de donde puede**: si el BOE ya ha consolidado la norma, del texto
    consolidado, con el análisis como anotación (suele llevar la cláusula de
    efectos). Si aún no —el BOE tarda días—, **del texto de la propia norma
@@ -845,14 +862,33 @@ pensado para cron diario, encadena todo:
    consolidación, el grupo se vuelve a comprobar: si lo aplicado coincide con
    el consolidado queda respaldado sin gastar nada, y si no, se relee.
 4. **Verifica** todos los ficheros contra el texto vigente (sin modelo): lo
-   que no coincide entra también, lo haya anunciado una norma o no.
+   que no coincide entra también, lo haya anunciado una norma o no; y si el
+   BOE ha actualizado una ley sin que ninguna norma del registro lo explique,
+   los grupos de los artículos con redacción posterior a la última lectura se
+   releen como en el paso 2.
 5. **Recodifica** con el bucle, bajo `RECODE_MAX_PER_RUN` y el presupuesto
    diario, y aplica lo que no necesita a nadie si `RECODE_AUTO_APPLY=true`.
-6. **Avisa** al operador con un parte (y solo cuando algo ha cambiado).
+6. **Anota la lectura** de cada ley actualizada que ha quedado al día (abajo).
+7. **Avisa** al operador con un parte (y solo cuando algo ha cambiado).
+
+**La fecha de lectura de cada ley.** `params-check --fail-on-stale` compara la
+fecha en que el BOE actualizó una ley con `consultado_el`, la fecha en que los
+ficheros la leyeron. El piloto (y `params-verify` al terminar) la anota solo,
+de forma determinista, en **todos** los ficheros que citan la ley (IRPF,
+autónomos, sociedades, patrimonio, ISD): nueva fecha de consolidación, huella
+de la página, `consultado_el` de hoy y una línea en `revisiones` donde el
+fichero la tiene. Solo cuando todas las comprobaciones de los grupos que la
+citan coinciden, ningún grupo de un artículo modificado desde la lectura
+anterior queda sin releer contra el texto de hoy (ni es de los que el bucle no
+relee, como unos importes calculados) y no hay nada abierto sobre
+ella (propuesta pendiente o sin converger, norma en curso, grupo marcado como
+no verificado sin comprobación). Nunca toca una cifra ni una fuente fijada a
+una redacción con fecha; con `--snapshot-dir` solo lo simula.
 
 Es idempotente (no paga dos veces por el mismo grupo y el mismo texto, ni
-repite un parte) y **seguro sin clave de LLM**: los pasos 1, 2 y 4 se ejecutan
-igual y el parte dice qué grupos esperan. `boe-novedades --autopilot` (o
+repite un parte) y **seguro sin clave de LLM**: los pasos 1, 2 (salvo la lista
+de último recurso), 4 y 6 se ejecutan igual y el parte dice qué grupos
+esperan; una ley con grupos que esperan no se anota. `boe-novedades --autopilot` (o
 `RECODE_AUTOPILOT=true`) lo lanza al terminar la revisión del día.
 
 **Antes de fiarte: `params-eval`.** Toma N codificaciones publicadas, **se las
@@ -865,7 +901,11 @@ mismo control que una propuesta.
 **Nada de esto se ha ejecutado contra un modelo real**: las pruebas usan un
 proveedor guionizado y leyes sintéticas; contra las leyes reales solo se han
 ejercitado las partes deterministas (localización de artículos, recorte de
-apartados, control de cifras, verificación).
+apartados, control de cifras, verificación, el control de «sin cambios» —que
+superan con sus citas guardadas las 220 deducciones autonómicas y todos los
+grupos de los otros cuatro ficheros—, los artículos que una ley autonómica
+real modifica según su propio texto y según las notas del consolidado, y la
+anotación de la lectura sobre copias de los ficheros).
 
 **Garantías, con cualquier modelo:** nada se escribe sin pasar el control;
 toda cifra escrita está impresa en una cita literal del texto leído; el texto
@@ -899,7 +939,8 @@ convierte ese silencio en un estado visible:
   saca texto con encabezados de artículo?, ¿cae el rendimiento?), la ingesta del corpus, las
   ejecuciones de los rastreadores y la cabecera de las sentencias del Supremo informan con recuentos.
   Del CENDOJ solo se observan las lecturas que el operador ya ha pedido: la vigilancia no descarga
-  nada de allí.
+  nada de allí ni guarda el texto de ninguna sentencia, solo su esqueleto (marcado, rótulos y forma
+  de los valores), que es también lo único que vería el modelo.
 - **El calendario fiscal se vigila como dato que caduca.** `ops formatos check` comprueba su
   coherencia (cada plazo existe este año y el siguiente, nada pasado se muestra como próximo, cada
   modelo es conocido, lo no contrastado que se acerca) y `ops formatos probe` contrasta sus plazos con

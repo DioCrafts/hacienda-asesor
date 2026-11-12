@@ -416,6 +416,22 @@ def _fecha_boe(boe_id: str) -> date | None:
     return fecha
 
 
+def _fechas_del_boe() -> Any:
+    """``_fecha_boe`` asked once per law and run (a failed request is not repeated either)."""
+    vistas: dict[str, date | None] = {}
+
+    def fecha_de(boe_id: str) -> date | None:
+        if boe_id not in vistas:
+            try:
+                vistas[boe_id] = _fecha_boe(boe_id)
+            except Exception as exc:  # the page's own date is used instead
+                logger.warning("Could not read the BOE metadata of %s: %s", boe_id, exc)
+                vistas[boe_id] = None
+        return vistas[boe_id]
+
+    return fecha_de
+
+
 _ANOTAR_OPTION = click.option(
     "--anotar-lecturas/--no-anotar-lecturas",
     "anotar",
@@ -439,7 +455,7 @@ def _anotar_lecturas(
             hoy=hoy_en_espana(),
             data_dir=data_dir,
             almacen=_almacen(proposals_dir),
-            fecha_boe=None if desde_snapshot else _fecha_boe,
+            fecha_boe=None if desde_snapshot else _fechas_del_boe(),
             simular=desde_snapshot,
         )
     except RecodificacionError as exc:
@@ -1146,7 +1162,7 @@ def _pilotar(
             hoy=hoy_en_espana(),
             leidas={boe_id: ley["leida"] for boe_id, ley in fuentes.items() if ley["leida"]},
             motivo_sin_modelo=motivo,
-            fecha_boe=None if texto_de is not None else _fecha_boe,
+            fecha_boe=None if texto_de is not None else _fechas_del_boe(),
             procedencia="no" if not anotar else ("simular" if texto_de is not None else "anotar"),
         )
     except RecodificacionError as exc:

@@ -74,6 +74,20 @@ Además:
   modelo cuando se diagnostica el lector (`ops formatos diagnose`). No está ligado a una cuenta,
   así que **no se borra al eliminar la cuenta** ni figura en la exportación: quien active la
   opción debe valorar si ese residuo es admisible en su despliegue.
+- **Vigilancia del lector de sentencias del CENDOJ** (`hacienda_gpt/ops/formatos_esqueleto.py`): las
+  sentencias no son datos de los usuarios, pero las condiciones de reutilización del CENDOJ prohíben
+  la descarga masiva y la creación de bases de datos de resoluciones sin autorización del CGPJ. La
+  vigilancia de formatos no hace ninguna petición al CENDOJ y **no guarda el texto de ninguna
+  resolución**: de cada sentencia que el operador ya ha descargado o leído de su disco se guarda,
+  como mucho (la última buena, la anterior y la última mala), un *esqueleto* estructural en
+  `FORMAT_DIR/muestras/cendoj_documento/`: las etiquetas y nombres de atributo del marcado, los
+  rótulos de una lista cerrada («ROJ», «ECLI», «Ponente», «Fecha», «Sala», «Sección», «Nº de
+  Recurso»…), `_` en lugar de cualquier otra palabra y `1` en lugar de cada cifra, con un máximo de
+  20 000 caracteres. Nombres de ponentes, partes y lugares, y el razonamiento de la sentencia, no
+  sobreviven al filtro. Lo que se espera de cada muestra se guarda como forma («STS ####/####»), no
+  como valor; la observación anota la URL, nunca la ruta de un fichero local. Ese esqueleto es lo
+  único que recibe el proveedor del modelo cuando se diagnostica el lector. De las ejecuciones de
+  `supremo_seed` solo se guardan recuentos.
 - **Registros del servidor**: el registro estructurado de la aplicación anota método, plantilla de
   ruta, estado y latencia; no anota cuerpos, identificadores de expediente ni direcciones IP. Pero
   el registro de accesos de uvicorn, activo por defecto, sí escribe la IP del cliente y la ruta
@@ -96,6 +110,7 @@ no salen de la máquina que ejecuta el modelo; con los otros dos salen hacia un 
 | Pregunta al flujo antiguo (`/qa`) | La pregunta, el historial y los fragmentos recuperados, a OpenAI. |
 | Subir un documento (`/cases/{id}/documents`) | El texto extraído del documento, o el propio fichero si es un escaneado o una foto. **Solo si el usuario ha dado el consentimiento `envio_documentos_a_proveedor_llm`**; sin él el servidor responde 403 antes de leer el fichero. |
 | Simulador, calendario, avisos proactivos, edición manual del expediente | Nada. Son cálculos deterministas locales. |
+| Diagnóstico de un formato externo (`ops formatos diagnose`, lo lanza el operador) | Muestras de fuentes públicas (BOE, boletines, TEAC, DGT, sede de la AEAT). De los documentos de usuarios, solo esqueletos anónimos y solo si el operador los ha activado; de las sentencias del CENDOJ, solo su esqueleto estructural. Ningún dato de expedientes. |
 
 Los *embeddings* y el reordenado de resultados se calculan en local.
 

@@ -345,8 +345,8 @@ def _localizar(
     except ProviderError as exc:
         return 0, [f"{norma.norma}: no se pudo pedir la lista de artículos que modifica: {str(exc)[:200]}"], "error"
     norma.listados.append("sin_consolidar")
-    for precepto in lista.preceptos:
-        _anotar_via(norma, precepto.articulo, VIA_MODELO)
+    for listado in lista.preceptos:
+        _anotar_via(norma, listado.articulo, VIA_MODELO)
     return lista.llamadas_llm, [f"{norma.norma}: {d}" for d in lista.descartados], None
 
 
@@ -750,7 +750,9 @@ def texto_del_parte(informe: InformePiloto, nuevas: Sequence[Propuesta]) -> str:
         ]
     if procedencia.get("bloqueadas"):
         lineas += ["", "Leyes actualizadas en el BOE cuya lectura NO se anota todavía:"]
-        lineas += [f"- {ley}: {'; '.join(m[:200] for m in motivos[:3])}" for ley, motivos in procedencia["bloqueadas"].items()]
+        lineas += [
+            f"- {ley}: {'; '.join(m[:200] for m in motivos[:3])}" for ley, motivos in procedencia["bloqueadas"].items()
+        ]
     if informe.errores:
         lineas += ["", "Errores:"] + [f"- {e[:300]}" for e in informe.errores[:15]]
     if nuevas:

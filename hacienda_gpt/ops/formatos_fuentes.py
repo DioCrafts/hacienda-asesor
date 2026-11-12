@@ -44,6 +44,7 @@ from hacienda_gpt.ops.formatos_boe import (
     valor_en,
 )
 from hacienda_gpt.ops.formatos_documentos import CLASES, OTROS
+from hacienda_gpt.ops.formatos_esqueleto import esqueleto_html, lista_permitida
 
 logger = logging.getLogger(__name__)
 
@@ -615,9 +616,21 @@ def _registrar_rastreadores() -> None:
 # CENDOJ / Tribunal Supremo (no network of our own: only the reads the operator already asked for)
 # --------------------------------------------------------------------------- #
 
-MAX_CENDOJ_MUESTRA = 30_000
 MIN_LOTE = 3
 _SIN_TEXTO = re.compile(r"(?is)<!--.*?-->|<(svg|noscript)\b.*?</\1\s*>")
+
+# The only words of a CENDOJ page the watch keeps (see formatos_esqueleto): the labels the reader and the
+# Supreme Court analysis rely on, court vocabulary, ordinals used as headings, months, and connectors.
+# Nothing here names a person, a party, a place or a matter.
+PALABRAS_CENDOJ = lista_permitida("""
+    roj ecli es ts sts ats id cendoj organo sede seccion ponente fecha sala tribunal supremo nº º ª num
+    numero recurso resolucion procedimiento tipo casacion contencioso administrativo civil penal social militar
+    primera segunda tercera cuarta quinta sexta septima octava sentencia auto fundamentos derecho juridicos
+    antecedentes hecho hechos fallo parte dispositiva voto particular interes casacional objetivo rec ordinario
+    unificacion doctrina ley primero segundo tercero cuarto quinto sexto septimo octavo noveno decimo
+    undecimo duodecimo vigesimo enero febrero marzo abril mayo junio julio agosto septiembre octubre
+    noviembre diciembre de del la el lo los las y en a al para por
+    """.split())
 
 
 def _sin_ruido(crudo: str) -> str:
@@ -625,9 +638,13 @@ def _sin_ruido(crudo: str) -> str:
     return _SIN_TEXTO.sub("", _SCRIPTS.sub("", crudo))
 
 
-def _recortar_cendoj(crudo: str) -> str:
-    """The start of the ruling without scripts or styles: the header (ROJ, ECLI, date, court) is there."""
-    return _sin_ruido(crudo)[:MAX_CENDOJ_MUESTRA]
+def esqueleto_cendoj(crudo: str) -> str:
+    """What the watch keeps of a ruling, and all a model ever sees of it: its structural skeleton.
+
+    The CENDOJ forbids building a database of rulings without the CGPJ's authorisation: not one word of
+    the ruling outside :data:`PALABRAS_CENDOJ` is kept; figures keep only their shape ("STS 1111/1111").
+    """
+    return esqueleto_html(crudo, PALABRAS_CENDOJ)
 
 
 def _recortar_html(crudo: str) -> str:
@@ -635,25 +652,50 @@ def _recortar_html(crudo: str) -> str:
     return _sin_ruido(crudo)[:MAX_MUESTRA_CHARS]
 
 
-def _canarios_cendoj(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
-    from hacienda_gpt.crawler.cendoj import MIN_CARACTERES_DOCUMENTO
+def _forma(valor: Any) -> Any:
+    """The shape of an extracted value: every digit becomes ``#`` ("STS ####/####")."""
+    return re.sub(r"\d", "#", valor) if isinstance(valor, str) else valor
 
+
+def forma_documento(reglas: Any, html: str) -> dict[str, Any]:
+    """What the gate compares for ``cendoj_documento``: which fields are found, and the shape of their values.
+
+    Run on skeletons, never on literal values: a proposed spec is accepted only if it finds the same fields
+    with the same shapes in the known-good skeleton and satisfies the canaries on the new one. Free text
+    (the reporting judge) counts only as present or absent.
+    """
+    from hacienda_gpt.crawler.cendoj import MIN_PALABRAS_DOCUMENTO, extraer_documento
+
+    campos = extraer_documento(reglas, html)
+    return {
+        "source_authority": campos["source_authority"],
+        "sala": campos["sala"],
+        "roj": _forma(campos["roj"]),
+        "ecli": _forma(campos["ecli"]),
+        "fecha_resolucion": _forma(campos["fecha_resolucion"]),
+        "ponente": campos["ponente"] is not None,
+        "is_tributario": campos["is_tributario"],
+        "tributos_detectados": campos["tributos_detectados"],
+        "con_texto": campos["palabras"] >= MIN_PALABRAS_DOCUMENTO,
+    }
+
+
+def _canarios_cendoj(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
     datos = datos if isinstance(datos, dict) else {}
     fallos: list[Fallo] = []
-    caracteres = int(datos.get("caracteres") or 0)
-    if caracteres < MIN_CARACTERES_DOCUMENTO:
+    con_texto = bool(datos.get("con_texto"))
+    if not con_texto:
         fallos.append(
             _grave(
                 "pagina_vacia",
-                f"La página apenas tiene texto ({caracteres} caracteres): es el armazón del portal o una página de "
-                "error, no una resolución.",
+                "La página apenas tiene texto: es el armazón del portal o una página de error, no una resolución.",
             )
         )
     elif not datos.get("roj") and not datos.get("ecli"):
         fallos.append(_grave("identificadores", "No se reconoce ni el ROJ ni el ECLI de la resolución."))
     elif not datos.get("roj"):
         fallos.append(_leve("roj", "Se reconoce el ECLI pero no el ROJ: la sentencia se guarda con otro nombre."))
-    if caracteres >= MIN_CARACTERES_DOCUMENTO and not datos.get("fecha_resolucion"):
+    if con_texto and not datos.get("fecha_resolucion"):
         fallos.append(
             _grave(
                 "fecha",
@@ -661,11 +703,11 @@ def _canarios_cendoj(datos: Any, muestra: str, contexto: str, reglas: Any) -> Le
                 "22/07/2016 y pierde prioridad.",
             )
         )
-    if caracteres >= MIN_CARACTERES_DOCUMENTO and not datos.get("sala"):
+    if con_texto and not datos.get("sala"):
         fallos.append(_leve("sala", "No se reconoce la sala."))
-    if caracteres >= MIN_CARACTERES_DOCUMENTO and not datos.get("ponente"):
+    if con_texto and not datos.get("ponente"):
         fallos.append(_leve("ponente", "No se reconoce el ponente."))
-    return Lectura(fallos=fallos, metricas={"caracteres": caracteres})
+    return Lectura(fallos=fallos)
 
 
 def _canarios_supremo(datos: Any, muestra: str, contexto: str, reglas: Any) -> Lectura:
@@ -699,7 +741,7 @@ def _canarios_supremo(datos: Any, muestra: str, contexto: str, reglas: Any) -> L
 
 
 def _registrar_cendoj() -> None:
-    from hacienda_gpt.crawler.cendoj import ReglasCendoj, extraer_documento
+    from hacienda_gpt.crawler.cendoj import ReglasCendoj
 
     registrar(
         Fuente(
@@ -711,11 +753,16 @@ def _registrar_cendoj() -> None:
                 "y la sala («Sala Tercera», «Sala de lo Contencioso…»).",
                 "Solo se observan las resoluciones que el operador ya ha pedido (lista de URL o ficheros locales): "
                 "la vigilancia no descarga nada del CENDOJ.",
+                "Por las condiciones del CENDOJ, de una resolución solo se guarda (y solo ves) su ESQUELETO: las "
+                "etiquetas y nombres de atributo del marcado, los rótulos de los que depende el lector («ROJ», "
+                "«ECLI», «Ponente», «Fecha», «Sala», «Sección», «Nº de Recurso»…), «_» en lugar de cualquier otra "
+                "palabra y «1» en lugar de cada cifra. Lo extraído se compara por su forma («STS ####/####»), "
+                "no por su valor.",
             ),
             reglas=ReglasCendoj,
-            extraer=extraer_documento,
+            extraer=forma_documento,
             canarios=_canarios_cendoj,
-            recortar=_recortar_cendoj,
+            recortar=esqueleto_cendoj,
             codigo="hacienda_gpt/crawler/cendoj.py (extraer_documento, parse_cendoj_document)",
         )
     )

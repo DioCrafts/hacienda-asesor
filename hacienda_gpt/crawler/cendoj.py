@@ -74,9 +74,13 @@ _PONENTE_PATTERN = re.compile(r"Ponente\s*:?\s*([^\n<]+)", re.IGNORECASE)
 _SALA_PATTERN = re.compile(r"Sala\s+(Tercera|3[ªa\.]+|de\s+lo\s+Contencioso[\w\s\-]*)", re.IGNORECASE)
 
 
-# Below this many characters of visible text the page is not a ruling (the portal's JavaScript shell or an
-# error page): the format watch flags it.
-MIN_CARACTERES_DOCUMENTO = 200
+# Below this many words of visible text (scripts and styles aside) the page is not a ruling (the portal's
+# JavaScript shell or an error page): the format watch flags it. Counted in words, not characters, so that
+# it reads the same on the structural skeleton the watch keeps instead of the ruling (see formatos_esqueleto).
+MIN_PALABRAS_DOCUMENTO = 30
+
+
+_TEXTO_VISIBLE = "//body//text()[not(ancestor::script) and not(ancestor::style)]"
 
 
 class ReglasCendoj(BaseModel):
@@ -139,10 +143,10 @@ class ReglasCendoj(BaseModel):
 
 
 def extraer_documento(reglas: ReglasCendoj, html: str) -> dict[str, Any]:
-    """The metadata of a ruling according to ``reglas`` (pure: no clock, no URL), plus ``caracteres``.
+    """The metadata of a ruling according to ``reglas`` (pure: no clock, no URL), plus ``palabras``.
 
-    ``caracteres`` (length of the visible text) is only for the format watch;
-    :func:`parse_cendoj_document` leaves it out.
+    ``palabras`` (words of visible text, scripts and styles aside) is only for
+    the format watch; :func:`parse_cendoj_document` leaves it out.
     """
     selector = parsel.Selector(text=html)
     body_text = " ".join(selector.xpath(reglas.texto_xpath).getall())
@@ -171,7 +175,7 @@ def extraer_documento(reglas: ReglasCendoj, html: str) -> dict[str, Any]:
         "ponente": ponente,
         "is_tributario": _classify_tributario(cleaned),
         "tributos_detectados": _detect_tributos(cleaned),
-        "caracteres": len(cleaned),
+        "palabras": len(" ".join(selector.xpath(_TEXTO_VISIBLE).getall()).split()),
     }
 
 

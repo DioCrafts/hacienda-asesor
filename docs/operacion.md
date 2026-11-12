@@ -38,8 +38,10 @@ SHELL=/bin/bash
 
 # Piloto de parámetros: normas que modifican leyes de las que salen parámetros → grupos
 # afectados → verificación de todos los ficheros → recodificación (si hay clave de LLM) →
-# parte al operador. --no-detect porque la línea anterior ya ha leído el BOE del día; sin
-# ella, quita la opción y el piloto lo lee él mismo. Ver el apartado 5.
+# anotación de la lectura de las leyes que quedan al día → parte al operador. Escribe en
+# hacienda_gpt/tax/data/ (fechas de lectura; y lo aplicado, con RECODE_AUTO_APPLY=true).
+# --no-detect porque la línea anterior ya ha leído el BOE del día; sin ella, quita la opción
+# y el piloto lo lee él mismo. Ver el apartado 5.
 55 6 * * *  cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.ops run params-autopilot -- uv run python -m hacienda_gpt.cli.proactive params-autopilot --no-detect >> logs/proactive.log 2>&1
 
 # Recordatorios de plazos y plan de fin de ejercicio.
@@ -237,6 +239,17 @@ Después ejecuta `params-verify --fail-on-mismatch` (todos los ficheros de pará
 autónomos, sociedades, patrimonio e ISD) y, siempre, `params-autopilot` (apartado 5): sin el
 secreto `ANTHROPIC_API_KEY` solo hace su parte determinista y dice qué grupos esperan.
 
+`params-check` compara la fecha en que el BOE actualizó cada ley con `consultado_el`, la fecha en
+que los ficheros la leyeron. Esa fecha ya no hay que editarla a mano: `params-verify` y
+`params-autopilot` la anotan solos, sin modelo, cuando la ley está al día (apartado 5, «La fecha
+de lectura de cada ley»). En Actions eso ocurre en la copia de trabajo del runner y **no se
+sube al repositorio**: el JSON de `params-verify` dice bajo `procedencia` qué leyes se
+anotarían y cuáles no, y por qué. Para que `params-check` vuelva a verde hay que anotarlas donde
+viven los ficheros de verdad (el servidor, con su cron del apartado 1, o tu copia de trabajo con
+`params-verify`) y subir el cambio. Una fuente fijada a una redacción con fecha (el fichero de
+autónomos de un ejercicio cerrado lee la ley «a 31-12-2025») ya no retiene la alarma: su texto
+no cambia.
+
 ## 5. Recodificación automática de parámetros
 
 Cuando un grupo de parámetros deja de coincidir con su ley (`params-verify`),
@@ -256,10 +269,35 @@ apartado 1). Cada ejecución:
 
 1. **Detecta** (salvo `--no-detect`): lee el BOE de los días pendientes, como
    `boe-novedades`, y actualiza su registro (`_boe_novedades.json`).
-2. **Normas → grupos.** Para cada norma del registro cuyo análisis del BOE
-   dice que modifica una ley de la que salen parámetros, toma los artículos
-   que nombra («MODIFICA los arts. 5 y 9 bis…») y busca los grupos que se leen
-   de ellos, en cualquier fichero.
+2. **Normas → artículos → grupos.** Para cada norma del registro cuyo análisis
+   del BOE dice que modifica una ley de la que salen parámetros, averigua qué
+   artículos cambia y lo deja anotado, artículo a artículo, con la vía por la
+   que lo supo (`articulos` de cada norma en el parte y en el estado):
+   - `análisis`: los que nombra el análisis («MODIFICA los arts. 5 y 9 bis…»);
+   - `versión del consolidado` / `anotaciones del consolidado`: una vez
+     consolidada, los bloques del texto consolidado cuya nota la nombra («Se
+     modifica por el art. 2 de la Ley 3/2026… Ref. BOE-A-…», o un «Téngase en
+     cuenta…»), con o sin versión fechada ese día;
+   - `texto de la norma`: antes de la consolidación, las frases de la propia
+     norma («Se modifica el artículo 5…», «Uno. El apartado 2 del artículo 9
+     queda redactado…», «Se añade una disposición adicional tercera…»), sin
+     leer la nueva redacción entre «» y solo las que se refieren a esa ley por
+     su número (o están dentro de un artículo de la norma que la nombra);
+   - `modelo`: solo si nada de lo anterior da ningún artículo (el análisis dice
+     «determinados preceptos» y la norma usa una fórmula que el programa no
+     reconoce), un modelo **lista** los artículos (una llamada por norma), cada
+     uno con una cita literal de la norma que lo nombra; lo que no se comprueba
+     se descarta. El modelo nunca codifica aquí.
+
+   Luego busca, en cualquier fichero, **todos** los grupos que se leen de esos
+   artículos, por su propio artículo o porque sus citas están en ellos, y los
+   relee **aunque su comprobación pase**: una condición nueva puede estar fuera
+   de los pasajes citados, donde ninguna verificación mira. Esa relectura recibe
+   el artículo entero y la codificación vigente, y el lector puede responder
+   `sin_cambios`: el control exige que todas las citas anteriores sigan en el
+   texto y que cada cifra de la codificación vigente esté en alguna cita, y el
+   revisor busca expresamente una condición, excepción o límite nuevo y lanza
+   sus casos con la codificación vigente. Si no, propone, como siempre.
    - Si el identificador de la norma ya aparece en el texto consolidado de la
      ley, los relee del consolidado, con el análisis como anotación.
    - Si aún no (el BOE consolida días después), los relee **del texto de la
@@ -276,22 +314,31 @@ apartado 1). Cada ejecución:
      activar el piloto sobre un registro antiguo no se paga por el pasado. Una
      norma que a los 90 días sigue sin aparecer en el consolidado se cierra con
      aviso.
-3. **Verifica** todos los ficheros de parámetros contra el texto vigente (sin
+3. **Cambios que nadie anunció.** Si el BOE ha actualizado una ley después de
+   la lectura que anotan los ficheros, los grupos de los artículos cuya
+   redacción se publicó después de esa lectura se releen igual que en el paso
+   2 (salvo que ya haya una propuesta aceptada hecha con el texto de hoy).
+4. **Verifica** todos los ficheros de parámetros contra el texto vigente (sin
    modelo). Lo que no coincide entra como objetivo, lo anuncie una norma o no.
-4. **Recodifica** con el bucle, con los topes de `RECODE_MAX_PER_RUN` y del
+5. **Recodifica** con el bucle, con los topes de `RECODE_MAX_PER_RUN` y del
    presupuesto diario; lo que no cabe queda para la siguiente ejecución. Con
-   `RECODE_AUTO_APPLY=true` aplica lo que no necesita a nadie.
-5. **Parte** al operador por los canales `NOTIFY_*` (asunto «parte del piloto
-   de parámetros»): normas nuevas, estado de cada una, grupos que no
-   coinciden, lo que el bucle no puede releer, propuestas de la ejecución. No
-   se repite mientras la situación no cambie.
+   `RECODE_AUTO_APPLY=true` aplica lo que no necesita a nadie (también un
+   `sin_cambios` conforme, que no escribe nada).
+6. **Anota la lectura** de cada ley que ha quedado al día (ver «La fecha de
+   lectura de cada ley», más abajo).
+7. **Parte** al operador por los canales `NOTIFY_*` (asunto «parte del piloto
+   de parámetros»): normas nuevas, estado de cada una y sus artículos, grupos
+   que no coinciden o que se releen, lo que el bucle no puede releer,
+   propuestas de la ejecución, leyes anotadas y leyes que aún no se pueden
+   anotar y por qué. No se repite mientras la situación no cambie.
 
 Su estado está en `<output-dir>/_params_autopilot.json` (una entrada por norma
 y ley: `sin_consolidar` → `consolidada` → `cerrada`). Bórralo solo si quieres
 que vuelva a tratar las normas del registro.
 
-Sin credenciales de LLM (o con `--no-llm`) hace los pasos 1 a 3 y el parte, y
-dice en `omitido` cuántos grupos esperan. Termina con código 0 salvo con
+Sin credenciales de LLM (o con `--no-llm`) hace los pasos 1 a 4, el 6 y el
+parte, y dice en `omitido` cuántos grupos esperan (una ley con grupos que
+esperan no se anota). Termina con código 0 salvo con
 `--fail-on-error` (errores o presupuesto agotado → 1). `boe-novedades
 --autopilot`, o la variable `RECODE_AUTOPILOT=true`, lanza el piloto al
 terminar la revisión del día, si prefieres una sola línea de cron.
@@ -305,9 +352,42 @@ Qué sigue necesitando a una persona, aunque actives la auto-aplicación:
 - retiradas y `sin_converger` (entre ellas, un cambio de *estructura* en un
   grupo de cifras: hay que cambiar la calculadora);
 - lo listado en `fuera_de_alcance` y `sin_adaptador`;
-- `params-confirm` de lo aplicado, y la fecha `consultado_el` de cada ley en
-  los ficheros (el piloto no la toca: `params-check` seguirá diciendo que la
-  ley ha cambiado hasta que alguien la actualice).
+- `params-confirm` de lo aplicado;
+- una ley que no se puede anotar (ver abajo): `params-check` sigue en rojo
+  hasta que se resuelva lo que impide anotarla.
+
+### La fecha de lectura de cada ley
+
+Cada fichero de parámetros dice de qué texto de cada ley salen sus cifras
+(`fuente_principal` en el IRPF y en cada comunidad; `fuentes_principales`,
+`fuentes_complementarias` y la `fuente_principal` de cada comunidad en los
+demás) con `consolidado_a`, `consultado_el` y `sha256_html`. `params-autopilot`
+(paso 6) y `params-verify` (al terminar) **anotan solos la lectura de hoy** de
+cada ley que el BOE ha actualizado después de la lectura anterior (por la fecha
+de sus metadatos, la misma que mira `params-check`, o por la «Última
+actualización» de la página), sin modelo y solo si:
+
+- todas las comprobaciones de todos los grupos que la citan, en todos los
+  ficheros, coinciden con el texto de hoy;
+- ningún grupo leído de un artículo cuya redacción se publicó después de la
+  lectura anterior queda sin releer contra el texto de hoy (con una propuesta
+  aceptada, `recodificada` o `sin_cambios`, hecha con ese mismo texto), ni
+  cuelga de uno de esos artículos un grupo que el bucle no relee (importes
+  calculados a partir de otros, como los mínimos de Baleares): ese caso lo
+  revisa una persona, que anota la lectura a mano;
+- no hay sobre ella ninguna propuesta pendiente de decisión ni `sin_converger`,
+  ningún grupo marcado como no verificado que no compruebe nada, ni —en el
+  piloto— una norma en curso o un grupo de la ejecución sin resolver.
+
+Entonces escribe en **todos** los ficheros que la citan la nueva fecha de
+consolidación (nunca hacia atrás), `consultado_el` de hoy y la huella de la
+página, y una línea en `revisiones` donde el fichero tiene esa lista (los de
+autónomos, sociedades, patrimonio e ISD no la tienen: queda en la salida y en
+el parte). Valida cada fichero con su modelo antes de escribir ninguno. Nunca
+toca una cifra ni una fuente fijada a una redacción con fecha o al PDF de una
+orden. La salida (`procedencia`) dice qué leyes se anotaron, cuáles están al
+día y, de las demás, todos los motivos. Con `--snapshot-dir` solo se simula
+(esos textos no se han leído hoy del BOE); `--no-anotar-lecturas` lo desactiva.
 
 ### Ajustes
 
@@ -364,6 +444,11 @@ Qué mirar en una propuesta antes de aplicarla:
 - `resultado: "retirada"`: el lector cree que la deducción ya no encaja en el
   esquema (`motivo_lector`). Aplicarla la quita de las calculables y la deja,
   por título, en `otras_deducciones`. Nunca se auto-aplica.
+- `resultado: "sin_cambios"`: tras una modificación del artículo, el lector
+  sostiene que el grupo no cambia; el control comprobó que siguen todas las
+  citas anteriores y el revisor no encontró ninguna condición nueva.
+  `params-apply` repite el control y no escribe nada en los ficheros: solo
+  deja la propuesta como aceptada (eso permite anotar la lectura de la ley).
 - `estado: "sin_converger"`: `objeciones_abiertas` dice dónde se atascó. No se
   puede aplicar; corrígelo a mano o recházala. No se reintenta sola mientras ni
   la ley ni los datos cambien (`--force` lo fuerza).
@@ -509,10 +594,21 @@ del servidor es el camino normal.
   Si no imprime la fecha de efectos («entrará en vigor el día siguiente al de
   su publicación») la propuesta no supera el control y hay que esperar al
   texto consolidado, que sí la imprime.
-- El piloto empareja normas y grupos por los artículos que nombra el análisis
-  del BOE. Si el análisis dice «determinados preceptos», o tarda en
-  publicarse, solo queda la verificación, que ve cifras y citas que cambian
-  pero no una condición nueva en un grupo de cifras.
+- Si el análisis del BOE dice «determinados preceptos», los artículos salen
+  del texto consolidado o del de la propia norma; el análisis sintáctico de
+  la norma reconoce las fórmulas habituales («Se modifica…», «… queda
+  redactado…», «Se añade…») y, si no reconoce ninguna, decide un modelo que
+  solo lista. Una norma que cambia un artículo sin nombrarlo en ninguna parte
+  queda para la verificación, que ve cifras y citas que cambian pero no una
+  condición nueva.
+- Antes de la consolidación no se puede probar que un grupo «no cambia»: el
+  texto de la norma solo trae el apartado que reescribe. Hay que esperar al
+  consolidado o decidir a mano.
+- Una relectura tras una modificación envía el artículo entero, aunque mida
+  70.000 caracteres: es más cara que una relectura por verificación.
+- El paso 3 y la anotación de lecturas comparan fechas de publicación de
+  versiones con la fecha de lectura. Una norma publicada antes de la lectura y
+  consolidada después la cubre el registro de novedades (paso 2), no el 3.
 - Los artículos que una norma añade solo se desglosan en deducciones nuevas en
   las leyes autonómicas del IRPF; un grupo estatal nuevo exige código.
 - Grupos leídos de una redacción ya no vigente, o con importes calculados:
@@ -544,7 +640,9 @@ de fuentes, supuestos y síntomas está en [`docs/formatos_inventario.md`](forma
    un volumen persistente, como `JOBS_STATE_PATH`. La ingesta (Docling) informa desde varios procesos
    a la vez: el fichero de estado se escribe con bloqueo.
    Del CENDOJ solo se observa lo que ya se lee por orden tuya (`supremo_seed --from-dir` o
-   `--urls-file`, el rastreador con su lista de URL): la vigilancia no hace ninguna petición propia.
+   `--urls-file`, el rastreador con su lista de URL): la vigilancia no hace ninguna petición propia
+   y de cada sentencia guarda solo un esqueleto estructural, sin una palabra de la resolución fuera de
+   los rótulos ni una cifra (ver `docs/privacidad.md`); el diagnóstico trabaja sobre ese esqueleto.
 2. Añade una línea de cron **después** de las tareas diarias:
 
    ```cron

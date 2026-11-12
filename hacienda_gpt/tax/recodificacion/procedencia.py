@@ -11,7 +11,8 @@ This module moves it, deterministically, and only when it is true. A law is reco
 * its current consolidated text has been read and shows the date of its last update;
 * every check of every group, in every parameter file, that quotes it matches that text;
 * no article changed since the files last read it hosts a group nobody has re-read against the current text (a
-  new condition can sit outside the passages a group quotes, where no check looks);
+  new condition can sit outside the passages a group quotes, where no check looks), nor a group the loop never
+  re-reads (figures computed from others);
 * nothing about it is open: no proposal waiting for a decision or that did not converge, no group flagged as not
   verified that no check covers, nothing the caller (the autopilot) is still following.
 
@@ -265,6 +266,41 @@ def _historico(adaptador: Adaptador, fuente: dict[str, Any]) -> bool:
     )
 
 
+def fuera_del_bucle(boe_id: str, bloques: Iterable[str], *, data_dir: Path = DATA_DIR) -> list[str]:
+    """IRPF groups read from one of ``bloques`` of ``boe_id`` that the loop never re-reads (figures computed from
+    others): nothing can confirm them against a new wording, so a person must.
+
+    Groups read from a superseded wording are left out: they are pinned to that wording, and re-reading one is the
+    operator's call (``--version``).
+    """
+    from hacienda_gpt.tax.recodificacion.adaptadores import _DEL_IRPF, FICHERO_IRPF, GrupoDeCifras
+    from hacienda_gpt.tax.recodificacion.control import articulos_de_referencia
+    from hacienda_gpt.tax.recodificacion.nucleo import ejercicios_en
+
+    buscados = set(bloques)
+    fuera: list[str] = []
+    for ejercicio in ejercicios_en(data_dir, FICHERO_IRPF):
+        raw = _json(data_dir / FICHERO_IRPF.format(ejercicio=ejercicio))
+        for adaptador in _DEL_IRPF:
+            if not isinstance(adaptador, GrupoDeCifras):
+                continue
+            for ruta in adaptador.grupos(raw):
+                fuente = (leer_ruta(raw, ruta) or {}).get("fuente")
+                if not isinstance(fuente, dict) or _historico(adaptador, fuente):
+                    continue
+                duenio = raw["comunidades"][ruta[1]] if ruta[0] == "comunidades" else raw
+                tocados = buscados & set(articulos_de_referencia(str(fuente.get("referencia") or "")))
+                if duenio.get("fuente_principal", {}).get("boe_id") != boe_id or not tocados:
+                    continue
+                try:
+                    adaptador.objetivo(ruta, {ejercicio: raw}, data_dir=data_dir, origen="procedencia")
+                except RecodificacionError:
+                    etiqueta = f"{'/'.join(ruta)} (art. {', '.join(sorted(tocados))})"
+                    if etiqueta not in fuera:
+                        fuera.append(etiqueta)
+    return fuera
+
+
 def _sin_cuadrar(texto_de: TextoDe, data_dir: Path) -> dict[str, list[str]]:
     """Per law: failing checks of every parameter file, and IRPF groups flagged as not verified that nothing checks."""
     from hacienda_gpt.tax.recodificacion.adaptadores import (
@@ -288,9 +324,7 @@ def _sin_cuadrar(texto_de: TextoDe, data_dir: Path) -> dict[str, list[str]]:
                 )
 
     evidencia, evidencia_parametros = _json(data_dir / EVIDENCIA_DEDUCCIONES), _json(data_dir / EVIDENCIA_PARAMETROS)
-    ficheros = {
-        e: _json(data_dir / FICHERO_IRPF.format(ejercicio=e)) for e in ejercicios_en(data_dir, FICHERO_IRPF)
-    }
+    ficheros = {e: _json(data_dir / FICHERO_IRPF.format(ejercicio=e)) for e in ejercicios_en(data_dir, FICHERO_IRPF)}
     for ejercicio, raw in ficheros.items():
         nombre = FICHERO_IRPF.format(ejercicio=ejercicio)
         checks = comprobaciones(
@@ -302,7 +336,11 @@ def _sin_cuadrar(texto_de: TextoDe, data_dir: Path) -> dict[str, list[str]]:
             for ruta in adaptador.grupos(raw):
                 nodo = leer_ruta(raw, ruta)
                 fuente = nodo.get("fuente") if isinstance(nodo, dict) else None
-                if not isinstance(fuente, dict) or fuente.get("verificado") is not False or _historico(adaptador, fuente):
+                if (
+                    not isinstance(fuente, dict)
+                    or fuente.get("verificado") is not False
+                    or _historico(adaptador, fuente)
+                ):
                     continue
                 camino = "/".join(ruta)
                 if any(camino == c or camino.startswith(c + "/") for c in comprobados):
@@ -409,6 +447,12 @@ def diagnosticar(
                 f"{len(estado.pendientes_de_releer)} grupo(s) de artículos modificados desde la última lectura "
                 f"({', '.join(estado.modificados[:12])}) sin releer contra el texto actual: "
                 + "; ".join(estado.pendientes_de_releer[:5])
+            )
+        fuera = fuera_del_bucle(estado.boe_id, estado.modificados, data_dir=data_dir)
+        if fuera:
+            estado.motivos.append(
+                "grupos que el bucle no relee (cifras calculadas a partir de otras) en artículos modificados desde la "
+                f"última lectura: {'; '.join(fuera[:5])}. Revísalos a mano y anota la lectura de la ley a mano."
             )
         estado.motivos += sin_cuadrar.get(estado.boe_id, [])
         estado.motivos += [
@@ -576,6 +620,7 @@ __all__ = [
     "ficheros_de_parametros",
     "fuentes_de_los_parametros",
     "fuentes_del_fichero",
+    "fuera_del_bucle",
     "grupos_de_los_bloques",
     "lecturas",
     "refrescar",

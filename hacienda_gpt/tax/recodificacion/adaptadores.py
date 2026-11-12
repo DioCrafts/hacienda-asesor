@@ -1053,9 +1053,7 @@ class GrupoDeCifras(_CitasDeParametros):
         ejercicio = max(objetivo.ejercicios)
         base = ficheros_en_curso().get(ejercicio)
         raw = (
-            copy.deepcopy(base)
-            if isinstance(base, dict)
-            else params_mod.load_params(ejercicio).model_dump(mode="json")
+            copy.deepcopy(base) if isinstance(base, dict) else params_mod.load_params(ejercicio).model_dump(mode="json")
         )
         if self.cifras.autonomico:
             contribuyente.setdefault("comunidad_autonoma", objetivo.ambito)
