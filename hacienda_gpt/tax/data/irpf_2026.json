@@ -307,7 +307,7 @@
         {
           "articulo": "art. 11",
           "titulo": "Gastos educativos",
-          "resumen": "15 % de los gastos de escolaridad y de enseñanza de idiomas y 5 % de los de vestuario de uso exclusivo escolar de los hijos por los que se aplica el mínimo por descendientes, minorados en becas y ayudas. Máximo de 412,40 € por hijo, que sube a 927,90 € si hay gastos de escolaridad; el art. 11.4 fija otro límite para el primer ciclo de Educación Infantil.",
+          "resumen": "15 % de los gastos de escolaridad y de enseñanza de idiomas y 5 % de los de vestuario de uso exclusivo escolar de los hijos por los que se aplica el mínimo por descendientes, minorados en becas y ayudas. Máximo de 412,40 € por hijo, 927,90 € si hay gastos de escolaridad y 1.031 € por cada hijo en el primer ciclo de Educación Infantil.",
           "limites": "Base imponible conjunta de la unidad familiar no superior a 30.930 € multiplicados por el número de miembros (art. 18.2).",
           "limite_base_individual": null,
           "limite_base_conjunta": null,
@@ -341,7 +341,86 @@
         "art. 15 y 17: inversión en acciones de entidades nuevas o cotizadas en el Mercado Alternativo Bursátil",
         "art. 16: fomento del autoempleo de menores de 35 años",
         "art. 17 bis: inversiones de nuevos contribuyentes procedentes del extranjero"
-      ]
+      ],
+      "deducciones_madrid": {
+        "nacimiento": {
+          "importe_por_hijo": "721.70",
+          "limite_base_individual": "30930",
+          "limite_base_conjunta": "37322.20",
+          "limite_base_unidad_familiar": "61860",
+          "fuente": {
+            "referencia": "arts. 4 y 18.1 DLeg. 1/2010 de la Comunidad de Madrid",
+            "en_vigor_desde": "2023-12-22",
+            "verificado": true
+          }
+        },
+        "alquiler": {
+          "porcentaje": "0.30",
+          "maximo": "1237.20",
+          "edad_maxima_exclusiva": 40,
+          "porcentaje_minimo_sobre_base": "0.20",
+          "limite_base_individual": "26414.22",
+          "limite_base_conjunta": "37322.20",
+          "limite_base_unidad_familiar": "61860",
+          "fuente": {
+            "referencia": "arts. 8 y 18.1 DLeg. 1/2010 de la Comunidad de Madrid",
+            "en_vigor_desde": "2024-11-29",
+            "verificado": true
+          }
+        },
+        "gastos_educativos": {
+          "porcentaje_escolaridad_idiomas": "0.15",
+          "porcentaje_vestuario": "0.05",
+          "maximo_por_hijo": "412.40",
+          "maximo_por_hijo_con_escolaridad": "927.90",
+          "maximo_por_hijo_primer_ciclo_infantil": "1031",
+          "limite_base_por_miembro": "30930",
+          "fuente": {
+            "referencia": "arts. 11 y 18.2 DLeg. 1/2010 de la Comunidad de Madrid",
+            "en_vigor_desde": "2023-12-22",
+            "verificado": true
+          }
+        },
+        "cuidado": {
+          "porcentaje": "0.25",
+          "maximo": "463.95",
+          "porcentaje_familia_numerosa": "0.40",
+          "maximo_familia_numerosa": "618.60",
+          "limite_base_por_miembro": "30930",
+          "fuente": {
+            "referencia": "arts. 11 bis y 18.2 DLeg. 1/2010 de la Comunidad de Madrid",
+            "en_vigor_desde": "2023-12-22",
+            "verificado": true
+          }
+        },
+        "donativos": {
+          "porcentaje": "0.15",
+          "limite_base_liquidable": "0.10",
+          "fuente": {
+            "referencia": "arts. 9 y 18.3 DLeg. 1/2010 de la Comunidad de Madrid",
+            "en_vigor_desde": "2018-12-31",
+            "verificado": true
+          }
+        },
+        "familias_ingresos_reducidos": {
+          "porcentaje": "0.10",
+          "minimo_descendientes": 2,
+          "limite_suma_bases": "24744",
+          "fuente": {
+            "referencia": "art. 14 DLeg. 1/2010 de la Comunidad de Madrid",
+            "en_vigor_desde": "2023-12-22",
+            "verificado": true
+          }
+        }
+      }
+    }
+  },
+  "reparto_deducciones_estatales": {
+    "parte_autonomica": "0.50",
+    "fuente": {
+      "referencia": "arts. 67.1.b) y 77.1.a) LIRPF",
+      "en_vigor_desde": "2015-01-01",
+      "verificado": true
     }
   }
 }

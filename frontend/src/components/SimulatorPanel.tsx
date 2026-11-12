@@ -44,7 +44,27 @@ const GROUPS: Array<{ title: string; fields: FieldDef[] }> = [
     ],
   },
 ];
-const FIELDS = GROUPS.flatMap((g) => g.fields);
+// Shown only for residents of the Comunidad de Madrid (the one community whose
+// deductions the calculator applies).
+const MADRID_GROUP: { title: string; fields: FieldDef[] } = {
+  title: "Deducciones de la Comunidad de Madrid",
+  fields: [
+    { name: "edad", label: "Tu edad", kind: "count", hint: "El alquiler solo deduce si tienes menos de 40 años" },
+    { name: "alquiler_vivienda_habitual", label: "Alquiler pagado en el año", kind: "money" },
+    { name: "hijos_nacidos_ultimos_3_ejercicios", label: "Hijos nacidos en los últimos 3 años", kind: "count" },
+    { name: "gastos_escolaridad", label: "Gastos de escolaridad", kind: "money", hint: "Colegio privado no concertado o primer ciclo de infantil" },
+    { name: "gastos_ensenanza_idiomas", label: "Clases de idiomas de los hijos", kind: "money" },
+    { name: "gastos_uniformes_escolares", label: "Uniformes escolares", kind: "money" },
+    { name: "cotizaciones_empleada_hogar", label: "Cotizaciones de empleada de hogar", kind: "money", hint: "Con un hijo menor de 3 años" },
+    { name: "base_imponible_resto_unidad_familiar", label: "Rentas netas de tu pareja", kind: "money", hint: "Cuentan para los límites de renta familiar" },
+  ],
+};
+const COMUNIDADES = [
+  { value: "", label: "Sin indicar" },
+  { value: "Madrid", label: "Comunidad de Madrid" },
+  { value: "Otra", label: "Otra comunidad" },
+];
+const FIELDS = [...GROUPS, MADRID_GROUP].flatMap((g) => g.fields);
 const TRIBUTACION = [
   { value: "individual", label: "Individual" },
   { value: "conjunta_biparental", label: "Conjunta (matrimonio)" },
@@ -70,7 +90,7 @@ interface SimulatorPanelProps {
   facts: Fact[];
   taxPeriod: string | null;
   // Persist edited figures to the case. Resolves true when saved.
-  onSaveFact: (factName: string, value: number) => Promise<boolean>;
+  onSaveFact: (factName: string, value: number | string) => Promise<boolean>;
   busy: boolean;
 }
 
@@ -78,6 +98,8 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   // Edits layered over the case facts: { field: raw text }. Empty = baseline.
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [tributacion, setTributacion] = useState("individual");
+  // null = keep whatever the case says.
+  const [comunidadEdit, setComunidadEdit] = useState<string | null>(null);
   const [simulation, setSimulation] = useState<Simulation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -89,6 +111,12 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
     return map;
   }, [facts]);
 
+  const savedComunidad = useMemo(() => {
+    const value = facts.find((f) => f.name === "comunidad_autonoma")?.value;
+    if (typeof value !== "string") return "";
+    return /madrid/i.test(value) ? "Madrid" : "Otra";
+  }, [facts]);
+
   const cambios = useMemo(() => {
     const out: Record<string, unknown> = {};
     for (const [name, raw] of Object.entries(edits)) {
@@ -96,8 +124,11 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
       if (n !== null && String(n) !== baseline[name]) out[name] = n;
     }
     if (tributacion !== "individual") out.tributacion = tributacion;
+    if (comunidadEdit !== null && comunidadEdit !== savedComunidad) out.comunidad_autonoma = comunidadEdit === "Otra" ? "otra comunidad" : comunidadEdit || null;
     return out;
-  }, [edits, tributacion, baseline]);
+  }, [edits, tributacion, baseline, comunidadEdit, savedComunidad]);
+  const comunidad = comunidadEdit ?? savedComunidad;
+  const groups = /madrid/i.test(comunidad) ? [...GROUPS, MADRID_GROUP] : GROUPS;
   const changed = Object.keys(cambios).length > 0;
   const cambiosKey = JSON.stringify(cambios);
 
@@ -155,10 +186,12 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
     setSaving(true);
     try {
       for (const [name, value] of Object.entries(cambios)) {
-        if (typeof value !== "number") continue;
+        const saveable = typeof value === "number" || (name === "comunidad_autonoma" && typeof value === "string");
+        if (!saveable) continue;
         if (!(await onSaveFact(name, value))) return;
       }
       setEdits({});
+      setComunidadEdit(null);
     } finally {
       setSaving(false);
     }
@@ -239,7 +272,7 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
             </section>
           )}
 
-          {GROUPS.map((group) => (
+          {groups.map((group) => (
             <fieldset key={group.title}>
               <legend className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">{group.title}</legend>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -267,6 +300,23 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
                     </label>
                   );
                 })}
+                {group.title === "Familia" && (
+                  <label className="block sm:col-span-2">
+                    <span className="text-[12.5px] text-ink-soft">Comunidad autónoma</span>
+                    <select value={comunidad} onChange={(e) => setComunidadEdit(e.target.value)} className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-[16px] text-ink focus:border-primary focus:outline-none sm:text-[14px]">
+                      {COMUNIDADES.map((c) => (
+                        <option key={c.value} value={c.value}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="mt-1 block text-[11.5px] leading-snug text-muted">
+                      {comunidad === "Madrid"
+                        ? "Se aplican la escala, los mínimos y varias deducciones de Madrid."
+                        : "Solo Madrid tiene cargada su normativa; para el resto la parte autonómica es una aproximación."}
+                    </span>
+                  </label>
+                )}
                 {group.title === "Familia" && (
                   <label className="block sm:col-span-2">
                     <span className="text-[12.5px] text-ink-soft">Tipo de declaración</span>
@@ -301,6 +351,7 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
                 onClick={() => {
                   setEdits({});
                   setTributacion("individual");
+                  setComunidadEdit(null);
                 }}
                 className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-soft hover:bg-line/60"
               >

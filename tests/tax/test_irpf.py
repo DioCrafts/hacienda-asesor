@@ -207,7 +207,7 @@ def test_madrid_resident_uses_regional_scale_and_minimums() -> None:
     assert r.cuota_integra_autonomica == D("2140.78")
     assert r.cuota_liquida == D("4610.53") and r.resultado == D("110.53")
     assert not any("aproximado" in aviso for aviso in r.avisos)
-    assert any("deducciones autonómicas NO están incluidas" in aviso for aviso in r.avisos)
+    assert any("Se aplican la escala y los mínimos de Comunidad de Madrid" in aviso for aviso in r.avisos)
     assert "BOCM-m-2010-90068" in r.fuente and r.parametros_no_verificados == []
 
     # Regional family minimums: 5.956,65 + 2.575,85 + 2.897,83 + 3.005,16 (one child under three).
@@ -240,3 +240,157 @@ def test_no_income_and_negative_general_base_do_not_crash() -> None:
     assert _calc().resultado == 0
     loss = _calc(rendimiento_actividad_neto=D(-5000))
     assert loss.base_liquidable_general == 0 and any("negativa" in aviso for aviso in loss.avisos)
+
+
+# --------------------------------------------------------------------------- #
+# Comunidad de Madrid deductions (DLeg. 1/2010, arts. 4, 8, 9, 11, 11 bis, 14, 18)
+# --------------------------------------------------------------------------- #
+
+
+def _madrid(**kwargs):
+    return _calc(comunidad_autonoma="Madrid", **kwargs)
+
+
+def _aplicada(result, prefix: str) -> D:
+    return next((-line.importe for line in result.lineas if line.concepto.startswith(prefix)), D(0))
+
+
+def _no_aplicada(result, nombre: str) -> str:
+    return next((a for a in result.avisos if a.startswith(f"Deducción madrileña por {nombre} no aplicada")), "")
+
+
+def test_madrid_rent_deduction_for_under_40s() -> None:
+    # Base 24.000 − 1.524 − 2.000 = 20.476 (≤ 26.414,22). Rent 9.600 > 20 % of the base.
+    # 30 % × 9.600 = 2.880 → capped at 1.237,20.
+    # Regional: 1.739,53 + 1.471,37 × 12,8 % = 1.927,87; − 506,32 = 1.421,55; − 1.237,20 = 184,35.
+    # State: 2.112,75 + 276 × 15 % − 527,25 = 1.626,90.
+    base = dict(
+        rendimiento_trabajo_bruto=D(24000), cotizaciones_seguridad_social=D(1524), alquiler_vivienda_habitual=D(9600)
+    )
+    r = _madrid(edad=30, **base)
+    assert _aplicada(r, "Deducción autonómica por alquiler") == D("1237.20")
+    assert r.cuota_integra_autonomica == D("1421.55") and r.cuota_integra_estatal == D("1626.90")
+    assert r.cuota_liquida == D("1811.25")
+
+    assert "menores de 40" in _no_aplicada(_madrid(edad=40, **base), "alquiler")
+    assert "falta tu edad" in _no_aplicada(_madrid(**base), "alquiler")
+    cheap = _madrid(edad=30, **{**base, "alquiler_vivienda_habitual": D(4000)})
+    assert "no supera el 20 %" in _no_aplicada(cheap, "alquiler")
+    rich = _madrid(edad=30, **{**base, "rendimiento_trabajo_bruto": D(40000)})
+    assert "supera 26414.22 €" in _no_aplicada(rich, "alquiler")
+    household = _madrid(edad=30, base_imponible_resto_unidad_familiar=D(45000), **base)
+    assert "unidad familiar" in _no_aplicada(household, "alquiler")
+    for failed in (cheap, rich, household):
+        assert _aplicada(failed, "Deducción autonómica por alquiler") == 0
+
+
+def test_madrid_birth_deduction_and_sharing_between_parents() -> None:
+    family = dict(
+        rendimiento_trabajo_bruto=D(24000),
+        cotizaciones_seguridad_social=D(1524),
+        num_descendientes=1,
+        num_descendientes_menores_3=1,
+        hijos_nacidos_ultimos_3_ejercicios=1,
+    )
+    assert _aplicada(_madrid(**family), "Deducción autonómica por nacimiento") == D("721.70")
+    shared = _madrid(descendientes_compartidos=True, **family)
+    assert _aplicada(shared, "Deducción autonómica por nacimiento") == D("360.85")
+    high = _madrid(**{**family, "rendimiento_trabajo_bruto": D(40000)})
+    assert "supera 30930.00 €" in _no_aplicada(high, "nacimiento o adopción")
+
+
+def test_madrid_education_expenses_rates_and_caps() -> None:
+    kids = dict(rendimiento_trabajo_bruto=D(60000), cotizaciones_seguridad_social=D(3810), num_descendientes=2)
+    # 15 % × (6.000 + 1.000) + 5 % × 400 = 1.070; cap 2 × 927,90 not reached.
+    full = _madrid(
+        gastos_escolaridad=D(6000), gastos_ensenanza_idiomas=D(1000), gastos_uniformes_escolares=D(400), **kids
+    )
+    assert _aplicada(full, "Deducción autonómica por gastos educativos") == D("1070.00")
+    assert any("deducidos de tus datos" in aviso for aviso in full.avisos)  # family size was inferred
+
+    # Without schooling fees the cap is 412,40 per child: 15 % × 4.000 = 600 → 412,40.
+    one = {**kids, "num_descendientes": 1}
+    languages = _madrid(gastos_ensenanza_idiomas=D(4000), miembros_unidad_familiar=3, **one)
+    assert _aplicada(languages, "Deducción autonómica por gastos educativos") == D("412.40")
+    assert not any("deducidos de tus datos" in aviso for aviso in languages.avisos)
+    # First cycle of infant education: 15 % × 9.000 = 1.350 → 1.031.
+    nursery = _madrid(gastos_escolaridad=D(9000), num_hijos_primer_ciclo_infantil=1, **one)
+    assert _aplicada(nursery, "Deducción autonómica por gastos educativos") == D("1031.00")
+    # Shared between parents filing separately.
+    halved = _madrid(gastos_escolaridad=D(6000), descendientes_compartidos=True, **kids)
+    assert _aplicada(halved, "Deducción autonómica por gastos educativos") == D("450.00")
+
+    # Family income ceiling: 30.930 € per member of the family unit.
+    over = _madrid(gastos_escolaridad=D(6000), miembros_unidad_familiar=1, **kids)
+    assert "30.930 € × 1 miembros" in _no_aplicada(over, "gastos educativos")
+    childless = _madrid(rendimiento_trabajo_bruto=D(30000), gastos_escolaridad=D(6000))
+    assert "no constan hijos" in _no_aplicada(childless, "gastos educativos")
+
+
+def test_madrid_care_and_local_donations_deductions() -> None:
+    base = dict(rendimiento_trabajo_bruto=D(40000), cotizaciones_seguridad_social=D(2540), num_descendientes=1)
+    toddler = {**base, "num_descendientes_menores_3": 1}
+    # 25 % × 2.000 = 500 → 463,95; large families: 40 % × 2.000 = 800 → 618,60.
+    assert _aplicada(_madrid(cotizaciones_empleada_hogar=D(2000), **toddler), "Deducción autonómica por cuidado") == D(
+        "463.95"
+    )
+    numerous = _madrid(cotizaciones_empleada_hogar=D(2000), familia_numerosa=True, **toddler)
+    assert _aplicada(numerous, "Deducción autonómica por cuidado") == D("618.60")
+    assert _aplicada(_madrid(cotizaciones_empleada_hogar=D(1000), **toddler), "Deducción autonómica por cuidado") == D(
+        "250.00"
+    )
+    assert "menor de tres años" in _no_aplicada(
+        _madrid(cotizaciones_empleada_hogar=D(2000), **base), "cuidado de menores o dependientes"
+    )
+
+    donor = _madrid(donativos_fundaciones_madrid=D(1000), **base)
+    assert _aplicada(donor, "Deducción autonómica por donativos") == D("150.00")
+
+
+def test_madrid_low_income_family_deduction_is_ten_percent_of_what_remains() -> None:
+    # Base 22.000 − 1.397 − 2.000 = 18.603 ≤ 24.744, two descendants.
+    r = _madrid(rendimiento_trabajo_bruto=D(22000), cotizaciones_seguridad_social=D(1397), num_descendientes=2)
+    assert r.minimo_autonomico == D("11430.33")
+    assert r.cuota_integra_autonomica == D("724.97")  # 1.696,55 − 971,58
+    assert _aplicada(r, "Deducción autonómica para familias") == D("72.50")
+    # The other parent's income counts towards the 24.744 € ceiling.
+    both = _madrid(
+        rendimiento_trabajo_bruto=D(22000),
+        cotizaciones_seguridad_social=D(1397),
+        num_descendientes=2,
+        base_imponible_resto_unidad_familiar=D(20000),
+    )
+    assert _aplicada(both, "Deducción autonómica para familias") == 0
+
+
+def test_regional_deductions_cannot_push_the_regional_tax_below_zero() -> None:
+    r = _madrid(
+        rendimiento_trabajo_bruto=D(21000),
+        cotizaciones_seguridad_social=D(1333),
+        edad=30,
+        alquiler_vivienda_habitual=D(9600),
+        num_descendientes=1,
+        hijos_nacidos_ultimos_3_ejercicios=1,
+    )
+    # Rent (1.237,20) + birth (721,70) exceed the regional tax: it drops to zero
+    # and the state tax is untouched.
+    assert _aplicada(r, "Deducción autonómica por alquiler") == D("1237.20")
+    assert _aplicada(r, "Deducción autonómica por nacimiento") == D("721.70")
+    assert r.cuota_integra_autonomica < D("1958.90")
+    assert any("art. 77.2" in aviso for aviso in r.avisos)
+    assert r.cuota_liquida == r.cuota_integra_estatal
+
+
+def test_general_deductions_are_split_between_state_and_regional_tax() -> None:
+    # A 200 € donation deduction is borne 100 € by each tax (arts. 67.1.b and 77.1.a).
+    # With only 34,49 € of tax on each side, each side can absorb just its own tax.
+    low = dict(rendimiento_trabajo_bruto=D(16000), cotizaciones_seguridad_social=D(1016), donativos=D(250))
+    r = calcular_irpf(IRPFInput(ejercicio=2025, **low))
+    assert r.cuota_integra_estatal == D("34.49") and r.cuota_liquida == 0
+
+    # Madrid inputs supplied for a non-Madrid simulation are reported, not silently ignored.
+    elsewhere = _calc(
+        comunidad_autonoma="Galicia", rendimiento_trabajo_bruto=D(24000), edad=30, alquiler_vivienda_habitual=D(9600)
+    )
+    assert any("no es de un residente en Madrid" in aviso for aviso in elsewhere.avisos)
+    assert _aplicada(elsewhere, "Deducción autonómica por alquiler") == 0

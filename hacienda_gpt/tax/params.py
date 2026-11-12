@@ -153,11 +153,8 @@ class ObligacionDeclarar(_Model):
 
 
 class DeduccionAutonomica(_Model):
-    """A regional deduction, summarised from the article that creates it.
-
-    Listed in the benefit catalogue for the user to check; NOT applied by the
-    calculator (their requirements go beyond what the profile captures).
-    """
+    """A regional deduction, summarised from the article that creates it, for
+    the benefit catalogue."""
 
     articulo: str
     titulo: str
@@ -167,6 +164,75 @@ class DeduccionAutonomica(_Model):
     limite_base_individual: Decimal | None = None
     limite_base_conjunta: Decimal | None = None
     en_vigor_desde: str
+
+
+class _MadridNacimiento(_Model):
+    importe_por_hijo: Decimal
+    limite_base_individual: Decimal
+    limite_base_conjunta: Decimal
+    limite_base_unidad_familiar: Decimal
+    fuente: Fuente
+
+
+class _MadridAlquiler(_Model):
+    porcentaje: Decimal
+    maximo: Decimal
+    edad_maxima_exclusiva: int
+    porcentaje_minimo_sobre_base: Decimal
+    limite_base_individual: Decimal
+    limite_base_conjunta: Decimal
+    limite_base_unidad_familiar: Decimal
+    fuente: Fuente
+
+
+class _MadridEducacion(_Model):
+    porcentaje_escolaridad_idiomas: Decimal
+    porcentaje_vestuario: Decimal
+    maximo_por_hijo: Decimal
+    maximo_por_hijo_con_escolaridad: Decimal
+    maximo_por_hijo_primer_ciclo_infantil: Decimal
+    limite_base_por_miembro: Decimal
+    fuente: Fuente
+
+
+class _MadridCuidado(_Model):
+    porcentaje: Decimal
+    maximo: Decimal
+    porcentaje_familia_numerosa: Decimal
+    maximo_familia_numerosa: Decimal
+    limite_base_por_miembro: Decimal
+    fuente: Fuente
+
+
+class _MadridDonativos(_Model):
+    porcentaje: Decimal
+    limite_base_liquidable: Decimal
+    fuente: Fuente
+
+
+class _MadridFamilias(_Model):
+    porcentaje: Decimal
+    minimo_descendientes: int
+    limite_suma_bases: Decimal
+    fuente: Fuente
+
+
+class DeduccionesMadrid(_Model):
+    """Parameters of the Madrid deductions the calculator applies."""
+
+    nacimiento: _MadridNacimiento
+    alquiler: _MadridAlquiler
+    gastos_educativos: _MadridEducacion
+    cuidado: _MadridCuidado
+    donativos: _MadridDonativos
+    familias_ingresos_reducidos: _MadridFamilias
+
+
+class RepartoDeducciones(_Model):
+    # Share of the general state deductions (donations, housing) borne by the
+    # regional tax; the rest reduces the state tax.
+    parte_autonomica: Decimal
+    fuente: Fuente
 
 
 class Comunidad(_Model):
@@ -179,6 +245,8 @@ class Comunidad(_Model):
     # Regional personal/family minimums (art. 56.3 LIRPF); None = the state ones apply.
     minimos: Minimos | None = None
     deducciones: list[DeduccionAutonomica] = Field(default_factory=list)
+    # Deductions the calculator subtracts for this community (Madrid only, so far).
+    deducciones_madrid: DeduccionesMadrid | None = None
     # Other deductions the community has, by article and title only.
     otras_deducciones: list[str] = Field(default_factory=list)
 
@@ -204,6 +272,7 @@ class IRPFParams(_Model):
     # Each community legislates its own general scale, minimums and deductions;
     # one that is not loaded here is approximated by the calculator (and flagged).
     comunidades: dict[str, Comunidad] = Field(default_factory=dict)
+    reparto_deducciones_estatales: RepartoDeducciones
     deduccion_rendimientos_trabajo: DeduccionTrabajo | None = None
     donativos: Donativos
     maternidad: Maternidad

@@ -466,10 +466,16 @@ actuales**, que la calculadora declara en los `avisos` de cada resultado:
   familiares (arts. 2 a 2 quater) del Decreto Legislativo 1/2010
   (BOCM-m-2010-90068, consolidado a 10-07-2026). Para el resto de comunidades
   se usa una escala igual a la estatal como aproximación, y se avisa.
-- **Deducciones autonómicas no aplicadas.** De Madrid, el catálogo describe
-  cuatro (nacimiento, alquiler de menores de 40, gastos educativos y cuidado
-  de menores o dependientes) con su límite de renta, y lista el resto por
-  título; ninguna se resta en el cálculo.
+- **Deducciones autonómicas: seis de Madrid.** La calculadora resta de la
+  cuota autonómica las de nacimiento o adopción (art. 4), alquiler de menores
+  de 40 años (art. 8), donativos a fundaciones madrileñas (art. 9), gastos
+  educativos (art. 11), cuidado de menores o dependientes (art. 11 bis) y
+  familias con dos o más descendientes e ingresos reducidos (art. 14), con
+  los límites de renta del art. 18. Cuando una se pide y no cumple un
+  requisito, el resultado explica cuál. El resto de deducciones madrileñas
+  solo se listan por título. Las deducciones estatales por donativos y
+  vivienda se reparten al 50 % entre cuota estatal y autonómica (arts. 67 y
+  77 LIRPF) y ninguna de las dos cuotas puede quedar negativa.
 - **2025** usa los mismos parámetros salvo la deducción de la DA 61.ª, cuyas
   cuantías de ese año no se pudieron contrastar y por eso no se aplica.
 - Rendimientos de actividades económicas y de alquileres entran como cifra

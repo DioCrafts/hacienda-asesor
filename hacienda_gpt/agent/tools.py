@@ -142,7 +142,11 @@ _INPUT_FIELDS_DOC = (
     "cotizaciones_seguridad_social, otros_gastos_deducibles_trabajo, rendimiento_actividad_neto, "
     "rendimiento_alquiler_neto, otras_rentas_base_general, rendimiento_capital_mobiliario, ganancias_patrimoniales, "
     "aportacion_plan_pensiones, contribucion_empresa_plan_pensiones, donativos, donativos_recurrentes (bool), "
-    "pagos_vivienda_habitual_pre2013, hijos_deduccion_maternidad, gastos_guarderia, retenciones"
+    "pagos_vivienda_habitual_pre2013, hijos_deduccion_maternidad, gastos_guarderia, retenciones. Para residentes en "
+    "Madrid, además: alquiler_vivienda_habitual, gastos_escolaridad, gastos_ensenanza_idiomas, "
+    "gastos_uniformes_escolares, num_hijos_gastos_educativos, num_hijos_primer_ciclo_infantil, "
+    "cotizaciones_empleada_hogar, hijos_nacidos_ultimos_3_ejercicios, donativos_fundaciones_madrid, familia_numerosa "
+    "(bool), base_imponible_resto_unidad_familiar, miembros_unidad_familiar"
 )
 
 CALCULATE_TOOL = ToolSpec(

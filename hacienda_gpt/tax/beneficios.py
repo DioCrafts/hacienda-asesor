@@ -350,23 +350,42 @@ def evaluar_beneficios(inp: IRPFInput, *, conocidos: set[str], params: IRPFParam
 
     base_imponible = base.base_imponible_general + base.base_imponible_ahorro
     norma = f"DLeg. 1/2010 de la {comunidad.nombre}" if "Madrid" in comunidad.nombre else comunidad.nombre
+    # article → (calculator line it produces, input that triggers it)
+    calculadas = {
+        "art. 4": ("Deducción autonómica por nacimiento", "hijos_nacidos_ultimos_3_ejercicios"),
+        "art. 8": ("Deducción autonómica por alquiler", "alquiler_vivienda_habitual"),
+        "art. 11": ("Deducción autonómica por gastos educativos", "gastos_escolaridad"),
+        "art. 11 bis": ("Deducción autonómica por cuidado", "cotizaciones_empleada_hogar"),
+    }
     for deduccion in comunidad.deducciones:
+        linea, campo = calculadas.get(deduccion.articulo, ("", ""))
+        aplicado = _importe_linea(base, linea) if linea and comunidad.deducciones_madrid is not None else ZERO
         limite = deduccion.limite_base_individual if inp.tributacion == "individual" else deduccion.limite_base_conjunta
         supera = limite is not None and base_imponible > limite
+        if aplicado:
+            estado: Estado = "aplicado"
+            detalle = f"Deducción aplicada en la simulación: {aplicado:.2f} €. {deduccion.resumen}"
+        elif supera:
+            estado = "no_aplica"
+            detalle = (
+                f"No te corresponde con los datos actuales: tu base imponible ({base_imponible:.2f} €) supera el "
+                f"límite de {limite:.2f} €. {deduccion.resumen}"
+            )
+        else:
+            estado = "por_confirmar"
+            detalle = deduccion.resumen + (
+                f" La simulación la aplica si indicas «{campo}» y cumples los requisitos."
+                if linea and comunidad.deducciones_madrid is not None
+                else " No está incluida en la simulación."
+            )
         add(
             f"autonomica_{deduccion.articulo.replace('art. ', 'art_').replace(' ', '_')}",
             f"{comunidad.nombre}: {deduccion.titulo}",
-            "no_aplica" if supera else "por_confirmar",
-            (
-                f"No te corresponde con los datos actuales: tu base imponible ({base_imponible:.2f} €) supera el "
-                f"límite de {limite:.2f} €. "
-                if supera
-                else ""
-            )
-            + deduccion.resumen
-            + " No está incluida en la simulación.",
+            estado,
+            detalle,
             [deduccion.limites, "Requiere justificación documental (art. 18.4)."],
             f"{deduccion.articulo} {norma} ({comunidad.fuente_principal.boe_id})",
+            faltan=faltan(campo) if estado == "por_confirmar" and campo else None,
         )
     if comunidad.otras_deducciones:
         add(

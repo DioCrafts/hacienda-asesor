@@ -6,7 +6,7 @@ from hacienda_gpt.agent.evidence import EvidenceLedger
 from hacienda_gpt.agent.providers.base import ToolCall
 from hacienda_gpt.agent.tools import Toolbox
 from hacienda_gpt.decision.fact_extractor import EXPECTED_FACT_TYPE, KNOWN_FACT_NAMES
-from hacienda_gpt.decision.schemas import CaseState, Fact, FactValueType
+from hacienda_gpt.decision.schemas import CaseState, Fact
 from hacienda_gpt.tax.beneficios import evaluar_beneficios
 from hacienda_gpt.tax.irpf import IRPFInput
 from hacienda_gpt.tax.profile import PROFILE_FACT_TYPES, DatosInvalidosError, build_input
@@ -37,7 +37,7 @@ def _call(name: str, **arguments) -> ToolCall:
 
 def test_profile_facts_are_in_the_extractor_vocabulary_and_map_onto_the_calculator() -> None:
     assert set(PROFILE_FACT_TYPES) <= set(KNOWN_FACT_NAMES)
-    numeric_inputs = {n for n, t in PROFILE_FACT_TYPES.items() if t is FactValueType.NUMBER}
+    numeric_inputs = {n for n, t in PROFILE_FACT_TYPES.items() if t == "number"}
     # Every numeric profile fact is a calculator field of the same name: no mapping table to drift.
     assert numeric_inputs <= set(IRPFInput.model_fields)
 
@@ -174,9 +174,17 @@ def test_regional_deductions_stay_open_under_the_income_ceiling_and_unloaded_reg
     by_id = {b.id: b for b in evaluar_beneficios(low, conocidos={"comunidad_autonoma"})}
     assert by_id["autonomica_art_4"].estado == "por_confirmar" and "721,70 €" in by_id["autonomica_art_4"].detalle
     assert by_id["autonomica_art_8"].estado == "por_confirmar"
-    assert all(
-        "No está incluida en la simulación" in by_id[k].detalle for k in ("autonomica_art_4", "autonomica_art_8")
+    # They are open: the catalogue says which datum makes the simulation apply them.
+    assert "alquiler_vivienda_habitual" in by_id["autonomica_art_8"].detalle
+    assert by_id["autonomica_art_8"].datos_que_faltan == ["alquiler_vivienda_habitual"]
+
+    renter = low.model_copy(
+        update={"edad": 30, "alquiler_vivienda_habitual": D(9600), "cotizaciones_seguridad_social": D(1524)}
     )
+    applied = {
+        b.id: b for b in evaluar_beneficios(renter, conocidos={"comunidad_autonoma", "alquiler_vivienda_habitual"})
+    }
+    assert applied["autonomica_art_8"].estado == "aplicado" and "1237.20 €" in applied["autonomica_art_8"].detalle
 
     other = IRPFInput(ejercicio=2026, rendimiento_trabajo_bruto=D(24000), comunidad_autonoma="Galicia")
     regional = {b.id: b for b in evaluar_beneficios(other, conocidos={"comunidad_autonoma"})}["deducciones_autonomicas"]
@@ -185,3 +193,13 @@ def test_regional_deductions_stay_open_under_the_income_ceiling_and_unloaded_reg
         "deducciones_autonomicas"
     ]
     assert unknown.datos_que_faltan == ["comunidad_autonoma"]
+
+
+def test_tax_package_imports_standalone() -> None:
+    # Importing the tax package before anything from `decision` used to hit a
+    # circular import (profile → decision → fact_extractor → profile).
+    import subprocess
+    import sys
+
+    code = "import hacienda_gpt.tax.simulador, hacienda_gpt.tax.documentos, hacienda_gpt.tax.calendario"
+    assert subprocess.run([sys.executable, "-c", code], capture_output=True).returncode == 0

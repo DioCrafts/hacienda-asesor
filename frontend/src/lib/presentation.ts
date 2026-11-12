@@ -194,6 +194,16 @@ const FACT_LABEL: Record<string, string> = {
   pagos_vivienda_habitual_pre2013: "Pagos de hipoteca (vivienda anterior a 2013)",
   gastos_guarderia: "Gastos de guardería",
   bienes_en_el_extranjero: "Bienes o cuentas en el extranjero",
+  alquiler_vivienda_habitual: "Alquiler pagado por tu vivienda",
+  gastos_escolaridad: "Gastos de escolaridad",
+  gastos_ensenanza_idiomas: "Clases de idiomas de los hijos",
+  gastos_uniformes_escolares: "Uniformes escolares",
+  cotizaciones_empleada_hogar: "Cotizaciones de empleada de hogar",
+  hijos_nacidos_ultimos_3_ejercicios: "Hijos nacidos en los últimos 3 años",
+  donativos_fundaciones_madrid: "Donativos a fundaciones de Madrid",
+  base_imponible_resto_unidad_familiar: "Rentas del resto de la unidad familiar",
+  miembros_unidad_familiar: "Miembros de la unidad familiar",
+  familia_numerosa: "Familia numerosa",
 };
 
 // Enum values the backend stores as ASCII slugs.
@@ -225,6 +235,13 @@ const MONEY_FACTS = new Set([
   "donativos",
   "pagos_vivienda_habitual_pre2013",
   "gastos_guarderia",
+  "alquiler_vivienda_habitual",
+  "gastos_escolaridad",
+  "gastos_ensenanza_idiomas",
+  "gastos_uniformes_escolares",
+  "cotizaciones_empleada_hogar",
+  "donativos_fundaciones_madrid",
+  "base_imponible_resto_unidad_familiar",
 ]);
 // Cents are kept when present: showing 6.502,57 € as "6503 €" would misstate the figure.
 const EUR = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 2 });

@@ -20,7 +20,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from hacienda_gpt.tax.params import Escala, Fuente, IRPFParams, Minimos, load_params
+from hacienda_gpt.tax.params import DeduccionesMadrid, Escala, Fuente, IRPFParams, Minimos, load_params
 
 CENT = Decimal("0.01")
 ZERO = Decimal(0)
@@ -72,6 +72,23 @@ class IRPFInput(BaseModel):
     # Maternity deduction: number of children under 3 the taxpayer claims it for.
     hijos_deduccion_maternidad: int = Field(default=0, ge=0, le=20)
     gastos_guarderia: Decimal = Field(default=ZERO, ge=0)
+
+    # Family unit, for regional income ceilings
+    # Taxable bases (general + savings) of the OTHER members of the family unit.
+    base_imponible_resto_unidad_familiar: Decimal = Field(default=ZERO, ge=0)
+    miembros_unidad_familiar: int | None = Field(default=None, ge=1, le=20)
+    familia_numerosa: bool = False
+
+    # Regional (Comunidad de Madrid) deductions
+    hijos_nacidos_ultimos_3_ejercicios: int = Field(default=0, ge=0, le=20)  # born/adopted this year or the two before
+    alquiler_vivienda_habitual: Decimal = Field(default=ZERO, ge=0)  # rent paid in the year
+    gastos_escolaridad: Decimal = Field(default=ZERO, ge=0)
+    gastos_ensenanza_idiomas: Decimal = Field(default=ZERO, ge=0)
+    gastos_uniformes_escolares: Decimal = Field(default=ZERO, ge=0)
+    num_hijos_gastos_educativos: int | None = Field(default=None, ge=0, le=20)
+    num_hijos_primer_ciclo_infantil: int = Field(default=0, ge=0, le=20)
+    cotizaciones_empleada_hogar: Decimal = Field(default=ZERO, ge=0)
+    donativos_fundaciones_madrid: Decimal = Field(default=ZERO, ge=0)
 
     retenciones: Decimal = Field(default=ZERO, ge=0)
 
@@ -189,6 +206,182 @@ def _minimo(inp: IRPFInput, m: Minimos, t: _Trace | None = None) -> Decimal:
 def _cuota_con_minimo(escala: Escala, base: Decimal, minimo: Decimal) -> Decimal:
     """Scale applied to the base, minus the scale applied to the minimum (arts. 63 and 66)."""
     return _round(escala.cuota(base)) - _round(escala.cuota(min(minimo, base)))
+
+
+_MADRID_INPUTS = (
+    "hijos_nacidos_ultimos_3_ejercicios",
+    "alquiler_vivienda_habitual",
+    "gastos_escolaridad",
+    "gastos_ensenanza_idiomas",
+    "gastos_uniformes_escolares",
+    "cotizaciones_empleada_hogar",
+    "donativos_fundaciones_madrid",
+)
+
+
+def _deducciones_madrid(
+    inp: IRPFInput,
+    d: DeduccionesMadrid,
+    t: _Trace,
+    *,
+    base_imponible: Decimal,
+    base_liquidable: Decimal,
+    cuota_autonomica: Decimal,
+    estatales_sobre_autonomica: Decimal,
+) -> Decimal:
+    """Madrid deductions (DLeg. 1/2010). Each one that is claimed but fails a
+    requirement is explained in an aviso instead of being silently dropped."""
+    conjunta = inp.tributacion != "individual"
+    base_familia = base_imponible + inp.base_imponible_resto_unidad_familiar
+    miembros = inp.miembros_unidad_familiar
+    if miembros is None:
+        miembros = 1 + inp.num_descendientes + (1 if inp.tributacion == "conjunta_biparental" else 0)
+    # Shared between both parents when they file separately.
+    reparto = Decimal("0.5") if inp.descendientes_compartidos and not conjunta else Decimal(1)
+    total = ZERO
+
+    def fuera(nombre: str, motivo: str) -> None:
+        t.aviso(f"Deducción madrileña por {nombre} no aplicada: {motivo}")
+
+    # Art. 4 — birth or adoption
+    if inp.hijos_nacidos_ultimos_3_ejercicios:
+        n = d.nacimiento
+        limite = n.limite_base_conjunta if conjunta else n.limite_base_individual
+        if base_imponible > limite:
+            fuera("nacimiento o adopción", f"tu base imponible ({base_imponible:.2f} €) supera {limite:.2f} €.")
+        elif base_familia > n.limite_base_unidad_familiar:
+            fuera(
+                "nacimiento o adopción",
+                f"la suma de bases de la unidad familiar ({base_familia:.2f} €) supera {n.limite_base_unidad_familiar:.2f} €.",
+            )
+        else:
+            importe = n.importe_por_hijo * inp.hijos_nacidos_ultimos_3_ejercicios * reparto
+            t.linea("Deducción autonómica por nacimiento o adopción de hijos", -importe, n.fuente)
+            t.aviso(
+                "La deducción por nacimiento exige convivir con el hijo; en partos o adopciones múltiples el primer "
+                "año se incrementa en 721,70 € por hijo, lo que no se calcula aquí."
+            )
+            total += importe
+
+    # Art. 8 — rent, under 40
+    if inp.alquiler_vivienda_habitual:
+        a = d.alquiler
+        limite = a.limite_base_conjunta if conjunta else a.limite_base_individual
+        minimo_renta = a.porcentaje_minimo_sobre_base * base_imponible
+        if inp.edad is None:
+            fuera("alquiler", f"falta tu edad (solo para menores de {a.edad_maxima_exclusiva} años).")
+        elif inp.edad >= a.edad_maxima_exclusiva:
+            fuera("alquiler", f"es solo para menores de {a.edad_maxima_exclusiva} años.")
+        elif base_imponible > limite:
+            fuera("alquiler", f"tu base imponible ({base_imponible:.2f} €) supera {limite:.2f} €.")
+        elif base_familia > a.limite_base_unidad_familiar:
+            fuera(
+                "alquiler",
+                f"la suma de bases de la unidad familiar ({base_familia:.2f} €) supera {a.limite_base_unidad_familiar:.2f} €.",
+            )
+        elif inp.alquiler_vivienda_habitual <= minimo_renta:
+            fuera("alquiler", f"el alquiler pagado no supera el 20 % de tu base imponible ({minimo_renta:.2f} €).")
+        else:
+            importe = min(inp.alquiler_vivienda_habitual * a.porcentaje, a.maximo)
+            t.linea("Deducción autonómica por alquiler de vivienda habitual", -importe, a.fuente)
+            total += importe
+
+    limite_familiar_gastos = d.gastos_educativos.limite_base_por_miembro * miembros
+    excede_familiar = base_familia > limite_familiar_gastos
+    motivo_familiar = (
+        f"la base imponible de la unidad familiar ({base_familia:.2f} €) supera {limite_familiar_gastos:.2f} € "
+        f"(30.930 € × {miembros} miembros)."
+    )
+    usa_limite_familiar = False
+
+    # Art. 11 — education expenses
+    gastos = inp.gastos_escolaridad + inp.gastos_ensenanza_idiomas + inp.gastos_uniformes_escolares
+    if gastos:
+        e = d.gastos_educativos
+        hijos = (
+            inp.num_hijos_gastos_educativos if inp.num_hijos_gastos_educativos is not None else inp.num_descendientes
+        )
+        usa_limite_familiar = True
+        if hijos == 0:
+            fuera("gastos educativos", "no constan hijos por los que apliques el mínimo por descendientes.")
+        elif excede_familiar:
+            fuera("gastos educativos", motivo_familiar)
+        else:
+            infantil = min(inp.num_hijos_primer_ciclo_infantil, hijos)
+            por_hijo = e.maximo_por_hijo_con_escolaridad if inp.gastos_escolaridad else e.maximo_por_hijo
+            tope = e.maximo_por_hijo_primer_ciclo_infantil * infantil + por_hijo * (hijos - infantil)
+            bruto = (
+                inp.gastos_escolaridad + inp.gastos_ensenanza_idiomas
+            ) * e.porcentaje_escolaridad_idiomas + inp.gastos_uniformes_escolares * e.porcentaje_vestuario
+            importe = min(bruto, tope) * reparto
+            t.linea("Deducción autonómica por gastos educativos", -importe, e.fuente)
+            t.aviso(
+                "En gastos educativos el máximo se ha aplicado al conjunto de los hijos (la ley lo fija por hijo) y los "
+                "gastos deben ir ya minorados en becas; la escolaridad pública o concertada no genera deducción."
+            )
+            total += importe
+
+    # Art. 11 bis — household employee caring for children under 3 / dependants
+    if inp.cotizaciones_empleada_hogar:
+        c = d.cuidado
+        usa_limite_familiar = True
+        if not (inp.num_descendientes_menores_3 or inp.grado_discapacidad >= 33):
+            fuera(
+                "cuidado de menores o dependientes",
+                "requiere un hijo menor de tres años o convivir con un mayor dependiente o una persona con discapacidad "
+                "(esto último no consta en el perfil).",
+            )
+        elif excede_familiar:
+            fuera("cuidado de menores o dependientes", motivo_familiar)
+        else:
+            porcentaje, maximo = (
+                (c.porcentaje_familia_numerosa, c.maximo_familia_numerosa)
+                if inp.familia_numerosa
+                else (c.porcentaje, c.maximo)
+            )
+            importe = min(inp.cotizaciones_empleada_hogar * porcentaje, maximo)
+            t.linea("Deducción autonómica por cuidado de menores o dependientes", -importe, c.fuente)
+            t.aviso(
+                "La deducción por cuidado solo cuenta las cotizaciones de los meses en que se cumple el requisito, exige "
+                "estar de alta como empleador con al menos 40 horas mensuales contratadas y, si es por un hijo menor de "
+                "tres años, que ambos progenitores trabajen; el cálculo lo da por cumplido."
+            )
+            total += importe
+    if usa_limite_familiar and inp.miembros_unidad_familiar is None:
+        t.aviso(
+            f"El límite de renta familiar se ha calculado con {miembros} miembros, deducidos de tus datos; indica el "
+            "número de miembros de la unidad familiar y sus bases imponibles si no es correcto."
+        )
+
+    # Art. 9 — donations to Madrid foundations and sports clubs
+    if inp.donativos_fundaciones_madrid:
+        dn = d.donativos
+        base = min(inp.donativos_fundaciones_madrid, dn.limite_base_liquidable * base_liquidable)
+        importe = base * dn.porcentaje
+        t.linea("Deducción autonómica por donativos a fundaciones y clubes deportivos", -importe, dn.fuente)
+        t.aviso(
+            "La deducción madrileña por donativos solo vale para fundaciones inscritas en el Registro de Fundaciones "
+            "de la Comunidad de Madrid y clubes deportivos elementales o básicos."
+        )
+        total += importe
+
+    # Art. 14 — two or more descendants and low income: 10 % of what remains
+    f = d.familias_ingresos_reducidos
+    if inp.num_descendientes >= f.minimo_descendientes and base_familia <= f.limite_suma_bases:
+        resto = max(ZERO, cuota_autonomica - total - estatales_sobre_autonomica)
+        importe = resto * f.porcentaje
+        if importe:
+            t.linea(
+                "Deducción autonómica para familias con dos o más descendientes e ingresos reducidos",
+                -importe,
+                f.fuente,
+            )
+            t.aviso(
+                "La deducción para familias con ingresos reducidos suma las bases de ambos progenitores y de los "
+                "propios descendientes: indícalas en la base del resto de la unidad familiar."
+            )
+            total += importe
+    return total
 
 
 def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResult:
@@ -346,8 +539,14 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
                 comunidad.minimos.fuente,
             )
         t.aviso(
-            f"Se aplican la escala y los mínimos de {comunidad.nombre}. Sus deducciones autonómicas NO están "
-            "incluidas en el cálculo: si tienes derecho a alguna, la cuota será menor."
+            f"Se aplican la escala y los mínimos de {comunidad.nombre}"
+            + (
+                ", y las deducciones autonómicas por nacimiento, alquiler, gastos educativos, cuidado de menores o "
+                "dependientes, donativos y familias con ingresos reducidos cuando aportas sus datos. El resto de "
+                "deducciones autonómicas no se calcula."
+                if comunidad.deducciones_madrid is not None
+                else ". Sus deducciones autonómicas NO están incluidas en el cálculo."
+            )
         )
     minimo_autonomico_general = min(minimo_autonomico, general)
     minimo_autonomico_ahorro = min(minimo_autonomico - minimo_autonomico_general, ahorro)
@@ -371,7 +570,7 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
     )
     cuota_integra = estatal + autonomica
 
-    # ---- 6. Deductions from gross tax -------------------------------------
+    # ---- 6. Deductions from gross tax (arts. 67 and 77) --------------------
     base_liquidable = general + ahorro
     deducciones = ZERO
     if inp.donativos:
@@ -393,7 +592,37 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
             "se ha calculado con el porcentaje estatal más el autonómico general (algunas comunidades fijan otro)."
         )
         deducciones += importe
-    cuota_liquida = max(ZERO, cuota_integra - _round(deducciones))
+
+    # The general deductions are borne half by each tax; the community's own
+    # deductions reduce only the regional tax. Neither tax can go below zero.
+    parte_autonomica = _round(deducciones * p.reparto_deducciones_estatales.parte_autonomica)
+    parte_estatal = _round(deducciones) - parte_autonomica
+    deducciones_autonomicas = ZERO
+    if comunidad is not None and comunidad.deducciones_madrid is not None:
+        deducciones_autonomicas = _round(
+            _deducciones_madrid(
+                inp,
+                comunidad.deducciones_madrid,
+                t,
+                base_imponible=base_imponible_general + base_imponible_ahorro,
+                base_liquidable=base_liquidable,
+                cuota_autonomica=autonomica,
+                estatales_sobre_autonomica=parte_autonomica,
+            )
+        )
+    elif any(getattr(inp, name) for name in _MADRID_INPUTS):
+        t.aviso(
+            "Has indicado datos de deducciones autonómicas de Madrid (alquiler, gastos educativos, nacimiento…), "
+            "pero la simulación no es de un residente en Madrid: no se han aplicado."
+        )
+    liquida_estatal = max(ZERO, estatal - parte_estatal)
+    liquida_autonomica = max(ZERO, autonomica - parte_autonomica - deducciones_autonomicas)
+    if autonomica - parte_autonomica - deducciones_autonomicas < 0:
+        t.aviso(
+            "Las deducciones superan la cuota autonómica: el exceso se pierde (la cuota líquida autonómica no puede "
+            "ser negativa, art. 77.2 LIRPF)."
+        )
+    cuota_liquida = liquida_estatal + liquida_autonomica
 
     # ---- 7. Work-income deduction (additional provision 61) ---------------
     dt = p.deduccion_rendimientos_trabajo

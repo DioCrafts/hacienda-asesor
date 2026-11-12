@@ -47,7 +47,7 @@ EXPECTED_FACT_TYPE: dict[str, FactValueType] = {
 # calculator. Declared next to the calculator input they map onto.
 from hacienda_gpt.tax.profile import PROFILE_FACT_TYPES  # noqa: E402
 
-EXPECTED_FACT_TYPE.update(PROFILE_FACT_TYPES)
+EXPECTED_FACT_TYPE.update({name: FactValueType(kind) for name, kind in PROFILE_FACT_TYPES.items()})
 
 KNOWN_FACT_NAMES: tuple[str, ...] = tuple(EXPECTED_FACT_TYPE.keys())
 
@@ -228,7 +228,17 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     pagos_vivienda_habitual_pre2013     → pagado en el año por la hipoteca de una vivienda habitual comprada antes de 2013
     gastos_guarderia                    → pagado a guarderías en el año
 
+    alquiler_vivienda_habitual          → alquiler pagado en el año por su vivienda habitual
+    gastos_escolaridad                  → pagado por escolaridad de los hijos (colegio privado no concertado, guardería)
+    gastos_ensenanza_idiomas            → pagado por clases de idiomas de los hijos
+    gastos_uniformes_escolares          → pagado por uniformes escolares
+    cotizaciones_empleada_hogar         → cotizaciones a la Seguridad Social pagadas por una empleada de hogar
+    hijos_nacidos_ultimos_3_ejercicios  → hijos nacidos o adoptados este año o en los dos anteriores
+    base_imponible_resto_unidad_familiar → base imponible (rentas netas) del cónyuge y demás miembros de la unidad familiar
+    miembros_unidad_familiar            → número de miembros de la unidad familiar
+
   value_boolean:
+    familia_numerosa                    → true si tiene título de familia numerosa
     bienes_en_el_extranjero             → true si tiene cuentas, valores o inmuebles fuera de España
 
   "gano 38.000 brutos al año, vivo en Valencia, tengo dos hijos, uno de 2 años"
