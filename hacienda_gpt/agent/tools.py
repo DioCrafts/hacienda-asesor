@@ -36,7 +36,7 @@ from hacienda_gpt.tax.pagos_fraccionados import Modelo130Input, calcular_modelo_
 from hacienda_gpt.tax.params import EjercicioNoDisponibleError, ejercicios_disponibles, load_params
 from hacienda_gpt.tax.patrimonio import PatrimonioInput, calcular_patrimonio
 from hacienda_gpt.tax.patrimonio_params import ejercicios_patrimonio_disponibles
-from hacienda_gpt.tax.profile import DatosInvalidosError, build_input
+from hacienda_gpt.tax.profile import DatosInvalidosError, build_input, build_input_con_actividad
 from hacienda_gpt.tax.simulador import simular
 from hacienda_gpt.tax.sociedades import (
     ComparacionInput,
@@ -937,8 +937,10 @@ class Toolbox:
             year, facts, datos = self._scenario_base(
                 {"ejercicio": arguments.get("ejercicio"), "datos": arguments.get("conyuge_a")}
             )
-            a = build_input(ejercicio=year, facts=facts, datos=datos)
-            b = build_input(ejercicio=year, datos={"comunidad_autonoma": a.comunidad_autonoma, **otro})
+            a, actividad_a = build_input_con_actividad(ejercicio=year, facts=facts, datos=datos)
+            b, actividad_b = build_input_con_actividad(
+                ejercicio=year, datos={"comunidad_autonoma": a.comunidad_autonoma, **otro}
+            )
             comparacion = comparar_tributacion(a, b)
         except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
             return _error(str(exc))
@@ -1025,7 +1027,7 @@ class Toolbox:
         try:
             year, facts, datos = self._scenario_base(arguments)
             params = load_params(year)
-            inp = build_input(ejercicio=year, facts=facts, datos=datos)
+            inp, actividad = build_input_con_actividad(ejercicio=year, facts=facts, datos=datos)
         except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
             return _error(str(exc))
         conocidos = {name for name in (*facts, *datos) if name in IRPFInput.model_fields or name == "estado_civil"}
