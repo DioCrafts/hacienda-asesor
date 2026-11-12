@@ -20,7 +20,15 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from hacienda_gpt.tax.params import DeduccionesMadrid, Escala, Fuente, IRPFParams, Minimos, load_params
+from hacienda_gpt.tax.params import (
+    DeduccionesMadrid,
+    Escala,
+    Fuente,
+    IRPFParams,
+    Minimos,
+    load_params,
+    normalizar_comunidad,
+)
 
 CENT = Decimal("0.01")
 ZERO = Decimal(0)
@@ -516,6 +524,13 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
 
     # ---- 5. Gross tax ------------------------------------------------------
     comunidad = p.comunidad(inp.comunidad_autonoma)
+    territorio = normalizar_comunidad(inp.comunidad_autonoma or "")
+    if any(nombre in territorio for nombre in ("ceuta", "melilla", "la palma")):
+        t.aviso(
+            "La deducción por rentas obtenidas en Ceuta o Melilla (art. 68.4 LIRPF; en 2022 a 2026 también para "
+            "residentes en la isla de La Palma, disposición adicional 57.ª) NO está incluida en el cálculo: el "
+            "resultado real será más favorable."
+        )
     if comunidad is None:
         escala_autonomica = p.escala_general_estatal
         minimo_autonomico = minimo

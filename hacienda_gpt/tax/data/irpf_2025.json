@@ -412,5 +412,13 @@
       "en_vigor_desde": "2015-01-01",
       "verificado": true
     }
-  }
+  },
+  "revisiones": [
+    {
+      "norma": "Real Decreto-ley 33/2026, de 10 de noviembre (DANA Adam)",
+      "boe_id": "BOE-A-2026-23602",
+      "revisado_el": "2026-11-12",
+      "resultado": "Sin cambios en los parámetros. Con efectos desde el 1-1-2025 añade los apartados 5 y 6 a la DA 5.ª LIRPF (exención de ayudas públicas por daños personales de catástrofes naturales y de ayudas autonómicas y locales análogas). No modelado; sin acuerdo de convalidación publicado en la fecha de revisión."
+    }
+  ]
 }

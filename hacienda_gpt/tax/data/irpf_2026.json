@@ -442,6 +442,24 @@
       "boe_id": "BOE-A-2026-20823",
       "revisado_el": "2026-11-12",
       "resultado": "Añadida la deducción estatal por alquiler de vivienda habitual (art. 68.6). El resto de parámetros de este fichero no cambia. No modelado por la calculadora: nueva reducción por arrendamiento de vivienda (art. 23.2, contratos desde el 1-12-2026; DT 38.ª), prórroga a 2026 de la imputación de rentas inmobiliarias al 1,1 % (DA 55.ª), Planes de Ahorro a Largo Plazo y Cuenta de Ahorro e Inversión Financia Europa (art. 7.ñ, DA 26.ª, art. 95 ter, DA 66.ª), exención por transmisión de vivienda a entes públicos (DA 65.ª), y cambios con efectos desde 2027 (arts. 24 y 85.1)."
+    },
+    {
+      "norma": "Real Decreto-ley 22/2026, de 1 de septiembre (Ceuta)",
+      "boe_id": "BOE-A-2026-18429",
+      "revisado_el": "2026-11-12",
+      "resultado": "Sin cambios en los parámetros. Convalidado (Resolución de 16-9-2026, BOE-A-2026-19420). Añade la DA 64.ª LIRPF: en 2026, el porcentaje de provisiones y gastos de difícil justificación (estimación directa simplificada) y la reducción del rendimiento neto en módulos pasan al 10 % para actividades desarrolladas en Ceuta con derecho a la deducción del art. 68.4. No modelado: la calculadora recibe el rendimiento neto de la actividad ya calculado y no aplica la deducción por rentas obtenidas en Ceuta o Melilla."
+    },
+    {
+      "norma": "Real Decreto-ley 23/2026, de 8 de septiembre (La Palma)",
+      "boe_id": "BOE-A-2026-18828",
+      "revisado_el": "2026-11-12",
+      "resultado": "Sin cambios en los parámetros. Convalidado (Resolución de 23-9-2026, BOE-A-2026-19845). Con efectos desde el 1-1-2026 extiende a 2026 la DA 57.ª LIRPF: la deducción del art. 68.4.1.º (Ceuta y Melilla) se aplica a los residentes habituales y efectivos en la isla de La Palma. No modelado."
+    },
+    {
+      "norma": "Real Decreto-ley 33/2026, de 10 de noviembre (DANA Adam)",
+      "boe_id": "BOE-A-2026-23602",
+      "revisado_el": "2026-11-12",
+      "resultado": "Sin cambios en los parámetros. En vigor desde el 12-11-2026; sin acuerdo de convalidación publicado en la fecha de revisión. Con efectos desde el 1-1-2025 añade los apartados 5 y 6 a la DA 5.ª LIRPF: exención de las ayudas públicas por daños personales causados por catástrofes naturales en zonas declaradas gravemente afectadas por una emergencia de protección civil, y de las ayudas autonómicas y locales análogas a una estatal exenta. No modelado: afecta también al ejercicio 2025."
     }
   ]
 }

@@ -79,3 +79,20 @@ def test_catalogue_lists_it() -> None:
         b.id: b for b in evaluar_beneficios(con, conocidos={"rendimiento_trabajo_bruto", "alquiler_vivienda_habitual"})
     }
     assert aplicado["alquiler_estatal"].estado == "aplicado"
+
+
+def test_ceuta_melilla_and_la_palma_residents_are_warned() -> None:
+    for lugar in ("Ceuta", "Melilla", "La Palma"):
+        r = calcular_irpf(
+            IRPFInput(ejercicio=2026, comunidad_autonoma=lugar, rendimiento_trabajo_bruto=Decimal("30000"))
+        )
+        assert any("art. 68.4" in aviso for aviso in r.avisos), lugar
+    otros = calcular_irpf(
+        IRPFInput(ejercicio=2026, comunidad_autonoma="Las Palmas", rendimiento_trabajo_bruto=Decimal("30000"))
+    )
+    assert not any("art. 68.4" in aviso for aviso in otros.avisos)
+
+
+def test_reviews_are_recorded() -> None:
+    revisadas = {r["boe_id"] for r in load_params(2026).revisiones}
+    assert {"BOE-A-2026-20823", "BOE-A-2026-18429", "BOE-A-2026-18828", "BOE-A-2026-23602"} <= revisadas
