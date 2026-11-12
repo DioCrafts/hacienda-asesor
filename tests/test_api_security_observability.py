@@ -99,3 +99,18 @@ def test_rate_limit_middleware_returns_429(monkeypatch: pytest.MonkeyPatch) -> N
     blocked = client.post("/cases", json={"user_id": "u", "jurisdiction": "ES", "tax_period": "2025"})
     assert blocked.status_code == 429
     assert blocked.headers.get("Retry-After") == "60"
+
+
+def test_case_read_endpoints_require_api_key_when_configured(monkeypatch: pytest.MonkeyPatch) -> None:
+    # A case holds personal fiscal facts and the audit log holds every user
+    # message, so reading them must be gated exactly like writing them.
+    monkeypatch.setenv("HACIENDA_API_KEY", "s3cret")
+    headers = {"X-API-Key": "s3cret"}
+    case_id = client.post(
+        "/cases", json={"user_id": "u", "jurisdiction": "ES", "tax_period": "2025"}, headers=headers
+    ).json()["case_id"]
+
+    for path in (f"/cases/{case_id}", f"/cases/{case_id}/audit", f"/cases/{case_id}/audit/export"):
+        assert client.get(path).status_code == 401, path
+        assert client.get(path, headers=headers).status_code == 200, path
+    assert client.post("/agent", json={"query": "x"}).status_code == 401

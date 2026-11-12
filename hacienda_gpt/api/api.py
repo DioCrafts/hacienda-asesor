@@ -214,7 +214,7 @@ def create_case(
     return case
 
 
-@app.get("/cases/{case_id}", response_model=CaseState)
+@app.get("/cases/{case_id}", response_model=CaseState, dependencies=[Depends(require_api_key)])
 def get_case(
     case_id: str,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
@@ -225,7 +225,7 @@ def get_case(
     return case
 
 
-@app.get("/cases/{case_id}/audit")
+@app.get("/cases/{case_id}/audit", dependencies=[Depends(require_api_key)])
 def get_case_audit(
     case_id: str,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
@@ -455,7 +455,7 @@ def post_agent(
     return AgentResponse(**result.model_dump(), case_id=payload.case_id, case_updated=case_updated)
 
 
-@app.get("/cases/{case_id}/audit/export")
+@app.get("/cases/{case_id}/audit/export", dependencies=[Depends(require_api_key)])
 def export_case_audit(
     case_id: str,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],

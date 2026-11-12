@@ -66,8 +66,10 @@ def test_planner_generates_prioritized_action_plan_with_next_best_and_dependenci
 
     assert first.action.priority == 1
     assert second.action.priority == 2
-    assert second.action.depends_on == [first.action.action_id]
-    assert first.action.due_date is not None
+    # Unrelated obligations are not chained, and no deadline is invented when
+    # the obligation carries none.
+    assert second.action.depends_on == []
+    assert first.action.due_date is None
 
     assert first.checklist_documental
     assert first.bloqueos == ["tipo_renta"]

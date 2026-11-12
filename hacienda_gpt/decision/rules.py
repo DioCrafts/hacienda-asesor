@@ -40,6 +40,29 @@ class RuleCondition(BaseModel):
         return self
 
 
+class ObligationDeadline(BaseModel):
+    """Filing deadline of an obligation, relative to the fiscal year it covers.
+
+    Declared in the rule (data, reviewed alongside its sources) rather than
+    computed in code: the planner must never invent a date. ``year_offset=1``
+    means "the year after the fiscal year" (e.g. IRPF 2025 is filed by
+    30 June 2026).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    month: int = Field(ge=1, le=12)
+    day: int = Field(ge=1, le=31)
+    year_offset: int = Field(default=0, ge=0, le=5)
+    note: str | None = None
+
+    def resolve(self, fiscal_year: int) -> date | None:
+        try:
+            return date(fiscal_year + self.year_offset, self.month, self.day)
+        except ValueError:
+            return None
+
+
 class GeneratedObligationSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -47,6 +70,7 @@ class GeneratedObligationSpec(BaseModel):
     title: str = Field(min_length=1)
     description: str = Field(min_length=1)
     status: ObligationStatus = ObligationStatus.CANDIDATE
+    deadline: ObligationDeadline | None = None
 
 
 class RuleSourceRef(BaseModel):

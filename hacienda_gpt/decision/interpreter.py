@@ -10,7 +10,7 @@ from hacienda_gpt.decision.fact_extractor import (
     RegexFactExtractor,
 )
 from hacienda_gpt.decision.schemas import CaseState, Fact, MissingFact, RiskLevel
-from hacienda_gpt.decision.taxonomy import SupportedIntent, required_facts_for_intent
+from hacienda_gpt.decision.taxonomy import SupportedIntent, blocking_facts_for_intent, required_facts_for_intent
 
 
 class Intent(str, Enum):
@@ -81,7 +81,34 @@ _QUESTION_TEMPLATES: dict[str, tuple[str, str]] = {
         "q_periodo",
         "¿A qué ejercicio fiscal (año) se refiere tu consulta?",
     ),
+    "alta_actividad_economica": (
+        "q_alta_actividad",
+        "¿Estás dado de alta en una actividad económica (censo de empresarios, modelo 036/037)?",
+    ),
+    "periodicidad_iva": (
+        "q_periodicidad_iva",
+        "¿Presentas el IVA con periodicidad trimestral o mensual?",
+    ),
+    "fecha_inicio_actividad": (
+        "q_fecha_inicio_actividad",
+        "¿En qué fecha iniciaste la actividad económica?",
+    ),
+    "regimen_cotizacion": (
+        "q_regimen_cotizacion",
+        "¿En qué régimen de la Seguridad Social cotizas (autónomos/RETA, régimen general u otro)?",
+    ),
+    "importe_renta_aproximado": (
+        "q_importe_renta",
+        "¿Cuál es el importe aproximado de tus ingresos anuales?",
+    ),
+    "tema_tributario": (
+        "q_tema_tributario",
+        "¿Sobre qué impuesto o trámite concreto es tu consulta?",
+    ),
 }
+
+# Facts whose question logic is hand-written in `_build_missing_and_questions`.
+_SPECIAL_CASED_FACTS = frozenset({"tipo_renta", "residencia_fiscal", "periodo_fiscal"})
 
 
 def _merge_facts(new_facts: list[Fact], current: CaseState | None) -> list[Fact]:
@@ -186,6 +213,32 @@ def _build_missing_and_questions(
                 target_fact="periodo_fiscal",
                 reason="necesario_para_contextualizar_normativa",
                 priority=RiskLevel.MEDIUM,
+            )
+        )
+
+    # Every other fact the intent's taxonomy requires. Without this the rules
+    # engine could block on a fact nobody ever asked for (e.g. the IVA rule
+    # requires `periodicidad_iva`, which had no question at all).
+    try:
+        blocking = set(blocking_facts_for_intent(SupportedIntent(intent.value)))
+        ordered_required = required_facts_for_intent(SupportedIntent(intent.value))
+    except ValueError:
+        blocking, ordered_required = set(), ()
+    for fact_name in ordered_required:
+        if fact_name in _SPECIAL_CASED_FACTS or fact_name in fact_names or fact_name not in _QUESTION_TEMPLATES:
+            continue
+        priority = RiskLevel.HIGH if fact_name in blocking else RiskLevel.MEDIUM
+        missing_facts.append(
+            MissingFact(fact_name=fact_name, reason="requerido_por_la_intencion_detectada", priority=priority)
+        )
+        qid, text = _QUESTION_TEMPLATES[fact_name]
+        next_questions.append(
+            QuestionPrompt(
+                question_id=qid,
+                question_text=text,
+                target_fact=fact_name,
+                reason="requerido_para_evaluar_obligaciones",
+                priority=priority,
             )
         )
 

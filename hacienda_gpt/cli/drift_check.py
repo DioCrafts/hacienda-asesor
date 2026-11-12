@@ -20,8 +20,41 @@ from pathlib import Path
 import click
 
 from hacienda_gpt.decision.rules import load_rules_from_directory
-from hacienda_gpt.governance.drift import DriftDetector, FilesystemResolver, write_report
+from hacienda_gpt.governance.drift import DriftDetector, DriftReport, DriftStatus, FilesystemResolver, write_report
 from hacienda_gpt.settings import RULES_DIR
+
+
+def record_unverified_hashes(rules_dir: Path, report: DriftReport) -> int:
+    """Link never-verified sources to the snapshot hash the detector just read.
+
+    Rewrites the rule JSON files in place. Only ``UNVERIFIED`` findings are
+    applied: accepting a ``CHANGED`` hash would silently bless a law change the
+    rule has not been re-validated against.
+    """
+    pending = {
+        (finding.rule_id, finding.source_id): finding.actual_hash
+        for finding in report.findings
+        if finding.status is DriftStatus.UNVERIFIED and finding.actual_hash
+    }
+    if not pending:
+        return 0
+    today = datetime.now(UTC).date().isoformat()
+    recorded = 0
+    for path in sorted(rules_dir.glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        rules = data if isinstance(data, list) else data.get("rules", [])
+        changed = False
+        for rule in rules:
+            for ref in rule.get("source_refs", []):
+                actual = pending.get((rule.get("id"), ref.get("source_id")))
+                if actual:
+                    ref["content_hash"] = actual
+                    ref["last_reviewed_at"] = today
+                    changed = True
+                    recorded += 1
+        if changed:
+            path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return recorded
 
 
 def _default_report_path() -> Path:
@@ -49,10 +82,25 @@ def _default_report_path() -> Path:
     default=False,
     help="Exit with non-zero code when changed/critical drift is detected (useful in CI)",
 )
-def cli(rules_dir: str, snapshot_root: str, output: str | None, fail_on_changed: bool) -> None:
+@click.option(
+    "--record-unverified",
+    is_flag=True,
+    default=False,
+    help=(
+        "Write the current snapshot hash into every source_ref still carrying the all-zero placeholder, "
+        "stamping last_reviewed_at with today. Use after reviewing that the snapshot is the text the rule was "
+        "written against; sources already linked (ok/changed) are never touched."
+    ),
+)
+def cli(rules_dir: str, snapshot_root: str, output: str | None, fail_on_changed: bool, record_unverified: bool) -> None:
     ruleset = load_rules_from_directory(rules_dir)
     detector = DriftDetector(resolver=FilesystemResolver(root=Path(snapshot_root)))
     report = detector.detect(ruleset)
+
+    if record_unverified:
+        recorded = record_unverified_hashes(Path(rules_dir), report)
+        click.echo(f"Recorded {recorded} source hash(es) into {rules_dir}")
+        report = detector.detect(load_rules_from_directory(rules_dir))
 
     output_path = Path(output) if output else _default_report_path()
     write_report(report, output_path)

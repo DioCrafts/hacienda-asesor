@@ -2,18 +2,36 @@
   {
     "id": "rule_irpf_candidate_resident_income",
     "jurisdiction": "ES",
-    "valid_from": "2024-01-01",
+    "valid_from": "2020-01-01",
     "valid_to": "2026-12-31",
     "conditions": [
-      {"fact": "residencia_fiscal", "operator": "eq", "value": "ES"},
-      {"fact": "menciona_ingresos", "operator": "eq", "value": true}
+      {
+        "fact": "residencia_fiscal",
+        "operator": "eq",
+        "value": "ES"
+      },
+      {
+        "fact": "menciona_ingresos",
+        "operator": "eq",
+        "value": true
+      }
     ],
-    "required_facts": ["residencia_fiscal", "periodo_fiscal", "tipo_renta"],
+    "required_facts": [
+      "residencia_fiscal",
+      "periodo_fiscal",
+      "tipo_renta"
+    ],
     "generated_obligation": {
       "obligation_id": "obl_irpf_candidate",
       "title": "Posible obligación de IRPF",
       "description": "Se detectan indicios para evaluar obligación de IRPF; requiere validación adicional.",
-      "status": "candidate"
+      "status": "candidate",
+      "deadline": {
+        "month": 6,
+        "day": 30,
+        "year_offset": 1,
+        "note": "Fin habitual de la campaña de Renta (30 de junio del año siguiente). Confirmar en el calendario del contribuyente de la AEAT del ejercicio."
+      }
     },
     "base_confidence": 0.72,
     "risk_level": "medium",
@@ -38,17 +56,31 @@
   {
     "id": "rule_iva_candidate_activity",
     "jurisdiction": "ES",
-    "valid_from": "2024-01-01",
+    "valid_from": "2020-01-01",
     "valid_to": "2026-12-31",
     "conditions": [
-      {"fact": "alta_actividad_economica", "operator": "eq", "value": true}
+      {
+        "fact": "alta_actividad_economica",
+        "operator": "eq",
+        "value": true
+      }
     ],
-    "required_facts": ["residencia_fiscal", "alta_actividad_economica", "periodicidad_iva"],
+    "required_facts": [
+      "residencia_fiscal",
+      "alta_actividad_economica",
+      "periodicidad_iva"
+    ],
     "generated_obligation": {
       "obligation_id": "obl_iva_candidate",
       "title": "Posible obligación de IVA",
       "description": "Actividad económica detectada; verificar periodicidad y modelos aplicables.",
-      "status": "candidate"
+      "status": "candidate",
+      "deadline": {
+        "month": 1,
+        "day": 30,
+        "year_offset": 1,
+        "note": "Autoliquidación del 4T y resumen anual (30 de enero del año siguiente). Los trimestres 1T-3T vencen el 20 de abril, julio y octubre. Confirmar en el calendario del contribuyente de la AEAT."
+      }
     },
     "base_confidence": 0.68,
     "risk_level": "high",

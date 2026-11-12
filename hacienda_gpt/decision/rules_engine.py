@@ -202,7 +202,11 @@ class RulesEngine:
         self, rule: DecisionRule, case_state: CaseState, missing_facts: list[str]
     ) -> ObligationCandidate:
         now = datetime.now(UTC)
+        deadline = rule.generated_obligation.deadline
+        fiscal_year = parse_fiscal_year(case_state.tax_period)
         return ObligationCandidate(
+            due_date=deadline.resolve(fiscal_year) if deadline is not None and fiscal_year is not None else None,
+            due_date_note=deadline.note if deadline is not None else None,
             obligation_id=rule.generated_obligation.obligation_id,
             title=rule.generated_obligation.title,
             description=rule.generated_obligation.description,
