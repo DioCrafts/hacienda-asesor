@@ -53,7 +53,6 @@ jobs:
     runs-on: ubuntu-latest
     # mypy is not enforced yet (never run in CI before); keep it informational
     # so it surfaces type issues without blocking until the backlog is cleared.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
