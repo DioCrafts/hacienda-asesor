@@ -663,6 +663,28 @@ Lista las normas que el BOE ha actualizado después de la fecha en que se
 leyeron sus parámetros. Que una norma aparezca no significa que sus cifras
 hayan cambiado, sino que hay que volver a leerla.
 
+**Normas nuevas.** `boe_watch` solo ve cambios en leyes que ya seguimos. Para
+no depender de eso, `boe-novedades` lee el sumario del BOE de cada día y se
+queda con las disposiciones —estatales o autonómicas— que tocan impuestos,
+según la clasificación por materias del propio BOE y la lista de normas que
+cada una modifica. Así encuentra un decreto de vivienda que cambia la Ley del
+IRPF aunque su título no lo diga, o la ley de medidas tributarias de una
+comunidad cuando llega al BOE. No usa LLM.
+
+```cron
+15 7 * * *  cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.proactive boe-novedades >> logs/proactive.log 2>&1
+```
+
+Guarda un registro en `data/html/_boe_novedades.json` y retoma desde el último
+día revisado. Las de relevancia alta (leyes y decretos-ley, o cualquier norma
+que modifique una de las que alimentan la calculadora) generan un aviso: a los
+residentes si es autonómica, o al perfil al que toca el impuesto si es estatal.
+El aviso dice expresamente que la norma aún no se ha analizado. Límites: una
+ley autonómica llega al BOE semanas después de publicarse en su boletín; el
+análisis del BOE puede tardar unos días (la norma queda pendiente y se vuelve
+a mirar); y decidir si una norma nueva se incorpora al corpus o a los
+parámetros sigue siendo manual (`destacadas[].en_catalogo` lo indica).
+
 Repetir una ejecución no duplica avisos. Los importes son estimaciones de la
 calculadora con los datos del expediente, y los plazos no tienen en cuenta
 festivos. Los avisos solo se guardan en la base de datos: todavía no se envían

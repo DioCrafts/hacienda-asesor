@@ -20,12 +20,14 @@ state file next to the changes log.
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 import json
 import logging
 from pathlib import Path
 import time
 from typing import Any
+from urllib.error import HTTPError, URLError
+import urllib.request
 
 import click
 
@@ -34,6 +36,7 @@ from hacienda_gpt.decision.schemas import CaseStatus
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.proactive.impacto import clave_evento, parse_fecha_actualizacion, preparar_eventos, procesar_eventos
 from hacienda_gpt.proactive.jobs import ejecutar_para_todos, hoy_en_espana
+from hacienda_gpt.proactive.novedades import ItemSumario, notificar_novedad, revisar
 from hacienda_gpt.proactive.store import NotificationStore
 from hacienda_gpt.tax.fuentes import desactualizadas, normas_de_parametros
 
@@ -224,6 +227,145 @@ def params_check(fail_on_stale: bool) -> None:
     )
     if fail_on_stale and pendientes:
         raise SystemExit(1)
+
+
+_SUMARIO_URL = "https://www.boe.es/datosabiertos/api/boe/sumario/{dia}"
+_XML_URL = "https://www.boe.es/diario_boe/xml.php?id={id}"
+_USER_AGENT = "hacienda-asesor/0.1 (novedades tributarias)"
+
+
+def _get(url: str, *, accept: str, timeout: int = 60, intentos: int = 3) -> bytes | None:
+    """GET ``url`` with a couple of retries; None on 404 (no BOE that day)."""
+    request = urllib.request.Request(url, headers={"Accept": accept, "User-Agent": _USER_AGENT})
+    for intento in range(intentos):
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                return bytes(response.read())
+        except HTTPError as exc:
+            if exc.code == 404:
+                return None
+            if intento == intentos - 1:
+                raise
+        except (URLError, ConnectionError, TimeoutError):
+            if intento == intentos - 1:
+                raise
+        time.sleep(2 * (intento + 1))
+    return None
+
+
+def _sumario(dia: date) -> dict[str, Any] | None:
+    raw = _get(_SUMARIO_URL.format(dia=dia.strftime("%Y%m%d")), accept="application/json")
+    time.sleep(0.3)
+    return json.loads(raw) if raw else None
+
+
+def _xml(boe_id: str) -> bytes | None:
+    raw = _get(_XML_URL.format(id=boe_id), accept="application/xml")
+    time.sleep(0.3)
+    return raw
+
+
+def _vigiladas() -> frozenset[str]:
+    """Ids already watched: the corpus catalogue plus the calculator's source laws."""
+    catalogo = Path(__file__).resolve().parent / "boe_seed_catalog.json"
+    ids = {str(doc["id"]) for doc in json.loads(catalogo.read_text(encoding="utf-8")).get("documents", [])}
+    return frozenset(ids | {norma.boe_id for norma in normas_de_parametros()})
+
+
+@cli.command("boe-novedades")
+@click.option(
+    "--desde",
+    callback=_parse_day,
+    default=None,
+    help="Primer día a revisar (por defecto, el siguiente al último revisado; la primera vez, hace 7 días).",
+)
+@click.option("--hasta", callback=_parse_day, default=None, help="Último día a revisar (por defecto, hoy).")
+@click.option(
+    "--output-dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    default=Path("./data/html"),
+    show_default=True,
+    help="Dónde se guardan el estado y el registro de novedades.",
+)
+@click.option(
+    "--notify/--no-notify",
+    default=True,
+    show_default=True,
+    help="Avisar a los usuarios afectados por las de relevancia alta.",
+)
+@_DB_OPTION
+def boe_novedades(desde: date | None, hasta: date | None, output_dir: Path, notify: bool, db_path: str | None) -> None:
+    """Busca en el BOE de cada día normas nuevas, estatales o autonómicas, que toquen impuestos.
+
+    No usa ningún LLM: se guía por la clasificación por materias del propio BOE
+    y por las normas que cada disposición modifica. Pensado para cron diario.
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    state_path = output_dir / "_boe_novedades_state.json"
+    registro_path = output_dir / "_boe_novedades.json"
+    state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else {}
+    registro: dict[str, Any] = json.loads(registro_path.read_text(encoding="utf-8")) if registro_path.exists() else {}
+
+    hoy = hoy_en_espana()
+    hasta = hasta or hoy
+    if desde is None:
+        ultimo = state.get("ultimo_dia")
+        desde = date.fromisoformat(ultimo) + timedelta(days=1) if ultimo else hasta - timedelta(days=7)
+    dias = [desde + timedelta(days=n) for n in range(max(0, (hasta - desde).days + 1))]
+
+    revision = revisar(
+        dias,
+        sumario_de=_sumario,
+        xml_de=_xml,
+        vigiladas=_vigiladas(),
+        pendientes=[ItemSumario(**item) for item in state.get("pendientes", [])],
+        hoy=hoy,
+    )
+
+    nuevas = 0
+    for novedad in revision.novedades:
+        nuevas += novedad.boe_id not in registro
+        registro[novedad.boe_id] = novedad.model_dump(mode="json")
+    notificaciones = 0
+    if notify and revision.novedades:
+        path = db_path or settings.DECISION_STATE_DB_PATH
+        cases = [case for case in SQLiteCaseStateStore(path).list_all_cases() if case.status != CaseStatus.CLOSED]
+        store = NotificationStore(path)
+        notificaciones = sum(notificar_novedad(novedad, cases, store) for novedad in revision.novedades)
+
+    registro_path.write_text(json.dumps(registro, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    if dias and not revision.errores:
+        state["ultimo_dia"] = max(max(dias).isoformat(), state.get("ultimo_dia", ""))
+    state["pendientes"] = [item.model_dump(mode="json") for item in revision.pendientes]
+    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+
+    click.echo(
+        json.dumps(
+            {
+                "dias_revisados": len(dias) - len(revision.dias_sin_boletin),
+                "novedades": len(revision.novedades),
+                "nuevas_en_el_registro": nuevas,
+                "pendientes_de_analisis": len(revision.pendientes),
+                "notificaciones": notificaciones,
+                "errores": revision.errores,
+                "destacadas": [
+                    {
+                        "boe_id": n.boe_id,
+                        "fecha": n.fecha.isoformat(),
+                        "ambito": n.comunidad_nombre or "Estado",
+                        "tributos": n.tributos,
+                        "modifica_vigiladas": [m.boe_id for m in n.modifica],
+                        "en_catalogo": n.en_catalogo,
+                        "titulo": n.titulo[:140],
+                    }
+                    for n in revision.novedades
+                    if n.relevancia == "alta"
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":
