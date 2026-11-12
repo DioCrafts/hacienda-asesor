@@ -25,6 +25,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from hacienda_gpt.agent.providers.base import ProviderError
 from hacienda_gpt.decision.schemas import CaseState
 from hacienda_gpt.proactive.store import Notification, NotificationStore
+from hacienda_gpt.tax.fuentes import comunidad_de, norma_de_parametros
 
 logger = logging.getLogger(__name__)
 
@@ -386,16 +387,29 @@ def notificar_cambio(cambio: CambioNormativo, cases: Iterable[CaseState], store:
         return 0
     created = 0
     url = f"https://www.boe.es/buscar/act.php?id={cambio.boe_id}"
+    # A regional law only concerns the residents of that community.
+    fuente = norma_de_parametros(cambio.boe_id)
     for case in cases:
-        razones = perfil_afectado({fact.name: fact.value for fact in case.facts}, cambio.afecta_a)
+        facts = {fact.name: fact.value for fact in case.facts}
+        razones = perfil_afectado(facts, cambio.afecta_a)
         if not razones:
             continue
+        if fuente is not None and fuente.comunidad is not None:
+            residencia = facts.get("comunidad_autonoma")
+            if comunidad_de(residencia if isinstance(residencia, str) else None) != fuente.comunidad:
+                continue
+            razones.insert(0, f"Resides en {fuente.comunidad_nombre}.")
         sections = [cambio.resumen, "**Por qué te lo cuento:** " + " ".join(razones)]
         if cambio.en_vigor_desde:
             sections.append(f"**En vigor desde:** {cambio.en_vigor_desde}")
         sections.append(f"**Texto de la norma:** «{cambio.cita_literal}»")
         if cambio.articulos:
             sections.append("**Preceptos modificados:** " + "; ".join(cambio.articulos))
+        if fuente is not None:
+            sections.append(
+                "**Calculadora:** las cifras que usa la calculadora para esta norma se leyeron el "
+                f"{fuente.consultado_el.strftime('%d/%m/%Y')}; hasta que se revisen pueden no recoger este cambio."
+            )
         sections.append(
             f"**Norma:** {cambio.titulo_norma} ({cambio.boe_id}).\n\n"
             "Este resumen se ha generado automáticamente a partir del texto consolidado del BOE y no calcula el "

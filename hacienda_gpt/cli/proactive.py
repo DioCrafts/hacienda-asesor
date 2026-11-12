@@ -24,6 +24,7 @@ from datetime import UTC, date, datetime
 import json
 import logging
 from pathlib import Path
+import time
 from typing import Any
 
 import click
@@ -31,9 +32,10 @@ import click
 from hacienda_gpt import settings
 from hacienda_gpt.decision.schemas import CaseStatus
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
-from hacienda_gpt.proactive.impacto import clave_evento, preparar_eventos, procesar_eventos
+from hacienda_gpt.proactive.impacto import clave_evento, parse_fecha_actualizacion, preparar_eventos, procesar_eventos
 from hacienda_gpt.proactive.jobs import ejecutar_para_todos, hoy_en_espana
 from hacienda_gpt.proactive.store import NotificationStore
+from hacienda_gpt.tax.fuentes import desactualizadas, normas_de_parametros
 
 logger = logging.getLogger(__name__)
 
@@ -178,6 +180,50 @@ def boe_impact(changes_log: Path, snapshot_dir: Path, since: date | None, yes: b
         )
         _save_processed(state_path, processed | set(summary["procesados"]))
     click.echo(json.dumps(summary, ensure_ascii=False))
+
+
+@cli.command("params-check")
+@click.option(
+    "--fail-on-stale", is_flag=True, help="Termina con código 1 si alguna norma ha cambiado (para cron o CI)."
+)
+def params_check(fail_on_stale: bool) -> None:
+    """Comprueba si el BOE ha actualizado las normas de las que salen los parámetros de la calculadora.
+
+    Una petición ligera de metadatos por norma (la Ley del IRPF y la ley de cada
+    comunidad); no usa ningún LLM. Una norma listada no significa que sus cifras
+    hayan cambiado: significa que hay que releerla.
+    """
+    from hacienda_gpt.cli.boe_watch import _fetch_metadata
+
+    fechas: dict[str, date] = {}
+    errores: list[str] = []
+    for norma in normas_de_parametros():
+        try:
+            fecha = parse_fecha_actualizacion(_fetch_metadata(norma.boe_id).get("fecha_actualizacion"))
+        except Exception as exc:  # network or malformed payload: report and carry on
+            errores.append(f"{norma.boe_id}: {exc}")
+            continue
+        if fecha is not None:
+            fechas[norma.boe_id] = fecha
+        time.sleep(0.3)
+    pendientes = [
+        {
+            "boe_id": norma.boe_id,
+            "comunidad": norma.comunidad_nombre or "Estado",
+            "norma": norma.norma,
+            "parametros_leidos_el": norma.consultado_el.isoformat(),
+            "actualizada_en_boe_el": fecha.isoformat(),
+            "ejercicios": list(norma.ejercicios),
+        }
+        for norma, fecha in desactualizadas(fechas)
+    ]
+    click.echo(
+        json.dumps(
+            {"comprobadas": len(fechas), "a_revisar": pendientes, "errores": errores}, ensure_ascii=False, indent=2
+        )
+    )
+    if fail_on_stale and pendientes:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

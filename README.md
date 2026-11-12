@@ -648,6 +648,21 @@ abrirla, prográmalos:
 0 7 * * *   cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.proactive run-daily >> logs/proactive.log 2>&1
 ```
 
+**Normas autonómicas.** La vigilancia cubre también la ley de cada una de las
+15 comunidades de las que salen la escala, los mínimos y las deducciones (están
+en el catálogo de `boe_watch`). Un cambio en una ley autonómica solo avisa a
+quienes residen en esa comunidad, y el aviso recuerda en qué fecha se leyeron
+las cifras de la calculadora. Para saber qué parámetros hay que releer:
+
+```bash
+# Una petición de metadatos por norma; sin LLM. Con --fail-on-stale termina con código 1 si hay alguna.
+uv run python -m hacienda_gpt.cli.proactive params-check
+```
+
+Lista las normas que el BOE ha actualizado después de la fecha en que se
+leyeron sus parámetros. Que una norma aparezca no significa que sus cifras
+hayan cambiado, sino que hay que volver a leerla.
+
 Repetir una ejecución no duplica avisos. Los importes son estimaciones de la
 calculadora con los datos del expediente, y los plazos no tienen en cuenta
 festivos. Los avisos solo se guardan en la base de datos: todavía no se envían

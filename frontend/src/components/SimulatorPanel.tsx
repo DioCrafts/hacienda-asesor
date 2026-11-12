@@ -10,7 +10,7 @@ import type { Benefit, Fact, Simulation } from "../api";
 import { ApiError, simulate } from "../api";
 import { formatMoney } from "../lib/presentation";
 
-type FieldKind = "money" | "count";
+type FieldKind = "money" | "count" | "flag";
 interface FieldDef {
   name: string;
   label: string;
@@ -59,6 +59,29 @@ const MADRID_GROUP: { title: string; fields: FieldDef[] } = {
     { name: "base_imponible_resto_unidad_familiar", label: "Rentas netas de tu pareja", kind: "money", hint: "Cuentan para los límites de renta familiar" },
   ],
 };
+// For residents of the other communities whose deductions are computed from data.
+const REGIONAL_GROUP: { title: string; fields: FieldDef[] } = {
+  title: "Deducciones de tu comunidad",
+  fields: [
+    { name: "edad", label: "Tu edad", kind: "count", hint: "Varias deducciones (alquiler, mayores) dependen de ella" },
+    { name: "alquiler_vivienda_habitual", label: "Alquiler pagado en el año", kind: "money" },
+    { name: "hijos_nacidos_en_el_ejercicio", label: "Hijos nacidos o adoptados este año", kind: "count" },
+    { name: "gastos_guarderia", label: "Guardería o escuela infantil (0-3)", kind: "money" },
+    { name: "num_hijos_gastos_educativos", label: "Hijos escolarizados", kind: "count", hint: "Por los que pagas libros o clases" },
+    { name: "gastos_libros_texto", label: "Libros de texto y material escolar", kind: "money" },
+    { name: "gastos_ensenanza_idiomas", label: "Clases de idiomas de los hijos", kind: "money" },
+    { name: "cotizaciones_empleada_hogar", label: "Cotizaciones de empleada de hogar", kind: "money" },
+    { name: "gastos_cuidado_familiares", label: "Cuidado de hijos, mayores o personas con discapacidad", kind: "money", hint: "Pagado a cuidadores o centros, sin las cotizaciones" },
+    { name: "num_familiares_discapacidad_a_cargo", label: "Familiares con discapacidad a tu cargo", kind: "count" },
+    { name: "num_ascendientes_mayores_75", label: "Ascendientes mayores de 75 a tu cargo", kind: "count" },
+    { name: "grado_discapacidad", label: "Tu grado de discapacidad (%)", kind: "count" },
+    { name: "familia_numerosa", label: "Familia numerosa", kind: "flag" },
+    { name: "familia_numerosa_especial", label: "De categoría especial", kind: "flag" },
+    { name: "familia_monoparental", label: "Familia monoparental", kind: "flag" },
+    { name: "municipio_rural_o_despoblacion", label: "Vivo en un municipio pequeño, rural o en riesgo de despoblación", kind: "flag", hint: "Cada comunidad lo define a su manera; el resultado te dirá el criterio" },
+    { name: "base_imponible_resto_unidad_familiar", label: "Rentas netas de tu pareja", kind: "money", hint: "Cuentan para los límites de renta familiar" },
+  ],
+};
 const COMUNIDADES = [
   { value: "", label: "Sin indicar" },
   { value: "Andalucía", label: "Andalucía" },
@@ -84,7 +107,8 @@ const plain = (text: string) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
-const FIELDS = [...GROUPS, MADRID_GROUP].flatMap((g) => g.fields);
+const FIELDS = [...GROUPS, MADRID_GROUP, REGIONAL_GROUP].flatMap((g) => g.fields);
+const FLAGS = new Set(FIELDS.filter((f) => f.kind === "flag").map((f) => f.name));
 const TRIBUTACION = [
   { value: "individual", label: "Individual" },
   { value: "conjunta_biparental", label: "Conjunta (matrimonio)" },
@@ -110,7 +134,7 @@ interface SimulatorPanelProps {
   facts: Fact[];
   taxPeriod: string | null;
   // Persist edited figures to the case. Resolves true when saved.
-  onSaveFact: (factName: string, value: number | string) => Promise<boolean>;
+  onSaveFact: (factName: string, value: number | string | boolean) => Promise<boolean>;
   busy: boolean;
 }
 
@@ -127,7 +151,9 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
 
   const baseline = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const fact of facts) if (typeof fact.value === "number") map[fact.name] = String(fact.value);
+    for (const fact of facts) {
+      if (typeof fact.value === "number" || typeof fact.value === "boolean") map[fact.name] = String(fact.value);
+    }
     return map;
   }, [facts]);
 
@@ -142,6 +168,10 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   const cambios = useMemo(() => {
     const out: Record<string, unknown> = {};
     for (const [name, raw] of Object.entries(edits)) {
+      if (FLAGS.has(name)) {
+        if (raw !== (baseline[name] ?? "false")) out[name] = raw === "true";
+        continue;
+      }
       const n = parseNumber(raw);
       if (n !== null && String(n) !== baseline[name]) out[name] = n;
     }
@@ -150,7 +180,7 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
     return out;
   }, [edits, tributacion, baseline, comunidadEdit, savedComunidad]);
   const comunidad = comunidadEdit ?? savedComunidad;
-  const groups = /madrid/i.test(comunidad) ? [...GROUPS, MADRID_GROUP] : GROUPS;
+  const groups = /madrid/i.test(comunidad) ? [...GROUPS, MADRID_GROUP] : comunidad && comunidad !== "Otra" ? [...GROUPS, REGIONAL_GROUP] : GROUPS;
   const changed = Object.keys(cambios).length > 0;
   const cambiosKey = JSON.stringify(cambios);
 
@@ -208,7 +238,7 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
     setSaving(true);
     try {
       for (const [name, value] of Object.entries(cambios)) {
-        const saveable = typeof value === "number" || (name === "comunidad_autonoma" && typeof value === "string");
+        const saveable = typeof value === "number" || typeof value === "boolean" || (name === "comunidad_autonoma" && typeof value === "string");
         if (!saveable) continue;
         if (!(await onSaveFact(name, value))) return;
       }
@@ -301,6 +331,22 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
                 {group.fields.map((field) => {
                   const value = edits[field.name] ?? baseline[field.name] ?? "";
                   const dirty = field.name in cambios;
+                  if (field.kind === "flag") {
+                    return (
+                      <label key={field.name} className="flex items-start gap-2.5 sm:col-span-2">
+                        <input
+                          type="checkbox"
+                          checked={value === "true"}
+                          onChange={(e) => setEdits((prev) => ({ ...prev, [field.name]: String(e.target.checked) }))}
+                          className="mt-0.5 h-4 w-4 accent-[rgb(var(--primary))]"
+                        />
+                        <span>
+                          <span className={clsx("text-[13.5px]", dirty ? "font-semibold text-primary-dark" : "text-ink")}>{field.label}</span>
+                          {field.hint && <span className="block text-[11.5px] leading-snug text-muted">{field.hint}</span>}
+                        </span>
+                      </label>
+                    );
+                  }
                   return (
                     <label key={field.name} className="block">
                       <span className="text-[12.5px] text-ink-soft">{field.label}</span>
@@ -338,7 +384,7 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
                         : comunidad === "Otra"
                           ? "Los territorios forales tienen su propio impuesto y Ceuta y Melilla una deducción específica: aquí la parte autonómica es solo una aproximación."
                           : comunidad
-                            ? "Se aplican la escala y los mínimos de tu comunidad; sus deducciones propias no se calculan."
+                            ? "Se aplican la escala, los mínimos y las deducciones más habituales de tu comunidad (abajo)."
                             : "Sin comunidad, la parte autonómica se aproxima con la escala estatal."}
                     </span>
                   </label>
