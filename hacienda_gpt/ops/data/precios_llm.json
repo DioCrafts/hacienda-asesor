@@ -1,0 +1,23 @@
+{
+  "consultado_el": "2026-11-12",
+  "moneda": "USD",
+  "unidad": "por millón de tokens",
+  "nota": "Los precios de los modelos cambian: esta tabla es una foto del día indicado en «consultado_el» y hay que revisarla contra la página de precios del proveedor antes de fiarse de los importes. Un precio null significa «no consultado»: las llamadas a ese modelo se registran sin coste (nunca se estima) y no cuentan para los límites diarios en USD.",
+  "fuente": "Tabla «Current Models» de la referencia de la API de Claude incluida en Claude Code (skill claude-api, fechada el 2026-11-03), tarifas de la API propia de Anthropic. No se ha consultado la página de precios en línea.",
+  "modelos": {
+    "claude-opus-5-5": {
+      "input": "4.00",
+      "output": "20.00",
+      "cache_read": "0.20",
+      "cache_write": "5.00",
+      "nota": "Entrada, salida y lectura de caché: cifras literales de la fuente ($4 / $20 por MTok; lecturas de caché $0.20). Escritura de caché: 1,25 × entrada, la regla que da la fuente para la caché de 5 minutos, que es la que usa el proveedor (cache_control ephemeral sin ttl). No incluye el modo rápido ni tarifas de Bedrock o Vertex."
+    },
+    "gpt-4o-mini": {
+      "input": null,
+      "output": null,
+      "cache_read": null,
+      "cache_write": null,
+      "nota": "Precio no consultado (sin acceso a la página de precios de OpenAI): sus llamadas se registran sin coste."
+    }
+  }
+}

@@ -10,7 +10,13 @@ from pydantic import BaseModel, ConfigDict
 from hacienda_gpt.tax.beneficios import Beneficio, evaluar_beneficios
 from hacienda_gpt.tax.irpf import IRPFInput, IRPFResult, calcular_irpf
 from hacienda_gpt.tax.params import load_params
-from hacienda_gpt.tax.profile import CORE_FIELDS, DatosInvalidosError, build_input
+from hacienda_gpt.tax.profile import (
+    ACTIVIDAD_FACT_FIELDS,
+    CORE_FIELDS,
+    ActividadPerfil,
+    DatosInvalidosError,
+    build_input_con_actividad,
+)
 
 MAX_ESCENARIOS = 6
 BASE_NAME = "Situación actual"
@@ -23,6 +29,10 @@ class EscenarioResultado(BaseModel):
     resultado: IRPFResult
     # Tax saved versus the first scenario (positive: this one is cheaper).
     ahorro_frente_a_base: Decimal
+    # Set when the profile holds income and expenses of a self-employed activity: whether the
+    # activity's net income was computed from them, with the computation's lines and warnings.
+    # Its sentence is also the first of ``resultado.avisos``.
+    actividad: ActividadPerfil | None = None
 
 
 class Simulacion(BaseModel):
@@ -33,6 +43,17 @@ class Simulacion(BaseModel):
     beneficios: list[Beneficio]
     # Core figures nobody supplied: the simulation silently used zero for them.
     datos_no_aportados: list[str]
+
+
+def _con_aviso_de_actividad(result: IRPFResult, actividad: ActividadPerfil | None) -> IRPFResult:
+    """Put what was done with the activity facts first among the result's warnings.
+
+    The IRPF calculator only sees a net figure ("dato aportado"); where it came
+    from is known here, so the sentence is added to the result after the fact.
+    """
+    if actividad is None:
+        return result
+    return result.model_copy(update={"avisos": [actividad.aviso, *result.avisos]})
 
 
 def simular(
@@ -55,6 +76,7 @@ def simular(
         raise DatosInvalidosError(f"'escenarios' debe ser una lista de hasta {MAX_ESCENARIOS} alternativas.")
 
     inputs: list[tuple[str, IRPFInput]] = []
+    actividades: list[ActividadPerfil | None] = []
     cambios_ultimo: dict[str, Any] = {}
     for item in raw:
         if not isinstance(item, dict) or not isinstance(item.get("nombre"), str) or not item["nombre"].strip():
@@ -63,18 +85,33 @@ def simular(
         if not isinstance(cambios, dict):
             raise DatosInvalidosError("'cambios' debe ser un objeto {campo: valor}.")
         cambios_ultimo = cambios
-        inputs.append(
-            (item["nombre"].strip(), build_input(ejercicio=ejercicio, facts=facts, datos=datos, cambios=cambios))
-        )
+        inp, actividad = build_input_con_actividad(ejercicio=ejercicio, facts=facts, datos=datos, cambios=cambios)
+        inputs.append((item["nombre"].strip(), inp))
+        actividades.append(actividad)
 
-    results = [(nombre, calcular_irpf(inp, params)) for nombre, inp in inputs]
+    results = [
+        (nombre, _con_aviso_de_actividad(calcular_irpf(inp, params), actividad))
+        for (nombre, inp), actividad in zip(inputs, actividades, strict=True)
+    ]
     base = results[0][1]
     provided = {name for name in (*facts, *datos) if name in IRPFInput.model_fields or name == "estado_civil"}
+    if any(
+        name in ACTIVIDAD_FACT_FIELDS and value is not None
+        for source in (facts, datos)
+        for name, value in source.items()
+    ):
+        # The activity's net income is known through its breakdown.
+        provided.add("rendimiento_actividad_neto")
     return Simulacion(
         ejercicio=ejercicio,
         escenarios=[
-            EscenarioResultado(nombre=nombre, resultado=result, ahorro_frente_a_base=base.resultado - result.resultado)
-            for nombre, result in results
+            EscenarioResultado(
+                nombre=nombre,
+                resultado=result,
+                ahorro_frente_a_base=base.resultado - result.resultado,
+                actividad=actividad,
+            )
+            for (nombre, result), actividad in zip(results, actividades, strict=True)
         ],
         beneficios=(
             # Levers are normally judged against the saved profile; an interactive

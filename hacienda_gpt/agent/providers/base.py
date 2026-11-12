@@ -15,7 +15,10 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
+import logging
 from typing import Any, Literal, Protocol
+
+logger = logging.getLogger(__name__)
 
 StopReason = Literal["end", "tool_use", "max_tokens", "refusal"]
 
@@ -78,6 +81,58 @@ class ModelTurn:
 
 # Receives the model's visible text as it is generated, chunk by chunk.
 TextCallback = Callable[[str], None]
+
+
+@dataclass(frozen=True)
+class Usage:
+    """Tokens billed for ONE call to a model API, as the API itself reported them.
+
+    ``input_tokens`` excludes the cached part of the prompt, which is counted in
+    ``cache_read_tokens`` (served from the cache) and ``cache_write_tokens``
+    (written to it). ``reported`` is False when the API gave no usage data: the
+    call happened but its size is unknown.
+    """
+
+    provider: str
+    model: str
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_read_tokens: int = 0
+    cache_write_tokens: int = 0
+    # What the call was for ("agente", "verificador", "documentos"…); set by the metering wrapper.
+    purpose: str = ""
+    reported: bool = True
+
+
+# Optional hook a provider exposes as ``provider.on_usage``: called once per API
+# call that reported its token usage. Not part of the :class:`LLMProvider`
+# protocol — providers (and test doubles) without it keep working.
+UsageCallback = Callable[[Usage], None]
+
+
+def report_usage(provider: Any, build: Callable[[], Usage | None]) -> None:
+    """Hand the usage of one API call to ``provider.on_usage``, if there is one.
+
+    Never raises: measuring spend must not break an answer the user already paid
+    for. ``build`` returns None when the response carried no usage data.
+    """
+    callback = getattr(provider, "on_usage", None)
+    if callback is None:
+        return
+    try:
+        usage = build()
+        if usage is not None:
+            callback(usage)
+    except Exception:  # a malformed usage object or a failing callback
+        logger.warning("could not report LLM usage", exc_info=True)
+
+
+def token_count(source: Any, name: str) -> int:
+    """``source.name`` as a non-negative int; 0 when missing or not a number."""
+    value = getattr(source, name, None)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return 0
+    return value
 
 
 class Conversation(Protocol):

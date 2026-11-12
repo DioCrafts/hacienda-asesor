@@ -225,3 +225,84 @@ Apunta el resultado, avisa al healthcheck y deja pasar la excepción sin tocarla
 rojo significa que el BOE ha actualizado alguna de las normas de las que salen los parámetros
 de la calculadora (hay que releerla; no implica que las cifras hayan cambiado), o que no se
 pudo consultar el BOE. Solo necesita acceso a `www.boe.es`.
+
+## Consumo de modelos de IA: medirlo y limitarlo
+
+Una sola pregunta puede costar muchas llamadas al modelo: el agente da varias vueltas, en modo
+equipo intervienen además un planificador, dos investigadores y un crítico, después pasa el
+verificador, y un documento escaneado se lee dos veces. `hacienda_gpt/ops/consumo.py` apunta
+cada llamada y, si se configuran límites, corta antes de hacer la siguiente.
+
+### Qué se guarda
+
+Una fila por llamada en la tabla `llm_usage` de la misma base de datos SQLite que los casos
+(`DECISION_STATE_DB_PATH`): fecha y hora (UTC), usuario y caso si se conocen, propósito
+(`agente`, `verificador`, `documentos`…), proveedor, modelo, tokens de entrada, de salida, leídos
+de caché y escritos en caché, y el coste en USD. No se guarda ningún texto de la consulta ni de
+la respuesta.
+
+Los tokens son los que devuelve la propia API. Si la API no los devuelve (pasa con algunos
+servidores locales, sobre todo en respuestas en streaming), la llamada se apunta igualmente, con
+los tokens y el coste vacíos.
+
+### De dónde sale el coste
+
+De una tabla de precios que es un fichero de datos, `hacienda_gpt/ops/data/precios_llm.json`: USD
+por millón de tokens de entrada, salida, lectura de caché y escritura de caché para cada modelo,
+con la fecha en que se consultaron (`consultado_el`) y la fuente.
+
+- **Los precios cambian.** La tabla es una foto de esa fecha: revísala contra la página de precios
+  del proveedor. Para actualizarla sin tocar el código, copia el fichero, corrígelo y apunta
+  `LLM_PRICES_PATH` a la copia.
+- **Nunca se estima.** Un modelo que no está en la tabla, o con el precio a `null`, se apunta sin
+  coste. Hoy solo tiene precio `claude-opus-5-5`; `gpt-4o-mini` está a `null` (no se pudo
+  consultar) y los modelos locales no figuran. Si cambias `ANTHROPIC_MODEL`, `VERIFIER_MODEL` u
+  `OPENAI_AGENT_MODEL`, añade el modelo a la tabla.
+- El coste es una estimación para operar, no una factura: no incluye descuentos, modo rápido ni
+  las tarifas de Bedrock o Vertex.
+
+En los informes, `llamadas_sin_coste` dice cuántas llamadas no suman coste: si no es cero, el
+total en USD es un mínimo.
+
+### Límites
+
+Todos opcionales; vacío significa sin límite. Un valor que no sea un número mayor que cero impide
+arrancar el agente (mejor eso que un límite que no limita).
+
+| Variable | Qué limita |
+|---|---|
+| `LLM_DAILY_BUDGET_USD` | Gasto total del servicio en un día. |
+| `LLM_DAILY_BUDGET_USD_PER_USER` | Gasto de cada usuario en un día. Solo se aplica a las llamadas atribuidas a un usuario. |
+| `LLM_MAX_CALLS_PER_QUESTION` | Llamadas al modelo en una misma pregunta (agente, equipo y verificador juntos). |
+| `LLM_PRICES_PATH` | Tabla de precios alternativa. |
+
+El día es el día natural de la península (Europe/Madrid): los límites diarios se restablecen a las
+00:00. Al llegar a un límite, la consulta recibe un error 429 con un mensaje en español que dice
+qué límite es y cuándo se restablece.
+
+Lo que conviene saber antes de fiarse de ellos:
+
+- Se comprueban **antes** de cada llamada, con lo ya gastado. La llamada que cruza el límite se
+  completa, y si hay varias a la vez pueden cruzarlo todas: el exceso es de unas pocas llamadas,
+  no de un día entero.
+- Los límites en USD solo cuentan las llamadas con coste conocido. Con un modelo sin precio en la
+  tabla **no protegen nada** (queda un aviso en el log la primera vez); el tope de llamadas por
+  pregunta sí funciona siempre.
+- Si el límite salta a mitad de una pregunta, lo ya gastado no se recupera. Cuando salta en el
+  verificador, la respuesta se entrega marcada como no verificada, igual que si el verificador
+  hubiera fallado.
+- Un tope de llamadas por pregunta demasiado bajo empeora las respuestas. Como referencia, sin
+  modo equipo una pregunta usa como mucho `AGENT_MAX_STEPS` vueltas por intento, más una
+  verificación por intento.
+
+### Consultarlo
+
+```bash
+# Total y desglose por día, propósito, usuario y caso de los últimos 7 días, en JSON.
+uv run python -m hacienda_gpt.cli.consumo resumen --dias 7
+```
+
+`GET /usage` (con la cabecera `X-API-Key` si `HACIENDA_API_KEY` está definida) devuelve los
+totales de hoy y de los últimos 30 días, en conjunto y por propósito, junto con los límites
+configurados y la fecha de la tabla de precios. Son cifras de todo el servicio, pensadas para
+quien lo opera.

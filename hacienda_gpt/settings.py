@@ -256,3 +256,38 @@ JOBS_STATE_PATH = os.environ.get("JOBS_STATE_PATH", "./data/_jobs_state.json")
 # ``HEALTHCHECK_URL_<JOB_NAME_IN_UPPERCASE>`` (e.g. HEALTHCHECK_URL_BOE_NOVEDADES)
 # takes precedence and is read when the job finishes.
 HEALTHCHECK_URL = os.environ.get("HEALTHCHECK_URL", "")
+
+# --- User accounts and privacy (hacienda_gpt/auth) --------------------------
+# off      : no accounts; anyone holding a case id can read that case (the
+#            historical behaviour — only acceptable on a single-user machine).
+# required : every case-scoped endpoint needs a session (Authorization: Bearer)
+#            and a case is visible only to the account that created it.
+# An unknown value is refused at start-up: a typo must not silently leave the
+# cases unprotected.
+AUTH_MODE = os.environ.get("AUTH_MODE", "off").strip().lower()
+if AUTH_MODE not in {"off", "required"}:
+    raise ValueError(f"AUTH_MODE must be 'off' or 'required', not {AUTH_MODE!r}")
+# How long a session token is valid after login.
+AUTH_SESSION_TTL_HOURS = float(os.environ.get("AUTH_SESSION_TTL_HOURS", "24"))
+# scrypt work factor for password hashes (memory is 128 * N * r bytes: 128 MB at
+# the default). Stored with every hash, so raising it never locks anyone out.
+AUTH_SCRYPT_N = int(os.environ.get("AUTH_SCRYPT_N", str(2**17)))
+# Failed logins allowed per e-mail + client address inside the window.
+AUTH_LOGIN_MAX_ATTEMPTS = int(os.environ.get("AUTH_LOGIN_MAX_ATTEMPTS", "5"))
+AUTH_LOGIN_WINDOW_SECONDS = int(os.environ.get("AUTH_LOGIN_WINDOW_SECONDS", "900"))
+# Where the operator publishes the privacy notice shown on the register screen.
+# Empty: the app shows its built-in technical summary, which is NOT a legal notice.
+PRIVACY_NOTICE_URL = os.environ.get("PRIVACY_NOTICE_URL", "")
+
+# --- LLM spend: measurement and limits (hacienda_gpt/ops/consumo.py) ---------
+# All optional; empty = no limit. The USD limits are per calendar day in
+# Europe/Madrid and rely on the price table (hacienda_gpt/ops/data/precios_llm.json):
+# calls to a model without a known price are recorded with no cost and do not
+# count towards them. Read when the agent is built; an invalid value is refused.
+LLM_DAILY_BUDGET_USD = os.environ.get("LLM_DAILY_BUDGET_USD", "")
+LLM_DAILY_BUDGET_USD_PER_USER = os.environ.get("LLM_DAILY_BUDGET_USD_PER_USER", "")
+# Hard cap on model calls spent on ONE user question (agent turns, planner,
+# researchers, critic and verifier together).
+LLM_MAX_CALLS_PER_QUESTION = os.environ.get("LLM_MAX_CALLS_PER_QUESTION", "")
+# Replacement price table (same format as the bundled one), for when prices change.
+LLM_PRICES_PATH = os.environ.get("LLM_PRICES_PATH", "")

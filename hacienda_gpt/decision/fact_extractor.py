@@ -45,9 +45,11 @@ EXPECTED_FACT_TYPE: dict[str, FactValueType] = {
 
 # Fiscal-profile facts (family, income breakdown, deductions) that feed the IRPF
 # calculator. Declared next to the calculator input they map onto.
-from hacienda_gpt.tax.profile import PROFILE_FACT_TYPES  # noqa: E402
+from hacienda_gpt.tax.profile import ACTIVIDAD_FACT_TYPES, PROFILE_FACT_TYPES  # noqa: E402
 
 EXPECTED_FACT_TYPE.update({name: FactValueType(kind) for name, kind in PROFILE_FACT_TYPES.items()})
+# Income and expenses of a self-employed activity (the profile bridge computes the net income from them).
+EXPECTED_FACT_TYPE.update({name: FactValueType(kind) for name, kind in ACTIVIDAD_FACT_TYPES.items()})
 
 KNOWN_FACT_NAMES: tuple[str, ...] = tuple(EXPECTED_FACT_TYPE.keys())
 
@@ -250,6 +252,13 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     hijos_nacidos_ultimos_3_ejercicios  → hijos nacidos o adoptados este año o en los dos anteriores
     base_imponible_resto_unidad_familiar → base imponible (rentas netas) del cónyuge y demás miembros de la unidad familiar
     miembros_unidad_familiar            → número de miembros de la unidad familiar
+    actividad_ingresos_integros         → autónomos: ingresos anuales de la actividad, sin IVA
+    actividad_seguridad_social_autonomo → autónomos: cuotas de autónomos (RETA) pagadas en el año
+    actividad_suministros               → autónomos: gasto anual de la actividad en luz, agua, gas, teléfono e internet, sin IVA
+    actividad_alquileres                → autónomos: alquiler anual del local u oficina de la actividad, sin IVA
+    actividad_servicios_profesionales   → autónomos: pagado en el año a gestoría, asesoría y otros profesionales, sin IVA
+    actividad_otros_gastos              → autónomos: resto de gastos anuales de la actividad, sin IVA
+    actividad_amortizaciones            → autónomos: amortización anual de equipos, vehículos y otros bienes de la actividad
 
   value_boolean:
     familia_numerosa                    → true si tiene título de familia numerosa
@@ -261,6 +270,8 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     num_familiares_discapacidad_a_cargo → ascendientes o descendientes con discapacidad que dependen de él
     municipio_rural_o_despoblacion      → true si vive en un municipio pequeño, rural o en riesgo de despoblación
     bienes_en_el_extranjero             → true si tiene cuentas, valores o inmuebles fuera de España
+    es_autonomo                         → true si trabaja por cuenta propia (autónomo)
+    actividad_profesional               → true si su actividad es profesional (abogado, médico, programador, diseñador…); false si es empresarial (comercio, hostelería, taller…)
 
   "gano 38.000 brutos al año, vivo en Valencia, tengo dos hijos, uno de 2 años"
     → rendimiento_trabajo_bruto value_number=38000 · comunidad_autonoma value_string="Comunidad Valenciana"

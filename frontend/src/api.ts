@@ -6,6 +6,8 @@
 //   hacienda_gpt/api/api.py              -> QARequest, TurnResponse
 // so if the backend grows a new field, only this file changes.
 
+import { type AuthMode, getSessionToken } from "./lib/session";
+
 // "cited" / "uncited" come from the legacy /qa grounding gate; the rest are
 // the /agent verdicts (hacienda_gpt/agent/agent.py -> AgentMode).
 export type AnswerMode =
@@ -184,6 +186,24 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+// With accounts on (AUTH_MODE=required) every request carries the session
+// token. With accounts off there is no token and the headers are as before.
+function requestHeaders(hasBody: boolean): Record<string, string> | undefined {
+  const token = getSessionToken();
+  if (!hasBody && !token) return undefined;
+  const headers: Record<string, string> = {};
+  if (hasBody) headers["Content-Type"] = "application/json";
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
+
+let sessionExpiredHandler: (() => void) | null = null;
+
+/** Called when the server rejects the session token (expired, revoked, account deleted). */
+export function onSessionExpired(handler: (() => void) | null): void {
+  sessionExpiredHandler = handler;
+}
+
 // Runtime shape guards. A 200 with an unexpected/partial body must NOT be cast
 // blindly to the typed interface — that would defer the failure to a confusing
 // `undefined.map` deep in render. We validate the fields the UI actually reads
@@ -251,8 +271,17 @@ async function errorFromResponse(path: string, resp: Response): Promise<ApiError
   } catch {
     // not JSON: keep the raw text
   }
-  if (resp.status === 401) detail = "El servicio requiere una clave de acceso que esta aplicación no tiene configurada.";
-  if (resp.status === 429) detail = "Demasiadas consultas seguidas. Espera un momento y vuelve a intentarlo.";
+  // The account endpoints explain their own 401/403/429 (wrong password, too many attempts).
+  const account = path.startsWith("/auth/") || path.startsWith("/me");
+  if (resp.status === 401) {
+    if (resp.headers.get("WWW-Authenticate")?.toLowerCase().startsWith("bearer")) {
+      detail = "Tu sesión ha caducado. Vuelve a iniciar sesión.";
+      sessionExpiredHandler?.();
+    } else if (!account) {
+      detail = "El servicio requiere una clave de acceso que esta aplicación no tiene configurada.";
+    }
+  }
+  if (resp.status === 429 && !account) detail = "Demasiadas consultas seguidas. Espera un momento y vuelve a intentarlo.";
   return new ApiError(detail || `${path}: error ${resp.status}`, resp.status);
 }
 
@@ -271,7 +300,7 @@ async function request<T>(
   try {
     resp = await fetch(`${API_BASE}${path}`, {
       method,
-      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+      headers: requestHeaders(body !== undefined),
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: combined,
     });
@@ -284,7 +313,8 @@ async function request<T>(
 
   if (!resp.ok) throw await errorFromResponse(path, resp);
 
-  const data: unknown = await resp.json();
+  // 204 (logout, account deletion) has no body.
+  const data: unknown = resp.status === 204 ? null : await resp.json();
   if (!validate(data)) {
     throw new ApiError("El servidor devolvió una respuesta con un formato inesperado.", resp.status);
   }
@@ -381,7 +411,7 @@ export async function streamAgent(
   try {
     const resp = await fetch(`${API_BASE}/agent/stream`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: requestHeaders(true),
       body: JSON.stringify(body),
       signal: combined,
     });
@@ -650,4 +680,113 @@ export function markNotificationRead(opts: { caseId: string; notificationId: str
 /** Run the deterministic proactive jobs (deadlines, year-end plan) for this case now. */
 export function runProactive(opts: { caseId: string; signal?: AbortSignal }): Promise<NotificationsResponse> {
   return request(`/cases/${encodeURIComponent(opts.caseId)}/proactive/run`, {}, isNotifications, { signal: opts.signal });
+}
+
+// ---- Accounts and privacy (hacienda_gpt/api/routers/auth.py) -----------------
+
+export interface AuthConfig {
+  auth_mode: AuthMode;
+  password_min_length: number;
+  consent_text_version: string;
+  // Empty when the operator has not published a privacy notice.
+  privacy_notice_url: string;
+}
+
+export interface SessionUser {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
+export interface SessionResponse {
+  token: string;
+  expires_at: string;
+  user: SessionUser;
+}
+
+export type ConsentType = "tratamiento_datos" | "envio_documentos_a_proveedor_llm" | "avisos_por_correo";
+
+export interface ConsentState {
+  type: ConsentType;
+  granted: boolean;
+  timestamp: string | null;
+  text_version: string | null;
+}
+
+export interface ConsentsResponse {
+  text_version: string;
+  consents: ConsentState[];
+}
+
+function isAuthConfig(value: unknown): value is AuthConfig {
+  return isRecord(value) && (value.auth_mode === "off" || value.auth_mode === "required");
+}
+
+function isSessionUser(value: unknown): value is SessionUser {
+  return isRecord(value) && typeof value.id === "string" && typeof value.email === "string";
+}
+
+function isSessionResponse(value: unknown): value is SessionResponse {
+  return isRecord(value) && typeof value.token === "string" && value.token.length > 0 && isSessionUser(value.user);
+}
+
+function isConsents(value: unknown): value is ConsentsResponse {
+  return isRecord(value) && Array.isArray(value.consents);
+}
+
+function isEmpty(value: unknown): value is null {
+  return value === null;
+}
+
+// Asked before anything is shown, so it must fail fast when the backend is down.
+const CONFIG_TIMEOUT_MS = 4_000;
+
+/** Whether this backend has user accounts. A backend older than accounts answers 404: that is "off". */
+export async function getAuthConfig(signal?: AbortSignal): Promise<AuthConfig> {
+  try {
+    return await request("/auth/config", undefined, isAuthConfig, { signal, method: "GET", timeoutMs: CONFIG_TIMEOUT_MS });
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      return { auth_mode: "off", password_min_length: 10, consent_text_version: "", privacy_notice_url: "" };
+    }
+    throw err;
+  }
+}
+
+export function register(opts: {
+  email: string;
+  password: string;
+  consents: Record<ConsentType, boolean>;
+}): Promise<SessionResponse> {
+  return request("/auth/register", { email: opts.email, password: opts.password, consents: opts.consents }, isSessionResponse);
+}
+
+export function login(opts: { email: string; password: string }): Promise<SessionResponse> {
+  return request("/auth/login", { email: opts.email, password: opts.password }, isSessionResponse);
+}
+
+export function logout(): Promise<null> {
+  return request("/auth/logout", {}, isEmpty);
+}
+
+export function getMe(signal?: AbortSignal): Promise<SessionUser> {
+  return request("/auth/me", undefined, isSessionUser, { signal, method: "GET" });
+}
+
+export function getConsents(signal?: AbortSignal): Promise<ConsentsResponse> {
+  return request("/me/consents", undefined, isConsents, { signal, method: "GET" });
+}
+
+export function updateConsents(changes: Partial<Record<ConsentType, boolean>>): Promise<ConsentsResponse> {
+  return request("/me/consents", changes, isConsents, { method: "PUT" });
+}
+
+/** Everything the server stores about the signed-in user, as one JSON document. */
+export function exportMyData(): Promise<Record<string, unknown>> {
+  return request("/me/export", undefined, isRecord, { method: "GET", timeoutMs: 60_000 });
+}
+
+/** Erase the account and all its data. Irreversible; the password is asked again. */
+export function deleteMyAccount(password: string): Promise<null> {
+  return request("/me", { password }, isEmpty, { method: "DELETE" });
 }

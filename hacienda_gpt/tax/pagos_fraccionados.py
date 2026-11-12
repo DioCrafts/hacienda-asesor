@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from hacienda_gpt.tax.actividad import ZERO, Traza, _round, gastos_dificil_justificacion
 from hacienda_gpt.tax.autonomos_params import AutonomosParams, load_autonomos_params
@@ -53,6 +53,34 @@ class Modelo130Input(BaseModel):
     ingresos_con_retencion_ano_anterior: Decimal | None = Field(default=None, ge=0)
     inicio_actividad: bool = False  # the activity started this year
     ingresos_con_retencion_acumulados: Decimal | None = Field(default=None, ge=0)
+
+    @model_validator(mode="after")
+    def _coherencia(self) -> Modelo130Input:
+        # Art. 110.1.a) and 110.3.c) speak of "los trimestres anteriores del mismo año" and of
+        # "los siguientes pagos fraccionados correspondientes al mismo período impositivo":
+        # the first quarter has nothing behind it.
+        if self.trimestre == 1 and (
+            self.pagos_trimestres_anteriores or self.minoracion_pendiente_trimestres_anteriores
+        ):
+            raise ValueError(
+                "En el primer trimestre no hay pagos fraccionados ni minoración pendiente de trimestres anteriores "
+                "del mismo año: deja esos importes a cero."
+            )
+        # The share of income that bore withholding (art. 109.2 and 109.5) cannot exceed the income itself.
+        if (
+            self.ingresos_ano_anterior is not None
+            and self.ingresos_con_retencion_ano_anterior is not None
+            and self.ingresos_con_retencion_ano_anterior > self.ingresos_ano_anterior
+        ):
+            raise ValueError(
+                "Los ingresos con retención del año anterior no pueden superar los ingresos totales de ese año."
+            )
+        if (
+            self.ingresos_con_retencion_acumulados is not None
+            and self.ingresos_con_retencion_acumulados > self.ingresos_acumulados
+        ):
+            raise ValueError("Los ingresos con retención del período no pueden superar los ingresos acumulados.")
+        return self
 
 
 class ResultadoModelo130(BaseModel):

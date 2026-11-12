@@ -44,6 +44,10 @@ class Notification(BaseModel):
     read_at: datetime | None = None
 
 
+# ``list`` is also a method of the store below, so the builtin needs another name inside the class.
+_DeliveryRows = list[dict[str, str]]
+
+
 class NotificationStore:
     """SQLite store for notifications (same database file as the cases)."""
 
@@ -137,4 +141,36 @@ class NotificationStore:
                 "DELETE FROM notifications WHERE case_id = ? AND key LIKE ? ESCAPE '\\' AND key != ?",
                 (case_id, escaped + "%", keep_key),
             )
+            return cursor.rowcount
+
+    def _has_deliveries_table(self) -> bool:
+        # ``notification_deliveries`` belongs to proactive/entrega.py and only
+        # exists once delivery outside the app has been used on this database.
+        row = self._conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'notification_deliveries'"
+        ).fetchone()
+        return row is not None
+
+    def deliveries_for_case(self, case_id: str) -> _DeliveryRows:
+        """Delivery records (notification, channel, time) of a case's notifications, oldest first."""
+        with self._lock:
+            if not self._has_deliveries_table():
+                return []
+            rows = self._conn.execute(
+                "SELECT d.notification_id, d.canal, d.delivered_at FROM notification_deliveries d "
+                "JOIN notifications n ON n.id = d.notification_id WHERE n.case_id = ? ORDER BY d.delivered_at",
+                (case_id,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def delete_for_case(self, case_id: str) -> int:
+        """Erase every notification of a case and its delivery records; returns the notifications removed."""
+        with self._lock, self._conn:
+            if self._has_deliveries_table():
+                self._conn.execute(
+                    "DELETE FROM notification_deliveries WHERE notification_id IN "
+                    "(SELECT id FROM notifications WHERE case_id = ?)",
+                    (case_id,),
+                )
+            cursor = self._conn.execute("DELETE FROM notifications WHERE case_id = ?", (case_id,))
             return cursor.rowcount

@@ -16,7 +16,11 @@ from hacienda_gpt.agent.providers.base import (
     ToolCall,
     ToolResult,
     ToolSpec,
+    Usage,
+    UsageCallback,
     normalize_history,
+    report_usage,
+    token_count,
 )
 
 # Non-streaming requests: 16k keeps a full answer + thinking comfortably under
@@ -51,6 +55,26 @@ def _usage_dict(usage: Any) -> dict[str, int]:
     return out
 
 
+def usage_from_response(response: Any, *, provider: str, model: str) -> Usage | None:
+    """Billed tokens of a Messages response; None when it carries no usage.
+
+    The model is the one that served the request (``response.model``), which
+    differs from the configured one after a refusal fallback.
+    """
+    usage = getattr(response, "usage", None)
+    if usage is None:
+        return None
+    served = getattr(response, "model", None)
+    return Usage(
+        provider=provider,
+        model=served if isinstance(served, str) and served else model,
+        input_tokens=token_count(usage, "input_tokens"),
+        output_tokens=token_count(usage, "output_tokens"),
+        cache_read_tokens=token_count(usage, "cache_read_input_tokens"),
+        cache_write_tokens=token_count(usage, "cache_creation_input_tokens"),
+    )
+
+
 def _wrap_errors(exc: Exception) -> ProviderError:
     import anthropic
 
@@ -82,6 +106,12 @@ class AnthropicProvider:
         self.effort = effort
         self._client = client
         self._refusal_fallback = refusal_fallback and model.startswith(_FALLBACK_MODEL_PREFIXES)
+        # Called with the token usage of every API call (see ops/consumo.py).
+        self.on_usage: UsageCallback | None = None
+
+    def _report(self, response: Any) -> Any:
+        report_usage(self, lambda: usage_from_response(response, provider=self.name, model=self.model))
+        return response
 
     def _ensure_client(self) -> Any:
         if self._client is None:
@@ -114,8 +144,8 @@ class AnthropicProvider:
         params = self._params(kwargs, max_tokens=_MAX_TOKENS)
         try:
             if self._refusal_fallback:
-                return client.beta.messages.create(betas=[_FALLBACK_BETA], fallbacks="default", **params)
-            return client.messages.create(**params)
+                return self._report(client.beta.messages.create(betas=[_FALLBACK_BETA], fallbacks="default", **params))
+            return self._report(client.messages.create(**params))
         except anthropic.APIError as exc:
             raise _wrap_errors(exc) from exc
 
@@ -133,7 +163,8 @@ class AnthropicProvider:
             with manager as stream:
                 for text in stream.text_stream:
                     on_text(text)
-                return stream.get_final_message()
+                # The final message accumulates the usage of the whole stream.
+                return self._report(stream.get_final_message())
         except anthropic.APIError as exc:
             raise _wrap_errors(exc) from exc
         except ValueError as exc:

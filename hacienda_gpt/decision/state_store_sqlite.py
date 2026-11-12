@@ -199,3 +199,12 @@ class SQLiteCaseStateStore(CaseStateStore):
                 "SELECT event_json FROM audit_events WHERE case_id = ? ORDER BY id ASC", (case_id,)
             ).fetchall()
         return [json.loads(row["event_json"]) for row in rows]
+
+    def delete_case(self, case_id: str) -> bool:
+        """Erase a case and its audit trail (right to erasure). False when it did not exist."""
+        with self._lock, self._connect() as conn:
+            # Explicit, not left to ON DELETE CASCADE: that only works while the
+            # foreign_keys pragma is on for the connection doing the delete.
+            conn.execute("DELETE FROM audit_events WHERE case_id = ?", (case_id,))
+            cursor = conn.execute("DELETE FROM case_states WHERE case_id = ?", (case_id,))
+            return cursor.rowcount == 1

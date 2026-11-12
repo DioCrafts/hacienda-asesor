@@ -65,10 +65,18 @@ def _thread_safe_singleton[T](factory: Callable[[], T]) -> Callable[[], T]:
 from hacienda_gpt.agent.agent import AgentResult, TaxAgent
 from hacienda_gpt.agent.providers.base import LLMProvider, ProviderError
 from hacienda_gpt.api.observability import ApiMetrics, observability_middleware
+from hacienda_gpt.api.routers import auth as auth_router
 from hacienda_gpt.api.security import (
     RateLimiter,
     make_rate_limit_middleware,
     require_api_key,
+)
+from hacienda_gpt.auth.deps import (
+    CaseAccess,
+    get_case_access,
+    require_case_access,
+    require_document_consent,
+    require_session,
 )
 from hacienda_gpt.decision.audit import build_recommendation_audit_event
 from hacienda_gpt.decision.fact_extractor import (
@@ -118,7 +126,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_ALLOWED_ORIGINS,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "X-API-Key"],
+    allow_headers=["Content-Type", "X-API-Key", "Authorization"],
+    # Lets a cross-origin web client tell "session expired" from "API key missing".
+    expose_headers=["WWW-Authenticate"],
     allow_credentials=False,
 )
 
@@ -215,22 +225,26 @@ def metrics() -> Response:
 def create_case(
     payload: CreateCaseRequest,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+    access: Annotated[CaseAccess, Depends(get_case_access)],
 ) -> CaseState:
     now = datetime.now(UTC)
     case = CaseState(
         case_id=f"case_{uuid4().hex}",
-        user_id=payload.user_id,
+        user_id=access.owner_id(payload.user_id),
         jurisdiction=payload.jurisdiction,
         tax_period=payload.tax_period,
         created_at=now,
         updated_at=now,
     )
     store.save_case(case)
+    access.claim(case.case_id)
     store.append_audit_event(case.case_id, {"event_type": "case_created"})
     return case
 
 
-@app.get("/cases/{case_id}", response_model=CaseState, dependencies=[Depends(require_api_key)])
+@app.get(
+    "/cases/{case_id}", response_model=CaseState, dependencies=[Depends(require_api_key), Depends(require_case_access)]
+)
 def get_case(
     case_id: str,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
@@ -241,7 +255,7 @@ def get_case(
     return case
 
 
-@app.get("/cases/{case_id}/audit", dependencies=[Depends(require_api_key)])
+@app.get("/cases/{case_id}/audit", dependencies=[Depends(require_api_key), Depends(require_case_access)])
 def get_case_audit(
     case_id: str,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
@@ -252,7 +266,11 @@ def get_case_audit(
     return {"case_id": case_id, "events": store.list_audit_events(case_id)}
 
 
-@app.post("/cases/{case_id}/turn", response_model=TurnResponse, dependencies=[Depends(require_api_key)])
+@app.post(
+    "/cases/{case_id}/turn",
+    response_model=TurnResponse,
+    dependencies=[Depends(require_api_key), Depends(require_case_access)],
+)
 def post_turn(
     case_id: str,
     payload: TurnRequest,
@@ -358,7 +376,7 @@ def get_qa_chain():
         ) from exc
 
 
-@app.post("/qa", response_model=AnswerEnvelope, dependencies=[Depends(require_api_key)])
+@app.post("/qa", response_model=AnswerEnvelope, dependencies=[Depends(require_api_key), Depends(require_session)])
 def post_qa(payload: QARequest, chain=Depends(get_qa_chain)) -> AnswerEnvelope:
     from hacienda_gpt.llm.chain import answer_with_grounding
 
@@ -422,9 +440,10 @@ def get_agent() -> TaxAgent:
         ) from exc
 
 
-def _load_agent_case(case_id: str | None, store: SQLiteCaseStateStore) -> CaseState | None:
+def _load_agent_case(case_id: str | None, store: SQLiteCaseStateStore, access: CaseAccess) -> CaseState | None:
     if case_id is None:
         return None
+    access.check(case_id)
     case = store.get_case(case_id)
     if case is None:
         raise HTTPException(status_code=404, detail="case not found")
@@ -480,6 +499,7 @@ def post_agent(
     payload: AgentRequest,
     agent: Annotated[TaxAgent, Depends(get_agent)],
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+    access: Annotated[CaseAccess, Depends(get_case_access)],
 ) -> AgentResponse:
     """Tool-using advisor: searches the corpus, cites fragments, verifies claims.
 
@@ -487,7 +507,7 @@ def post_agent(
     look up and how often, and every normative claim in the answer is checked
     against the fragment it cites before the response is labelled ``verified``.
     """
-    case = _load_agent_case(payload.case_id, store)
+    case = _load_agent_case(payload.case_id, store, access)
     try:
         result = agent.run(payload.query, chat_history=payload.chat_history, case=case)
     except ProviderError as exc:
@@ -508,6 +528,7 @@ def post_agent_stream(
     payload: AgentRequest,
     agent: Annotated[TaxAgent, Depends(get_agent)],
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+    access: Annotated[CaseAccess, Depends(get_case_access)],
 ) -> StreamingResponse:
     """Same as ``/agent``, streamed as NDJSON so the UI can show live progress.
 
@@ -518,7 +539,7 @@ def post_agent_stream(
     Request-level failures that happen before the run starts (404 case, 503
     agent unavailable, 401) are still plain HTTP errors.
     """
-    case = _load_agent_case(payload.case_id, store)
+    case = _load_agent_case(payload.case_id, store, access)
     events: queue.Queue[dict] = queue.Queue()
 
     def work() -> None:
@@ -591,7 +612,11 @@ class FactUpdateRequest(BaseModel):
     value: str | float | bool
 
 
-@app.put("/cases/{case_id}/facts/{fact_name}", response_model=CaseState, dependencies=[Depends(require_api_key)])
+@app.put(
+    "/cases/{case_id}/facts/{fact_name}",
+    response_model=CaseState,
+    dependencies=[Depends(require_api_key), Depends(require_case_access)],
+)
 def put_case_fact(
     case_id: str,
     fact_name: str,
@@ -644,7 +669,11 @@ def put_case_fact(
     )
 
 
-@app.delete("/cases/{case_id}/facts/{fact_name}", response_model=CaseState, dependencies=[Depends(require_api_key)])
+@app.delete(
+    "/cases/{case_id}/facts/{fact_name}",
+    response_model=CaseState,
+    dependencies=[Depends(require_api_key), Depends(require_case_access)],
+)
 def delete_case_fact(
     case_id: str,
     fact_name: str,
@@ -679,13 +708,14 @@ class SimulateRequest(BaseModel):
 def post_simulate(
     payload: SimulateRequest,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+    access: Annotated[CaseAccess, Depends(get_case_access)],
 ) -> Simulacion:
     """Deterministic IRPF simulation — no LLM involved, so it is instant and free.
 
     Returns the base scenario, each alternative with its saving versus the
     base, and the tax-benefit catalogue checked against the profile.
     """
-    case = _load_agent_case(payload.case_id, store)
+    case = _load_agent_case(payload.case_id, store, access)
     facts = {fact.name: fact.value for fact in case.facts} if case is not None else {}
     year = payload.ejercicio
     if year is None:
@@ -711,7 +741,11 @@ class CalendarResponse(BaseModel):
     aviso: str
 
 
-@app.get("/cases/{case_id}/calendar", response_model=CalendarResponse, dependencies=[Depends(require_api_key)])
+@app.get(
+    "/cases/{case_id}/calendar",
+    response_model=CalendarResponse,
+    dependencies=[Depends(require_api_key), Depends(require_case_access)],
+)
 def get_case_calendar(
     case_id: str,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
@@ -756,7 +790,11 @@ def get_document_provider() -> LLMProvider:
         raise HTTPException(status_code=503, detail=f"El lector de documentos no está disponible: {exc}") from exc
 
 
-@app.post("/cases/{case_id}/documents", response_model=AnalisisDocumento, dependencies=[Depends(require_api_key)])
+@app.post(
+    "/cases/{case_id}/documents",
+    response_model=AnalisisDocumento,
+    dependencies=[Depends(require_api_key), Depends(require_document_consent)],
+)
 def post_case_document(
     case_id: str,
     payload: DocumentRequest,
@@ -818,7 +856,9 @@ class ProactiveRunResponse(NotificationsResponse):
 
 
 @app.get(
-    "/cases/{case_id}/notifications", response_model=NotificationsResponse, dependencies=[Depends(require_api_key)]
+    "/cases/{case_id}/notifications",
+    response_model=NotificationsResponse,
+    dependencies=[Depends(require_api_key), Depends(require_case_access)],
 )
 def get_case_notifications(
     case_id: str,
@@ -839,7 +879,7 @@ def get_case_notifications(
 @app.post(
     "/cases/{case_id}/notifications/{notification_id}/read",
     response_model=NotificationsResponse,
-    dependencies=[Depends(require_api_key)],
+    dependencies=[Depends(require_api_key), Depends(require_case_access)],
 )
 def post_notification_read(
     case_id: str,
@@ -857,7 +897,9 @@ def post_notification_read(
 
 
 @app.post(
-    "/cases/{case_id}/proactive/run", response_model=ProactiveRunResponse, dependencies=[Depends(require_api_key)]
+    "/cases/{case_id}/proactive/run",
+    response_model=ProactiveRunResponse,
+    dependencies=[Depends(require_api_key), Depends(require_case_access)],
 )
 def post_case_proactive_run(
     case_id: str,
@@ -877,7 +919,7 @@ def post_case_proactive_run(
     )
 
 
-@app.get("/cases/{case_id}/audit/export", dependencies=[Depends(require_api_key)])
+@app.get("/cases/{case_id}/audit/export", dependencies=[Depends(require_api_key), Depends(require_case_access)])
 def export_case_audit(
     case_id: str,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
@@ -887,3 +929,14 @@ def export_case_audit(
         raise HTTPException(status_code=404, detail="case not found")
     events = store.list_audit_events(case_id)
     return {"case_id": case_id, "exported_at": datetime.now(UTC).isoformat(), "events": events}
+
+
+# --- routers ---
+# Routers live in hacienda_gpt/api/routers/. Include them here, after every
+# store provider above is defined, and pass those providers in (instead of
+# importing them from this module in the router) so there is no circular import
+# and ``app.dependency_overrides`` keeps working inside the router.
+app.include_router(
+    auth_router.build_router(get_case_store=get_case_store, get_notification_store=get_notification_store)
+)
+# --- /routers ---

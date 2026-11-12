@@ -24,8 +24,12 @@ from hacienda_gpt.agent.providers.base import (
     ToolCall,
     ToolResult,
     ToolSpec,
+    Usage,
+    UsageCallback,
     normalize_history,
     rasterizar_pdf,
+    report_usage,
+    token_count,
 )
 
 # Pages of a PDF sent as images in one request.
@@ -58,6 +62,27 @@ def _usage_dict(usage: Any) -> dict[str, int]:
     return out
 
 
+def usage_from_response(response: Any, *, provider: str, model: str) -> Usage | None:
+    """Billed tokens of a Chat Completions response (or of the last chunk of a stream).
+
+    None when there is no usage object, as with many local servers.
+    ``prompt_tokens`` includes the cached part of the prompt; it is split out
+    when the API details it, so the two are never counted twice.
+    """
+    usage = getattr(response, "usage", None)
+    if usage is None:
+        return None
+    prompt = token_count(usage, "prompt_tokens")
+    cached = min(token_count(getattr(usage, "prompt_tokens_details", None), "cached_tokens"), prompt)
+    return Usage(
+        provider=provider,
+        model=model,
+        input_tokens=prompt - cached,
+        output_tokens=token_count(usage, "completion_tokens"),
+        cache_read_tokens=cached,
+    )
+
+
 class OpenAIProvider:
     def __init__(
         self,
@@ -75,6 +100,12 @@ class OpenAIProvider:
         self._base_url = base_url
         self._api_key = api_key
         self._timeout = timeout
+        # Called with the token usage of every API call (see ops/consumo.py).
+        self.on_usage: UsageCallback | None = None
+
+    def _report(self, response: Any) -> None:
+        """Report the usage carried by a response or by a stream chunk."""
+        report_usage(self, lambda: usage_from_response(response, provider=self.name, model=self.model))
 
     def _ensure_client(self) -> Any:
         if self._client is None:
@@ -92,9 +123,13 @@ class OpenAIProvider:
         import openai
 
         try:
-            return self._ensure_client().chat.completions.create(model=self.model, **kwargs)
+            response = self._ensure_client().chat.completions.create(model=self.model, **kwargs)
         except openai.APIError as exc:
             raise _wrap_errors(exc, self.name) from exc
+        if not kwargs.get("stream"):
+            # A streamed call returns an iterator; its usage arrives in a chunk (see _stream).
+            self._report(response)
+        return response
 
     def start(
         self,
@@ -151,6 +186,7 @@ class OpenAIProvider:
                     "json_schema": {"name": schema_name, "schema": schema, "strict": True},
                 },
             )
+            self._report(response)
         except openai.BadRequestError:
             # Local servers frequently lack json_schema support. Degrade to a
             # prompt-carried schema; the caller validates the object anyway.
@@ -269,11 +305,13 @@ class OpenAIConversation:
         calls: dict[int, dict[str, str]] = {}
         finish_reason: str | None = None
         usage: dict[str, int] = {}
+        usage_chunk: Any = None
         try:
             for chunk in self._provider._create(stream=True, **kwargs):
                 chunk_usage = getattr(chunk, "usage", None)
                 if chunk_usage is not None:
                     usage = _usage_dict(chunk_usage)
+                    usage_chunk = chunk
                 if not chunk.choices:
                     continue
                 choice = chunk.choices[0]
@@ -295,6 +333,10 @@ class OpenAIConversation:
                     finish_reason = choice.finish_reason
         except openai.APIError as exc:  # raised mid-stream, after _create returned the iterator
             raise _wrap_errors(exc, self._provider.name) from exc
+        if usage_chunk is not None:
+            # Reported once, from the last chunk that carried it: OpenAI sends the
+            # totals in a final chunk, some servers repeat running totals in each.
+            self._provider._report(usage_chunk)
 
         raw_calls = [
             (slot["id"] or f"call_{index}", slot["name"], slot["arguments"] or "{}")
