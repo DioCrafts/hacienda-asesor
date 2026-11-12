@@ -36,7 +36,7 @@ from hacienda_gpt.tax.pagos_fraccionados import Modelo130Input, calcular_modelo_
 from hacienda_gpt.tax.params import EjercicioNoDisponibleError, ejercicios_disponibles, load_params
 from hacienda_gpt.tax.patrimonio import PatrimonioInput, calcular_patrimonio
 from hacienda_gpt.tax.patrimonio_params import ejercicios_patrimonio_disponibles
-from hacienda_gpt.tax.profile import DatosInvalidosError, build_input, build_input_con_actividad
+from hacienda_gpt.tax.profile import DatosInvalidosError, build_input_con_actividad
 from hacienda_gpt.tax.simulador import simular
 from hacienda_gpt.tax.sociedades import (
     ComparacionInput,
@@ -256,7 +256,7 @@ ACTIVITY_TOOL = ToolSpec(
     description=(
         "Calcula el rendimiento neto anual de una actividad económica de un autónomo en estimación directa "
         "simplificada: ingresos íntegros menos los gastos que indique el usuario por categoría, menos el porcentaje de "
-        "gastos de difícil justificación (art. 30 RIRPF) y, si proceden, las reducciones del art. 32.2 LIRPF. No valora "
+        "gastos de difícil justificación (art. 30 RIRPF) y, si proceden, las reducciones del art. 32 LIRPF. No valora "
         "si un gasto es deducible. No sirve para módulos ni para estimación directa normal. El campo "
         "`rendimiento_actividad_neto` del resultado es el que debe pasarse a calcular_irpf. Importes anuales sin IVA. "
         "Traslada los avisos al usuario."
@@ -276,6 +276,18 @@ ACTIVITY_TOOL = ToolSpec(
             },
             "discapacidad": _BOOL,
             "discapacidad_ampliada": _BOOL,
+            "rendimientos_irregulares": {
+                "type": "number", "minimum": 0,
+                "description": "Parte del rendimiento neto generada en más de dos años o notoriamente irregular (art. 32.1 LIRPF, art. 25 RIRPF).",
+            },
+            "reduccion_inicio_actividad": {
+                "type": "boolean",
+                "description": "Solo si el usuario confirma los requisitos del art. 32.3 LIRPF (actividad nueva, primer año con rendimiento positivo o el siguiente).",
+            },
+            "ceuta_melilla": {
+                "type": "string", "enum": ["ceuta", "melilla"],
+                "description": "Actividad desarrollada en Ceuta o Melilla con derecho a la deducción del art. 68.4 LIRPF.",
+            },
         },
         "required": ["ingresos_integros"],
     },
@@ -306,6 +318,10 @@ MODELO_130_TOOL = ToolSpec(
             "aplicar_gastos_dificil_justificacion": _BOOL,
             "actividad_profesional": _BOOL,
             "inicio_actividad": _BOOL,
+            "ceuta_melilla": {
+                "type": "string", "enum": ["ceuta", "melilla"],
+                "description": "Actividad desarrollada en Ceuta o Melilla con derecho a la deducción del art. 68.4 LIRPF: el porcentaje se reduce (art. 110.2 RIRPF).",
+            },
         },
         "required": ["trimestre", "ingresos_acumulados"],
     },
@@ -516,6 +532,11 @@ ISD_TOOL = ToolSpec(
                 "type": "number",
                 "minimum": 0,
                 "description": "Parte de valor_recibido que es la vivienda habitual del fallecido.",
+            },
+            "valor_total_vivienda": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Valor real de la vivienda entera, para las comunidades que gradúan el porcentaje por él (Asturias, Galicia).",
             },
             "participacion_vivienda": {"type": "number", "description": "Fracción (0-1) de esa vivienda que adquiere."},
             "valor_empresa_familiar": {
@@ -944,6 +965,15 @@ class Toolbox:
             comparacion = comparar_tributacion(a, b)
         except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
             return _error(str(exc))
+        # Where each spouse's activity income came from (computed from the breakdown or given).
+        supuestos = [
+            *comparacion.avisos,
+            *(
+                f"Cónyuge {letra}: {actividad.aviso}"
+                for letra, actividad in (("A", actividad_a), ("B", actividad_b))
+                if actividad is not None
+            ),
+        ]
 
         blocks: list[str] = []
         ids: list[str] = []
@@ -971,7 +1001,7 @@ class Toolbox:
             "positivo = a pagar, negativo = a devolver)."
         )
         resumen = self.ledger.register(
-            text=veredicto + "\nSupuestos: " + " ".join(comparacion.avisos),
+            text=veredicto + "\nSupuestos: " + " ".join(supuestos),
             metadata={
                 "title": f"Comparación individual / conjunta {year}",
                 "source": f"calculadora://irpf/{year}/{len(self.ledger) + 1}",
@@ -980,7 +1010,7 @@ class Toolbox:
             },
         )
         blocks.insert(
-            0, f"[{resumen.fragment_id}] {veredicto}\nSupuestos:\n" + "\n".join(f"  * {a}" for a in comparacion.avisos)
+            0, f"[{resumen.fragment_id}] {veredicto}\nSupuestos:\n" + "\n".join(f"  * {a}" for a in supuestos)
         )
         return ToolOutcome(
             content="\n\n".join(blocks), summary=f"mejor {comparacion.mejor}: {resumen.fragment_id}, {', '.join(ids)}"
@@ -1053,6 +1083,9 @@ class Toolbox:
                 "beneficio deben contrastarse con buscar_fuentes antes de afirmarlas."
             ),
         }
+        if actividad is not None:
+            # The activity's net income was derived (or deliberately not): the agent must say so.
+            payload["actividad_economica"] = actividad.aviso
         disponibles = sum(1 for b in beneficios if b.estado == "disponible")
         return ToolOutcome(
             content=json.dumps(payload, ensure_ascii=False),
