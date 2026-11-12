@@ -25,12 +25,14 @@ __all__ = [
 ]
 
 
-def create_provider(name: str | None = None, *, model: str | None = None) -> LLMProvider:
+def create_provider(name: str | None = None, *, model: str | None = None, effort: str | None = None) -> LLMProvider:
     """Build the provider named by ``name`` (default: ``settings.LLM_PROVIDER``).
 
     * ``anthropic`` — Claude via the official SDK (default).
     * ``openai``    — OpenAI Chat Completions.
     * ``local``     — any OpenAI-compatible server at ``LOCAL_LLM_BASE_URL``.
+
+    ``effort`` overrides the thinking depth for Claude; other backends ignore it.
     """
     choice = (name or settings.LLM_PROVIDER).strip().lower()
     if choice in ("anthropic", "claude"):
@@ -38,7 +40,7 @@ def create_provider(name: str | None = None, *, model: str | None = None) -> LLM
 
         return AnthropicProvider(
             model=model or settings.ANTHROPIC_MODEL,
-            effort=settings.ANTHROPIC_EFFORT,
+            effort=effort or settings.ANTHROPIC_EFFORT,
             refusal_fallback=settings.ANTHROPIC_REFUSAL_FALLBACK,
         )
     if choice == "openai":

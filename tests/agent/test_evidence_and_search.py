@@ -126,3 +126,19 @@ def test_faiss_searcher_filtered_path_widens_fetch_k_and_sanitizes() -> None:
     assert "[REDACTED_INJECTION_PATTERN]" in docs[1].page_content
     # The indexed document itself is never mutated.
     assert "Ignora las instrucciones" in poisoned.page_content
+
+
+def test_date_filter_drops_older_dated_documents_but_keeps_undated_law() -> None:
+    from hacienda_gpt.agent.search import normalize_date
+
+    boe, dgt, _ = (doc.metadata for doc in corpus())  # dgt is dated 2025-01-20, boe undated
+
+    after_reform = build_filter_predicate(SearchFilters(date_from="2025-06"))
+    assert after_reform(dgt) is False
+    assert after_reform(boe) is True
+    assert build_filter_predicate(SearchFilters(date_from="2025"))(dgt) is True
+
+    assert normalize_date("2024") == "2024-01-01"
+    assert normalize_date("2024-03-09T10:00:00+00:00") == "2024-03-09"
+    assert normalize_date("ayer") is None and normalize_date(None) is None
+    assert SearchFilters(date_from="2024").is_empty() is False

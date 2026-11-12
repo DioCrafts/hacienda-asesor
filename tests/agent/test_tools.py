@@ -137,3 +137,14 @@ def test_read_case_and_evaluate_rules() -> None:
     assert any(r["regla"] == "rule_iva_candidate_activity" for r in evaluated["reglas_no_activadas"])
     assert "parcial" in evaluated["aviso"]
     assert [o.obligation_id for o in toolbox.case.obligation_candidates] == ["obl_irpf_candidate"]
+
+
+def test_search_date_filter_is_validated_and_forwarded() -> None:
+    searcher = FakeSearcher(corpus())
+    toolbox = Toolbox(searcher=searcher, ledger=EvidenceLedger())
+
+    assert toolbox.execute(_call("buscar_fuentes", consulta="x", desde_fecha="el año pasado")).is_error
+    outcome = toolbox.execute(_call("buscar_fuentes", consulta="reinversión", desde_fecha="2025-06-01"))
+
+    assert searcher.calls[0][2].date_from == "2025-06-01"
+    assert "V0058-25" not in outcome.content  # the January 2025 consulta is filtered out

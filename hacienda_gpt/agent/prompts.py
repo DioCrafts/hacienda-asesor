@@ -33,7 +33,8 @@ tribunales, y quedan superadas por cambios normativos o jurisprudencia posterior
 5. Manuales y páginas informativas de la AEAT: útiles para plazos, modelos y procedimiento; no son fuente de derecho.
 
 Fíjate en la fecha de cada fragmento. Una consulta o sentencia anterior a una reforma puede no reflejar la norma \
-aplicable al ejercicio que interesa al usuario; si solo encuentras fuentes antiguas, adviértelo. Las deducciones y \
+aplicable al ejercicio que interesa al usuario; si solo encuentras fuentes antiguas, adviértelo. Cuando sepas que \
+hubo una reforma o un cambio de criterio, repite la búsqueda con `desde_fecha` para quedarte con la doctrina posterior. Las deducciones y \
 tipos autonómicos solo valen para la comunidad del usuario: si no la conoces y la respuesta depende de ella, \
 pregúntala.
 

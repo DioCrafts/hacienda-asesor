@@ -417,6 +417,107 @@ class OpenAIFactExtractor:
 
 
 # --------------------------------------------------------------------------- #
+# Provider-neutral extractor (Claude by default; OpenAI / local via LLM_PROVIDER)
+# --------------------------------------------------------------------------- #
+
+# Kept as an alias so callers can catch one error type regardless of backend.
+FactExtractionError = OpenAIExtractionError
+
+_PROVIDER_PROMPT_SUFFIX = """
+
+FORMATO DE SALIDA (sustituye a la regla de slots anterior): cada hecho lleva un único campo `value`, siempre como
+TEXTO: los importes en euros solo con dígitos ("45000"), los booleanos como "true" o "false", y el resto tal como se
+describe arriba para `value_string`."""
+
+# One string-typed `value` per fact, coerced client-side. This avoids nullable
+# unions and numeric bounds, which not every provider's structured-output
+# implementation (nor most local servers) accepts.
+_PROVIDER_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "intent": {"type": "string", "enum": list(KNOWN_INTENTS)},
+        "intent_confidence": {"type": "number"},
+        "facts": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "name": {"type": "string", "enum": list(KNOWN_FACT_NAMES)},
+                    "value": {"type": "string"},
+                    "confidence": {"type": "number"},
+                },
+                "required": ["name", "value", "confidence"],
+            },
+        },
+    },
+    "required": ["intent", "intent_confidence", "facts"],
+}
+
+
+class ProviderFactExtractor:
+    """Fact extractor on top of the agent's provider layer.
+
+    Runs on whatever ``LLM_PROVIDER`` selects (Claude, OpenAI or a local
+    OpenAI-compatible server) through ``LLMProvider.complete_json``, reusing the
+    same prompt vocabulary and the same client-side coercion/validation as
+    :class:`OpenAIFactExtractor`.
+    """
+
+    def __init__(self, provider: Any) -> None:
+        self._provider = provider
+
+    def extract(
+        self,
+        user_input: str,
+        chat_history: list[dict[str, str]] | list[str],
+        current_case_state: CaseState | None,
+    ) -> ExtractionPayload:
+        from hacienda_gpt.agent.providers.base import ProviderError
+
+        messages = OpenAIFactExtractor._build_messages(user_input, chat_history, current_case_state)
+        try:
+            data = self._provider.complete_json(
+                system=_SYSTEM_PROMPT + _PROVIDER_PROMPT_SUFFIX,
+                user=messages[1]["content"],
+                schema=_PROVIDER_SCHEMA,
+                schema_name="ExtractedFacts",
+            )
+        except ProviderError as exc:
+            raise FactExtractionError(f"Fact extraction failed: {exc}") from exc
+
+        intent = data.get("intent", "unknown")
+        if intent not in KNOWN_INTENTS:
+            intent = "unknown"
+        try:
+            confidence = float(data.get("intent_confidence", 0.0))
+        except (TypeError, ValueError):
+            confidence = 0.0
+        confidence = max(0.0, min(1.0, confidence))
+
+        raw_facts = [
+            {
+                "name": item.get("name"),
+                # A model that ignores "always text" and emits 45000 / true is
+                # still usable: route the value to the slot of its real type.
+                "value_string": item.get("value") if isinstance(item.get("value"), str) else None,
+                "value_number": (
+                    item.get("value")
+                    if isinstance(item.get("value"), int | float) and not isinstance(item.get("value"), bool)
+                    else None
+                ),
+                "value_boolean": item.get("value") if isinstance(item.get("value"), bool) else None,
+                "confidence": item.get("confidence", 0.5),
+            }
+            for item in data.get("facts") or []
+            if isinstance(item, dict)
+        ]
+        facts = OpenAIFactExtractor._materialize_facts(raw_facts)
+        return ExtractionPayload(intent=intent, intent_confidence=confidence, extracted_facts=facts)
+
+
+# --------------------------------------------------------------------------- #
 # Value coercion helpers (module-level for unit-testability)
 # --------------------------------------------------------------------------- #
 
@@ -550,12 +651,41 @@ def _coerce_value(
 # --------------------------------------------------------------------------- #
 
 
+def _provider_extractor() -> FactExtractor:
+    from hacienda_gpt import settings
+    from hacienda_gpt.agent.providers import create_provider
+
+    return ProviderFactExtractor(
+        create_provider(
+            model=os.environ.get("DECISION_EXTRACTOR_MODEL") or None,
+            # Extraction is a constrained, low-ambiguity task: it does not need
+            # the reasoning depth the advisor runs at.
+            effort=settings.DECISION_EXTRACTOR_EFFORT,
+        )
+    )
+
+
+def _provider_credentials_available() -> bool:
+    from hacienda_gpt import settings
+
+    provider = settings.LLM_PROVIDER.strip().lower()
+    if provider in ("anthropic", "claude"):
+        return bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"))
+    if provider == "local":
+        return bool(settings.LOCAL_LLM_MODEL)
+    return False  # "openai" keeps using the dedicated OpenAIFactExtractor below
+
+
 def default_fact_extractor() -> FactExtractor:
     """Pick the production default extractor based on environment.
 
-    `DECISION_EXTRACTOR=regex` forces the legacy regex behaviour. Otherwise
-    we use the OpenAI extractor if `OPENAI_API_KEY` is available; otherwise
-    fall back to the regex extractor with a log line.
+    ``DECISION_EXTRACTOR`` forces a backend: ``regex`` (offline heuristic),
+    ``openai`` (OpenAI structured output) or ``provider`` (whatever
+    ``LLM_PROVIDER`` selects: Claude, OpenAI or a local model).
+
+    Unset, the extractor follows ``LLM_PROVIDER`` when that provider is
+    configured (Claude key present, or a local model named), else uses OpenAI
+    if ``OPENAI_API_KEY`` is set, else falls back to regex with a log line.
     """
 
     choice = os.environ.get("DECISION_EXTRACTOR", "").strip().lower()
@@ -563,12 +693,16 @@ def default_fact_extractor() -> FactExtractor:
         return RegexFactExtractor()
     if choice in ("openai", "llm"):
         return OpenAIFactExtractor()
+    if choice == "provider":
+        return _provider_extractor()
 
+    if _provider_credentials_available():
+        return _provider_extractor()
     if os.environ.get("OPENAI_API_KEY"):
         return OpenAIFactExtractor()
 
     logger.warning(
-        "OPENAI_API_KEY missing — falling back to RegexFactExtractor. "
-        "Set DECISION_EXTRACTOR=openai with a valid key for full extraction."
+        "No LLM credentials found (ANTHROPIC_API_KEY / OPENAI_API_KEY / LOCAL_LLM_MODEL) — falling back to "
+        "RegexFactExtractor, which only detects a handful of facts."
     )
     return RegexFactExtractor()

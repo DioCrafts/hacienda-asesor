@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+import re
 from typing import Any, Protocol
 
 from langchain_core.documents import Document
@@ -23,9 +24,10 @@ class SearchFilters:
     tributo: str | None = None
     jurisdiction_scope: str | None = None  # "estatal" | "autonomico:<código o nombre>"
     binding_only: bool = False
+    date_from: str | None = None  # ISO "YYYY" or "YYYY-MM-DD": drop dated documents older than this
 
     def is_empty(self) -> bool:
-        return not (self.source_type or self.tributo or self.jurisdiction_scope or self.binding_only)
+        return not (self.source_type or self.tributo or self.jurisdiction_scope or self.binding_only or self.date_from)
 
 
 class CorpusSearcher(Protocol):
@@ -40,6 +42,21 @@ def _as_list(value: Any) -> list[str]:
     return []
 
 
+DATE_METADATA_KEYS = ("fecha_resolucion", "fecha_actualizacion", "last_updated", "fecha")
+_ISO_DATE_RE = re.compile(r"(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?")
+
+
+def normalize_date(value: Any) -> str | None:
+    """Normalize ``YYYY`` / ``YYYY-MM`` / ``YYYY-MM-DD…`` to a comparable ``YYYY-MM-DD``."""
+    if not isinstance(value, str):
+        return None
+    match = _ISO_DATE_RE.match(value.strip())
+    if not match:
+        return None
+    year, month, day = match.groups()
+    return f"{year}-{month or '01'}-{day or '01'}"
+
+
 def build_filter_predicate(filters: SearchFilters) -> Callable[[dict[str, Any]], bool]:
     """Metadata predicate for ``filters``.
 
@@ -48,8 +65,12 @@ def build_filter_predicate(filters: SearchFilters) -> Callable[[dict[str, Any]],
     ``vinculante=True`` is not binding. ``tributo`` and ``jurisdiction_scope``
     are **lenient** (a document that does not declare them is kept), because
     most of the corpus carries no such tag and a strict match would silently
-    hide the state-wide law that applies everywhere.
+    hide the state-wide law that applies everywhere. ``date_from`` is lenient
+    too: it removes rulings/consultas dated before the cut-off (superseded
+    doctrine after a reform) but keeps undated documents — consolidated
+    legislation carries no resolution date and is current by construction.
     """
+    date_from = normalize_date(filters.date_from)
     tributo = (filters.tributo or "").strip().lower()
     scope = (filters.jurisdiction_scope or "").strip().lower()
 
@@ -59,6 +80,10 @@ def build_filter_predicate(filters: SearchFilters) -> Callable[[dict[str, Any]],
                 return False
         if filters.binding_only and metadata.get("vinculante") is not True:
             return False
+        if date_from:
+            dated = next((d for d in (normalize_date(metadata.get(key)) for key in DATE_METADATA_KEYS) if d), None)
+            if dated is not None and dated < date_from:
+                return False
         if tributo:
             declared = [
                 item.lower()

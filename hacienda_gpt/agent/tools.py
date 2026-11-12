@@ -15,7 +15,7 @@ from typing import Any
 
 from hacienda_gpt.agent.evidence import SOURCE_TYPES, EvidenceLedger
 from hacienda_gpt.agent.providers.base import ToolCall, ToolSpec
-from hacienda_gpt.agent.search import CorpusSearcher, SearchFilters
+from hacienda_gpt.agent.search import CorpusSearcher, SearchFilters, normalize_date
 from hacienda_gpt.decision.fact_extractor import EXPECTED_FACT_TYPE, KNOWN_FACT_NAMES, _coerce_value
 from hacienda_gpt.decision.interpreter import _merge_facts
 from hacienda_gpt.decision.rules_engine import evaluate_rules
@@ -64,6 +64,14 @@ SEARCH_TOOL = ToolSpec(
             "solo_vinculante": {
                 "type": "boolean",
                 "description": "true para devolver solo doctrina marcada como vinculante.",
+            },
+            "desde_fecha": {
+                "type": "string",
+                "description": (
+                    "AAAA o AAAA-MM-DD. Descarta consultas, resoluciones y sentencias anteriores a esa fecha; úsalo "
+                    "cuando una reforma o una sentencia posterior haya podido dejar superada la doctrina antigua. "
+                    "La legislación consolidada (sin fecha de resolución) se mantiene siempre."
+                ),
             },
             "max_resultados": {"type": "integer", "description": f"Entre 1 y {MAX_SEARCH_RESULTS}. Por defecto 6."},
         },
@@ -189,7 +197,11 @@ class Toolbox:
             value = arguments.get(key)
             return value.strip() if isinstance(value, str) and value.strip() else None
 
+        date_from = _text("desde_fecha")
+        if date_from is not None and normalize_date(date_from) is None:
+            return _error("'desde_fecha' debe tener formato AAAA o AAAA-MM-DD.")
         filters = SearchFilters(
+            date_from=date_from,
             source_type=source_type,
             tributo=_text("tributo"),
             jurisdiction_scope=_text("ambito"),

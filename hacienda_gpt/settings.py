@@ -206,3 +206,5 @@ AGENT_MAX_STEPS = int(os.environ.get("AGENT_MAX_STEPS", "8"))
 # How many times the agent may rewrite an answer the verifier rejected.
 AGENT_MAX_REVISIONS = int(os.environ.get("AGENT_MAX_REVISIONS", "1"))
 AGENT_SEARCH_DEFAULT_K = int(os.environ.get("AGENT_SEARCH_DEFAULT_K", "6"))
+# Thinking depth for the fact extractor when it runs on Claude.
+DECISION_EXTRACTOR_EFFORT = os.environ.get("DECISION_EXTRACTOR_EFFORT", "low")
