@@ -2983,7 +2983,7 @@
         ],
         "fuente": {
           "referencia": "art. 18 bis DLeg. 1/2009 de Canarias (redacción de la disp. final 11.17 de la Ley 9/2025, de 23 de diciembre)",
-          "en_vigor_desde": "2026-01-01",
+          "en_vigor_desde": "2025-01-01",
           "verificado": true
         }
       },
@@ -3057,14 +3057,66 @@
             "928"
           ],
           "unidad": "hijos_nacidos_en_el_ejercicio",
-          "limite_individual": "45500",
-          "limite_conjunta": "60500",
+          "limite_individual": "46455",
+          "limite_conjunta": "61770",
           "reparto_descendientes": true,
           "requisitos_no_comprobados": [
             "El hijo debe convivir con el contribuyente; el número de orden se determina por los hijos (naturales o adoptivos) que convivan con él a la fecha de devengo.",
             "El importe adicional por hijo nacido o adoptado con discapacidad igual o superior al 65 % (letra b) se calcula aparte."
           ],
-          "en_vigor_desde": "2026-01-01"
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "unidades_min": {
+            "hijos_nacidos_en_el_ejercicio": 1
+          },
+          "articulo": "art. 10.1.b)",
+          "titulo": "Nacimiento o adopción de hijos con discapacidad igual o superior al 65 %",
+          "resumen": "600 euros adicionales por cada hijo nacido o adoptado en el periodo impositivo con discapacidad igual o superior al 65 % (1.100 euros si es el tercer o posterior hijo con esa discapacidad, no calculado); rentas no superiores a 46.455 euros (61.770 en conjunta).",
+          "tipo": "fija",
+          "importe": "600",
+          "unidad_descendientes": {
+            "discapacidad_min": 65,
+            "anios_desde_llegada_max": 0
+          },
+          "limite_individual": "46455",
+          "limite_conjunta": "61770",
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Necesita el detalle de descendientes (grado de discapacidad del hijo nacido o adoptado).",
+            "El hijo debe haber convivido con el contribuyente ininterrumpidamente desde su nacimiento o adopción hasta el final del periodo impositivo.",
+            "Si es el tercer o posterior hijo con esa discapacidad (y sobreviven los anteriores), el importe es de 1.100 euros y no de 600 (NO calculado: da de menos)."
+          ],
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "discapacidad_min": 33,
+          "conyuge": "en_conjunta",
+          "articulo": "art. 11.1.a)",
+          "titulo": "Contribuyentes con discapacidad",
+          "resumen": "400 euros por contribuyente con discapacidad igual o superior al 33 %, si sus rentas (base imponible general y del ahorro) no superan 46.455 euros (61.770 en tributación conjunta); en tributación conjunta, por cada cónyuge que cumpla la condición.",
+          "tipo": "fija",
+          "importe": "400",
+          "limite_individual": "46455",
+          "limite_conjunta": "61770",
+          "por_contribuyente": true,
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "edad_min": 65,
+          "conyuge": "en_conjunta",
+          "articulo": "art. 11.1.b)",
+          "titulo": "Contribuyentes mayores de 65 años",
+          "resumen": "160 euros por contribuyente mayor de 65 años, si sus rentas (base imponible general y del ahorro) no superan 46.455 euros (61.770 en tributación conjunta); en tributación conjunta, por cada cónyuge que cumpla la condición.",
+          "tipo": "fija",
+          "importe": "160",
+          "limite_individual": "46455",
+          "limite_conjunta": "61770",
+          "por_contribuyente": true,
+          "requisitos_no_comprobados": [
+            "La ley dice \"mayor de 65 años\"; se ha codificado como 65 años cumplidos a la fecha de devengo."
+          ],
+          "en_vigor_desde": "2025-01-01"
         },
         {
           "articulo": "art. 11 bis",
@@ -3086,6 +3138,24 @@
           "en_vigor_desde": "2025-01-01"
         },
         {
+          "requiere": [
+            "familia_monoparental"
+          ],
+          "articulo": "art. 11 ter",
+          "titulo": "Familias monoparentales",
+          "resumen": "133 euros (cantidad única) para contribuyentes con descendientes a su cargo que no convivan con ninguna otra persona, con rentas no superiores a 46.455 euros (61.770 en conjunta).",
+          "tipo": "fija",
+          "importe": "133",
+          "limite_individual": "46455",
+          "limite_conjunta": "61770",
+          "requisitos_no_comprobados": [
+            "No convivir con ninguna persona distinta de los descendientes, salvo ascendientes que generen derecho al mínimo por ascendientes.",
+            "Los descendientes computables son hijos menores de edad o mayores con discapacidad que convivan y no tengan rentas anuales, excluidas las exentas, superiores a 8.000 euros (o internados en centros especializados).",
+            "Si la situación familiar cambia durante el año, la convivencia debe darse al menos 183 días."
+          ],
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
           "articulo": "art. 12",
           "titulo": "Gastos de custodia en guarderías",
           "resumen": "18 % de los gastos de guardería de descendientes menores de 3 años, con un máximo de 530 euros anuales por descendiente; rentas no superiores a 46.455 euros (61.770 en conjunta). Solo se calcula si a 31 de diciembre hay algún descendiente menor de 3 años.",
@@ -3097,8 +3167,8 @@
           "porcentaje": "0.18",
           "base": "gastos_guarderia",
           "maximo_por_unidad": "530",
-          "limite_individual": "45500",
-          "limite_conjunta": "60500",
+          "limite_individual": "46455",
+          "limite_conjunta": "61770",
           "reparto_descendientes": true,
           "requisitos_no_comprobados": [
             "Guardería autorizada para su apertura y funcionamiento; gastos justificados con factura y declaración del NIF de la guardería.",
@@ -3106,7 +3176,7 @@
             "En el año en que el niño cumple 3 años la deducción y su límite se calculan en proporción al número de meses en que se cumplen los requisitos (NO calculado: el esquema prorratea por días de edad o por meses de guardería declarados, no por meses en que el niño es menor de 3 años; la calculadora solo cuenta a los menores de 3 años a 31 de diciembre y da de menos).",
             "Las bases de las deducciones se minoran en las ayudas públicas exentas que cubran los gastos (art. 18.3)."
           ],
-          "en_vigor_desde": "2026-01-01"
+          "en_vigor_desde": "2025-01-01"
         },
         {
           "requiere": [
@@ -3193,7 +3263,60 @@
             "Poseer el título de familia numerosa a la fecha de devengo.",
             "La practica el contribuyente con quien conviva el resto de la familia; si conviven con más de un contribuyente, se prorratea por partes iguales."
           ],
-          "en_vigor_desde": "2026-01-01"
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "articulo": "art. 14",
+          "titulo": "Inversión en vivienda habitual",
+          "resumen": "Por las cantidades satisfechas por la adquisición de la vivienda habitual, sobre una base máxima de 6.000 euros anuales: 5 % si la renta es inferior a 26.035 euros y 3,5 % si es igual o superior e inferior a 46.455 euros (5,5 % y 4 % para menores de 40 años). Junto con las deducciones de los arts. 6, 14 bis y 14 ter no puede superar el 15 % de la cuota íntegra autonómica.",
+          "tipo": "porcentaje",
+          "porcentaje": "0.035",
+          "base": "pagos_adquisicion_vivienda",
+          "bases_adicionales": [
+            {
+              "base": "intereses_prestamo_vivienda"
+            }
+          ],
+          "base_maxima": "6000",
+          "limite_individual": "46455",
+          "limite_es_estricto": true,
+          "variantes": [
+            {
+              "descripcion": "menor de 40 años con renta inferior a 26.035 euros: 5,5 %",
+              "cuando": {
+                "edad_max": 39,
+                "ingreso_max": "26034.99"
+              },
+              "porcentaje": "0.055"
+            },
+            {
+              "descripcion": "menor de 40 años con renta igual o superior a 26.035 euros: 4 %",
+              "cuando": {
+                "edad_max": 39
+              },
+              "porcentaje": "0.04"
+            },
+            {
+              "descripcion": "renta inferior a 26.035 euros: 5 %",
+              "cuando": {
+                "ingreso_max": "26034.99"
+              },
+              "porcentaje": "0.05"
+            }
+          ],
+          "limite_conjunto": {
+            "grupo": "arts. 6, 14, 14 bis y 14 ter (límite del art. 14 quater)",
+            "maximo_fraccion_cuota": "0.15"
+          },
+          "requisitos_no_comprobados": [
+            "Se aplica en los mismos términos y con los mismos requisitos del art. 68.1 de la Ley 35/2006 en su redacción vigente el 1 de enero de 2012 (vivienda que sea o vaya a ser la residencia habitual; cantidades satisfechas por la adquisición, incluida la financiación ajena; reglas sobre deducciones practicadas por viviendas anteriores y ganancias exentas por reinversión).",
+            "Solo se han contado los pagos por adquisición y los intereses del préstamo; las cantidades de rehabilitación o ampliación no se han incluido.",
+            "Los tramos de renta (26.035 / 46.455 euros) son los del contribuyente: en tributación conjunta la calculadora compara la base imponible de toda la unidad familiar (puede dar de menos) y aplica una sola base máxima de 6.000 euros.",
+            "Sobre un mismo bien no puede aplicarse más de una deducción autonómica (art. 18.2); es incompatible, sobre las mismas cantidades, con la de obras de rehabilitación energética (art. 14 bis).",
+            "El límite conjunto del 15 % de la cuota íntegra autonómica incluye también las deducciones de los arts. 6 (restauración de bienes de interés cultural) y 14 ter (adecuación por discapacidad), que la calculadora no calcula.",
+            "Las bases de las deducciones se minoran en las ayudas públicas exentas que cubran los gastos (art. 18.3)."
+          ],
+          "en_vigor_desde": "2025-01-01"
         },
         {
           "articulo": "art. 14 bis",
@@ -3227,8 +3350,8 @@
           "porcentaje": "0.24",
           "base": "alquiler_vivienda_habitual",
           "maximo": "740",
-          "limite_individual": "45500",
-          "limite_conjunta_incremento": "15000",
+          "limite_individual": "46455",
+          "limite_conjunta_incremento": "15315",
           "gasto_minimo_sobre_base": "0.10",
           "variantes": [
             {
@@ -3252,7 +3375,7 @@
             "Para comprobar que el alquiler excede del 10 % de las rentas se descuenta el importe de las subvenciones al alquiler percibidas.",
             "Las bases de las deducciones se minoran en las ayudas públicas exentas que cubran los gastos (art. 18.3)."
           ],
-          "en_vigor_desde": "2026-01-01"
+          "en_vigor_desde": "2025-01-01"
         },
         {
           "articulo": "art. 16 quinquies",
@@ -3290,6 +3413,22 @@
           "en_vigor_desde": "2025-01-01"
         },
         {
+          "articulo": "art. 16 quater",
+          "titulo": "Familiares dependientes con discapacidad",
+          "resumen": "600 euros por cada ascendiente o descendiente con discapacidad igual o superior al 65 % que dé derecho al mínimo por discapacidad; rentas no superiores a 46.455 euros (61.770 en conjunta).",
+          "tipo": "fija",
+          "importe": "600",
+          "unidad": "num_familiares_discapacidad_65_a_cargo",
+          "limite_individual": "46455",
+          "limite_conjunta": "61770",
+          "requisitos_no_comprobados": [
+            "El ascendiente o descendiente debe dar derecho al mínimo por discapacidad de ascendientes o descendientes de la normativa estatal.",
+            "Si varios contribuyentes tienen derecho se aplican las reglas de prorrateo, convivencia y demás límites de la normativa estatal (NO calculado).",
+            "El apartado 4 (20 % de las cuotas a la Seguridad Social de un empleado de hogar, límite de 500 euros, cuando la persona con discapacidad genera el mínimo por gastos de asistencia) NO se calcula."
+          ],
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
           "articulo": "art. 9",
           "titulo": "Inversión en acciones y participaciones de entidades nuevas o de reciente creación",
           "resumen": "20 % de las cantidades invertidas en el ejercicio en acciones o participaciones por constitución o ampliación de capital de sociedades anónimas o limitadas con domicilio en Canarias, con un límite de 4.000 euros anuales.",
@@ -3303,7 +3442,76 @@
             "Constitución: la entidad debe contar desde el primer ejercicio con al menos una persona contratada a jornada completa. Ampliación de capital: entidad constituida en los tres años anteriores y que aumente su plantilla media en al menos una persona durante los dos ejercicios siguientes, manteniendo el aumento otros veinticuatro meses.",
             "IMPORTE SUPERIOR NO CALCULADO: 30 % con límite de 6.000 euros si la sociedad ha sido creada o está participada por universidades o centros de investigación, o si se trata de sociedades laborales o cooperativas (art. 9.4 y 9.5)."
           ],
-          "en_vigor_desde": "2026-01-01"
+          "en_vigor_desde": "2025-01-01"
+        },
+        {
+          "articulo": "art. 16 ter",
+          "titulo": "Gastos de enfermedad",
+          "resumen": "12 % de los gastos y honorarios de profesionales médicos o sanitarios (no farmacéuticos) y de aparatos y complementos como gafas graduadas y lentillas, propios y de las personas del mínimo familiar; límite anual de 500 euros en tributación individual (600 con discapacidad igual o superior al 65 %) y 700 en conjunta, o de 150 euros si las rentas superan 46.455 euros (61.770 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.12",
+          "base": "gastos_honorarios_sanitarios",
+          "bases_adicionales": [
+            {
+              "base": "gastos_salud_bucodental"
+            },
+            {
+              "base": "gastos_salud_mental"
+            },
+            {
+              "base": "gastos_optica"
+            }
+          ],
+          "maximo": "500",
+          "variantes": [
+            {
+              "descripcion": "tributación individual, rentas no superiores a 46.455 euros y discapacidad igual o superior al 65 %: límite incrementado en 100 euros",
+              "cuando": {
+                "discapacidad_min": 65,
+                "tributacion": "individual",
+                "ingreso_max": "46455"
+              },
+              "maximo_incremento": "100"
+            },
+            {
+              "descripcion": "tributación individual con rentas no superiores a 46.455 euros: límite de 500 euros",
+              "cuando": {
+                "tributacion": "individual",
+                "ingreso_max": "46455"
+              }
+            },
+            {
+              "descripcion": "tributación conjunta con rentas no superiores a 61.770 euros: límite de 700 euros",
+              "cuando": {
+                "tributacion": "conjunta",
+                "ingreso_max": "61770"
+              },
+              "maximo": "700"
+            },
+            {
+              "descripcion": "rentas superiores a 46.455 euros en tributación individual: límite de 150 euros",
+              "cuando": {
+                "tributacion": "individual"
+              },
+              "maximo": "150"
+            },
+            {
+              "descripcion": "rentas superiores a 61.770 euros en tributación conjunta: límite de 150 euros",
+              "cuando": {
+                "tributacion": "conjunta"
+              },
+              "maximo": "150"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Honorarios de profesionales médicos o sanitarios (Ley 44/2003), excepto farmacéuticos, por prevención, diagnóstico y tratamiento de enfermedades, salud dental, embarazo y nacimiento, accidentes e invalidez, y compra de aparatos y complementos (gafas graduadas, lentillas) que solo sirvan para suplir deficiencias físicas; propios o de las personas incluidas en el mínimo familiar. Los gastos de salud mental solo cuentan si los presta un profesional sanitario.",
+            "No cuentan los medicamentos, la asistencia con fines estéticos (salvo reparación de daños por accidentes o intervenciones y tratamientos de identidad sexual), las primas de seguros médicos ni las prestaciones reintegrables por la Seguridad Social o entidades que la sustituyan.",
+            "Los gastos indicados como de enfermedades raras o de ELA no se han incluido (solo serían deducibles los honorarios sanitarios y aparatos que contengan: indícalos en esos datos).",
+            "Gastos justificados con factura; para los honorarios hay que declarar el NIF del prestador de cada servicio y su importe anual.",
+            "El incremento de 100 euros (solo en tributación individual) se ha aplicado únicamente a contribuyentes con discapacidad igual o superior al 65 %. La ley lo concede «cuando el contribuyente sea una persona mayor de 65 años o con discapacidad y acredite un grado de discapacidad igual o superior al 65%»: si se entiende que basta con ser mayor de 65 años, a esos contribuyentes les corresponderían 100 euros más.",
+            "Las bases de las deducciones se minoran en las ayudas públicas exentas que cubran los gastos (art. 18.3)."
+          ],
+          "en_vigor_desde": "2025-01-01"
         },
         {
           "articulo": "art. 3",
@@ -6368,13 +6576,13 @@
           "referencia": "art. 1 DLeg. 1/2018 de Extremadura, redacción del art. 1.1 del Decreto-ley 4/2023, de 12 de septiembre (efectos desde 2023-01-01)",
           "en_vigor_desde": "2023-09-15",
           "verificado": true,
-          "version_historica": "20230915"
+          "version_historica": "20250407",
+          "nota": "Comprobada en la versión consolidada de 07-04-2025 (Ley 1/2025), la aplicable al ejercicio 2025; la Ley 2/2026 tiene efectos desde 1-1-2026."
         }
       },
       "otras_deducciones": [
         "art. 2: Deducción autonómica por trabajo dependiente",
-        "art. 3: Deducción autonómica por parto o adopción múltiple",
-        "art. 3 bis: Deducción en la cuota íntegra autonómica por nacimiento o adopción de descendientes",
+        "art. 3: Deducción autonómica por partos múltiples",
         "art. 4: Deducción autonómica por acogimiento de menores",
         "art. 5: Deducción autonómica por cuidado de familiares con discapacidad",
         "art. 6: Deducción autonómica por cuidado de hijos menores de hasta 14 años inclusive",
@@ -6389,12 +6597,56 @@
         "art. 11 ter: Deducción en la cuota íntegra autonómica para los contribuyentes con residencia habitual en municipios y entidades locales menores de Extremadura con población inferior a 3.000 habitantes",
         "art. 11 quater: Deducción autonómica por intereses de financiación ajena para la inversión en vivienda habitual para jóvenes",
         "art. 11 quinquies: Deducción en la cuota íntegra autonómica por donaciones de dinero a entidades culturales, artísticas y para patrocinio a deportistas",
-        "art. 11 sexies: Deducción autonómica para contribuyentes que trasladen su residencia habitual a Extremadura"
+        "art. 11 sexies: Deducción autonómica para contribuyentes que trasladen su residencia habitual a Extremadura",
+        "arts. 11 septies y 11 octies: Deducciones relativas a la Esclerosis Lateral Amiotrófica"
       ],
       "notas": [
         "Para 2025 se aplica la escala extremeña anterior a la Ley 2/2026 (redacción del Decreto-ley 4/2023)."
       ],
       "deducciones_calculables": [
+        {
+          "articulo": "art. 3",
+          "titulo": "Deducción autonómica por partos múltiples",
+          "resumen": "300 euros por hijo nacido en el período en caso de parto múltiple, si la suma de las bases imponibles general y del ahorro no supera 19.000 euros (individual) o 24.000 euros (conjunta); 28.000 y 45.000 euros para los residentes en municipios de menos de 3.000 habitantes.",
+          "tipo": "fija",
+          "importe": "300",
+          "unidad_descendientes": {
+            "anios_desde_llegada_max": 0,
+            "adoptado": false,
+            "parto_multiple": true
+          },
+          "limite_individual": "19000",
+          "limite_conjunta": "24000",
+          "ajustes_limite": [
+            {
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ],
+                "habitantes_max": 2999
+              },
+              "sin_limite": true
+            }
+          ],
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "residente en municipio o entidad local menor de menos de 3.000 habitantes: límite de renta de 28.000 euros (45.000 en conjunta)",
+              "cuando": {
+                "habitantes_max": 2999
+              },
+              "limite_individual": "28000",
+              "limite_conjunta": "45000"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Se cuentan los hijos nacidos en el ejercicio (no los adoptados: la redacción aplicable a 2025 solo cubre los partos múltiples) que has marcado como de parto múltiple en el detalle de descendientes.",
+            "Solo tienen derecho los padres que convivan con los hijos nacidos a la fecha de devengo; si conviven con ambos progenitores y tributan individualmente, el importe se prorratea por partes iguales (aquí se reduce a la mitad si has indicado que compartes los descendientes).",
+            "El art. 12 bis eleva el límite de renta a 28.000 euros (45.000 en conjunta) para los residentes en municipios y entidades locales menores de Extremadura de menos de 3.000 habitantes y lo suprime si, además, forman parte de una familia numerosa: se comprueba con los habitantes que indiques (si resides en una entidad local menor, indica su población; si no los indicas se aplica el límite general); también lo suprime para los ascendientes separados legalmente, o sin vínculo matrimonial, con dos hijos sin derecho a percibir anualidades por alimentos y por los que tengan derecho a la totalidad del mínimo por descendientes que residan en esos municipios (rama NO calculada: a estos se les aplica el límite).",
+            "Justificación documental adecuada (art. 13.2)."
+          ],
+          "en_vigor_desde": "2018-05-24"
+        },
         {
           "articulo": "art. 4",
           "titulo": "Deducción autonómica por acogimiento de menores",
@@ -6420,6 +6672,159 @@
             "Los días de convivencia que indiques se aplican a todos los menores acogidos (250 euros con 183 días o más; 125 euros con más de 90 y menos de 183; nada con 90 o menos). Si no indicas los días no se aplica.",
             "Debe tratarse de acogimiento familiar temporal, permanente o de urgencia.",
             "En el acogimiento por un matrimonio o una pareja de hecho, el importe se prorratea por partes iguales en la declaración individual de cada uno; aquí solo se reduce a la mitad si has indicado que compartes los descendientes con el otro progenitor.",
+            "Justificación documental adecuada (art. 13.2)."
+          ],
+          "en_vigor_desde": "2018-05-24"
+        },
+        {
+          "articulo": "art. 5",
+          "titulo": "Deducción autonómica por cuidado de familiares con discapacidad",
+          "resumen": "150 euros por cada ascendiente o descendiente con discapacidad igual o superior al 65 % que conviva con el contribuyente al menos la mitad del período, si la suma de bases imponibles general y del ahorro no supera 19.000 euros (24.000 en conjunta); 28.000 y 45.000 euros para los residentes en municipios de menos de 3.000 habitantes.",
+          "tipo": "fija",
+          "importe": "150",
+          "unidad": "num_familiares_discapacidad_65_a_cargo",
+          "limite_individual": "19000",
+          "limite_conjunta": "24000",
+          "ajustes_limite": [
+            {
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ],
+                "habitantes_max": 2999
+              },
+              "sin_limite": true
+            }
+          ],
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "residente en municipio o entidad local menor de menos de 3.000 habitantes: límite de renta de 28.000 euros (45.000 en conjunta)",
+              "cuando": {
+                "habitantes_max": 2999
+              },
+              "limite_individual": "28000",
+              "limite_conjunta": "45000"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "El familiar debe convivir de forma ininterrumpida con el contribuyente al menos la mitad del período impositivo, y la convivencia efectiva debe acreditarse por los Servicios Sociales de base u otro organismo público competente.",
+            "La renta general y del ahorro del familiar con discapacidad, incluidas las exentas, no puede superar el doble del IPREM, ni puede estar obligado a declarar por el Impuesto sobre el Patrimonio.",
+            "La deducción es de 220 euros si al familiar se le ha reconocido el derecho a una ayuda a la dependencia que a 31 de diciembre aún no percibe (NO calculado: se aplican 150 euros).",
+            "También dan derecho los ascendientes o descendientes judicialmente incapacitados o con curatela representativa aunque no alcancen el 65 % (no calculado: cuenta solo los de 65 % o más).",
+            "Si dos o más contribuyentes con el mismo grado de parentesco tienen derecho por la misma persona, el importe se prorratea por partes iguales (aquí solo se reduce a la mitad si has indicado que compartes los descendientes y tributas individualmente; no se detecta el caso de un ascendiente compartido con otro familiar); con distinto grado corresponde al más cercano. Si solo uno de los que conviven cumple el límite de renta, puede aplicarse la deducción completa (no calculado).",
+            "El art. 12 bis eleva el límite de renta a 28.000 euros (45.000 en conjunta) para los residentes en municipios y entidades locales menores de Extremadura de menos de 3.000 habitantes y lo suprime si, además, forman parte de una familia numerosa: se comprueba con los habitantes que indiques (si resides en una entidad local menor, indica su población; si no los indicas se aplica el límite general); también lo suprime para los ascendientes separados legalmente, o sin vínculo matrimonial, con dos hijos sin derecho a percibir anualidades por alimentos y por los que tengan derecho a la totalidad del mínimo por descendientes que residan en esos municipios (rama NO calculada: a estos se les aplica el límite).",
+            "Justificación documental adecuada (art. 13.2)."
+          ],
+          "en_vigor_desde": "2024-01-01"
+        },
+        {
+          "requiere": [
+            "progenitores_trabajan"
+          ],
+          "descendientes": [
+            {
+              "edad_max": 14
+            }
+          ],
+          "articulo": "art. 6",
+          "titulo": "Deducción autonómica por cuidado de hijos menores de hasta 14 años inclusive",
+          "resumen": "10 % de lo pagado por dejar a los hijos de 14 años o menos al cuidado de una persona empleada del hogar o en guarderías, centros de ocio, campamentos urbanos, centros deportivos, ludotecas o similares, con un máximo de 400 euros por unidad familiar, cuando ambos padres trabajan y la base imponible total no excede de 28.000 euros (45.000 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.10",
+          "base": "gastos_cuidado_familiares",
+          "bases_adicionales": [
+            {
+              "base": "gastos_guarderia"
+            },
+            {
+              "base": "cotizaciones_empleada_hogar"
+            }
+          ],
+          "maximo": "400",
+          "limite_individual": "28000",
+          "limite_conjunta": "45000",
+          "ajustes_limite": [
+            {
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ],
+                "habitantes_max": 2999
+              },
+              "sin_limite": true
+            }
+          ],
+          "reparto_descendientes": true,
+          "requisitos_no_comprobados": [
+            "Solo cuentan los pagos por el cuidado de los hijos de 14 años o menos (persona empleada del hogar, guarderías, centros de ocio, campamentos urbanos, centros deportivos, ludotecas o similares autorizados por la administración autonómica o local). Si en «gastos de cuidado de familiares» has incluido el cuidado de mayores o de personas con discapacidad, o has repetido allí lo indicado como guardería, la deducción estaría sobrevalorada.",
+            "Ambos padres deben realizar una actividad por cuenta propia o ajena por la que estén dados de alta en la Seguridad Social o mutualidad, y dejar a los hijos al cuidado de terceros por motivos de trabajo.",
+            "La persona empleada del hogar debe estar de alta en la Seguridad Social; de los centros debe disponerse de factura.",
+            "Debe tenerse derecho al mínimo por descendientes por cada hijo por el que se aplique la deducción.",
+            "El máximo de 400 euros es por unidad familiar y, si más de un contribuyente tiene derecho por los mismos descendientes, el importe se prorratea entre ellos: indica el gasto total; aquí se reduce a la mitad si has indicado que compartes los descendientes y tributas individualmente.",
+            "El art. 12 bis mantiene para los residentes en municipios y entidades locales menores de Extremadura de menos de 3.000 habitantes el mismo límite de 28.000 euros (45.000 en conjunta) y lo suprime si, además, forman parte de una familia numerosa: se comprueba con los habitantes que indiques (si resides en una entidad local menor, indica su población; si no los indicas se aplica el límite general); también lo suprime para los ascendientes separados legalmente, o sin vínculo matrimonial, con dos hijos sin derecho a percibir anualidades por alimentos y por los que tengan derecho a la totalidad del mínimo por descendientes que residan en esos municipios (rama NO calculada: a estos se les aplica el límite).",
+            "Justificación documental adecuada (art. 13.2)."
+          ],
+          "en_vigor_desde": "2020-06-02"
+        },
+        {
+          "requiere": [
+            "viudedad"
+          ],
+          "articulo": "art. 7",
+          "titulo": "Deducción autonómica para los contribuyentes viudos",
+          "resumen": "100 euros para los contribuyentes viudos (200 euros si tienen a su cargo descendientes que computan para el mínimo por descendientes y no perciben rentas), si la suma de las bases imponibles general y del ahorro no supera 19.000 euros (individual) o 24.000 euros (conjunta); 28.000 y 45.000 euros para los residentes en municipios de menos de 3.000 habitantes.",
+          "tipo": "fija",
+          "importe": "100",
+          "limite_individual": "19000",
+          "limite_conjunta": "24000",
+          "ajustes_limite": [
+            {
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ],
+                "habitantes_max": 2999
+              },
+              "sin_limite": true
+            }
+          ],
+          "variantes": [
+            {
+              "descripcion": "viudo con uno o más descendientes a cargo, residente en municipio de menos de 3.000 habitantes: 200 euros y límite de renta de 28.000 euros (45.000 en conjunta)",
+              "cuando": {
+                "unidades_min": {
+                  "num_descendientes": 1
+                },
+                "habitantes_max": 2999
+              },
+              "importe": "200",
+              "limite_individual": "28000",
+              "limite_conjunta": "45000"
+            },
+            {
+              "descripcion": "residente en municipio o entidad local menor de menos de 3.000 habitantes: límite de renta de 28.000 euros (45.000 en conjunta)",
+              "cuando": {
+                "habitantes_max": 2999
+              },
+              "limite_individual": "28000",
+              "limite_conjunta": "45000"
+            },
+            {
+              "descripcion": "viudo con uno o más descendientes a cargo: 200 euros",
+              "cuando": {
+                "unidades_min": {
+                  "num_descendientes": 1
+                }
+              },
+              "importe": "200"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Los 200 euros exigen que los descendientes a cargo computen para el mínimo por descendientes y que no perciban ningún tipo de renta (esto último no se comprueba: si alguno percibe rentas, la deducción es de 100 euros).",
+            "No tienen derecho los contribuyentes condenados por sentencia firme por delitos de violencia de género contra el cónyuge fallecido.",
+            "Es incompatible con la deducción por trabajo dependiente del art. 2 (75 euros, no calculada aquí).",
+            "El art. 12 bis eleva el límite de renta a 28.000 euros (45.000 en conjunta) para los residentes en municipios y entidades locales menores de Extremadura de menos de 3.000 habitantes y lo suprime si, además, forman parte de una familia numerosa: se comprueba con los habitantes que indiques (si resides en una entidad local menor, indica su población; si no los indicas se aplica el límite general); también lo suprime para los ascendientes separados legalmente, o sin vínculo matrimonial, con dos hijos sin derecho a percibir anualidades por alimentos y por los que tengan derecho a la totalidad del mínimo por descendientes que residan en esos municipios (rama NO calculada: a estos se les aplica el límite).",
             "Justificación documental adecuada (art. 13.2)."
           ],
           "en_vigor_desde": "2018-05-24"
@@ -6452,6 +6857,141 @@
           "en_vigor_desde": "2022-03-22"
         },
         {
+          "edad_max": 35,
+          "requiere": [
+            "primera_vivienda"
+          ],
+          "articulo": "art. 11 quater",
+          "titulo": "Deducción autonómica por intereses de financiación ajena para la inversión en vivienda habitual para jóvenes",
+          "resumen": "25 % de los intereses pagados en el ejercicio por préstamos hipotecarios para adquirir la vivienda habitual, sobre una base máxima de 1.000 euros anuales, para menores de 36 años que adquieren su primera vivienda y cuya suma de bases imponibles general y del ahorro no supere 28.000 euros (45.000 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.25",
+          "base": "intereses_prestamo_vivienda",
+          "base_maxima": "1000",
+          "limite_individual": "28000",
+          "limite_conjunta": "45000",
+          "excluyente_con": [
+            "art. 11 bis"
+          ],
+          "requisitos_no_comprobados": [
+            "Solo intereses de préstamos hipotecarios obtenidos para financiar la adquisición de la vivienda habitual (concepto de adquisición de la normativa estatal vigente a 31 de diciembre de 2012).",
+            "Primera vivienda: el contribuyente no dispone ni ha dispuesto de ningún derecho de plena propiedad igual o superior al 50 % sobre otra vivienda (art. 13.1.f).",
+            "El contribuyente debe tener su residencia habitual en Extremadura y cumplir el requisito de comprobación de la situación patrimonial de la normativa estatal vigente a 31 de diciembre de 2012.",
+            "La edad (menos de 36 años a la fecha de devengo) se comprueba solo en el contribuyente; la base máxima de 1.000 euros se aplica una vez por declaración.",
+            "No puede simultanearse con la deducción del art. 11 bis (la calculadora conserva la más favorable) y excluye la deducción por alquiler del art. 9.",
+            "El art. 12 bis (en la redacción aplicable a 2025) solo menciona los arts. 3, 5, 6, 7, 8, 9 y 10: a esta deducción se le aplica siempre el límite de renta.",
+            "Justificación documental adecuada (art. 13.2)."
+          ],
+          "en_vigor_desde": "2022-11-30"
+        },
+        {
+          "articulo": "art. 9",
+          "titulo": "Deducción autonómica por arrendamiento de vivienda habitual",
+          "resumen": "30 % del alquiler de la vivienda habitual, con el límite de 1.000 euros (1.500 en municipios de menos de 3.000 habitantes), para menores de 36 años, familias numerosas o personas con discapacidad del 65 % o más, si la suma de las bases imponibles general y del ahorro no supera 28.000 euros (individual) o 45.000 euros (conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.30",
+          "base": "alquiler_vivienda_habitual",
+          "maximo": "1000",
+          "limite_individual": "28000",
+          "limite_conjunta": "45000",
+          "ajustes_limite": [
+            {
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ],
+                "habitantes_max": 2999
+              },
+              "sin_limite": true
+            }
+          ],
+          "dividir_entre": "num_declaraciones_mismo_alquiler",
+          "alternativas": [
+            {
+              "edad_max": 35,
+              "conyuge": "en_conjunta"
+            },
+            {
+              "requiere": [
+                "familia_numerosa"
+              ]
+            },
+            {
+              "discapacidad_min": 65
+            }
+          ],
+          "variantes": [
+            {
+              "descripcion": "vivienda en el medio rural (población inferior a 3.000 habitantes): límite de 1.500 euros",
+              "cuando": {
+                "habitantes_max": 2999
+              },
+              "maximo": "1500"
+            }
+          ],
+          "incompatible_con": [
+            "art. 11 bis",
+            "art. 11 quater"
+          ],
+          "requisitos_no_comprobados": [
+            "El límite de 1.500 euros es para la vivienda en el medio rural. Población inferior a 3.000 habitantes del municipio o de la entidad local menor de Extremadura: se comprueba con los habitantes que indiques (si resides en una entidad local menor, indica su población).",
+            "El contribuyente no debe tener derecho en el mismo período a deducción alguna por inversión en vivienda habitual: aquí se excluye cuando se ha aplicado la del art. 11 bis o la del art. 11 quater; no se comprueban la estatal transitoria ni la del art. 8.",
+            "Si dos o más contribuyentes tienen derecho por la misma vivienda el importe se prorratea por partes iguales: el límite se divide por el número de declaraciones con derecho por el mismo alquiler que hayas indicado (si no lo indicas, se supone una).",
+            "También dan derecho a la deducción (no comprobado aquí, puede corresponderte aunque el cálculo la deniegue): ser ascendiente separado legalmente, o sin vínculo matrimonial, con dos hijos sin derecho a percibir anualidades por alimentos y por los que se tenga derecho a la totalidad del mínimo por descendientes; o estar judicialmente incapacitado o con curatela representativa.",
+            "La vivienda debe ser la habitual del contribuyente, ocupada efectivamente por él y situada en Extremadura.",
+            "Debe haberse satisfecho por el arrendamiento y sus prórrogas el Impuesto sobre Transmisiones Patrimoniales y Actos Jurídicos Documentados, o justificarse su exención.",
+            "Ni el contribuyente ni ningún miembro de su unidad familiar pueden ser titulares del pleno dominio o de un derecho real de uso o disfrute de otra vivienda situada a menos de 75 kilómetros de la arrendada.",
+            "El art. 12 bis mantiene para los residentes en municipios y entidades locales menores de Extremadura de menos de 3.000 habitantes el mismo límite de 28.000 euros (45.000 en conjunta) y lo suprime si, además, forman parte de una familia numerosa: se comprueba con los habitantes que indiques (si resides en una entidad local menor, indica su población; si no los indicas se aplica el límite general); también lo suprime para los ascendientes separados legalmente, o sin vínculo matrimonial, con dos hijos sin derecho a percibir anualidades por alimentos y por los que tengan derecho a la totalidad del mínimo por descendientes que residan en esos municipios (rama NO calculada: a estos se les aplica el límite).",
+            "Justificación documental adecuada (art. 13.2)."
+          ],
+          "en_vigor_desde": "2024-01-01"
+        },
+        {
+          "articulo": "art. 10",
+          "titulo": "Deducción autonómica por la compra de material escolar",
+          "resumen": "15 euros por cada hijo o descendiente en edad escolar obligatoria por la compra de material escolar, si la suma de las bases imponibles general y del ahorro no supera 19.000 euros (individual) o 24.000 euros (conjunta); 28.000 y 45.000 euros para los residentes en municipios de menos de 3.000 habitantes.",
+          "tipo": "fija",
+          "importe": "15",
+          "unidad_descendientes": {
+            "etapas": [
+              "primaria",
+              "eso",
+              "educacion_especial"
+            ]
+          },
+          "limite_individual": "19000",
+          "limite_conjunta": "24000",
+          "ajustes_limite": [
+            {
+              "cuando": {
+                "requiere": [
+                  "familia_numerosa"
+                ],
+                "habitantes_max": 2999
+              },
+              "sin_limite": true
+            }
+          ],
+          "reparto_descendientes": true,
+          "variantes": [
+            {
+              "descripcion": "residente en municipio o entidad local menor de menos de 3.000 habitantes: límite de renta de 28.000 euros (45.000 en conjunta)",
+              "cuando": {
+                "habitantes_max": 2999
+              },
+              "limite_individual": "28000",
+              "limite_conjunta": "45000"
+            }
+          ],
+          "requisitos_no_comprobados": [
+            "Se cuentan los descendientes que has indicado en primaria, ESO o educación especial. La ley exige que estén en edad escolar obligatoria y escolarizados, den derecho al mínimo por descendientes y convivan con el contribuyente (un alumno que siga en esas etapas superada la edad de escolarización obligatoria no daría derecho).",
+            "La deducción es por la compra de material escolar.",
+            "El art. 12 bis eleva el límite de renta a 28.000 euros (45.000 en conjunta) para los residentes en municipios y entidades locales menores de Extremadura de menos de 3.000 habitantes y lo suprime si, además, forman parte de una familia numerosa: se comprueba con los habitantes que indiques (si resides en una entidad local menor, indica su población; si no los indicas se aplica el límite general); también lo suprime para los ascendientes separados legalmente, o sin vínculo matrimonial, con dos hijos sin derecho a percibir anualidades por alimentos y por los que tengan derecho a la totalidad del mínimo por descendientes que residan en esos municipios (rama NO calculada: a estos se les aplica el límite).",
+            "Justificación documental adecuada (art. 13.2)."
+          ],
+          "en_vigor_desde": "2018-05-24"
+        },
+        {
           "articulo": "art. 11",
           "titulo": "Deducción autonómica por inversión en la adquisición de acciones y participaciones sociales como consecuencia de acuerdos de constitución de sociedades o ampliación de capital en las sociedades mercantiles",
           "resumen": "20 % de las cantidades invertidas en el ejercicio en acciones o participaciones por constitución o ampliación de capital de sociedades con domicilio en Extremadura, con un límite de 4.000 euros anuales.",
@@ -6468,6 +7008,23 @@
             "Justificación documental adecuada (art. 13.2)."
           ],
           "en_vigor_desde": "2018-05-24"
+        },
+        {
+          "habitantes_max": 2999,
+          "articulo": "art. 11 ter",
+          "titulo": "Deducción para residentes en municipios y entidades locales menores de Extremadura con población inferior a 3.000 habitantes",
+          "resumen": "15 % de la cuota íntegra autonómica para los residentes en municipios y entidades locales menores con población inferior a 3.000 habitantes cuya suma de bases imponibles general y del ahorro no supere 28.000 euros (45.000 en conjunta).",
+          "tipo": "porcentaje",
+          "porcentaje": "0.15",
+          "base": "cuota_integra_autonomica",
+          "limite_individual": "28000",
+          "limite_conjunta": "45000",
+          "requisitos_no_comprobados": [
+            "Residencia habitual en Extremadura. Población inferior a 3.000 habitantes del municipio o de la entidad local menor de Extremadura: se comprueba con los habitantes que indiques (si resides en una entidad local menor, indica su población).",
+            "El art. 12 bis (en la redacción aplicable a 2025) solo menciona los arts. 3, 5, 6, 7, 8, 9 y 10: a esta deducción se le aplica siempre el límite de renta.",
+            "Justificación documental adecuada (art. 13.2)."
+          ],
+          "en_vigor_desde": "2022-03-22"
         },
         {
           "articulo": "art. 11 quinquies",

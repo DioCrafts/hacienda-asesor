@@ -52,7 +52,7 @@ def test_every_group_of_parameters_has_a_check(checks_2026: list[Comprobacion]) 
     assert len(citas) >= 80 and all(c.citas for c in citas)  # every regional deduction carries its quote
     # A scale read from a superseded wording is checked against that wording.
     historicas = {c.version for c in comprobaciones(load_params(2025)) if c.version}
-    assert historicas == {"20230915", "20221231", "20241230"}  # the last: Canarias' 2025 income ceilings
+    assert historicas == {"20250407", "20221231"}
 
 
 def test_text_is_normalised_before_matching() -> None:

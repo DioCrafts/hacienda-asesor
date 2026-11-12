@@ -1279,31 +1279,95 @@
       "5. El importe de la deducción será el siguiente: a) En caso de declaración individual: 1.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es inferior a 35.000 euros, el 50 por 100 de la base de deducción. 2.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es igual o superior a 35.000 euros e inferior a 45.000 euros, el 37,50 por 100 de la base de deducción. 3.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es igual o superior a 45.000 euros e inferior a 60.000 euros, el 25 por 100 de la base de deducción. 4.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es igual o superior a 60.000 euros, no habrá derecho a la deducción. b) En caso de declaración conjunta: 1.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es inferior a 50.000 euros, el 50 por 100 de la base de deducción. 2.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es igual o superior a 50.000 euros e inferior a 75.000 euros, el 37,50 por 100 de la base de deducción. 3.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es igual o superior a 75.000 euros e inferior 95.000 euros, el 25 por 100 de la base de deducción. 4.º) Si la cantidad resultante de la suma de la base imponible general y de la base imponible del ahorro es igual o superior a 95.000 euros, no habrá derecho a la deducción."
     ]
   },
-  "canarias@2025": {
-    "_version": "20241230",
+  "extremadura@2025": {
+    "_version": "20250407",
+    "art. 3": [
+      "1. En el caso de partos múltiples, los contribuyentes tendrán derecho a la aplicación de una deducción de 300 euros por hijo nacido en el período impositivo, siempre que la suma de las bases imponibles general y del ahorro no sea superior a 19.000 euros en caso de tributación individual o a 24.000 euros en caso de tributación conjunta.",
+      "2. Solo tendrán derecho a practicar la deducción los padres que convivan con los hijos nacidos. Cuando los hijos nacidos convivan con ambos progenitores el importe de la deducción se prorrateará por partes iguales en la declaración de cada uno de ellos si optaran por tributación individual.",
+      "En los supuestos contemplados en los artículos 3, 5, 6, 7, 8, 9 y 10 de esta ley, las bases imponibles general y del ahorro para los contribuyentes con residencia habitual en municipios y entidades locales menores con una población inferior a 3.000 habitantes, no podrán superar los 28.000 euros en tributación individual y 45.000 euros en tributación conjunta.",
+      "No existirá ningún límite para los contribuyentes indicados en el párrafo anterior:",
+      "a) que formen parte de una familia que tenga la consideración legal de numerosa, o"
+    ],
+    "art. 4": [
+      "Los contribuyentes podrán deducir de la cuota íntegra autonómica la cantidad de 250 euros por cada menor en régimen de acogimiento familiar temporal, permanente o de urgencia, siempre que convivan con el menor 183 días o más durante el período impositivo. Si el tiempo de convivencia durante el período impositivo, incluido el acogimiento familiar que sea de urgencia, fuera inferior a 183 días y superior a 90 días, el importe de la deducción por cada menor acogido será de 125 euros.",
+      "En el caso de acogimiento de menores por matrimonio, el importe de la deducción se prorrateará por partes iguales en la declaración de cada uno de ellos, si optaran por la declaración individual."
+    ],
+    "art. 5": [
+      "1. El contribuyente podrá deducir de la cuota íntegra autonómica 150 euros por cada ascendiente o descendiente con un grado de discapacidad igual o superior al 65 % o que esté judicialmente incapacitado o se haya establecido la curatela representativa del contribuyente.",
+      "a) Que el ascendiente o descendiente con discapacidad conviva de forma ininterrumpida al menos durante la mitad del período impositivo con el contribuyente. Cuando dos o más contribuyentes con el mismo grado de parentesco tengan derecho a la aplicación de esta deducción respecto de una misma persona, su importe se prorrateará entre ellos por partes iguales. Cuando los contribuyentes tengan distinto grado de parentesco respecto de la persona con discapacidad, la aplicación de la deducción corresponderá al de grado más cercano.",
+      "b) Que la suma de las bases imponibles general y del ahorro del contribuyente no sea superior a 19.000 euros en tributación individual o a 24.000 euros en caso de tributación conjunta.",
+      "En los supuestos contemplados en los artículos 3, 5, 6, 7, 8, 9 y 10 de esta ley, las bases imponibles general y del ahorro para los contribuyentes con residencia habitual en municipios y entidades locales menores con una población inferior a 3.000 habitantes, no podrán superar los 28.000 euros en tributación individual y 45.000 euros en tributación conjunta.",
+      "No existirá ningún límite para los contribuyentes indicados en el párrafo anterior:",
+      "a) que formen parte de una familia que tenga la consideración legal de numerosa, o"
+    ],
+    "art. 6": [
+      "Los contribuyentes que por motivos de trabajo, por cuenta propia o ajena, tengan que dejar a sus hijos menores de hasta 14 años inclusive al cuidado de una persona empleada del hogar o en guarderías, centros de ocio, campamentos urbanos, centros deportivos, ludotecas o similares, autorizados por la administración autonómica o local competente, podrán deducir de la cuota íntegra autonómica el 10% de las cantidades satisfechas en el período, con el límite máximo de 400 euros por unidad familiar, siempre que concurran los siguientes requisitos:",
+      "a) Que en la fecha de devengo del impuesto los hijos tengan 14 o menos años de edad.",
+      "b) Que ambos padres realicen una actividad por cuenta propia o ajena por la que estén dados de alta en el régimen correspondiente de la Seguridad Social o mutualidad.",
+      "Cuando más de un contribuyente tenga derecho a la aplicación de esa deducción con respecto a los mismos descendientes, su importe será prorrateado entre ellos.",
+      "f) Que la base imponible total a efectos del IRPF no exceda de 28.000 euros en tributación individual o 45.000 euros en tributación conjunta.",
+      "En los supuestos contemplados en los artículos 3, 5, 6, 7, 8, 9 y 10 de esta ley, las bases imponibles general y del ahorro para los contribuyentes con residencia habitual en municipios y entidades locales menores con una población inferior a 3.000 habitantes, no podrán superar los 28.000 euros en tributación individual y 45.000 euros en tributación conjunta.",
+      "No existirá ningún límite para los contribuyentes indicados en el párrafo anterior:",
+      "a) que formen parte de una familia que tenga la consideración legal de numerosa, o"
+    ],
+    "art. 7": [
+      "1. Los contribuyentes viudos tendrán derecho a aplicar una deducción de 100 euros en la cuota íntegra autonómica, siempre que la suma de las bases imponibles general y del ahorro no sea superior a 19.000 euros en caso de tributación individual y a 24.000 euros en caso de tributación conjunta.",
+      "2. El importe de la deducción se eleva a 200 euros si el contribuyente viudo tiene a su cargo uno o más descendientes que, de conformidad con el artículo 58 de la Ley 35/2006, de 28 de noviembre, del Impuesto sobre la Renta de las Personas Físicas y de modificación parcial de las leyes de los Impuestos sobre Sociedades, sobre la Renta de no Residentes y sobre el Patrimonio, computan a efectos de aplicar el mínimo por descendientes.",
+      "La deducción de 200 euros podrá aplicarse siempre y cuando los descendientes mantengan los requisitos para computar a efectos de aplicar dicho mínimo y siempre que estos no perciban ningún tipo de renta.",
+      "En los supuestos contemplados en los artículos 3, 5, 6, 7, 8, 9 y 10 de esta ley, las bases imponibles general y del ahorro para los contribuyentes con residencia habitual en municipios y entidades locales menores con una población inferior a 3.000 habitantes, no podrán superar los 28.000 euros en tributación individual y 45.000 euros en tributación conjunta.",
+      "No existirá ningún límite para los contribuyentes indicados en el párrafo anterior:",
+      "a) que formen parte de una familia que tenga la consideración legal de numerosa, o"
+    ],
+    "art. 11 bis": [
+      "1. Los contribuyentes podrán deducirse de la cuota íntegra autonómica el 10 por ciento de las cantidades que durante el período impositivo satisfagan por la adquisición o rehabilitación de la vivienda que constituya o vaya a constituir su residencia habitual, siempre que se cumplan, simultáneamente, los siguientes requisitos:",
+      "a) Que la vivienda esté situada en alguno de los municipios y entidades locales menores de Extremadura en los que la población de derecho a 31 de diciembre sea inferior a 3.000 habitantes.",
+      "A su vez, la base máxima a aplicar en cada ejercicio será de 9.040 euros.",
+      "1. La aplicación de las deducciones previstas en los artículos 8 y 11 quater anteriores no podrá simultanearse con la regulada en el artículo 11 bis de esta Ley.",
+      "b) Que la adquisición o rehabilitación de la vivienda se haya producido a partir de la fecha de entrada en vigor de la ley de Medidas ante el reto demográfico y territorial de Extremadura.",
+      "Este artículo será de aplicación a los hechos imponibles que se devengen a partir del 1 de enero de 2022, según establece la disposición final 5 de la citada Ley."
+    ],
+    "art. 11 quater": [
+      "1. Los contribuyentes podrán deducirse el 25 % de los intereses satisfechos durante el período impositivo por préstamos hipotecarios obtenidos para financiar la adquisición de su vivienda habitual, con una base de deducción máxima de 1.000,00 euros anuales, siempre que se cumplan los siguientes requisitos:",
+      "b) Que a la fecha de devengo del impuesto el contribuyente tenga menos de 36 años.",
+      "c) Que se trate de su primera vivienda.",
+      "1. La aplicación de las deducciones previstas en los artículos 8 y 11 quater anteriores no podrá simultanearse con la regulada en el artículo 11 bis de esta Ley.",
+      "d) Que la suma de las bases imponibles general y del ahorro no supere los 28.000 euros en tributación individual y 45.000 euros en tributación conjunta."
+    ],
+    "art. 9": [
+      "1. El contribuyente podrá aplicar sobre la cuota íntegra autonómica del Impuesto sobre la Renta de las Personas Físicas una deducción del 30 % de las cantidades satisfechas en el período impositivo en concepto de alquiler de su vivienda habitual, con el límite de 1.000 euros anuales, siempre y cuando se cumplan los requisitos siguientes:",
+      "1.ª Que tenga en la fecha del devengo del impuesto menos de treinta y seis años cumplidos.",
+      "2.ª Que forme parte de una familia que tenga la consideración legal de numerosa o sea ascendiente separado legalmente, o sin vínculo matrimonial, con dos hijos",
+      "3.ª Que padezca una discapacidad con un grado reconocido igual o superior al 65 %, o esté judicialmente incapacitado o se haya establecido la curatela representativa del contribuyente.",
+      "2. El porcentaje de deducción será también del 30 % con el límite de 1.500 euros, en caso de alquiler de vivienda habitual en el medio rural.",
+      "A efectos de esta ley tendrá la consideración de vivienda en el medio rural aquella que se encuentre en municipios y entidades locales menores de Extremadura con población inferior a 3.000 habitantes.",
+      "En caso de tributación conjunta, el requisito de la edad deberá cumplirlo, al menos, uno de los cónyuges, o, en su caso, el padre o la madre.",
+      "d) Que el contribuyente no tenga derecho durante el mismo período impositivo a deducción alguna por inversión en vivienda habitual.",
+      "3. Cuando dos o más contribuyentes tengan derecho a la aplicación de esta deducción respecto de los mismos bienes para un mismo período impositivo, su importe se prorrateará entre ellos por partes iguales.",
+      "f) Que la suma de las bases imponibles general y del ahorro no sea superior a 28.000 euros en tributación individual y 45.000 euros en tributación conjunta.",
+      "En los supuestos contemplados en los artículos 3, 5, 6, 7, 8, 9 y 10 de esta ley, las bases imponibles general y del ahorro para los contribuyentes con residencia habitual en municipios y entidades locales menores con una población inferior a 3.000 habitantes, no podrán superar los 28.000 euros en tributación individual y 45.000 euros en tributación conjunta.",
+      "No existirá ningún límite para los contribuyentes indicados en el párrafo anterior:",
+      "a) que formen parte de una familia que tenga la consideración legal de numerosa, o"
+    ],
     "art. 10": [
-      "– 265 euros, cuando se trate del primer o segundo hijo.",
-      "– 530 euros, cuando se trate del tercero.",
-      "– 796 euros, cuando se trate del cuarto.",
-      "– 928 euros, cuando se trate del quinto o sucesivos.",
-      "c) Cuando ambos progenitores o adoptantes tengan derecho a la deducción y no opten por la tributación conjunta, su importe se prorrateará entre ellos por partes iguales.",
-      "d) Para determinar el número de orden del hijo nacido o adoptado se atenderá a los hijos que convivan con el contribuyente a la fecha de devengo del impuesto, computándose a dichos efectos tanto los hijos naturales como los adoptivos.",
-      "2. Solo tendrán derecho a la aplicación de esta deducción los contribuyentes que no hayan obtenido rentas en el periodo impositivo en que se origina el derecho a la deducción por importe superior a 45.500 euros; y, en el supuesto de tributación conjunta, cuando la unidad familiar no haya obtenido rentas por importe superior a 60.500 euros.",
-      "las referencias contenidas a la expresión “renta” en las normas reguladoras de las mismas deberán entenderse hechas a la base imponible general y del ahorro definida en la"
+      "Los contribuyentes que tengan a su cargo hijos o descendientes en edad escolar obligatoria tendrán derecho a aplicar una deducción de 15 euros en la cuota íntegra autonómica por la compra de material escolar, siempre que las sumas de las bases imponibles general y del ahorro no sea superior a 19.000 euros en caso de tributación individual o a 24.000 euros en caso de tributación conjunta.",
+      "Se podrá aplicar la deducción por cada hijo o descendiente por los que tengan derecho al mínimo por descendientes",
+      "Cuando un hijo o descendiente conviva con ambos padres o ascendientes el importe de la deducción se prorrateará por partes iguales en la declaración de cada uno de ellos, en el caso de que optaran por tributación individual.",
+      "En los supuestos contemplados en los artículos 3, 5, 6, 7, 8, 9 y 10 de esta ley, las bases imponibles general y del ahorro para los contribuyentes con residencia habitual en municipios y entidades locales menores con una población inferior a 3.000 habitantes, no podrán superar los 28.000 euros en tributación individual y 45.000 euros en tributación conjunta.",
+      "No existirá ningún límite para los contribuyentes indicados en el párrafo anterior:",
+      "a) que formen parte de una familia que tenga la consideración legal de numerosa, o"
     ],
-    "art. 12": [
-      "1. Por los descendientes menores de 3 años, los progenitores o tutores con quienes convivan podrán deducirse el 18% de las cantidades satisfechas en el periodo impositivo por los gastos de custodia en guarderías autorizadas para su apertura y funcionamiento, con un máximo de 530 euros anuales por cada descendiente.",
-      "2. Son requisitos, para poder practicar esta deducción, que los contribuyentes no hayan obtenido rentas por importe superior a 45.500 euros en el periodo impositivo. En el supuesto de tributación conjunta, este requisito se entenderá cumplido si la renta de la unidad familiar no excede de 60.500 euros.",
-      "3. Cuando dos o más contribuyentes tengan derecho a la deducción y no opten, o no puedan optar, por la tributación conjunta, su importe se prorrateará entre ellos por partes iguales.",
-      "las referencias contenidas a la expresión “renta” en las normas reguladoras de las mismas deberán entenderse hechas a la base imponible general y del ahorro definida en la"
+    "art. 11": [
+      "1. Los contribuyentes podrán aplicar una deducción en la cuota íntegra autonómica del Impuesto sobre la Renta de las Personas Físicas del 20 % de las cantidades invertidas durante el ejercicio en la adquisición de acciones o participaciones sociales como consecuencia de acuerdos de constitución de sociedades o de ampliación de capital en las sociedades mercantiles que revistan la forma de Sociedad Anónima, Sociedad de Responsabilidad Limitada, Sociedad Anónima Laboral, Sociedad de Responsabilidad Limitada Laboral o Sociedad Cooperativa.",
+      "El límite de deducción aplicable será de 4.000 euros anuales."
     ],
-    "art. 15": [
-      "1. Los contribuyentes podrán deducirse el 24% de las cantidades satisfechas en el periodo impositivo, con un máximo de 740 euros anuales, por el alquiler de su vivienda habitual, siempre que concurran los siguientes requisitos:",
-      "a) Que no hayan obtenido rentas superiores a 45.500 euros en el periodo impositivo.",
-      "Este importe se incrementará en 15.000 euros en el supuesto de opción por la tributación conjunta.",
-      "b) Que las cantidades satisfechas en concepto de alquiler excedan del 10% de las rentas obtenidas en el periodo impositivo, que a estos efectos se descontará, si lo hubiere, en el importe de las subvenciones que por este concepto hubiera percibido el arrendatario.",
-      "El importe de la deducción prevista tendrá un máximo de 760 euros anuales si el contribuyente tiene una edad inferior a 40 años o una edad igual o superior a 75 años y cumple los anteriores requisitos.",
-      "las referencias contenidas a la expresión “renta” en las normas reguladoras de las mismas deberán entenderse hechas a la base imponible general y del ahorro definida en la"
+    "art. 11 ter": [
+      "1. Los contribuyentes con residencia habitual en Extremadura podrán deducirse de la cuota íntegra autonómica el 15% de su importe si residen en municipios y entidades locales menores con población inferior a 3.000 habitantes.",
+      "2. Tendrán derecho a la aplicación de esta deducción los contribuyentes cuyas sumas de la base imponible general y del ahorro no superen los 28.000 euros en tributación individual y 45.000 euros en tributación conjunta."
+    ],
+    "art. 11 quinquies": [
+      "1. Los contribuyentes con residencia habitual en Extremadura podrán aplicar en la cuota íntegra autonómica una deducción del 20 por 100 de las cantidades donadas durante el ejercicio a entidades con domicilio fiscal en Extremadura que desarrollen en el territorio de la comunidad autónoma alguna de las siguientes actividades:",
+      "2. También podrán deducir de la cuota íntegra autonómica el 20 por 100 de las cantidades donadas durante el ejercicio con la finalidad de patrocinar a deportistas con domicilio fiscal en Extremadura",
+      "3. El importe máximo de las deducciones no podrá superar los 500 euros anuales por contribuyente."
     ]
   }
 }

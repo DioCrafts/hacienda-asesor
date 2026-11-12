@@ -474,7 +474,7 @@ actuales**, que la calculadora declara en los `avisos` de cada resultado:
   propio y no están cubiertos: se aproximan con la escala estatal y se avisa.
   **Ceuta y Melilla**: no se aplica su deducción del art. 68.4 LIRPF.
 - **Deducciones autonómicas con importe: 220 descritas con datos en las 15
-  comunidades (194 en 2025), más seis de Madrid programadas a mano.** Las
+  comunidades (209 en 2025), más seis de Madrid programadas a mano.** Las
   primeras viven en `deducciones_calculables` del JSON: importe fijo o
   porcentaje de un gasto, topes, base máxima, límites de renta, edad,
   discapacidad, condiciones alternativas, variantes de importe, importe según
