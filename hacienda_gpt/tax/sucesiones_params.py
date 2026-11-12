@@ -473,6 +473,8 @@ class EstatalISD(NormativaISD):
 
 class ISDParams(_Model):
     ejercicio: int
+    # Log of automatic readings of the source laws (tax/recodificacion/procedencia.py); empty until the first one.
+    revisiones: list[dict[str, str]] = Field(default_factory=list)
     fuentes_principales: dict[str, FuentePrincipal]
     # Norms quoted only to supply a figure a community's text names without printing it (see
     # NormativaAutonomicaISD.fuentes_complementarias). Kept apart: no rule of the tax lives in them.

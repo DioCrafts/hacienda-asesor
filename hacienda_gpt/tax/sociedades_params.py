@@ -151,6 +151,8 @@ class TributacionMinima(_Grupo):
 
 class SociedadesParams(_Model):
     ejercicio: int  # edition of the file: the year the data set was read for
+    # Log of automatic readings of the source laws (tax/recodificacion/procedencia.py); empty until the first one.
+    revisiones: list[dict[str, str]] = Field(default_factory=list)
     # Years (start of the tax period) for which ``tipos_gravamen.por_ano`` has rates.
     ejercicios_cubiertos: list[int] = Field(min_length=1)
     # Consolidated laws the figures are read from (watched for changes by ``tax/fuentes.py``).

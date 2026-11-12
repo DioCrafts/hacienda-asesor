@@ -1229,8 +1229,8 @@ def _plano(texto: str) -> str:
 
 GUIA_CASOS_REPARTO = (
     '`datos_json` of a case: {"deducciones_generales": "<euros>", "parte": "autonomica" | "estatal"}. '
-    "`deducciones_generales` is the total amount of the general State deductions the law splits between the State "
-    "and the regional tax (the deduction for donations, the transitional one for the main home); `parte` (default "
+    "`deducciones_generales` is a total amount of the deductions that the text shown splits between the State and "
+    "the regional tax; `parte` (default "
     '"autonomica") says which share `importe_esperado` is: the amount THE LAW assigns to that tax, in euros with a '
     "dot, rounded to the cent. The program runs the calculator's own split with the proposed figures. Choose round "
     "and odd totals (one cent, an odd number of cents, a large amount)."

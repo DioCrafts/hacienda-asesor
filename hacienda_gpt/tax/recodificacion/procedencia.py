@@ -517,6 +517,10 @@ def refrescar(
                 tocado = True
         if not tocado:
             continue
+        # The non-IRPF files have a reading log since it was added to their root model: start it on first use.
+        raiz = getattr(getattr(_validador_de(path.name), "familia", None), "raiz", None)
+        if "revisiones" not in raw and raiz is not None and "revisiones" in raiz.model_fields:
+            raw["revisiones"] = []
         if isinstance(raw.get("revisiones"), list):
             raw["revisiones"].append(
                 {

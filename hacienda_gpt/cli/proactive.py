@@ -385,6 +385,20 @@ def _fila_de_verificacion(resultados: list[Any]) -> dict[str, Any]:
     }
 
 
+_FICHEROS_DE_PARAMETROS = ("irpf", "autonomos", "sociedades", "patrimonio", "isd")
+
+
+def _ficheros_pedidos(valores: tuple[str, ...]) -> tuple[str, ...]:
+    """``--fichero a,b --fichero c`` -> ("a", "b", "c"); an unknown name is an error, never a silent empty report."""
+    pedidos = tuple(n.strip().lower() for v in valores for n in v.split(",") if n.strip())
+    desconocidos = [n for n in pedidos if n not in _FICHEROS_DE_PARAMETROS]
+    if desconocidos:
+        raise click.BadParameter(
+            f"{', '.join(desconocidos)}: no es un fichero de parámetros (son: {', '.join(_FICHEROS_DE_PARAMETROS)})."
+        )
+    return pedidos
+
+
 def _verificar_otros_ficheros(
     texto_de: Any, ejercicios: tuple[int, ...], ficheros: tuple[str, ...]
 ) -> dict[str, list[Any]]:
@@ -478,7 +492,9 @@ def _anotar_lecturas(
     "--fichero",
     "ficheros",
     multiple=True,
-    help="Solo estos ficheros de parámetros: irpf, autonomos, sociedades, patrimonio, isd (por defecto, todos).",
+    callback=lambda ctx, param, valores: _ficheros_pedidos(valores),
+    help="Solo estos ficheros de parámetros: irpf, autonomos, sociedades, patrimonio, isd (por defecto, todos). "
+    "Repetible o separados por comas.",
 )
 @click.option("--fail-on-mismatch", is_flag=True, help="Termina con código 1 si alguna comprobación falla.")
 @_ANOTAR_OPTION

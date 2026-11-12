@@ -155,6 +155,8 @@ class IVA(_Grupo):
 
 class AutonomosParams(_Model):
     ejercicio: int
+    # Log of automatic readings of the source laws (tax/recodificacion/procedencia.py); empty until the first one.
+    revisiones: list[dict[str, str]] = Field(default_factory=list)
     # Consolidated texts the figures were read from, by BOE id.
     fuentes_principales: dict[str, FuentePrincipal]
     # What was deliberately left out, repeated to whoever reads the file.

@@ -166,6 +166,8 @@ class ComunidadPatrimonio(_Model):
 
 class PatrimonioParams(_Model):
     ejercicio: int
+    # Log of automatic readings of the source laws (tax/recodificacion/procedencia.py); empty until the first one.
+    revisiones: list[dict[str, str]] = Field(default_factory=list)
     devengo: str
     fuentes_principales: dict[str, FuentePrincipal]
     # What was deliberately left out of the state rules.

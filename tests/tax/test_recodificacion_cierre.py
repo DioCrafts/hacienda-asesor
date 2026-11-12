@@ -317,8 +317,8 @@ def test_recording_a_reading_writes_every_file_that_cites_the_law_and_nothing_el
         motivo="m.",
     )
     assert hecho["ficheros"] == ["autonomos_2026.json", "irpf_2025.json", "irpf_2026.json", "sociedades_2026.json"]
-    # The four other files have no log of revisions: the reading is in the report only.
-    assert hecho["sin_registro"] == ["autonomos_2026.json", "sociedades_2026.json"]
+    # Every file keeps a log of the reading (the four other files start theirs on first use).
+    assert hecho["sin_registro"] == []
     despues = {p.name: json.loads(p.read_text(encoding="utf-8")) for p in procedencia.ficheros_de_parametros(datos)}
     for nombre, raw in despues.items():
         assert _sin_procedencia(raw) == _sin_procedencia(antes[nombre]), nombre  # no figure moved
@@ -326,8 +326,9 @@ def test_recording_a_reading_writes_every_file_that_cites_the_law_and_nothing_el
             nuevo = fuente.boe_id == "BOE-A-2006-20764" and not fuente.fijada
             assert (fuente.consultado_el == DESPUES.isoformat()) is nuevo, fuente.donde
             assert (fuente.consolidado_a == "2026-11-20") is nuevo, fuente.donde
-    revision_ = despues["irpf_2026.json"]["revisiones"][-1]
-    assert revision_["boe_id"] == "BOE-A-2006-20764" and "sin tocar ninguna cifra" in revision_["resultado"]
+    for nombre in hecho["ficheros"]:
+        revision_ = despues[nombre]["revisiones"][-1]
+        assert revision_["boe_id"] == "BOE-A-2006-20764" and "sin tocar ninguna cifra" in revision_["resultado"]
     assert len(despues["irpf_2026.json"]["revisiones"]) == len(antes["irpf_2026.json"]["revisiones"]) + 1
     # Recording the same reading again writes nothing.
     otra = procedencia.refrescar(
