@@ -338,3 +338,19 @@ LLM_DAILY_BUDGET_USD_PER_USER = os.environ.get("LLM_DAILY_BUDGET_USD_PER_USER", 
 LLM_MAX_CALLS_PER_QUESTION = os.environ.get("LLM_MAX_CALLS_PER_QUESTION", "")
 # Replacement price table (same format as the bundled one), for when prices change.
 LLM_PRICES_PATH = os.environ.get("LLM_PRICES_PATH", "")
+
+# --- Household modules (hacienda_gpt/modulos) ---------------------------------
+# Every package ``hacienda_gpt.modulos.<clave>`` exposing ``MODULO`` is discovered at
+# start-up (see hacienda_gpt/modulos/registro.py). Comma-separated keys listed here
+# are switched off for everyone (their tools, notices and facts are not offered).
+MODULOS_DESACTIVADOS = os.environ.get("MODULOS_DESACTIVADOS", "")
+# Modules active for an account that has not chosen yet, and for every case when
+# AUTH_MODE=off (a personal deployment has no per-user choice). Comma-separated
+# keys, or "todos". The default is privacy by default (art. 25.2 GDPR): only the
+# tax module, the service the user signed up for; each other module is opted into.
+MODULOS_ACTIVOS_POR_DEFECTO = os.environ.get("MODULOS_ACTIVOS_POR_DEFECTO", "fiscal")
+# Model turns a module specialist may take when the central agent consults it.
+ESPECIALISTA_MAX_STEPS = int(os.environ.get("ESPECIALISTA_MAX_STEPS", "4"))
+# Baseline of the BOE update date of every module source, for ``params-check``
+# (a module's law updated after that date is listed for re-reading).
+MODULOS_FUENTES_STATE_PATH = os.environ.get("MODULOS_FUENTES_STATE_PATH", "./data/_modulos_fuentes_state.json")

@@ -1,0 +1,23 @@
+# Extracto literal de https://www.boe.es/buscar/act.php?id=BOE-A-2018-16036 descargado el 2026-11-13. Texto consolidado: «Última actualización publicada el 28/12/2023»
+# Solo los artículos citados en hacienda_gpt/modulos/suscripciones/data/derechos_consumidor.json; generado, no editar a mano.
+
+Artículo 43. Notificación y rectificación de operaciones de pago no autorizadas o ejecutadas incorrectamente.
+1. El usuario de servicios de pago obtendrá la rectificación por parte del proveedor de servicios de pago de una operación de pago no autorizada o ejecutada incorrectamente únicamente si el usuario de servicios de pago se lo comunica sin demora injustificada, en cuanto tenga conocimiento de cualquiera de dichas operaciones que sea objeto de reclamación, incluso las cubiertas por el artículo 60, y, en todo caso, dentro de un plazo máximo de trece meses contados desde la fecha del adeudo.
+Los plazos para la notificación establecidos en el párrafo primero no se aplicarán cuando el proveedor de servicios de pago no le haya proporcionado ni puesto a su disposición la información sobre la operación de pago con arreglo a lo establecido en el título II.
+2. Cuando intervenga un proveedor de servicios de iniciación de pagos, el usuario de servicios de pago deberá obtener la rectificación del proveedor de servicios de pago gestor de cuenta en virtud del apartado 1, sin perjuicio de lo dispuesto en el artículo 45.2, y el artículo 60.1.
+
+Artículo 48. Devoluciones por operaciones de pago iniciadas por un beneficiario o a través del mismo.
+1. El ordenante tendrá derecho a obtener de su proveedor de servicios de pago, con fecha valor no posterior a la del adeudo, la devolución de la cantidad total correspondiente a las operaciones de pago autorizadas, iniciadas por un beneficiario o a través de él, que hayan sido ejecutadas siempre que se satisfagan las siguientes condiciones:
+a) que la autorización no especificase, en el momento en que se dio, el importe exacto de la operación de pago;
+b) que el importe supere el que el ordenante podía esperar razonablemente teniendo en cuenta las anteriores pautas de gasto, las condiciones del contrato marco y las circunstancias pertinentes al caso.
+A petición del proveedor de servicios de pago, corresponderá al ordenante demostrar que se cumplen tales condiciones.
+2. Sin perjuicio de lo dispuesto en el apartado 4 del presente artículo, además del derecho reconocido en el apartado 1, en relación con los adeudos domiciliados contemplados en el artículo 1 del Reglamento (UE) n.º 260/2012 del Parlamento Europeo y del Consejo, de 14 de marzo de 2012, por el que se establecen requisitos técnicos y empresariales para las transferencias y los adeudos domiciliados en euros, y se modifica el Reglamento (CE) n.º 924/2009, el ordenante tendrá un derecho incondicional de devolución dentro de los plazos establecidos en el artículo 49.
+3. A efectos del apartado 1.b), anterior, el ordenante no podrá invocar motivos relacionados con el cambio de divisa cuando se hubiera aplicado el tipo de cambio de referencia acordado con su proveedor de servicios de pago.
+4. En todo caso, el ordenante y el proveedor de servicios de pago podrán convenir en el contrato marco que aquél no tenga derecho de reembolso cuando:
+a) el ordenante haya dado su consentimiento para que se ejecute la operación de pago directamente al proveedor de servicios de pago, y
+b) en su caso, el proveedor de servicios de pago o el beneficiario hayan proporcionado o puesto a disposición del ordenante, en la forma acordada, información relativa a la futura operación de pago al menos con cuatro semanas de antelación a la fecha prevista.
+
+Artículo 49. Solicitudes de devolución por operaciones de pago iniciadas por un beneficiario o a través del mismo.
+1. El ordenante podrá solicitar la devolución a que se refiere el artículo 48 por una operación de pago autorizada iniciada por un beneficiario o a través del mismo, durante un plazo de ocho semanas contadas a partir de la fecha de adeudo de los fondos en su cuenta.
+2. En el plazo de diez días hábiles desde la recepción de una solicitud de devolución, el proveedor de servicios de pago deberá devolver el importe íntegro de la operación de pago o bien comunicar al ordenante las razones objetivas que justifican su denegación de devolución, e indicar en este caso los procedimientos de reclamación, judiciales y extrajudiciales, a disposición del usuario, para el caso de que el ordenante no esté conforme con las razones ofrecidas.
+En el caso de adeudos domiciliados a los que se refiere el artículo 48.2, el proveedor de servicios de pago no podrá denegar la devolución, sin perjuicio de lo previsto en el artículo 48.4.

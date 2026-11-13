@@ -1,0 +1,964 @@
+{
+  "version": "2026-11-13",
+  "fuentes_principales": {
+    "BOE-A-2005-21163": {
+      "norma": "Real Decreto 1553/2005, de 23 de diciembre, por el que se regula la expedición del documento nacional de identidad y sus certificados de firma electrónica (texto consolidado)",
+      "boe_id": "BOE-A-2005-21163",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2005-21163",
+      "consolidado_a": "2025-04-02",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "e7f78b2eeabe31a2d685306b09299b2ba6f4fbe49cd6faf11356d385f4d12c94"
+    },
+    "BOE-A-2003-13978": {
+      "norma": "Real Decreto 896/2003, de 11 de julio, por el que se regula la expedición del pasaporte ordinario y se determinan sus características (texto consolidado)",
+      "boe_id": "BOE-A-2003-13978",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2003-13978",
+      "consolidado_a": "2014-06-25",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "3003e52826b3769c41a724b029fb24b627fa2a6abdf783a1003afe453beca8ae"
+    },
+    "BOE-A-2009-9481": {
+      "norma": "Real Decreto 818/2009, de 8 de mayo, por el que se aprueba el Reglamento General de Conductores (texto consolidado)",
+      "boe_id": "BOE-A-2009-9481",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2009-9481",
+      "consolidado_a": "2023-12-06",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "bbf517033598cccd90c8aa9c4b47274d640f8cef67c5762f4e4333de5c9ca590"
+    },
+    "BOE-A-2017-12841": {
+      "norma": "Real Decreto 920/2017, de 23 de octubre, por el que se regula la inspección técnica de vehículos (texto consolidado)",
+      "boe_id": "BOE-A-2017-12841",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2017-12841",
+      "consolidado_a": "2024-09-18",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "e9118560c684415d934f0447207f78a123ad68d9f4d9c0ed9f04bf1236c2deaa"
+    },
+    "BOE-A-2007-20555": {
+      "norma": "Real Decreto Legislativo 1/2007, de 16 de noviembre, texto refundido de la Ley General para la Defensa de los Consumidores y Usuarios y otras leyes complementarias (texto consolidado)",
+      "boe_id": "BOE-A-2007-20555",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2007-20555",
+      "consolidado_a": "2026-11-04",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "59e6263dc1b003f797cf12c6af853e04afd81e6dfa4279b841405896de4309b9"
+    },
+    "BOE-A-2021-6872": {
+      "norma": "Real Decreto-ley 7/2021, de 27 de abril, de transposición de directivas de la Unión Europea (texto consolidado)",
+      "boe_id": "BOE-A-2021-6872",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2021-6872",
+      "consolidado_a": "2021-12-22",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "c2a8d674795e5de91cf92243118c2a0e94f26d7c6481e993c09ff2bc9cb6cdf4"
+    },
+    "BOE-A-2020-14046": {
+      "norma": "Ley 6/2020, de 11 de noviembre, reguladora de determinados aspectos de los servicios electrónicos de confianza (texto consolidado)",
+      "boe_id": "BOE-A-2020-14046",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2020-14046",
+      "consolidado_a": "2023-05-09",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "14d6ac28b1fbe1d3f6d3616aa49441774505bca54cff5824da68917298b7ff52"
+    },
+    "BOE-A-1980-22501": {
+      "norma": "Ley 50/1980, de 8 de octubre, de Contrato de Seguro (texto consolidado)",
+      "boe_id": "BOE-A-1980-22501",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1980-22501",
+      "consolidado_a": "2026-10-03",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "125942b54cd95a2ea57af6ffbca62dd1ca2cf15bd73ccb806b7d567ad65563c3"
+    },
+    "BOE-A-1889-4763": {
+      "norma": "Real Decreto de 24 de julio de 1889, texto de la edición del Código Civil (texto consolidado)",
+      "boe_id": "BOE-A-1889-4763",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1889-4763",
+      "consolidado_a": "2025-01-03",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "b9f8c385d4ff9f1c1c565ef3bea45118ceca20b612ee67b733d30507a7005be6"
+    }
+  },
+  "dni": {
+    "fuente": {
+      "referencia": "art. 6.1 del Real Decreto 1553/2005",
+      "en_vigor_desde": "2013-11-24",
+      "verificado": true,
+      "nota": "Redacción dada por el Real Decreto 869/2013; la edad que cuenta es la que tiene el titular al expedirse o renovarse el documento."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2005-21163",
+        "articulo": "art. 6.1 RD 1553/2005",
+        "cita": "1. Con carácter general el documento nacional de identidad tendrá un período de validez, a contar desde la fecha de la expedición o de cada una de sus renovaciones, de: a) Dos años cuando el solicitante no haya cumplido los cinco años de edad. b) Cinco años, cuando el titular haya cumplido los cinco años de edad y no haya alcanzado los treinta al momento de la expedición o renovación. c) Diez años, cuando el titular haya cumplido los treinta y no haya alcanzado los setenta. d) Permanente cuando el titular haya cumplido los setenta años.",
+        "cifras": {
+          "tramos.0.anos": "Dos años",
+          "tramos.0.hasta_edad": "cinco años",
+          "tramos.1.anos": "Cinco años",
+          "tramos.1.hasta_edad": "treinta",
+          "tramos.2.anos": "Diez años",
+          "tramos.2.hasta_edad": "setenta"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2005-21163",
+        "articulo": "art. 7.1 RD 1553/2005",
+        "cita": "1. Transcurrido el período de validez que para cada supuesto se contempla en el artículo anterior, el Documento Nacional de Identidad se considerará caducado y quedarán sin efecto las atribuciones y efectos que le reconoce el ordenamiento jurídico, estando su titular obligado a proceder a la renovación del mismo. Dicha renovación se llevará a cabo mediante la presencia física del titular del Documento, que deberá abonar la tasa correspondiente y aportar una fotografía con las características señaladas en el artículo 5.1.b). También se le recogerán las impresiones dactilares que se refieren en el apartado tercero del mismo artículo.",
+        "cifras": {}
+      }
+    ],
+    "avisos": [
+      "La fecha que vale es la impresa en el documento («válido hasta»): el cálculo desde la fecha de expedición es una comprobación y puede no coincidir al día.",
+      "No se modela la validez excepcional del art. 6.2 (gran invalidez, validez de un año) ni los duplicados del art. 8."
+    ],
+    "tramos": [
+      {
+        "hasta_edad": 5,
+        "anos": 2
+      },
+      {
+        "hasta_edad": 30,
+        "anos": 5
+      },
+      {
+        "hasta_edad": 70,
+        "anos": 10
+      },
+      {
+        "hasta_edad": null,
+        "anos": null
+      }
+    ],
+    "tramite": {
+      "nombre": "Renovación del Documento Nacional de Identidad",
+      "organismo": "Dirección General de la Policía (oficinas de expedición del DNI)",
+      "pasos": [
+        "Pide cita previa en una oficina de expedición del DNI.",
+        "Acude en persona con una fotografía reciente en color (32 x 26 mm, fondo blanco) y paga la tasa (art. 7.1 RD 1553/2005).",
+        "Si han cambiado tus datos, lleva además los documentos que acrediten el cambio (art. 7.2)."
+      ],
+      "webs": [
+        "https://www.dnielectronico.es/",
+        "https://www.citapreviadnie.es/"
+      ]
+    }
+  },
+  "pasaporte": {
+    "fuente": {
+      "referencia": "art. 5.1 del Real Decreto 896/2003",
+      "en_vigor_desde": "2003-07-13",
+      "verificado": true,
+      "nota": "La edad que cuenta es la del titular en la fecha de expedición."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2003-13978",
+        "articulo": "art. 5.1 RD 896/2003",
+        "cita": "1. Con carácter general, y sin perjuicio de lo dispuesto en los siguientes apartados de este artículo, el pasaporte tendrá una validez improrrogable de cinco años, si el titular tiene menos de treinta en la fecha de su expedición, y de diez años, cuando haya cumplido esa edad. Para los menores de cinco años la validez del pasaporte se limitará a dos años.",
+        "cifras": {
+          "tramos.0.hasta_edad": "cinco años",
+          "tramos.0.anos": "dos años",
+          "tramos.1.hasta_edad": "treinta",
+          "tramos.1.anos": "cinco años",
+          "tramos.2.anos": "diez años"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2003-13978",
+        "articulo": "art. 5.2 RD 896/2003",
+        "cita": "2. Los pasaportes expedidos a los menores de catorce años residentes en España que carezcan de documento nacional de identidad, tendrán validez máxima hasta que el menor alcance dicha edad, sin que, en ningún caso, la vigencia sea superior a cinco años.",
+        "cifras": {
+          "edad_menores_sin_dni": "catorce años"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2003-13978",
+        "articulo": "art. 4.1 RD 896/2003",
+        "cita": "1. Para la expedición del pasaporte ordinario será imprescindible la presencia física de la persona a la que se le haya de expedir ante los órganos o unidades que se señalan en el artículo anterior, aportando los siguientes documentos: a) Solicitud debidamente cumplimentada y firmada. b) Documento nacional de identidad en vigor del solicitante, que será devuelto en el acto de su presentación, una vez comprobados los datos de este documento con los reflejados en la solicitud. c) Una fotografía reciente en color del rostro del solicitante, tamaño 32 x 26 milímetros, con fondo uniforme blanco y liso, tomada de frente y sin gafas de cristales oscuros o cualquier otra prenda que pueda impedir la identificación de la persona. d) Resguardo acreditativo del abono de la tasa de expedición de pasaporte legalmente establecida, por el importe en cada momento vigente.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2003-13978",
+        "articulo": "art. 3.2 RD 896/2003",
+        "cita": "2. La competencia para su expedición corresponderá: a) En el territorio nacional a los órganos de la Dirección General de la Policía que depende del Ministerio del Interior. b) En el extranjero, la expedición se llevará a cabo por las Representaciones Diplomáticas y Consulares de España.",
+        "cifras": {}
+      }
+    ],
+    "avisos": [
+      "La fecha que vale es la impresa en el pasaporte: el cálculo desde la fecha de expedición es una comprobación.",
+      "No se modelan las validez limitadas de los apartados 3 a 8 del art. 5 (menores con validez limitada a petición, duplicados, validez temporal de un año, pasaporte provisional)."
+    ],
+    "tramos": [
+      {
+        "hasta_edad": 5,
+        "anos": 2
+      },
+      {
+        "hasta_edad": 30,
+        "anos": 5
+      },
+      {
+        "hasta_edad": null,
+        "anos": 10
+      }
+    ],
+    "edad_menores_sin_dni": 14,
+    "tramite": {
+      "nombre": "Expedición del pasaporte ordinario",
+      "organismo": "Dirección General de la Policía; en el extranjero, las representaciones diplomáticas y consulares de España (art. 3.2 RD 896/2003)",
+      "pasos": [
+        "Pide cita previa en una oficina de expedición.",
+        "Acude en persona con la solicitud firmada, el DNI en vigor, una fotografía reciente en color (32 x 26 mm) y el resguardo de la tasa (art. 4.1 RD 896/2003).",
+        "Para un menor sin DNI, certificación literal de nacimiento y consentimiento de quienes ejerzan la patria potestad (art. 4.2)."
+      ],
+      "webs": [
+        "https://www.policia.es/"
+      ]
+    }
+  },
+  "permiso_conduccion": {
+    "fuente": {
+      "referencia": "art. 12.1 y 12.2 del Reglamento General de Conductores (RD 818/2009)",
+      "en_vigor_desde": "2015-12-31",
+      "verificado": true,
+      "nota": "Redacción del art. 12.1 dada por el Real Decreto 1055/2015. Se toma la edad del titular en la fecha en que empieza cada período de vigencia."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2009-9481",
+        "articulo": "art. 12.1 RGC",
+        "cita": "1. El permiso de conducción de las clases C1, C1 + E, C, C + E, D1, D1 + E, D y D + E tendrá un período de vigencia de cinco años mientras su titular no cumpla los sesenta y cinco años y de tres años a partir de esa edad.",
+        "cifras": {
+          "grupo2.anos": "cinco años",
+          "grupo2.edad": "sesenta y cinco años",
+          "grupo2.anos_desde_edad": "tres años"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2009-9481",
+        "articulo": "art. 12.2 RGC",
+        "cita": "2. El permiso de las clases restantes y la licencia de conducción, cualquiera que sea su clase, tendrán un período de vigencia de diez años mientras su titular no cumpla los sesenta y cinco años y de cinco años a partir de esa edad.",
+        "cifras": {
+          "resto.anos": "diez años",
+          "resto.edad": "sesenta y cinco años",
+          "resto.anos_desde_edad": "cinco años"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2009-9481",
+        "articulo": "art. 13.1 RGC",
+        "cita": "La solicitud de prórroga de vigencia del permiso o licencia podrá presentarse con una antelación máxima de tres meses a su fecha de caducidad, computándose desde esta última fecha el nuevo período de vigencia de la autorización. En supuestos excepcionales debidamente justificados, se podrá solicitar con una antelación mayor, computándose el nuevo período de vigencia en estos casos desde la fecha en que se haya presentado la solicitud.",
+        "cifras": {
+          "antelacion_maxima_meses": "tres meses"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2009-9481",
+        "articulo": "art. 13.1 RGC",
+        "cita": "1. La vigencia de los permisos y licencias de conducción podrá ser prorrogada, por los períodos respectivamente señalados en el artículo anterior, por las Jefaturas Provinciales de Tráfico, previa solicitud de los interesados, en el modelo oficial establecido, y una vez hayan acreditado que conservan las aptitudes psicofísicas exigidas para obtener el permiso o licencia de que se trate.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2009-9481",
+        "articulo": "art. 45.1 RGC",
+        "cita": "a) Grupo 1. Comprende los que sean titulares o soliciten la obtención o prórroga de la licencia o del permiso de conducción de las clases AM, A1, A2, A, B o B + E. b) Grupo 2. Comprende los que sean titulares o soliciten la obtención o prórroga del permiso de conducción de las clases C1, C1 + E, C, C + E, D1, D1 + E, D o D + E.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2009-9481",
+        "articulo": "anexo III.B).1 RGC",
+        "cita": "1. De acuerdo con lo establecido en el artículo 13.2, a la solicitud de prórroga de vigencia del permiso o la licencia de conducción se acompañarán los documentos que se indican en el apartado A).1.párrafos a), b) y f).",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2009-9481",
+        "articulo": "anexo III.A).1.f) RGC",
+        "cita": "f) Informe de aptitud psicofísica emitido por un centro de reconocimiento de conductores autorizado, al que se hallará incorporada la fotografía a la que se hace referencia en el párrafo c) anterior.",
+        "cifras": {}
+      }
+    ],
+    "avisos": [
+      "La fecha que vale es la impresa en el permiso (casilla 4b o la de cada clase): el cálculo es una comprobación.",
+      "El art. 12.3 permite reducir la vigencia por motivos de salud: si tu permiso tiene una vigencia reducida, introduce la fecha impresa.",
+      "Interpretación: «mientras su titular no cumpla los sesenta y cinco años» se aplica a la edad del titular cuando empieza el período de vigencia (expedición o prórroga)."
+    ],
+    "grupo1_clases": [
+      "AM",
+      "A1",
+      "A2",
+      "A",
+      "B",
+      "B+E"
+    ],
+    "grupo2_clases": [
+      "C1",
+      "C1+E",
+      "C",
+      "C+E",
+      "D1",
+      "D1+E",
+      "D",
+      "D+E"
+    ],
+    "grupo2": {
+      "anos": 5,
+      "edad": 65,
+      "anos_desde_edad": 3
+    },
+    "resto": {
+      "anos": 10,
+      "edad": 65,
+      "anos_desde_edad": 5
+    },
+    "antelacion_maxima_meses": 3,
+    "tramite": {
+      "nombre": "Prórroga de vigencia del permiso o licencia de conducción",
+      "organismo": "Jefatura Provincial de Tráfico (Dirección General de Tráfico)",
+      "pasos": [
+        "Obtén el informe de aptitud psicofísica en un centro de reconocimiento de conductores autorizado (anexo III RGC).",
+        "Presenta la solicitud en el modelo oficial con los documentos del anexo III.B) ante la Jefatura Provincial de Tráfico.",
+        "Puedes pedirla hasta tres meses antes de la caducidad sin perder días: el nuevo período se cuenta desde la fecha de caducidad (art. 13.1 RGC)."
+      ],
+      "webs": [
+        "https://www.dgt.es/"
+      ]
+    }
+  },
+  "itv": {
+    "fuente": {
+      "referencia": "art. 6 del Real Decreto 920/2017",
+      "en_vigor_desde": "2018-05-20",
+      "verificado": true,
+      "nota": "Tabla del art. 6.1; el art. 6.2 (históricos) fue modificado por el Real Decreto 892/2024 y no se modela."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 6.1 RD 920/2017 (M1)",
+        "cita": "M1: vehículos de motor concebidos y fabricados principalmente para el transporte de personas y de sus equipajes, con un máximo de ocho plazas, excluida la del conductor. Hasta 4 años: Exento. De más de 4 años: Bienal. De más de 10 años: Anual.",
+        "cifras": {
+          "categorias.M1.tramos.0.hasta_anos": "4 años",
+          "categorias.M1.tramos.1.meses": "Bienal",
+          "categorias.M1.tramos.1.hasta_anos": "10 años",
+          "categorias.M1.tramos.2.meses": "Anual"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 6.1 RD 920/2017 (M2, M3)",
+        "cita": "M2, M3: Vehículos de motor concebidos y fabricados principalmente para el transporte de personas y su equipaje con más de ocho plazas, excluida la del conductor. Hasta 5 años: Anual. De más de 5 años: Semestral.",
+        "cifras": {
+          "categorias.M2_M3.tramos.0.hasta_anos": "5 años",
+          "categorias.M2_M3.tramos.0.meses": "Anual",
+          "categorias.M2_M3.tramos.1.meses": "Semestral"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 6.1 RD 920/2017 (N1)",
+        "cita": "N1: Vehículos de motor concebidos y fabricados principalmente para el transporte de mercancías y cuya masa máxima no sea superior a 3,5 toneladas. Hasta 2 años: Exento. De 2 a 6 años: Bienal. De 6 a 10 años: Anual. De más de 10 años: Semestral.",
+        "cifras": {
+          "categorias.N1.tramos.0.hasta_anos": "2 años",
+          "categorias.N1.tramos.1.hasta_anos": "6 años",
+          "categorias.N1.tramos.1.meses": "Bienal",
+          "categorias.N1.tramos.2.hasta_anos": "10 años",
+          "categorias.N1.tramos.2.meses": "Anual",
+          "categorias.N1.tramos.3.meses": "Semestral"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 6.1 RD 920/2017 (N2, N3, O2, O3, O4)",
+        "cita": "N2,N3: Vehículos de motor concebidos y fabricados principalmente para el transporte de mercancías y cuya masa máxima sea superior a 3,5 toneladas O2 (excepto caravanas remolcadas de esta categoría),O3,O4: Remolques concebidos y fabricados para el transporte demercancías o de personas, así como para alojar personas. Hasta 10 años: Anual. De más de 10 años: Semestral.",
+        "cifras": {
+          "categorias.N2_N3_O.tramos.0.hasta_anos": "10 años",
+          "categorias.N2_N3_O.tramos.0.meses": "Anual",
+          "categorias.N2_N3_O.tramos.1.meses": "Semestral"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 6.1 RD 920/2017 (O2 caravanas)",
+        "cita": "O2 caravanas remolcadas. Hasta seis años: Exento. De más de 6 años: Bienal.",
+        "cifras": {
+          "categorias.O2_caravana.tramos.0.hasta_anos": "6 años",
+          "categorias.O2_caravana.tramos.1.meses": "Bienal"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 6.1 RD 920/2017 (L1e)",
+        "cita": "L1e: Ciclomotores: vehículos de dos ruedas con una velocidad máxima por construcción no superior a 45 km/h, de cilindrada inferior a igual a 50 cm3(combustión interna) o potencia continua nominal máxima inferior o igual a 4 kW (motores eléctricos). Hasta 3 años: Exento. De más de 3 años: Bienal.",
+        "cifras": {
+          "categorias.L1e.tramos.0.hasta_anos": "3 años",
+          "categorias.L1e.tramos.1.meses": "Bienal"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 6.1 RD 920/2017 (resto L)",
+        "cita": "Resto L: Vehículos de motor de dos o tres ruedas, gemelas o no, y cuadriciclos, destinados a circular por carretera, así como sus componentes o unidades técnicas. Hasta 4 años: Exento. De más de 4 años: Bienal.",
+        "cifras": {
+          "categorias.L.tramos.0.hasta_anos": "4 años",
+          "categorias.L.tramos.1.meses": "Bienal"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 6.1 RD 920/2017 (escuela)",
+        "cita": "a) Vehículos de escuela de conductores de las categorías M1 y L: Antigüedad: Hasta dos años: Exento. De dos a cinco años: Anual. De más de cinco años: Semestral.",
+        "cifras": {
+          "categorias.escuela_M1_L.tramos.0.hasta_anos": "dos años",
+          "categorias.escuela_M1_L.tramos.1.hasta_anos": "cinco años",
+          "categorias.escuela_M1_L.tramos.1.meses": "Anual",
+          "categorias.escuela_M1_L.tramos.2.meses": "Semestral"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 6.1 RD 920/2017 (taxis, ambulancias, transporte escolar)",
+        "cita": "b) Vehículos de la categoría M1 utilizados como ambulancias y taxis, y de transporte escolar y de menores. Antigüedad: Hasta cinco años: Anual. De más de cinco años: Semestral.",
+        "cifras": {
+          "categorias.M1_taxi_ambulancia_escolar.tramos.0.hasta_anos": "cinco años",
+          "categorias.M1_taxi_ambulancia_escolar.tramos.0.meses": "Anual",
+          "categorias.M1_taxi_ambulancia_escolar.tramos.1.meses": "Semestral"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 6.1 RD 920/2017",
+        "cita": "A efectos de la determinación de frecuencia, la antigüedad del vehículo deberá ser computada a partir de la fecha de primera matriculación o puesta en servicio que conste en el Registro de Vehículos del organismo autónomo Jefatura Central de Tráfico y que podrá ser consignada en el permiso de circulación o documento equivalente.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 6.5 RD 920/2017",
+        "cita": "5. El plazo de validez de las inspecciones técnicas periódicas se obtendrá adicionando a la fecha en la que el resultado de la inspección haya sido favorable la frecuencia indicada en este artículo. No obstante, si dicha fecha está comprendida en los 30 días naturales precedentes a la expiración del plazo de validez de la inspección anterior, el plazo de validez se obtendrá adicionando la frecuencia correspondiente a la citada fecha de expiración.",
+        "cifras": {
+          "margen_anticipo_dias": "30 días naturales"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 6.4 RD 920/2017",
+        "cita": "4. Los vehículos quad se equipararán a los de la categoría L (resto de L, por no corresponder con L1e), de la tabla anterior.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 6.3 RD 920/2017",
+        "cita": "3. En el caso de vehículos mixtos, la frecuencia de inspección aplicable será la correspondiente a la categoría N en la que el vehículo pueda catalogarse.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 4.2 RD 920/2017",
+        "cita": "2. El titular o arrendatario a largo plazo del vehículo deberá someterlo a las inspecciones técnicas que le sean exigibles según lo establecido en el artículo 5.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 17 RD 920/2017",
+        "cita": "Todo usuario de un vehículo matriculado en España o que vaya ser matriculado en España elegirá libremente la estación ITV del territorio nacional donde desee realizar la inspección técnica de vehículos, cualquiera que sea el tipo de inspección.",
+        "cifras": {}
+      }
+    ],
+    "avisos": [
+      "La fecha que vale es la anotada en la tarjeta ITV tras la última inspección favorable (art. 18 RD 920/2017): si la tienes, introdúcela.",
+      "Interpretación: la frecuencia se toma según la antigüedad del vehículo (desde la primera matriculación) en la fecha a la que se suma el plazo; cada tramo empieza el día en que el vehículo cumple esos años.",
+      "No se modelan los vehículos históricos (art. 6.2), los tractores y vehículos agrícolas o especiales, ni las inspecciones extraordinarias del art. 6.7."
+    ],
+    "categorias": {
+      "M1": {
+        "descripcion": "Turismos (M1): hasta ocho plazas además del conductor",
+        "tramos": [
+          {
+            "hasta_anos": 4,
+            "meses": null
+          },
+          {
+            "hasta_anos": 10,
+            "meses": 24
+          },
+          {
+            "hasta_anos": null,
+            "meses": 12
+          }
+        ]
+      },
+      "M2_M3": {
+        "descripcion": "Autobuses y microbuses (M2, M3)",
+        "tramos": [
+          {
+            "hasta_anos": 5,
+            "meses": 12
+          },
+          {
+            "hasta_anos": null,
+            "meses": 6
+          }
+        ]
+      },
+      "N1": {
+        "descripcion": "Furgonetas y vehículos de mercancías de hasta 3,5 t (N1); también los mixtos de esa categoría (art. 6.3)",
+        "tramos": [
+          {
+            "hasta_anos": 2,
+            "meses": null
+          },
+          {
+            "hasta_anos": 6,
+            "meses": 24
+          },
+          {
+            "hasta_anos": 10,
+            "meses": 12
+          },
+          {
+            "hasta_anos": null,
+            "meses": 6
+          }
+        ]
+      },
+      "N2_N3_O": {
+        "descripcion": "Camiones de más de 3,5 t (N2, N3) y remolques O2 (salvo caravanas), O3 y O4",
+        "tramos": [
+          {
+            "hasta_anos": 10,
+            "meses": 12
+          },
+          {
+            "hasta_anos": null,
+            "meses": 6
+          }
+        ]
+      },
+      "O2_caravana": {
+        "descripcion": "Caravanas remolcadas (O2)",
+        "tramos": [
+          {
+            "hasta_anos": 6,
+            "meses": null
+          },
+          {
+            "hasta_anos": null,
+            "meses": 24
+          }
+        ]
+      },
+      "L1e": {
+        "descripcion": "Ciclomotores de dos ruedas (L1e)",
+        "tramos": [
+          {
+            "hasta_anos": 3,
+            "meses": null
+          },
+          {
+            "hasta_anos": null,
+            "meses": 24
+          }
+        ]
+      },
+      "L": {
+        "descripcion": "Motocicletas, triciclos, cuadriciclos y quads (resto de la categoría L; art. 6.4)",
+        "tramos": [
+          {
+            "hasta_anos": 4,
+            "meses": null
+          },
+          {
+            "hasta_anos": null,
+            "meses": 24
+          }
+        ]
+      },
+      "escuela_M1_L": {
+        "descripcion": "Vehículos de autoescuela de las categorías M1 y L",
+        "tramos": [
+          {
+            "hasta_anos": 2,
+            "meses": null
+          },
+          {
+            "hasta_anos": 5,
+            "meses": 12
+          },
+          {
+            "hasta_anos": null,
+            "meses": 6
+          }
+        ]
+      },
+      "M1_taxi_ambulancia_escolar": {
+        "descripcion": "Turismos (M1) usados como taxi, ambulancia o transporte escolar y de menores",
+        "tramos": [
+          {
+            "hasta_anos": 5,
+            "meses": 12
+          },
+          {
+            "hasta_anos": null,
+            "meses": 6
+          }
+        ]
+      }
+    },
+    "margen_anticipo_dias": 30,
+    "tramite": {
+      "nombre": "Inspección técnica periódica del vehículo (ITV)",
+      "organismo": "Estaciones ITV habilitadas por la comunidad autónoma; puedes elegir cualquiera del territorio nacional (art. 17 RD 920/2017)",
+      "pasos": [
+        "Pide cita en la estación ITV que prefieras.",
+        "Lleva el vehículo con su tarjeta ITV y el permiso de circulación.",
+        "Si pasas la inspección en los 30 días naturales anteriores a la caducidad, el nuevo plazo se cuenta desde la caducidad, no desde el día de la inspección (art. 6.5)."
+      ],
+      "webs": [
+        "https://www.dgt.es/"
+      ]
+    }
+  },
+  "certificado_electronico": {
+    "fuente": {
+      "referencia": "art. 4.2 de la Ley 6/2020 y art. 12.1 del Real Decreto 1553/2005",
+      "en_vigor_desde": "2020-11-13",
+      "verificado": true,
+      "nota": "La ley solo fija el máximo; la vigencia concreta la fija el prestador (FNMT u otro) y figura en el propio certificado."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2020-14046",
+        "articulo": "art. 4.2 Ley 6/2020",
+        "cita": "2. El período de vigencia de los certificados cualificados no será superior a cinco años.",
+        "cifras": {
+          "vigencia_maxima_anos": "cinco años"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2005-21163",
+        "articulo": "art. 12.1 RD 1553/2005",
+        "cita": "1. Con independencia de lo que establece el artículo 6.1 sobre la validez del documento nacional de identidad, la vigencia de los certificados electrónicos reconocidos incorporados al mismo no podrá ser superior a cinco años.",
+        "cifras": {
+          "vigencia_maxima_dnie_anos": "cinco años"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2020-14046",
+        "articulo": "art. 7.1 Ley 6/2020",
+        "cita": "1. La identificación de la persona física que solicite un certificado cualificado exigirá su personación ante los encargados de verificarla y se acreditará mediante el Documento Nacional de Identidad, pasaporte u otros medios admitidos en Derecho. Podrá prescindirse de la personación de la persona física que solicite un certificado cualificado si su firma en la solicitud de expedición de un certificado cualificado ha sido legitimada en presencia notarial.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2020-14046",
+        "articulo": "art. 7.6 Ley 6/2020",
+        "cita": "6. Lo dispuesto en los apartados anteriores podrá no ser exigible cuando la identidad u otras circunstancias permanentes de los solicitantes de los certificados constaran ya al prestador de servicios de confianza en virtud de una relación preexistente, en la que, para la identificación del interesado, se hubiese empleado el medio señalado en el apartado 1 y el período de tiempo transcurrido desde la identificación fuese menor de cinco años.",
+        "cifras": {
+          "identificacion_previa_anos": "cinco años"
+        }
+      }
+    ],
+    "avisos": [
+      "La fecha de caducidad está en el propio certificado (en el gestor de certificados del navegador o del sistema): sin ella no se puede avisar con seguridad."
+    ],
+    "vigencia_maxima_anos": 5,
+    "vigencia_maxima_dnie_anos": 5,
+    "identificacion_previa_anos": 5,
+    "tramite": {
+      "nombre": "Renovación del certificado electrónico de persona física",
+      "organismo": "El prestador que lo expidió (para el certificado de ciudadano, la Fábrica Nacional de Moneda y Timbre - Real Casa de la Moneda)",
+      "pasos": [
+        "Renuévalo antes de que caduque desde la sede del prestador, con el certificado aún vigente instalado.",
+        "La renovación sin volver a identificarte en persona puede no exigirse si te identificaste hace menos de cinco años (art. 7.6 Ley 6/2020); si no, toca acreditar la identidad otra vez (art. 7.1).",
+        "Los certificados del DNI electrónico se renuevan en las oficinas de expedición del DNI (art. 12.1 RD 1553/2005)."
+      ],
+      "webs": [
+        "https://www.sede.fnmt.gob.es/"
+      ]
+    }
+  },
+  "seguro": {
+    "fuente": {
+      "referencia": "art. 22 de la Ley 50/1980, de Contrato de Seguro",
+      "en_vigor_desde": "2016-01-01",
+      "verificado": true,
+      "nota": "Redacción dada por la Ley 20/2015."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-1980-22501",
+        "articulo": "art. 22.1 Ley 50/1980",
+        "cita": "1. La duración del contrato será determinada en la póliza, la cual no podrá fijar un plazo superior a diez años. Sin embargo, podrá establecerse que se prorrogue una o más veces por un período no superior a un año cada vez.",
+        "cifras": {
+          "prorroga_maxima_anos": "un año"
+        }
+      },
+      {
+        "boe_id": "BOE-A-1980-22501",
+        "articulo": "art. 22.2 Ley 50/1980",
+        "cita": "2. Las partes pueden oponerse a la prórroga del contrato mediante una notificación escrita a la otra parte, efectuada con un plazo de, al menos, un mes de anticipación a la conclusión del período del seguro en curso cuando quien se oponga a la prórroga sea el tomador, y de dos meses cuando sea el asegurador.",
+        "cifras": {
+          "oposicion_tomador_meses": "un mes",
+          "oposicion_asegurador_meses": "dos meses"
+        }
+      },
+      {
+        "boe_id": "BOE-A-1980-22501",
+        "articulo": "art. 22.3 Ley 50/1980",
+        "cita": "3. El asegurador deberá comunicar al tomador, al menos con dos meses de antelación a la conclusión del período en curso, cualquier modificación del contrato de seguro.",
+        "cifras": {
+          "comunicacion_modificacion_meses": "dos meses"
+        }
+      },
+      {
+        "boe_id": "BOE-A-1980-22501",
+        "articulo": "art. 22.5 Ley 50/1980",
+        "cita": "5. Lo dispuesto en los apartados precedentes no será de aplicación en cuanto sea incompatible con la regulación del seguro sobre la vida.",
+        "cifras": {}
+      }
+    ],
+    "avisos": [
+      "Las condiciones y plazos de la oposición a la prórroga deben figurar destacados en tu póliza (art. 22.4): si la póliza da otro plazo, prevalece lo que diga y te favorezca."
+    ],
+    "prorroga_maxima_anos": 1,
+    "oposicion_tomador_meses": 1,
+    "oposicion_asegurador_meses": 2,
+    "comunicacion_modificacion_meses": 2,
+    "tramite": {
+      "nombre": "Oposición a la prórroga del seguro (si no quieres renovarlo)",
+      "organismo": "Tu aseguradora",
+      "pasos": [
+        "Compara antes la renovación con otras ofertas: la aseguradora debe comunicarte cualquier cambio al menos dos meses antes (art. 22.3).",
+        "Si no quieres renovar, notifícalo por escrito a la aseguradora al menos un mes antes del vencimiento (art. 22.2)."
+      ],
+      "webs": []
+    }
+  },
+  "garantia": {
+    "fuente": {
+      "referencia": "arts. 120 a 124 del TRLGDCU (RDLeg. 1/2007), redacción del Real Decreto-ley 7/2021",
+      "en_vigor_desde": "2022-01-01",
+      "verificado": true,
+      "nota": "Se aplica a las compras de un consumidor a un empresario. Antes del 1 de enero de 2022 regía otra redacción (dos años), que no se modela."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2007-20555",
+        "articulo": "art. 120.1 TRLGDCU",
+        "cita": "1. En el caso de contrato de compraventa de bienes o de suministro de contenidos o servicios digitales suministrados en un acto único o en una serie de actos individuales, el empresario será responsable de las faltas de conformidad que existan en el momento de la entrega o del suministro y se manifiesten en un plazo de tres años desde la entrega en el caso de bienes o de dos años en el caso de contenidos o servicios digitales, sin perjuicio de lo dispuesto en el artículo 115 ter, apartado 2, letras a) y b). En los bienes de segunda mano, el empresario y el consumidor o usuario podrán pactar un plazo menor al indicado en el párrafo anterior, que no podrá ser inferior a un año desde la entrega.",
+        "cifras": {
+          "bienes_anos": "tres años",
+          "digital_anos": "dos años",
+          "segunda_mano_minimo_anos": "un año"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-20555",
+        "articulo": "art. 121.1 TRLGDCU",
+        "cita": "1. Salvo prueba en contrario, se presumirá que las faltas de conformidad que se manifiesten en los dos años siguientes a la entrega del bien o en el año siguiente al suministro del contenido o servicio digital suministrado en un acto único o en una serie de actos individuales, ya existían cuando el bien se entregó o el contenido o servicio digital se suministró, excepto cuando para los bienes esta presunción sea incompatible con su naturaleza o la índole de la falta de conformidad. En los bienes de segunda mano, el empresario y el consumidor y usuario podrán pactar un plazo de presunción menor al indicado en el párrafo anterior, que no podrá ser inferior al período de responsabilidad pactado por la falta de conformidad, de acuerdo con lo previsto en el artículo 120.1.",
+        "cifras": {
+          "presuncion_bienes_anos": "dos años",
+          "presuncion_digital_anos": "el año siguiente"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-20555",
+        "articulo": "art. 122.3 TRLGDCU",
+        "cita": "3. Durante el año posterior a la entrega del bien o el suministro del contenido o servicio digital ya conforme, el empresario responderá de las faltas de conformidad que motivaron la puesta en conformidad, presumiéndose que se trata de la misma falta de conformidad cuando se reproduzcan los defectos del mismo origen que los inicialmente manifestados.",
+        "cifras": {
+          "tras_reparacion_anos": "el año posterior"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-20555",
+        "articulo": "art. 123.1 TRLGDCU",
+        "cita": "1. Salvo prueba en contrario, la entrega o el suministro se entienden hechos en el día que figure en la factura o tique de compra, o en el albarán de entrega correspondiente si este fuera posterior.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2007-20555",
+        "articulo": "art. 124 TRLGDCU",
+        "cita": "La acción para reclamar el cumplimiento de lo previsto en el capítulo II de este título prescribirá a los cinco años desde la manifestación de la falta de conformidad.",
+        "cifras": {
+          "prescripcion_anos": "cinco años"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-20555",
+        "articulo": "art. 120.2 TRLGDCU",
+        "cita": "2. En el caso de contenidos o servicios digitales o de bienes con elementos digitales, cuando el contrato prevea el suministro continuo de contenidos o servicios digitales durante un período de tiempo determinado, el empresario será responsable de cualquier falta de conformidad de los contenidos o servicios digitales que se produzca o se manifieste dentro del plazo durante el cual deben suministrarse los contenidos o servicios digitales de acuerdo con el contrato. No obstante, si el contrato de compraventa de bienes con elementos digitales establece el suministro continuo de los contenidos o servicios digitales durante un período inferior a tres años, el plazo de responsabilidad será de tres años a partir del momento de la entrega.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2007-20555",
+        "articulo": "art. 114.2 TRLGDCU",
+        "cita": "2. Lo previsto en este título no será de aplicación a: a) Los animales vivos. b) Los bienes de segunda mano adquiridos en subasta administrativa a la que los consumidores y usuarios puedan asistir personalmente. c) La prestación de servicios distintos de los servicios digitales, independientemente de que el empresario haya utilizado formas o medios digitales para obtener el resultado del servicio o para entregarlo o transmitirlo al consumidor o usuario.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2021-6872",
+        "articulo": "disposición final octava.d) RDL 7/2021",
+        "cita": "d) El artículo decimosexto, que entrará en vigor el 1 de enero de 2022, salvo los artículos 126 y 126 bis que se aplicarán solo a los contratos celebrados a partir de esa fecha.",
+        "cifras": {}
+      }
+    ],
+    "avisos": [
+      "Es la garantía legal frente al vendedor; una garantía comercial adicional (art. 127) es aparte y su plazo es el que diga su documento.",
+      "Las reparaciones suspenden el cómputo de estos plazos (art. 122.1): si has tenido el producto en reparación, la garantía termina más tarde."
+    ],
+    "bienes_anos": 3,
+    "digital_anos": 2,
+    "segunda_mano_minimo_anos": 1,
+    "presuncion_bienes_anos": 2,
+    "presuncion_digital_anos": 1,
+    "tras_reparacion_anos": 1,
+    "prescripcion_anos": 5,
+    "en_vigor_desde": "2022-01-01"
+  },
+  "desistimiento": {
+    "fuente": {
+      "referencia": "arts. 102 a 105 del TRLGDCU y art. 5.1 del Código Civil",
+      "en_vigor_desde": "2022-05-28",
+      "verificado": true,
+      "nota": "Solo para contratos a distancia o fuera del establecimiento (art. 92); en una tienda física no hay derecho legal de desistimiento, solo la política comercial de la tienda."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2007-20555",
+        "articulo": "art. 102.1 TRLGDCU",
+        "cita": "1. Salvo las excepciones previstas en el artículo 103, el consumidor o usuario tendrá derecho a desistir del contrato durante un periodo de catorce días naturales sin indicar el motivo y sin incurrir en ningún coste distinto de los previstos en los artículos 107.2 y 108. En el caso de los contratos celebrados en el contexto de visitas no solicitadas efectuadas por el empresario en el domicilio del consumidor o usuario o de excursiones organizadas por el empresario con el objetivo o efecto de promocionar o vender bienes o servicios, el plazo de desistimiento se amplía a treinta días naturales.",
+        "cifras": {
+          "dias": "catorce días naturales",
+          "dias_ampliado": "treinta días naturales"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-20555",
+        "articulo": "art. 104 TRLGDCU",
+        "cita": "Sin perjuicio de lo dispuesto en el artículo 105, el plazo de desistimiento concluirá a los catorce días naturales o, en su caso, a los treinta días naturales, contados a partir de: a) El día de la celebración del contrato, en el caso de los contratos de servicios.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2007-20555",
+        "articulo": "art. 104.c) TRLGDCU",
+        "cita": "c) En el caso de los contratos para el suministro de agua, gas o electricidad –cuando no estén envasados para la venta en un volumen delimitado o en cantidades determinadas–, o de calefacción mediante sistemas urbanos o de contenido digital que no se preste en un soporte material, el día en que se celebre el contrato.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2007-20555",
+        "articulo": "art. 105.1 TRLGDCU",
+        "cita": "1. Si el empresario no ha facilitado al consumidor o usuario la información sobre el derecho de desistimiento, tal como se establece en el artículo 97.1.j), el periodo de desistimiento finalizará doce meses después de la fecha de expiración del periodo de desistimiento inicial, determinada de conformidad con el artículo 104.",
+        "cifras": {
+          "prorroga_sin_informacion_meses": "doce meses"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-20555",
+        "articulo": "art. 92.1 TRLGDCU",
+        "cita": "1. Se regirán por lo dispuesto en este título los contratos celebrados a distancia con los consumidores y usuarios en el marco de un sistema organizado de venta o prestación de servicios a distancia, sin la presencia física simultánea del empresario y del consumidor y usuario, y en el que se hayan utilizado exclusivamente una o más técnicas de comunicación a distancia hasta el momento de la celebración del contrato y en la propia celebración del mismo. Entre otras, tienen la consideración de técnicas de comunicación a distancia: el correo postal, Internet, el teléfono o el fax.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2007-20555",
+        "articulo": "art. 92.2 TRLGDCU",
+        "cita": "2. Las disposiciones de este título serán también de aplicación a los siguientes contratos celebrados con consumidores y usuarios fuera del establecimiento mercantil: a) Contratos celebrados con la presencia física simultánea del empresario y del consumidor y usuario, en un lugar distinto al establecimiento mercantil del empresario.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-1889-4763",
+        "articulo": "art. 5.1 Código Civil",
+        "cita": "1. Siempre que no se establezca otra cosa, en los plazos señalados por días, a contar de uno determinado, quedará éste excluido del cómputo, el cual deberá empezar en el día siguiente; y si los plazos estuviesen fijados por meses o años, se computarán de fecha a fecha. Cuando en el mes del vencimiento no hubiera día equivalente al inicial del cómputo, se entenderá que el plazo expira el último del mes.",
+        "cifras": {}
+      }
+    ],
+    "avisos": [
+      "El plazo se cuenta desde el día en que recibes el bien (si el pedido llega en varias entregas, desde la última); para servicios y contenido digital sin soporte, desde la celebración del contrato (art. 104).",
+      "El día de la entrega no se cuenta (art. 5.1 del Código Civil): el plazo empieza al día siguiente y los días inhábiles sí cuentan."
+    ],
+    "dias": 14,
+    "dias_ampliado": 30,
+    "prorroga_sin_informacion_meses": 12,
+    "excepciones": [
+      {
+        "letra": "a",
+        "texto": "a) La prestación de servicios, una vez que el servicio haya sido completamente ejecutado, y si el contrato impone al consumidor o usuario una obligación de pago, cuando la ejecución haya comenzado, con previo consentimiento expreso del consumidor o usuario y con el conocimiento por su parte de que, una vez que el empresario haya ejecutado íntegramente el contrato, habrá perdido su derecho de desistimiento."
+      },
+      {
+        "letra": "b",
+        "texto": "b) El suministro de bienes o la prestación de servicios cuyo precio dependa de fluctuaciones del mercado financiero que el empresario no pueda controlar y que puedan producirse durante el periodo de desistimiento."
+      },
+      {
+        "letra": "c",
+        "texto": "c) El suministro de bienes confeccionados conforme a las especificaciones del consumidor y usuario o claramente personalizados."
+      },
+      {
+        "letra": "d",
+        "texto": "d) El suministro de bienes que puedan deteriorarse o caducar con rapidez."
+      },
+      {
+        "letra": "e",
+        "texto": "e) El suministro de bienes precintados que no sean aptos para ser devueltos por razones de protección de la salud o de higiene y que hayan sido desprecintados tras la entrega."
+      },
+      {
+        "letra": "f",
+        "texto": "f) El suministro de bienes que después de su entrega y teniendo en cuenta su naturaleza se hayan mezclado de forma indisociable con otros bienes."
+      },
+      {
+        "letra": "g",
+        "texto": "g) El suministro de bebidas alcohólicas cuyo precio haya sido acordado en el momento de celebrar el contrato de venta y que no puedan ser entregadas antes de 30 días, y cuyo valor real dependa de fluctuaciones del mercado que el empresario no pueda controlar."
+      },
+      {
+        "letra": "h",
+        "texto": "h) Los contratos en los que el consumidor y usuario haya solicitado específicamente al empresario que le visite para efectuar operaciones de reparación o mantenimiento urgente; si, en esa visita, el empresario presta servicios adicionales a los solicitados específicamente por el consumidor o suministra bienes distintos de las piezas de recambio utilizadas necesariamente para efectuar las operaciones de mantenimiento o reparación, el derecho de desistimiento debe aplicarse a dichos servicios o bienes adicionales."
+      },
+      {
+        "letra": "i",
+        "texto": "i) El suministro de grabaciones sonoras o de vídeo precintadas o de programas informáticos precintados que hayan sido desprecintados por el consumidor y usuario después de la entrega."
+      },
+      {
+        "letra": "j",
+        "texto": "j) El suministro de prensa diaria, publicaciones periódicas o revistas, con la excepción de los contratos de suscripción para el suministro de tales publicaciones."
+      },
+      {
+        "letra": "k",
+        "texto": "k) Los contratos celebrados mediante subastas públicas."
+      },
+      {
+        "letra": "l",
+        "texto": "l) El suministro de servicios de alojamiento para fines distintos del de servir de vivienda, transporte de bienes, alquiler de vehículos, comida o servicios relacionados con actividades de esparcimiento, si los contratos prevén una fecha o un periodo de ejecución específicos."
+      },
+      {
+        "letra": "m",
+        "texto": "m) El suministro de contenido digital que no se preste en un soporte material cuando la ejecución haya comenzado y, si el contrato impone al consumidor o usuario una obligación de pago, cuando se den las siguientes condiciones: 1.º El consumidor o usuario haya otorgado su consentimiento previo para iniciar la ejecución durante el plazo del derecho de desistimiento. 2.º El consumidor o usuario haya expresado su conocimiento de que, en consecuencia, pierde su derecho de desistimiento; y 3.º El empresario haya proporcionado una confirmación con arreglo al artículo 98.7 o al artículo 99.2."
+      }
+    ],
+    "tramite": {
+      "nombre": "Ejercicio del derecho de desistimiento",
+      "organismo": "El vendedor",
+      "pasos": [
+        "Comunica al vendedor, dentro del plazo, que desistes del contrato (por el formulario de desistimiento o una declaración inequívoca; art. 106).",
+        "Devuelve el bien; el vendedor debe reembolsarte lo pagado (art. 107)."
+      ],
+      "webs": []
+    }
+  },
+  "computo": {
+    "fuente": {
+      "referencia": "art. 5.1 del Código Civil",
+      "en_vigor_desde": "1974-07-29",
+      "verificado": true,
+      "nota": "Regla general de cómputo de plazos civiles: por días, excluido el inicial; por meses o años, de fecha a fecha, y si no hay día equivalente, el último del mes."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-1889-4763",
+        "articulo": "art. 5.1 Código Civil",
+        "cita": "1. Siempre que no se establezca otra cosa, en los plazos señalados por días, a contar de uno determinado, quedará éste excluido del cómputo, el cual deberá empezar en el día siguiente; y si los plazos estuviesen fijados por meses o años, se computarán de fecha a fecha. Cuando en el mes del vencimiento no hubiera día equivalente al inicial del cómputo, se entenderá que el plazo expira el último del mes.",
+        "cifras": {}
+      }
+    ],
+    "avisos": []
+  },
+  "no_modelado": [
+    "Validez excepcional del DNI (art. 6.2 RD 1553/2005) y de duplicados (art. 8).",
+    "Validez limitada del pasaporte (art. 5.3 a 5.8 RD 896/2003); para menores de catorce años sin DNI, la validez máxima hasta los catorce (art. 5.2) se avisa pero no se calcula.",
+    "Reducción de la vigencia del permiso por motivos de salud (art. 12.3 RGC), pérdida de puntos y permisos extranjeros.",
+    "ITV de vehículos históricos, tractores, vehículos agrícolas y especiales, e inspecciones extraordinarias.",
+    "Vigencia concreta de cada certificado electrónico (la fija el prestador).",
+    "Garantía de compras entregadas antes del 1 de enero de 2022 (redacción anterior del TRLGDCU), suministro continuo de contenidos digitales (art. 120.2), suspensión por reparación (art. 122) y garantías comerciales (art. 127) salvo la fecha que introduzcas.",
+    "Plazo de desistimiento ampliado por falta de información (art. 105): se explica, no se calcula."
+  ]
+}

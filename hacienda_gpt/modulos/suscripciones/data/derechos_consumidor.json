@@ -1,0 +1,549 @@
+{
+  "version": "2026-11-13",
+  "descripcion": "Derechos de la persona consumidora ante suscripciones y servicios de tracto sucesivo, leídos del BOE (textos consolidados). Cada cita es literal; cada cifra figura en su cita.",
+  "fuentes_principales": {
+    "BOE-A-2007-20555": {
+      "norma": "Real Decreto Legislativo 1/2007, de 16 de noviembre, por el que se aprueba el texto refundido de la Ley General para la Defensa de los Consumidores y Usuarios y otras leyes complementarias (texto consolidado)",
+      "boe_id": "BOE-A-2007-20555",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2007-20555",
+      "consolidado_a": "2026-11-04",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "59e6263dc1b003f797cf12c6af853e04afd81e6dfa4279b841405896de4309b9"
+    },
+    "BOE-A-1980-22501": {
+      "norma": "Ley 50/1980, de 8 de octubre, de Contrato de Seguro (texto consolidado)",
+      "boe_id": "BOE-A-1980-22501",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1980-22501",
+      "consolidado_a": "2026-10-03",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "125942b54cd95a2ea57af6ffbca62dd1ca2cf15bd73ccb806b7d567ad65563c3"
+    },
+    "BOE-A-2022-10757": {
+      "norma": "Ley 11/2022, de 28 de junio, General de Telecomunicaciones (texto consolidado)",
+      "boe_id": "BOE-A-2022-10757",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2022-10757",
+      "consolidado_a": "2025-12-27",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "3efa8b5faa7a04bcdd8fc1e82797c568af082161a92972f5cde4b18c2c48d00f"
+    },
+    "BOE-A-2009-8961": {
+      "norma": "Real Decreto 899/2009, de 22 de mayo, por el que se aprueba la carta de derechos del usuario de los servicios de comunicaciones electrónicas (texto consolidado)",
+      "boe_id": "BOE-A-2009-8961",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2009-8961",
+      "consolidado_a": "2009-05-30",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "6c11dba5ad0dec436007758480fb44856af2a9edf86613948f7aef783ee6d2f2"
+    },
+    "BOE-A-2025-26698": {
+      "norma": "Ley 10/2025, de 26 de diciembre, por la que se regulan los servicios de atención a la clientela (texto consolidado)",
+      "boe_id": "BOE-A-2025-26698",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2025-26698",
+      "consolidado_a": "2025-12-27",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "2c642a704aa0bbdfe22fea15fef36b32cca7b8c505395a508bf238c5d8ad7fc7"
+    },
+    "BOE-A-2018-16036": {
+      "norma": "Real Decreto-ley 19/2018, de 23 de noviembre, de servicios de pago y otras medidas urgentes en materia financiera (texto consolidado)",
+      "boe_id": "BOE-A-2018-16036",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2018-16036",
+      "consolidado_a": "2023-12-28",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "29bf1d13110aff9655e8cf7a20445561948adb8c3345d7d8a53eb5d50edd818f"
+    }
+  },
+  "no_modelado": [
+    "No se comprueba si el contrato concreto se celebró a distancia (requisito del aviso de renovación del art. 97.1.p y del desistimiento) ni si la empresa entra en el ámbito de la Ley 10/2025 (art. 2).",
+    "No se modelan las excepciones al desistimiento del art. 103 TRLGDCU ni el art. 105 (ampliación del plazo cuando no se informó del derecho).",
+    "Seguros: no se modela el seguro de vida (art. 22.5 LCS) ni la disposición transitoria 13.ª de la Ley 20/2015.",
+    "Normativa autonómica de consumo (p. ej. reglas de baja en gimnasios de algunas comunidades) no incluida.",
+    "Suministros de electricidad y gas: su normativa sectorial de baja y cambio de comercializadora no está incluida.",
+    "Préstamos: la amortización anticipada se rige por su normativa propia (no incluida); no se preparan cartas de baja para préstamos."
+  ],
+  "derechos": {
+    "baja_tracto_sucesivo": {
+      "titulo": "Derecho a darse de baja de un servicio de tracto sucesivo",
+      "resumen": "En los contratos de servicios que se prestan de forma continuada (suscripciones, gimnasios, suministros…) la empresa no puede impedir ni dificultar la baja: puedes darte de baja por el mismo medio por el que contrataste, sin penalizaciones desproporcionadas, y el contrato debe decir cómo hacerlo.",
+      "sectores": [
+        "general",
+        "telecomunicaciones",
+        "seguros",
+        "suministros"
+      ],
+      "fuente": {
+        "referencia": "Art. 62.3 y 62.4 TRLGDCU",
+        "en_vigor_desde": "2007-12-01",
+        "verificado": true,
+        "nota": "Apartado 1 del art. 62 modificado por la Ley 10/2025 (en vigor desde el 28/12/2025); los apartados 3 y 4 citados no cambian."
+      },
+      "valores": {},
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 62.3",
+          "cita": "En particular, en los contratos de prestación de servicios o suministro de productos de tracto sucesivo o continuado se prohíben las cláusulas que establezcan plazos de duración excesiva o limitaciones que excluyan u obstaculicen el derecho del consumidor y usuario a poner fin al contrato.",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 62.3, párrafo segundo",
+          "cita": "El consumidor y usuario podrá ejercer su derecho a poner fin al contrato en la misma forma en que lo celebró, sin ningún tipo de sanción o de cargas onerosas o desproporcionadas, tales como la pérdida de las cantidades abonadas por adelantado, el abono de cantidades por servicios no prestados efectivamente, la ejecución unilateral de las cláusulas penales que se hubieran fijado contractualmente o la fijación de indemnizaciones que no se correspondan con los daños efectivamente causados.",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 62.4",
+          "cita": "Los contratos de prestación de servicios o suministro de productos de tracto sucesivo o continuado deberán contemplar expresamente el procedimiento a través del cual el consumidor y usuario puede ejercer su derecho a poner fin al contrato.",
+          "cifras": {}
+        }
+      ]
+    },
+    "permanencia_proporcional": {
+      "titulo": "Penalización por permanencia proporcional",
+      "resumen": "Si tenías un compromiso de permanencia y te das de baja antes, la penalización solo puede ser proporcional a los días que faltaban.",
+      "sectores": [
+        "general",
+        "telecomunicaciones"
+      ],
+      "fuente": {
+        "referencia": "Art. 62.5 TRLGDCU",
+        "en_vigor_desde": "2022-01-01",
+        "verificado": true,
+        "nota": "Añadido por el art. 16.4 del Real Decreto-ley 7/2021, con efectos de 1 de enero de 2022."
+      },
+      "valores": {},
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 62.5",
+          "cita": "En caso de que el usuario incumpla el compromiso de permanencia adquirido con la empresa, la penalización por baja o cese prematuro de la relación contractual, será proporcional al número de días no efectivos del compromiso de permanencia acordado.",
+          "cifras": {}
+        }
+      ]
+    },
+    "prorroga_automatica": {
+      "titulo": "Prórroga automática con plazo de preaviso que no permite oponerse",
+      "resumen": "Es abusiva la cláusula que renueva automáticamente un contrato de duración determinada fijando una fecha límite para oponerse que en la práctica no permite hacerlo.",
+      "sectores": [
+        "general"
+      ],
+      "fuente": {
+        "referencia": "Art. 85.2 TRLGDCU",
+        "en_vigor_desde": "2007-12-01",
+        "verificado": true
+      },
+      "valores": {},
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 85, encabezamiento",
+          "cita": "Las cláusulas que vinculen cualquier aspecto del contrato a la voluntad del empresario serán abusivas y, en todo caso, las siguientes:",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 85.2",
+          "cita": "Las cláusulas que prevean la prórroga automática de un contrato de duración determinada si el consumidor y usuario no se manifiesta en contra, fijando una fecha límite que no permita de manera efectiva al consumidor y usuario manifestar su voluntad de no prorrogarlo.",
+          "cifras": {}
+        }
+      ]
+    },
+    "subida_precio": {
+      "titulo": "Subidas de precio unilaterales",
+      "resumen": "Es abusiva la cláusula que permite a la empresa subir el precio sin razones objetivas y sin reconocerte el derecho a resolver el contrato si el precio final resulta muy superior al pactado (salvo actualizaciones conforme a un índice legal descrito en el contrato).",
+      "sectores": [
+        "general"
+      ],
+      "fuente": {
+        "referencia": "Art. 85.10 TRLGDCU",
+        "en_vigor_desde": "2007-12-01",
+        "verificado": true
+      },
+      "valores": {},
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 85, encabezamiento",
+          "cita": "Las cláusulas que vinculen cualquier aspecto del contrato a la voluntad del empresario serán abusivas y, en todo caso, las siguientes:",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 85.10",
+          "cita": "Las cláusulas que prevean la estipulación del precio en el momento de la entrega del bien o servicio o las que otorguen al empresario la facultad de aumentar el precio final sobre el convenido, sin que en ambos casos existan razones objetivas y sin reconocer al consumidor y usuario el derecho a resolver el contrato si el precio final resulta muy superior al inicialmente estipulado.",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 85.10, párrafo segundo",
+          "cita": "Lo establecido en el párrafo anterior se entenderá sin perjuicio de la adaptación de precios a un índice, siempre que tales índices sean legales y que en el contrato se describa explícitamente el modo de variación del precio.",
+          "cifras": {}
+        }
+      ]
+    },
+    "aviso_renovacion": {
+      "titulo": "Aviso previo a la renovación (contratos a distancia o fuera del establecimiento)",
+      "resumen": "En los contratos a distancia o fuera del establecimiento de duración determinada y sujetos a renovación, la empresa debe avisarte con quince días de antelación al vencimiento del plazo para comunicar que no quieres renovar.",
+      "sectores": [
+        "general"
+      ],
+      "fuente": {
+        "referencia": "Art. 97.1.p) TRLGDCU",
+        "en_vigor_desde": "2025-12-28",
+        "verificado": true,
+        "nota": "Letra p) del apartado 1 en la redacción de la disposición final 3.6 de la Ley 10/2025, de 26 de diciembre (en vigor desde el 28/12/2025)."
+      },
+      "valores": {
+        "antelacion_dias": "15"
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 97.1, encabezamiento",
+          "cita": "Antes de que el consumidor y usuario quede vinculado por cualquier contrato a distancia o celebrado fuera del establecimiento o cualquier oferta correspondiente, el empresario le facilitará de forma clara y comprensible",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 97.1.p), párrafo segundo",
+          "cita": "En aquellos contratos de duración determinada, sujetos a renovación, se informará al consumidor o usuario, con quince días de antelación de forma previa al vencimiento del plazo para comunicar la voluntad de no renovación, del vencimiento de dicho plazo y de las consecuencias de no comunicar la cancelación de la renovación.",
+          "cifras": {
+            "antelacion_dias": "quince días"
+          }
+        }
+      ]
+    },
+    "desistimiento": {
+      "titulo": "Desistimiento de contratos a distancia",
+      "resumen": "En un contrato de servicios celebrado a distancia (internet, teléfono) puedes desistir sin dar motivos durante catorce días naturales desde que lo celebraste, salvo las excepciones del art. 103 TRLGDCU.",
+      "sectores": [
+        "general"
+      ],
+      "fuente": {
+        "referencia": "Arts. 102.1 y 104.a) TRLGDCU",
+        "en_vigor_desde": "2022-05-28",
+        "verificado": true
+      },
+      "valores": {
+        "plazo_dias": "14"
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 102.1",
+          "cita": "Salvo las excepciones previstas en el artículo 103, el consumidor o usuario tendrá derecho a desistir del contrato durante un periodo de catorce días naturales sin indicar el motivo y sin incurrir en ningún coste distinto de los previstos en los artículos 107.2 y 108.",
+          "cifras": {
+            "plazo_dias": "catorce días naturales"
+          }
+        },
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 104",
+          "cita": "Sin perjuicio de lo dispuesto en el artículo 105, el plazo de desistimiento concluirá a los catorce días naturales o, en su caso, a los treinta días naturales, contados a partir de:",
+          "cifras": {
+            "plazo_dias": "catorce días naturales"
+          }
+        },
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 104.a)",
+          "cita": "a) El día de la celebración del contrato, en el caso de los contratos de servicios.",
+          "cifras": {}
+        }
+      ]
+    },
+    "atencion_cliente": {
+      "titulo": "Canales para reclamar y plazo de respuesta (TRLGDCU)",
+      "resumen": "La empresa debe aceptar tus reclamaciones al menos por el medio por el que contrataste, por correo postal, por teléfono y por un medio electrónico, y responderlas como máximo en quince días.",
+      "sectores": [
+        "general",
+        "telecomunicaciones",
+        "seguros",
+        "suministros"
+      ],
+      "fuente": {
+        "referencia": "Art. 21.3 TRLGDCU",
+        "en_vigor_desde": "2025-12-28",
+        "verificado": true,
+        "nota": "Apartado 3 modificado por la Ley 10/2025, de 26 de diciembre."
+      },
+      "valores": {
+        "plazo_respuesta_dias": "15"
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 21.3",
+          "cita": "que deberá incluir, al menos, el medio por el que se inició la relación contractual, así como la vía postal, telefónica y un medio de comunicación electrónica.",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 21.3, párrafo segundo",
+          "cita": "Los empresarios deberán dar respuesta a las reclamaciones recibidas en el plazo más breve posible y, en todo caso, en el plazo máximo de quince días desde la presentación de la reclamación.",
+          "cifras": {
+            "plazo_respuesta_dias": "quince días"
+          }
+        }
+      ]
+    },
+    "atencion_clientela_ley_10_2025": {
+      "titulo": "Ley 10/2025 de servicios de atención a la clientela",
+      "resumen": "Para las empresas de servicios básicos (agua, gas, electricidad, transporte, postales, comunicaciones electrónicas, financieros) y las grandes empresas: deben admitir tu solicitud (incluida la baja, que la ley llama «incidencia») por el mismo canal por el que contrataste y por correo postal, teléfono y un medio electrónico; resolverla en quince días hábiles como máximo, y en cinco días si es sobre facturación o cobros indebidos. Tienen doce meses desde la entrada en vigor de la ley (28/12/2025) para adaptar sus servicios.",
+      "sectores": [
+        "general",
+        "telecomunicaciones",
+        "seguros",
+        "suministros"
+      ],
+      "fuente": {
+        "referencia": "Arts. 2, 3.4, 7.1 y 17 y disposición transitoria única de la Ley 10/2025",
+        "en_vigor_desde": "2025-12-28",
+        "verificado": true,
+        "nota": "Ámbito: art. 2.1 (servicios básicos de interés general, cualquier tamaño) y art. 2.2 (resto de empresas solo si superan 250 trabajadores, 50 millones de volumen de negocio o 43 millones de balance). El modelo no comprueba el tamaño de la empresa."
+      },
+      "valores": {
+        "plazo_resolucion_dias_habiles": "15",
+        "plazo_cobros_indebidos_dias": "5",
+        "meses_adaptacion": "12"
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2025-26698",
+          "articulo": "art. 2.1",
+          "cita": "Esta ley será de aplicación a todas las empresas, establecidas en España o en cualquier otro Estado, que lleven a cabo la ejecución efectiva de los siguientes servicios de carácter básico de interés general, ofrecidos o prestados en territorio español:",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2025-26698",
+          "articulo": "art. 3.4",
+          "cita": "Incidencia: cualquier gestión relativa a la ejecución del contrato o de la oferta comercial realizada, tal como la comunicación de averías, la solicitud de baja del servicio en su conjunto o de alguna de las prestaciones o facilidades adicionales, el alta en una nueva oferta, el cambio de tarifas o del plan de precios y otras análogas.",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2025-26698",
+          "articulo": "art. 7.1",
+          "cita": "Las empresas deberán admitir para la presentación de consultas, quejas, reclamaciones o incidencias la utilización del mismo canal a través del que se inició la relación contractual, así como, al menos, la vía postal, telefónica y por un medio de comunicación electrónica, garantizando siempre la accesibilidad universal.",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2025-26698",
+          "articulo": "art. 17.1",
+          "cita": "Las consultas, quejas, reclamaciones o incidencias, independientemente del medio a través del que se presenten, serán resueltas en el plazo más breve posible en función de la naturaleza del problema y, en todo caso, en el plazo máximo de quince días hábiles desde su presentación, salvo que la normativa sectorial establezca un plazo distinto.",
+          "cifras": {
+            "plazo_resolucion_dias_habiles": "quince días hábiles"
+          }
+        },
+        {
+          "boe_id": "BOE-A-2025-26698",
+          "articulo": "art. 17.3",
+          "cita": "En el caso de consultas, quejas, reclamaciones o incidencias relacionadas con facturación o cobros indebidos deberán ser respondidas en el plazo máximo de cinco días.",
+          "cifras": {
+            "plazo_cobros_indebidos_dias": "cinco días"
+          }
+        },
+        {
+          "boe_id": "BOE-A-2025-26698",
+          "articulo": "disposición transitoria única.1",
+          "cita": "Las empresas incluidas en el ámbito de aplicación de la presente ley deberán adaptar sus servicios de atención a la clientela a las disposiciones de la misma en el plazo de doce meses desde su entrada en vigor.",
+          "cifras": {
+            "meses_adaptacion": "doce meses"
+          }
+        }
+      ]
+    },
+    "seguro_oposicion_prorroga": {
+      "titulo": "Oposición a la prórroga de un seguro",
+      "resumen": "Un seguro (salvo el de vida en lo incompatible) se prorroga por periodos de un año como máximo; para que no se renueve, el tomador debe notificarlo por escrito con al menos un mes de antelación al fin del periodo en curso. La aseguradora debe comunicar cualquier modificación del contrato con dos meses de antelación.",
+      "sectores": [
+        "seguros"
+      ],
+      "fuente": {
+        "referencia": "Art. 22 de la Ley 50/1980, de Contrato de Seguro",
+        "en_vigor_desde": "2016-01-01",
+        "verificado": true,
+        "nota": "Redacción dada por la disposición final 1.3 de la Ley 20/2015; téngase en cuenta su disposición transitoria 13.ª."
+      },
+      "valores": {
+        "prorroga_maxima_anos": "1",
+        "preaviso_tomador_meses": "1",
+        "preaviso_asegurador_meses": "2",
+        "aviso_modificacion_meses": "2"
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-1980-22501",
+          "articulo": "art. 22.1",
+          "cita": "Sin embargo, podrá establecerse que se prorrogue una o más veces por un período no superior a un año cada vez.",
+          "cifras": {
+            "prorroga_maxima_anos": "un año"
+          }
+        },
+        {
+          "boe_id": "BOE-A-1980-22501",
+          "articulo": "art. 22.2",
+          "cita": "Las partes pueden oponerse a la prórroga del contrato mediante una notificación escrita a la otra parte, efectuada con un plazo de, al menos, un mes de anticipación a la conclusión del período del seguro en curso cuando quien se oponga a la prórroga sea el tomador, y de dos meses cuando sea el asegurador.",
+          "cifras": {
+            "preaviso_tomador_meses": "un mes",
+            "preaviso_asegurador_meses": "dos meses"
+          }
+        },
+        {
+          "boe_id": "BOE-A-1980-22501",
+          "articulo": "art. 22.3",
+          "cita": "El asegurador deberá comunicar al tomador, al menos con dos meses de antelación a la conclusión del período en curso, cualquier modificación del contrato de seguro.",
+          "cifras": {
+            "aviso_modificacion_meses": "dos meses"
+          }
+        },
+        {
+          "boe_id": "BOE-A-1980-22501",
+          "articulo": "art. 22.5",
+          "cita": "Lo dispuesto en los apartados precedentes no será de aplicación en cuanto sea incompatible con la regulación del seguro sobre la vida.",
+          "cifras": {}
+        }
+      ]
+    },
+    "telecom_duracion_y_baja": {
+      "titulo": "Duración máxima, prórroga y baja en servicios de telecomunicaciones",
+      "resumen": "Los contratos de telefonía e internet con consumidores no pueden durar más de veinticuatro meses; tras la prórroga automática puedes rescindir en cualquier momento con un preaviso máximo de un mes. La baja surte efecto con una antelación mínima de dos días hábiles y el operador no puede cobrar lo devengado después.",
+      "sectores": [
+        "telecomunicaciones"
+      ],
+      "fuente": {
+        "referencia": "Art. 67.7 Ley 11/2022 y art. 7 RD 899/2009",
+        "en_vigor_desde": "2022-06-30",
+        "verificado": true,
+        "nota": "El RD 899/2009 sigue vigente en lo que no se oponga a la Ley 11/2022 (disposición transitoria primera de esta)."
+      },
+      "valores": {
+        "duracion_maxima_meses": "24",
+        "preaviso_maximo_meses": "1",
+        "antelacion_baja_dias_habiles": "2"
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2022-10757",
+          "articulo": "art. 67.7",
+          "cita": "Los contratos celebrados entre consumidores y operadores de servicios de comunicaciones electrónicas disponibles al público distintos de los servicios de transmisión utilizados para la prestación de servicios máquina a máquina, no tendrán un período de vigencia superior a veinticuatro meses.",
+          "cifras": {
+            "duracion_maxima_meses": "veinticuatro meses"
+          }
+        },
+        {
+          "boe_id": "BOE-A-2022-10757",
+          "articulo": "art. 67.7, párrafo tercero",
+          "cita": "Una vez que se cumpla el período de vigencia, dichos contratos quedan prorrogados automáticamente por el mismo periodo si bien, tras dicha prórroga, los usuarios finales tienen el derecho de rescindirlo en cualquier momento con un preaviso máximo de un mes sin contraer ningún coste excepto el de la recepción del servicio durante el período de preaviso.",
+          "cifras": {
+            "preaviso_maximo_meses": "un mes"
+          }
+        },
+        {
+          "boe_id": "BOE-A-2009-8961",
+          "articulo": "art. 7",
+          "cita": "El contrato se extinguirá por las causas generales de extinción de los contratos y, especialmente, por voluntad del abonado, comunicándolo previamente al operador con una antelación mínima de dos días hábiles al momento en que ha de surtir efectos.",
+          "cifras": {
+            "antelacion_baja_dias_habiles": "dos días hábiles"
+          }
+        },
+        {
+          "boe_id": "BOE-A-2009-8961",
+          "articulo": "art. 7, párrafo segundo",
+          "cita": "El operador se abstendrá de facturar y cobrar cualquier cantidad que se haya podido devengar, por causa no imputable al usuario final, con posterioridad al plazo de dos días en que debió surtir efectos la baja.",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2022-10757",
+          "articulo": "disposición transitoria primera",
+          "cita": "Las normas reglamentarias en materia de telecomunicaciones vigentes con anterioridad a la entrada en vigor de la presente ley o dictadas en desarrollo de la Ley 32/2003, de 3 de noviembre, General de Telecomunicaciones o de la Ley 9/2014, de 9 de mayo, General de Telecomunicaciones, continuarán vigentes en lo que no se opongan a esta ley, hasta que se apruebe su normativa de desarrollo.",
+          "cifras": {}
+        }
+      ]
+    },
+    "telecom_cambio_condiciones": {
+      "titulo": "Cambios de condiciones (incluido el precio) en telecomunicaciones",
+      "resumen": "El operador debe comunicarte cualquier cambio de condiciones con al menos un mes de antelación, y puedes rescindir sin coste en el plazo de un mes desde la comunicación si no los aceptas (salvo cambios exclusivamente a tu favor, meramente administrativos sin efectos negativos o impuestos por una norma).",
+      "sectores": [
+        "telecomunicaciones"
+      ],
+      "fuente": {
+        "referencia": "Art. 67.8 Ley 11/2022",
+        "en_vigor_desde": "2022-06-30",
+        "verificado": true
+      },
+      "valores": {
+        "antelacion_comunicacion_meses": "1",
+        "plazo_rescision_meses": "1"
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2022-10757",
+          "articulo": "art. 67.8",
+          "cita": "Los usuarios finales tienen el derecho de rescindir sus contratos sin contraer ningún coste adicional cuando el operador de los servicios de comunicaciones electrónicas disponibles al público les anuncie que propone introducir cambios en las condiciones contractuales, a menos que los cambios propuestos sean exclusivamente en beneficio del usuario final o sean de una naturaleza estrictamente administrativa y no tengan efectos negativos sobre los usuarios finales o vengan impuestos normativamente.",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2022-10757",
+          "articulo": "art. 67.8, párrafo segundo",
+          "cita": "Los operadores comunicarán a los usuarios finales, al menos con un mes de antelación, cualquier cambio de las condiciones contractuales y les informarán al mismo tiempo de su derecho a rescindir su contrato sin contraer ningún coste adicional si no aceptan las nuevas condiciones. El derecho de rescindir el contrato podrá ejercerse en el plazo de un mes a partir de la comunicación, la cual debe efectuarse de forma clara y comprensible y en un soporte duradero.",
+          "cifras": {
+            "antelacion_comunicacion_meses": "un mes",
+            "plazo_rescision_meses": "un mes"
+          }
+        }
+      ]
+    },
+    "devolucion_adeudos": {
+      "titulo": "Devolución de recibos domiciliados y cargos no autorizados",
+      "resumen": "Puedes pedir a tu banco la devolución de un recibo domiciliado SEPA autorizado durante ocho semanas desde el cargo, sin necesidad de justificarlo (salvo pacto del art. 48.4); el banco responde en diez días hábiles. Si el cargo no estaba autorizado (por ejemplo, un cobro después de la baja con tarjeta), comunícalo sin demora y como máximo en trece meses.",
+      "sectores": [
+        "general",
+        "telecomunicaciones",
+        "seguros",
+        "suministros"
+      ],
+      "fuente": {
+        "referencia": "Arts. 43.1, 48.2 y 49 del Real Decreto-ley 19/2018",
+        "en_vigor_desde": "2018-11-25",
+        "verificado": true,
+        "nota": "Devolver un recibo no da de baja el contrato ni extingue la deuda si el cargo era debido."
+      },
+      "valores": {
+        "plazo_devolucion_semanas": "8",
+        "plazo_respuesta_banco_dias_habiles": "10",
+        "plazo_no_autorizadas_meses": "13"
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2018-16036",
+          "articulo": "art. 48.2",
+          "cita": "el ordenante tendrá un derecho incondicional de devolución dentro de los plazos establecidos en el artículo 49.",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2018-16036",
+          "articulo": "art. 49.1",
+          "cita": "El ordenante podrá solicitar la devolución a que se refiere el artículo 48 por una operación de pago autorizada iniciada por un beneficiario o a través del mismo, durante un plazo de ocho semanas contadas a partir de la fecha de adeudo de los fondos en su cuenta.",
+          "cifras": {
+            "plazo_devolucion_semanas": "ocho semanas"
+          }
+        },
+        {
+          "boe_id": "BOE-A-2018-16036",
+          "articulo": "art. 49.2",
+          "cita": "En el plazo de diez días hábiles desde la recepción de una solicitud de devolución, el proveedor de servicios de pago deberá devolver el importe íntegro de la operación de pago",
+          "cifras": {
+            "plazo_respuesta_banco_dias_habiles": "diez días hábiles"
+          }
+        },
+        {
+          "boe_id": "BOE-A-2018-16036",
+          "articulo": "art. 43.1",
+          "cita": "El usuario de servicios de pago obtendrá la rectificación por parte del proveedor de servicios de pago de una operación de pago no autorizada o ejecutada incorrectamente únicamente si el usuario de servicios de pago se lo comunica sin demora injustificada, en cuanto tenga conocimiento de cualquiera de dichas operaciones que sea objeto de reclamación, incluso las cubiertas por el artículo 60, y, en todo caso, dentro de un plazo máximo de trece meses contados desde la fecha del adeudo.",
+          "cifras": {
+            "plazo_no_autorizadas_meses": "trece meses"
+          }
+        }
+      ]
+    }
+  }
+}

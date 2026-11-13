@@ -1,0 +1,7 @@
+# Extracto literal de https://www.boe.es/buscar/act.php?id=BOE-A-2009-8961 descargado el 2026-11-13. Texto consolidado: «Texto inicial publicado el 30/05/2009»
+# Solo los artículos citados en hacienda_gpt/modulos/suscripciones/data/derechos_consumidor.json; generado, no editar a mano.
+
+Artículo 7. Extinción de los contratos.
+El contrato se extinguirá por las causas generales de extinción de los contratos y, especialmente, por voluntad del abonado, comunicándolo previamente al operador con una antelación mínima de dos días hábiles al momento en que ha de surtir efectos.
+El operador se abstendrá de facturar y cobrar cualquier cantidad que se haya podido devengar, por causa no imputable al usuario final, con posterioridad al plazo de dos días en que debió surtir efectos la baja.
+El procedimiento habilitado por el operador para que el consumidor haga uso de este derecho se ajustará a lo previsto en el artículo 26.2 de este real decreto, garantizando en todo caso al usuario la constancia del contenido de su solicitud de baja en el servicio.
