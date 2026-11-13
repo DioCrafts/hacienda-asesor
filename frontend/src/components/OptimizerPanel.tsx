@@ -40,6 +40,7 @@ import {
   amountText,
   boeUrl,
   compromisoLabel,
+  enMinuscula,
   eur,
   humanizeOptimizeError,
   joinList,
@@ -104,8 +105,17 @@ const EXTRA: FieldDef[] = [
   { name: "gastos_cuidado_familiares", label: factLabel("gastos_cuidado_familiares"), kind: "money" },
   { name: "alquiler_vivienda_habitual", label: factLabel("alquiler_vivienda_habitual"), kind: "money" },
   { name: "grado_discapacidad", label: factLabel("grado_discapacidad"), kind: "percent" },
-  { name: "num_ascendientes_mayores_65", label: factLabel("num_ascendientes_mayores_65"), kind: "count" },
-  { name: "num_ascendientes_mayores_75", label: factLabel("num_ascendientes_mayores_75"), kind: "count" },
+  { name: "necesita_asistencia", label: "Necesito ayuda de terceras personas o tengo movilidad reducida", kind: "flag", hint: "Con una discapacidad del 33 % al 64 %, suma los gastos de asistencia al mínimo" },
+  { name: "num_descendientes_discapacidad", label: "Hijos con discapacidad del 33 % o más", kind: "count", hint: "Cuentan a cualquier edad si viven contigo" },
+  { name: "num_descendientes_discapacidad_65", label: "De ellos, con discapacidad del 65 % o más", kind: "count" },
+  { name: "num_descendientes_asistencia", label: "Hijos del 33 % al 64 % que necesitan ayuda de terceros", kind: "count", hint: "O que tienen movilidad reducida (desde el 65 % ya se suma)" },
+  { name: "num_ascendientes_mayores_65", label: "Padres o abuelos mayores de 65 que viven contigo", kind: "count", hint: "Al menos medio año y sin rentas de más de 8.000 €. Los de tu cónyuge, en su declaración." },
+  { name: "num_ascendientes_mayores_75", label: "De ellos, mayores de 75", kind: "count" },
+  { name: "num_ascendientes_discapacidad", label: "Padres o abuelos con discapacidad del 33 % o más", kind: "count", hint: "Que viven contigo, tengan la edad que tengan" },
+  { name: "num_ascendientes_discapacidad_hasta_65", label: "De ellos, de 65 años o menos", kind: "count", hint: "También dan derecho al mínimo por ascendientes" },
+  { name: "num_ascendientes_discapacidad_65", label: "De ellos, con discapacidad del 65 % o más", kind: "count" },
+  { name: "num_ascendientes_asistencia", label: "Padres o abuelos del 33 % al 64 % que necesitan ayuda de terceros", kind: "count", hint: "O que tienen movilidad reducida" },
+  { name: "num_declaraciones_mismos_ascendientes", label: "Declaraciones que aplican el mínimo por ellos", kind: "count", hint: "Contando la tuya: 2 si un hermano también vive con ellos; se reparte" },
   { name: "rendimiento_alquiler_neto", label: factLabel("rendimiento_alquiler_neto"), kind: "signed" },
   { name: "rendimientos_negativos_pendientes", label: factLabel("rendimientos_negativos_pendientes"), kind: "money" },
   { name: "contribucion_empresa_plan_pensiones", label: factLabel("contribucion_empresa_plan_pensiones"), kind: "money" },
@@ -120,11 +130,20 @@ const SPOUSE: FieldDef[] = [
   { name: "ganancias_patrimoniales", label: "Sus ganancias por ventas de este año", kind: "signed" },
   { name: "aportacion_plan_pensiones", label: "Ya aportado a su plan este año", kind: "money" },
   { name: "edad", label: "Su edad", kind: "age" },
+  { name: "grado_discapacidad", label: "Su grado de discapacidad", kind: "percent" },
+  { name: "necesita_asistencia", label: "Necesita ayuda de terceras personas o tiene movilidad reducida", kind: "flag", hint: "Con una discapacidad del 33 % al 64 %, suma los gastos de asistencia a su mínimo" },
 ];
 const USER_FIELDS = [...INGRESOS, ...HECHO, ...FAMILIA, MONOPARENTAL, ...EXTRA];
 const FIELD_BY_NAME = new Map(USER_FIELDS.map((f) => [f.name, f]));
 const EXTRA_NAMES = new Set(EXTRA.map((f) => f.name));
-const COUNT_NAMES = new Set(["num_descendientes", "num_descendientes_menores_3"]);
+// Counts the per-child detail of the case already gives: never typed over it (the calculator would refuse them).
+const COUNT_NAMES = new Set([
+  "num_descendientes",
+  "num_descendientes_menores_3",
+  "num_descendientes_discapacidad",
+  "num_descendientes_discapacidad_65",
+  "num_descendientes_asistencia",
+]);
 
 const ESTADOS = [
   { value: "", label: "Sin indicar" },
@@ -461,8 +480,9 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   const visibleExtra = useMemo(() => {
     const shown = new Set(extraFields);
     for (const f of EXTRA) if (f.name in baseline) shown.add(f.name);
-    return EXTRA.filter((f) => shown.has(f.name));
-  }, [extraFields, baseline]);
+    // With the per-child detail in the case, the children's disability comes from it (edited in the simulator).
+    return EXTRA.filter((f) => shown.has(f.name) && !(caseChildren !== null && COUNT_NAMES.has(f.name)));
+  }, [extraFields, baseline, caseChildren]);
 
   // ---- The request ------------------------------------------------------------------------
   const problems: Record<string, string> = {};
@@ -490,9 +510,13 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   }
   if (estadoEdit !== null && estadoEdit !== savedEstado && estadoEdit) datos.estado_civil = estadoEdit;
 
-  const conyuge: Record<string, number> = {};
+  const conyuge: Record<string, number | boolean> = {};
   if (married) {
     for (const def of SPOUSE) {
+      if (def.kind === "flag") {
+        if (spouse[def.name] === "true") conyuge[def.name] = true;
+        continue;
+      }
       const problem = fieldProblem(def.kind, spouse[def.name]);
       if (problem) problems[`opt-conyuge-${def.name}`] = problem;
       const n = parseAmount(spouse[def.name]);
@@ -716,7 +740,9 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   const fechaPasada = fecha > `${year}-12-31`;
 
   function datosTab() {
-    const addable = EXTRA.filter((f) => !visibleExtra.includes(f));
+    const addable = EXTRA.filter(
+      (f) => !visibleExtra.includes(f) && !(caseChildren !== null && COUNT_NAMES.has(f.name)),
+    );
     return (
       <form id="opt-form" onSubmit={(e) => void calcular(e)} noValidate className="space-y-5">
         <p className="text-[13px] leading-snug text-ink-soft">
@@ -1231,7 +1257,7 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
               onClick={() => completar(name)}
               className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-surface px-2.5 py-1 text-[12.5px] font-semibold text-primary-dark transition hover:border-primary"
             >
-              {inForm ? `Completar: ${missingLabel(name).toLowerCase()}` : `${missingLabel(name)}: abrir el simulador`}
+              {inForm ? `Completar: ${enMinuscula(missingLabel(name))}` : `${missingLabel(name)}: abrir el simulador`}
               <ArrowRight size={13} aria-hidden />
             </button>
           );

@@ -255,3 +255,10 @@ export function planEnSimulador(plan: PlanOptimo, figure: (name: string) => numb
   }
   return { ok: true, cambios, tributacion };
 }
+
+/** First letter in lower case for use mid-sentence, unless the word is an acronym («IRPF», «IVA»). */
+export function enMinuscula(texto: string): string {
+  const primera = texto.split(/\s/, 1)[0] ?? "";
+  if (primera.length > 1 && primera === primera.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(primera)) return texto;
+  return texto.charAt(0).toLowerCase() + texto.slice(1);
+}
