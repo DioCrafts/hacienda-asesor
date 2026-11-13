@@ -116,10 +116,32 @@ class Minimos(_Model):
     incremento_descendiente_menor_3: Decimal
     ascendiente: Decimal
     incremento_ascendiente_mayor_75: Decimal
+    # Minimum for disability (art. 60 LIRPF): 33 % or more, 65 % or more, and the increase for assistance expenses.
+    # They are the taxpayer's (art. 60.1) and, unless set below, also those of each descendant or ascendant (art.
+    # 60.2), for which the State law and the regional laws loaded print the same amounts as for the taxpayer.
     discapacidad: Decimal
     discapacidad_65: Decimal
     gastos_asistencia: Decimal
+    # Minimum for disability of DESCENDANTS when the law sets amounts for it that differ from the taxpayer's (La Rioja
+    # raises it for descendants only and leaves the assistance expenses as they are). None: the taxpayer's amount.
+    discapacidad_descendientes: Decimal | None = None
+    discapacidad_65_descendientes: Decimal | None = None
+    gastos_asistencia_descendientes: Decimal | None = None
     fuente: Fuente
+
+    def discapacidad_familiar(self, *, descendiente: bool) -> tuple[Decimal, Decimal, Decimal]:
+        """(33 % or more, 65 % or more, assistance) of the minimum for disability of a descendant or ascendant."""
+        if not descendiente:
+            return self.discapacidad, self.discapacidad_65, self.gastos_asistencia
+        return (
+            self.discapacidad if self.discapacidad_descendientes is None else self.discapacidad_descendientes,
+            self.discapacidad_65 if self.discapacidad_65_descendientes is None else self.discapacidad_65_descendientes,
+            (
+                self.gastos_asistencia
+                if self.gastos_asistencia_descendientes is None
+                else self.gastos_asistencia_descendientes
+            ),
+        )
 
 
 class DeduccionTrabajo(_Model):

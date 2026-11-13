@@ -224,6 +224,14 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     num_descendientes_menores_3         → de ellos, menores de tres años
     num_ascendientes_mayores_65         → padres/abuelos mayores de 65 que conviven y dependen de él
     num_ascendientes_mayores_75         → de ellos, mayores de 75
+    num_descendientes_discapacidad      → hijos a cargo con discapacidad reconocida del 33 % o más (a cualquier edad)
+    num_descendientes_discapacidad_65   → de ellos, con discapacidad del 65 % o más o con incapacidad declarada judicialmente
+    num_descendientes_asistencia        → hijos con discapacidad del 33 % al 64 % que necesitan ayuda de terceras personas o tienen movilidad reducida
+    num_ascendientes_discapacidad       → padres/abuelos con discapacidad del 33 % o más que conviven y dependen de él (de cualquier edad)
+    num_ascendientes_discapacidad_65    → de ellos, con discapacidad del 65 % o más o con incapacidad declarada judicialmente
+    num_ascendientes_asistencia         → padres/abuelos con discapacidad del 33 % al 64 % que necesitan ayuda de terceras personas o tienen movilidad reducida
+    num_ascendientes_discapacidad_hasta_65 → de los padres/abuelos con discapacidad, los que tienen 65 años o menos
+    num_declaraciones_mismos_ascendientes → declaraciones (incluida la suya) que aplican el mínimo por los mismos padres/abuelos (p. ej. 2 si un hermano también convive con ellos)
     rendimiento_trabajo_bruto           → salario bruto anual
     cotizaciones_seguridad_social       → cotizaciones a la Seguridad Social pagadas por el trabajador
     retenciones                         → IRPF retenido en el año
@@ -263,7 +271,7 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     num_hijos_primer_ciclo_infantil     → hijos en el primer ciclo de educación infantil (0-3 años)
     edad_conyuge                        → edad del cónyuge
     grado_discapacidad_conyuge          → porcentaje de discapacidad reconocido al cónyuge
-    num_familiares_discapacidad_65_a_cargo → ascendientes o descendientes a su cargo con discapacidad del 65 % o más
+    num_familiares_discapacidad_65_a_cargo → TOTAL de ascendientes y descendientes a su cargo con discapacidad del 65 % o más
     num_personas_acogidas_mayores_o_discapacidad → mayores de 65 o personas con discapacidad, sin parentesco cercano, que acoge sin cobrar
     habitantes_municipio                → número de habitantes del municipio donde vive
     dias_alquiler_vivienda_habitual     → días del año con el contrato de alquiler de su vivienda en vigor
@@ -305,13 +313,15 @@ PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
     actividad_rendimientos_irregulares  → autónomos: parte del beneficio del año generada en más de dos años o por indemnización por cese, subvención de capital o premio (solo si el usuario lo dice así)
 
   value_boolean:
+    necesita_asistencia                 → true si el usuario, con discapacidad reconocida, necesita ayuda de terceras personas o tiene movilidad reducida
+    necesita_asistencia_conyuge         → true si su cónyuge, con discapacidad reconocida, necesita ayuda de terceras personas o tiene movilidad reducida
     familia_numerosa                    → true si tiene título de familia numerosa
     familia_numerosa_especial           → true si el título es de categoría especial
     familia_monoparental                → true si es familia monoparental
     hijos_nacidos_en_el_ejercicio       → hijos nacidos o adoptados en el año
     gastos_libros_texto                 → pagado en el año en libros de texto y material escolar
     gastos_cuidado_familiares           → pagado a cuidadores, guarderías o centros por cuidar hijos, mayores o personas con discapacidad
-    num_familiares_discapacidad_a_cargo → ascendientes o descendientes con discapacidad que dependen de él
+    num_familiares_discapacidad_a_cargo → TOTAL de ascendientes y descendientes con discapacidad que dependen de él; si dice cuáles son hijos y cuáles padres o abuelos, emite además num_descendientes_discapacidad y num_ascendientes_discapacidad
     menores_acogidos                    → menores en acogimiento familiar
     hijos_adoptados_en_el_ejercicio     → hijos adoptados en el año
     donativos_autonomicos               → TOTAL donado en el año a las entidades que incentiva su comunidad autónoma

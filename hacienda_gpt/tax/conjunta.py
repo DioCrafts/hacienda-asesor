@@ -35,8 +35,9 @@ _EL_MAYOR = frozenset(
         "hijos_deduccion_maternidad",
         "num_hijos_gastos_educativos",
         "num_hijos_primer_ciclo_infantil",
-        "num_familiares_discapacidad_a_cargo",
-        "num_familiares_discapacidad_65_a_cargo",
+        "num_descendientes_discapacidad",
+        "num_descendientes_discapacidad_65",
+        "num_descendientes_asistencia",
         "menores_acogidos",
         "num_personas_acogidas_mayores_o_discapacidad",
         "miembros_unidad_familiar",
@@ -71,9 +72,20 @@ _APARTE = frozenset(
         "base_imponible_resto_unidad_familiar",
         "edad",
         "grado_discapacidad",
+        "necesita_asistencia",
         "edad_conyuge",
         "grado_discapacidad_conyuge",
+        "necesita_asistencia_conyuge",
+        "num_familiares_discapacidad_a_cargo",
+        "num_familiares_discapacidad_65_a_cargo",
+        "num_declaraciones_mismos_ascendientes",
     }
+)
+# Relatives with a disability: (count of all, of the household's children, of the spouse's own ascendants). In the
+# joint return the children are common and each spouse's ascendants their own.
+_FAMILIARES_DISCAPACIDAD = (
+    ("num_familiares_discapacidad_a_cargo", "num_descendientes_discapacidad", "num_ascendientes_discapacidad"),
+    ("num_familiares_discapacidad_65_a_cargo", "num_descendientes_discapacidad_65", "num_ascendientes_discapacidad_65"),
 )
 
 # The household's children, copied to a spouse who gave none (the maternity deduction stays with the mother,
@@ -86,6 +98,9 @@ HIJOS_COMUNES = (
     "hijos_adoptados_en_el_ejercicio",
     "num_hijos_primer_ciclo_infantil",
     "num_hijos_gastos_educativos",
+    "num_descendientes_discapacidad",
+    "num_descendientes_discapacidad_65",
+    "num_descendientes_asistencia",
     "familia_numerosa",
     "familia_numerosa_especial",
 )
@@ -149,6 +164,10 @@ def _con_hijos_de(destino: IRPFInput, origen: IRPFInput) -> IRPFInput:
     comunes: dict[str, Any] = {campo: getattr(origen, campo) for campo in HIJOS_COMUNES}
     if origen.descendientes:
         comunes["descendientes"] = [h.model_copy(update={"gastos": {}}) for h in origen.descendientes]
+    # The relatives with a disability now include the children taken over (``destino`` had none). Relatives it gave
+    # only as a total may be those very children: the smaller count that holds both is taken.
+    for total, hijos, ascendientes in _FAMILIARES_DISCAPACIDAD:
+        comunes[total] = max(getattr(destino, total), getattr(destino, ascendientes) + getattr(origen, hijos))
     return destino.model_copy(update=comunes)
 
 
@@ -235,6 +254,10 @@ def _clave_hijo(hijo: Descendiente) -> tuple[Any, ...]:
     )
 
 
+def _tiene_ascendientes(x: IRPFInput) -> bool:
+    return bool(x.num_ascendientes_mayores_65 or x.num_ascendientes_discapacidad)
+
+
 def _miembro(x: IRPFInput) -> PrevisionSocialMiembro:
     return PrevisionSocialMiembro(**{campo: getattr(x, campo) for campo in PrevisionSocialMiembro.model_fields})
 
@@ -272,8 +295,25 @@ def _conjunta(a: IRPFInput, b: IRPFInput) -> IRPFInput:
     # Each spouse's personal circumstances (art. 84.2.2.º LIRPF): a's own, and b's as the spouse's.
     datos["edad"] = a.edad if a.edad is not None else b.edad_conyuge
     datos["grado_discapacidad"] = a.grado_discapacidad or b.grado_discapacidad_conyuge
+    datos["necesita_asistencia"] = a.necesita_asistencia or b.necesita_asistencia_conyuge
     datos["edad_conyuge"] = b.edad if b.edad is not None else a.edad_conyuge
     datos["grado_discapacidad_conyuge"] = b.grado_discapacidad or a.grado_discapacidad_conyuge
+    datos["necesita_asistencia_conyuge"] = b.necesita_asistencia or a.necesita_asistencia_conyuge
+    # Relatives with a disability: the children once (the larger count, as ``_EL_MAYOR``), each spouse's ascendants
+    # (no one else's). Relatives a spouse gave only as a total may be the common children: the smallest count that
+    # holds what each spouse said is taken.
+    for total, hijos, ascendientes in _FAMILIARES_DISCAPACIDAD:
+        datos[total] = max(
+            max(getattr(a, hijos), getattr(b, hijos)) + getattr(a, ascendientes) + getattr(b, ascendientes),
+            getattr(a, total) + getattr(b, ascendientes),
+            getattr(b, total) + getattr(a, ascendientes),
+        )
+    # Art. 61.1.ª: the ascendants' minimums are shared with whoever else applies them (one figure for all of them).
+    repartos = [x.num_declaraciones_mismos_ascendientes for x in (a, b) if _tiene_ascendientes(x)]
+    datos["num_declaraciones_mismos_ascendientes"] = max(
+        (r for r in repartos if r is not None),
+        default=a.num_declaraciones_mismos_ascendientes or b.num_declaraciones_mismos_ascendientes,
+    )
     datos["prevision_social_por_miembro"] = [_miembro(a), _miembro(b)]
     if a.descendientes and b.descendientes:
         datos["descendientes"] = _unir_descendientes(a.descendientes, b.descendientes)
@@ -317,7 +357,23 @@ def comparar_tributacion(
     if comunes.a.num_descendientes and comunes.b.num_descendientes:
         avisos.append(
             "Los hijos se han tomado como comunes: en las declaraciones individuales cada cónyuge aplica la mitad "
-            "del mínimo por descendientes (art. 61.1.ª LIRPF)."
+            "del mínimo por descendientes (art. 61.1.ª LIRPF)"
+            + (
+                " y del mínimo por su discapacidad."
+                if comunes.a.num_descendientes_discapacidad or comunes.b.num_descendientes_discapacidad
+                else "."
+            )
+        )
+    if _tiene_ascendientes(a) and _tiene_ascendientes(b):
+        avisos.append(
+            "Los ascendientes de cada cónyuge son suyos: cada uno aplica en su declaración individual el mínimo por "
+            "los suyos, y en la conjunta se suman."
+            + (
+                " En la conjunta se ha aplicado a todos el mayor de los repartos con otras declaraciones que habéis "
+                "indicado (art. 61.1.ª LIRPF): si los de un cónyuge no se comparten, su mínimo es mayor."
+                if (a.num_declaraciones_mismos_ascendientes or 1) != (b.num_declaraciones_mismos_ascendientes or 1)
+                else ""
+            )
         )
     for copiado, quien, otro in ((comunes.copiados_a, "A", "B"), (comunes.copiados_b, "B", "A")):
         if copiado:

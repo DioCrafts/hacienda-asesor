@@ -13,7 +13,7 @@ import pytest
 from hacienda_gpt.cli import proactive as cli_module
 from hacienda_gpt.tax import vigencia_normas
 from hacienda_gpt.tax.irpf import IRPFInput, calcular_irpf
-from hacienda_gpt.tax.params import IRPFParams, load_params
+from hacienda_gpt.tax.params import DATA_DIR, IRPFParams, load_params
 from hacienda_gpt.tax.rollover import preparar_ejercicio
 from hacienda_gpt.tax.verificacion import Comprobacion, _formas, comprobaciones, texto_plano, verificar
 from hacienda_gpt.tax.vigencia_normas import EstadoNorma, estado_de, estado_desde_xml, guardar_estados
@@ -228,3 +228,25 @@ def test_cli_verify_and_decree_check(tmp_path: Path, monkeypatch, checks_2026: l
     segunda = CliRunner().invoke(cli_module.cli, ["normas-check", "--fail-on-change"])
     assert segunda.exit_code == 1 and json.loads(segunda.output)["cambios"][0]["ahora"] == "derogada"
     assert estado_de(RDL).estado == "derogada"
+
+
+def test_rollover_carries_the_quotes_of_the_minimums_to_the_next_year(tmp_path: Path) -> None:
+    """Groups checked by literal quote keep that check in the new year's file (bound by sha256_valor)."""
+    import shutil
+
+    from hacienda_gpt.tax.rollover import heredar_citas
+    from hacienda_gpt.tax.verificacion import comprobaciones as checks_de
+
+    shutil.copy(DATA_DIR / "evidencia_parametros.json", tmp_path / "evidencia_parametros.json")
+    data = json.loads((DATA_DIR / "irpf_2026.json").read_text(encoding="utf-8"))
+    data["ejercicio"] = 2027
+    del data["comunidades"]["galicia"]  # a group that left the file is not carried
+    heredadas = heredar_citas(2026, 2027, data, data_dir=tmp_path)
+    assert "minimos" in heredadas and "comunidades/la_rioja/minimos" in heredadas
+    assert not any(r.startswith("comunidades/galicia/") for r in heredadas)
+    evidencia = json.loads((tmp_path / "evidencia_parametros.json").read_text(encoding="utf-8"))
+    params = IRPFParams(**data)
+    citas = [
+        c for c in checks_de(params, evidencia_parametros=evidencia) if c.ruta == ["comunidades", "la_rioja", "minimos"]
+    ]
+    assert citas and citas[0].tipo == "cita"

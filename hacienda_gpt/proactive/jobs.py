@@ -48,6 +48,8 @@ ETIQUETAS_DATOS: dict[str, str] = {
     "num_descendientes": "cuántos hijos tienes a tu cargo",
     "num_descendientes_menores_3": "cuántos de tus hijos tienen menos de tres años",
     "num_ascendientes_mayores_65": "si convives con padres o abuelos mayores de 65 años a tu cargo",
+    "num_ascendientes_discapacidad": "si convives con padres o abuelos con una discapacidad reconocida del 33 % o más",
+    "num_descendientes_discapacidad": "cuántos de tus hijos tienen una discapacidad reconocida del 33 % o más",
     "pagos_vivienda_habitual_pre2013": "lo que pagas al año de hipoteca, si compraste tu vivienda habitual antes de 2013",
     "alquiler_vivienda_habitual": "lo que pagas al año de alquiler por tu vivienda habitual",
     "gastos_escolaridad": "tus gastos de escolaridad del año",

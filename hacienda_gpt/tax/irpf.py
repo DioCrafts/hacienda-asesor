@@ -68,7 +68,12 @@ class Descendiente(BaseModel):
 
     edad: int | None = Field(default=None, ge=0, le=130)  # reached at 31 December of the tax year
     fecha_nacimiento: date | None = None
+    # 65 for a judicially declared incapacity, 33 for a permanent-incapacity pensioner (art. 60.3 LIRPF).
     grado_discapacidad: int = Field(default=0, ge=0, le=100)
+    # Needs the help of third parties or has reduced mobility: with a disability of 33 % to 64 % it adds the
+    # assistance expenses to the minimum for disability of descendants (art. 60.2, second paragraph); from 65 % they
+    # are always added.
+    necesita_asistencia: bool = False
     etapa_educativa: EtapaEducativa | None = None
     ejercicio_adopcion: int | None = Field(default=None, ge=1900, le=2200)  # tax year of the adoption, if adopted
     adopcion_internacional: bool = False
@@ -108,13 +113,34 @@ class IRPFInput(BaseModel):
 
     # Personal and family circumstances
     edad: int | None = Field(default=None, ge=0, le=130)
+    # 65 for a judicially declared incapacity, 33 for a permanent-incapacity pensioner (art. 60.3 LIRPF).
     grado_discapacidad: int = Field(default=0, ge=0, le=100)
+    # The taxpayer needs the help of third parties or has reduced mobility: with a disability of 33 % to 64 % it adds
+    # the assistance expenses to their minimum for disability (art. 60.1, second paragraph); from 65 % they always are.
+    necesita_asistencia: bool = False
     num_descendientes: int = Field(default=0, ge=0, le=20)
     num_descendientes_menores_3: int = Field(default=0, ge=0, le=20)
     # True when the minimum for descendants is shared with the other parent (50 %).
     descendientes_compartidos: bool = False
     num_ascendientes_mayores_65: int = Field(default=0, ge=0, le=10)
     num_ascendientes_mayores_75: int = Field(default=0, ge=0, le=10)
+    # Minimum for disability of descendants and ascendants (art. 60.2 LIRPF). Of the descendants counted in
+    # ``num_descendientes`` (a disabled one counts at any age, art. 58.1): those with a disability of 33 % or more, of
+    # them those of 65 % or more, and those of 33 % to 64 % who need the help of third parties or have reduced
+    # mobility (assistance expenses). Filled from ``descendientes`` when it is given.
+    num_descendientes_discapacidad: int = Field(default=0, ge=0, le=20)
+    num_descendientes_discapacidad_65: int = Field(default=0, ge=0, le=20)
+    num_descendientes_asistencia: int = Field(default=0, ge=0, le=20)
+    # The same for the ascendants who give the minimum for ascendants (art. 59.1: over 65, or disabled at any age).
+    num_ascendientes_discapacidad: int = Field(default=0, ge=0, le=10)
+    num_ascendientes_discapacidad_65: int = Field(default=0, ge=0, le=10)
+    num_ascendientes_asistencia: int = Field(default=0, ge=0, le=10)
+    # Of the disabled ascendants, those NOT counted in ``num_ascendientes_mayores_65`` (65 or younger): they give the
+    # minimum for ascendants too. Left at zero, the disabled ascendants the over-65 count cannot hold.
+    num_ascendientes_discapacidad_hasta_65: int = Field(default=0, ge=0, le=10)
+    # Tax returns (yours included) that apply the minimums for the same ascendants, e.g. siblings living with the
+    # parent: art. 61.1.ª prorates them in equal parts. One figure for all the ascendants. None: not shared.
+    num_declaraciones_mismos_ascendientes: int | None = Field(default=None, ge=1, le=20)
 
     # General base
     rendimiento_trabajo_bruto: Decimal = Field(default=ZERO, ge=0)
@@ -171,7 +197,9 @@ class IRPFInput(BaseModel):
     gastos_libros_texto: Decimal = Field(default=ZERO, ge=0)  # textbooks and school material
     # Paid to carers, nurseries or centres for looking after children, elders or disabled relatives.
     gastos_cuidado_familiares: Decimal = Field(default=ZERO, ge=0)
-    # Ascendants or descendants with a disability who depend on the taxpayer.
+    # Ascendants or descendants with a disability who depend on the taxpayer (those of the minimum for disability of
+    # descendants and ascendants): at least ``num_descendientes_discapacidad`` + ``num_ascendientes_discapacidad``, and
+    # their sum when left at zero.
     num_familiares_discapacidad_a_cargo: int = Field(default=0, ge=0, le=20)
     # Inputs of regional deductions beyond the family ones (see params.CAMPOS_*).
     menores_acogidos: int = Field(default=0, ge=0, le=20)
@@ -204,7 +232,10 @@ class IRPFInput(BaseModel):
     descendientes: list[Descendiente] | None = None
     edad_conyuge: int | None = Field(default=None, ge=0, le=130)
     grado_discapacidad_conyuge: int = Field(default=0, ge=0, le=100)
-    # Ascendants or descendants with a disability of 65 % or more who depend on the taxpayer.
+    # The spouse's ``necesita_asistencia`` (joint return, art. 84.2.2.º LIRPF).
+    necesita_asistencia_conyuge: bool = False
+    # Ascendants or descendants with a disability of 65 % or more who depend on the taxpayer: at least
+    # ``num_descendientes_discapacidad_65`` + ``num_ascendientes_discapacidad_65``, and their sum when left at zero.
     num_familiares_discapacidad_65_a_cargo: int = Field(default=0, ge=0, le=20)
     # Over-65s or disabled people, not close relatives, taken in without payment.
     num_personas_acogidas_mayores_o_discapacidad: int = Field(default=0, ge=0, le=20)
@@ -272,6 +303,11 @@ class IRPFInput(BaseModel):
                     self.ejercicio - hijo.edad <= hijo.ejercicio_adopcion <= self.ejercicio
                 ):
                     raise ValueError("descendientes: el ejercicio de adopción no cuadra con la edad")
+                if hijo.necesita_asistencia and hijo.grado_discapacidad < 33:
+                    raise ValueError(
+                        "descendientes: «necesita_asistencia» (ayuda de terceras personas o movilidad reducida) solo "
+                        "cuenta para un hijo con un grado de discapacidad del 33 % o más (art. 60.2 LIRPF)"
+                    )
             hijos = self.descendientes
             recuentos = {
                 "num_descendientes": len(hijos),
@@ -281,6 +317,11 @@ class IRPFInput(BaseModel):
                 "hijos_adoptados_en_el_ejercicio": sum(1 for h in hijos if h.ejercicio_adopcion == self.ejercicio),
                 "num_hijos_primer_ciclo_infantil": sum(
                     1 for h in hijos if h.etapa_educativa == "infantil_primer_ciclo"
+                ),
+                "num_descendientes_discapacidad": sum(1 for h in hijos if h.grado_discapacidad >= 33),
+                "num_descendientes_discapacidad_65": sum(1 for h in hijos if h.grado_discapacidad >= 65),
+                "num_descendientes_asistencia": sum(
+                    1 for h in hijos if 33 <= h.grado_discapacidad < 65 and h.necesita_asistencia
                 ),
             }
             for campo, segun_detalle in recuentos.items():
@@ -309,6 +350,72 @@ class IRPFInput(BaseModel):
                     f"«{total}» ({getattr(self, total):.2f} €) es el total de {', '.join(partes)}, que suman más "
                     f"({suma:.2f} €)"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def _discapacidad_de_descendientes_y_ascendientes(self) -> IRPFInput:
+        """Keep the counts of the minimum for disability of descendants and ascendants (art. 60.2 LIRPF) consistent
+        with each other and with the counts that hold them: a count left at zero is the smallest figure its parts
+        allow, and no part may exceed what holds it. Runs after the children's detail has filled its counts."""
+
+        def contiene(total: str, partes: tuple[str, ...], que: str) -> None:
+            suma = sum(getattr(self, parte) for parte in partes)
+            if not getattr(self, total):
+                setattr(self, total, suma)
+            elif suma > getattr(self, total):
+                detalle = " más ".join(f"«{p}» ({getattr(self, p)})" for p in partes)
+                raise ValueError(f"«{total}» ({getattr(self, total)}) {que}: no puede ser menor que {detalle}")
+
+        contiene(
+            "num_descendientes_discapacidad",
+            ("num_descendientes_discapacidad_65", "num_descendientes_asistencia"),
+            "cuenta todos los descendientes con discapacidad del 33 % o más (art. 60.2 LIRPF), también los del 65 % o "
+            "más y los del 33 % al 64 % que necesitan ayuda de terceras personas o tienen movilidad reducida",
+        )
+        contiene(
+            "num_descendientes",
+            ("num_descendientes_discapacidad",),
+            "cuenta todos los descendientes por los que aplicas el mínimo por descendientes, también los que tienen "
+            "discapacidad (art. 58.1 LIRPF)",
+        )
+        if not self.num_ascendientes_discapacidad:
+            # Both the degrees and the ages are parts of it: the smallest total that holds both.
+            self.num_ascendientes_discapacidad = max(
+                self.num_ascendientes_discapacidad_65 + self.num_ascendientes_asistencia,
+                self.num_ascendientes_discapacidad_hasta_65,
+            )
+        contiene(
+            "num_ascendientes_discapacidad",
+            ("num_ascendientes_discapacidad_65", "num_ascendientes_asistencia"),
+            "cuenta todos los ascendientes con discapacidad del 33 % o más (art. 60.2 LIRPF), también los del 65 % o "
+            "más y los del 33 % al 64 % que necesitan ayuda de terceras personas o tienen movilidad reducida",
+        )
+        contiene(
+            "num_ascendientes_discapacidad",
+            ("num_ascendientes_discapacidad_hasta_65",),
+            "cuenta todos los ascendientes con discapacidad, también los de 65 años o menos",
+        )
+        con_discapacidad = self.num_ascendientes_discapacidad
+        if not self.num_ascendientes_discapacidad_hasta_65:
+            # The disabled ascendants the over-65 count cannot hold are 65 or younger.
+            self.num_ascendientes_discapacidad_hasta_65 = max(0, con_discapacidad - self.num_ascendientes_mayores_65)
+        elif con_discapacidad - self.num_ascendientes_discapacidad_hasta_65 > self.num_ascendientes_mayores_65:
+            raise ValueError(
+                f"de los {con_discapacidad} ascendientes con discapacidad, "
+                f"{con_discapacidad - self.num_ascendientes_discapacidad_hasta_65} tendrían más de 65 años, pero "
+                f"«num_ascendientes_mayores_65» es {self.num_ascendientes_mayores_65}: cuenta en él a todos tus "
+                "ascendientes mayores de 65 años, tengan o no discapacidad"
+            )
+        contiene(
+            "num_familiares_discapacidad_a_cargo",
+            ("num_descendientes_discapacidad", "num_ascendientes_discapacidad"),
+            "cuenta los descendientes y ascendientes con discapacidad a tu cargo",
+        )
+        contiene(
+            "num_familiares_discapacidad_65_a_cargo",
+            ("num_descendientes_discapacidad_65", "num_ascendientes_discapacidad_65"),
+            "cuenta los descendientes y ascendientes con discapacidad del 65 % o más a tu cargo",
+        )
         return self
 
     @model_validator(mode="after")
@@ -430,13 +537,33 @@ def _incremento_por_edad(edad: int | None, m: Minimos) -> Decimal:
     return incremento
 
 
-def _minimo_discapacidad_propia(grado: int, m: Minimos) -> Decimal:
-    """Art. 60.1: the taxpayer's own disability minimum, with the assistance expenses from 65 %."""
+def _minimo_discapacidad_propia(grado: int, m: Minimos, *, asistencia: bool = False) -> Decimal:
+    """Art. 60.1: the taxpayer's own disability minimum, with the assistance expenses from 65 % or, from 33 %, when
+    they need the help of third parties or have reduced mobility (``asistencia``)."""
     if grado >= 65:
         return m.discapacidad_65 + m.gastos_asistencia
     if grado >= 33:
-        return m.discapacidad
+        return m.discapacidad + (m.gastos_asistencia if asistencia else ZERO)
     return ZERO
+
+
+def _minimo_discapacidad_familiares(
+    con_discapacidad: int, del_65: int, asistencia: int, importes: tuple[Decimal, Decimal, Decimal]
+) -> Decimal:
+    """Art. 60.2: the minimum for disability of ``con_discapacidad`` descendants or ascendants, ``del_65`` of them
+    of 65 % or more and ``asistencia`` of the rest needing the help of third parties or with reduced mobility.
+
+    ``importes``: the amounts for 33 % or more, for 65 % or more and the assistance expenses («por cada
+    ascendiente o descendiente que acredite necesitar ayuda de terceras personas o movilidad reducida, o un grado
+    de discapacidad igual o superior al 65 por ciento»).
+    """
+    d33, d65, gastos = importes
+    return d33 * (con_discapacidad - del_65) + d65 * del_65 + gastos * (del_65 + asistencia)
+
+
+def _reparto_ascendientes(inp: IRPFInput) -> int:
+    """Number of tax returns the minimums for the same ascendants are prorated among (art. 61.1.ª LIRPF)."""
+    return inp.num_declaraciones_mismos_ascendientes or 1
 
 
 def _minimo(inp: IRPFInput, m: Minimos, t: _Trace | None = None) -> Decimal:
@@ -445,23 +572,51 @@ def _minimo(inp: IRPFInput, m: Minimos, t: _Trace | None = None) -> Decimal:
     A joint return with both spouses has one taxpayer minimum (art. 57.1) but the age increments
     (art. 57.2) and disability minimum (art. 60.1) of each spouse: art. 84.2.2.º LIRPF, «se tendrán en
     cuenta las circunstancias personales de cada uno de los cónyuges». The other spouse's are
-    ``edad_conyuge`` and ``grado_discapacidad_conyuge``. With a trace, each component is its own line.
+    ``edad_conyuge``, ``grado_discapacidad_conyuge`` and ``necesita_asistencia_conyuge``.
+
+    The minimum for disability is also that of the descendants and ascendants who give the minimum for
+    descendants or ascendants (art. 60.2). When several taxpayers have the right to these minimums for the same
+    relatives they are prorated (art. 61.1.ª): by half for descendants shared with the other parent, and among
+    ``num_declaraciones_mismos_ascendientes`` returns for ascendants. With a trace, each component is its own line.
     """
     total = m.contribuyente + _incremento_por_edad(inp.edad, m)
 
     descendientes = _minimo_descendientes(inp, m)
+    discapacidad_descendientes = _minimo_discapacidad_familiares(
+        inp.num_descendientes_discapacidad,
+        inp.num_descendientes_discapacidad_65,
+        inp.num_descendientes_asistencia,
+        m.discapacidad_familiar(descendiente=True),
+    )
+    if discapacidad_descendientes and inp.descendientes_compartidos:
+        discapacidad_descendientes /= 2
 
+    reparto = _reparto_ascendientes(inp)
+    # Art. 59.1: over 65, or disabled at any age.
+    con_derecho = inp.num_ascendientes_mayores_65 + inp.num_ascendientes_discapacidad_hasta_65
     mayores_75 = min(inp.num_ascendientes_mayores_75, inp.num_ascendientes_mayores_65)
-    ascendientes = m.ascendiente * inp.num_ascendientes_mayores_65 + m.incremento_ascendiente_mayor_75 * mayores_75
+    ascendientes = _round((m.ascendiente * con_derecho + m.incremento_ascendiente_mayor_75 * mayores_75) / reparto)
+    discapacidad_ascendientes = _round(
+        _minimo_discapacidad_familiares(
+            inp.num_ascendientes_discapacidad,
+            inp.num_ascendientes_discapacidad_65,
+            inp.num_ascendientes_asistencia,
+            m.discapacidad_familiar(descendiente=False),
+        )
+        / reparto
+    )
 
-    discapacidad = _minimo_discapacidad_propia(inp.grado_discapacidad, m)
+    discapacidad = _minimo_discapacidad_propia(inp.grado_discapacidad, m, asistencia=inp.necesita_asistencia)
 
     edad_conyuge = discapacidad_conyuge = ZERO
     if inp.tributacion == "conjunta_biparental":
         edad_conyuge = _incremento_por_edad(inp.edad_conyuge, m)
-        discapacidad_conyuge = _minimo_discapacidad_propia(inp.grado_discapacidad_conyuge, m)
+        discapacidad_conyuge = _minimo_discapacidad_propia(
+            inp.grado_discapacidad_conyuge, m, asistencia=inp.necesita_asistencia_conyuge
+        )
 
     if t is not None:
+        prorrateo = f" (prorrateado entre {reparto} declaraciones)" if reparto > 1 else ""
         t.linea("Mínimo del contribuyente", total, m.fuente)
         if edad_conyuge:
             t.linea(
@@ -479,11 +634,133 @@ def _minimo(inp: IRPFInput, m: Minimos, t: _Trace | None = None) -> Decimal:
                 "y no tengan rentas superiores a 8.000 €; el cálculo da por cumplidos esos requisitos."
             )
         if ascendientes:
-            t.linea("Mínimo por ascendientes", ascendientes, m.fuente)
+            t.linea("Mínimo por ascendientes" + prorrateo, ascendientes, m.fuente)
         if discapacidad:
             t.linea("Mínimo por discapacidad del contribuyente", discapacidad, m.fuente)
+        if discapacidad_descendientes:
+            t.linea(
+                "Mínimo por discapacidad de descendientes"
+                + (" (50 %, compartido)" if inp.descendientes_compartidos else ""),
+                discapacidad_descendientes,
+                m.fuente,
+            )
+        if discapacidad_ascendientes:
+            t.linea("Mínimo por discapacidad de ascendientes" + prorrateo, discapacidad_ascendientes, m.fuente)
+        _avisos_del_minimo(inp, m, t, ascendientes=ascendientes)
 
-    return total + edad_conyuge + descendientes + ascendientes + discapacidad + discapacidad_conyuge
+    return (
+        total
+        + edad_conyuge
+        + descendientes
+        + ascendientes
+        + discapacidad
+        + discapacidad_conyuge
+        + discapacidad_descendientes
+        + discapacidad_ascendientes
+    )
+
+
+def _avisos_del_minimo(inp: IRPFInput, m: Minimos, t: _Trace, *, ascendientes: Decimal) -> None:
+    """What the minimums for ascendants and for disability take for granted, and what the inputs leave unsaid."""
+    if inp.num_descendientes_discapacidad or inp.num_ascendientes_discapacidad:
+        t.aviso(
+            "El mínimo por discapacidad de descendientes y ascendientes (art. 60.2 LIRPF) se ha aplicado por los que "
+            "has indicado. Exige que den derecho al mínimo por descendientes o por ascendientes (que convivan contigo "
+            "—los ascendientes, al menos la mitad del año— y no tengan rentas anuales superiores a 8.000 €, excluidas "
+            "las exentas), que no presenten declaración con rentas superiores a 1.800 € (art. 61.2.ª LIRPF) y que el "
+            "grado de discapacidad y, en su caso, la necesidad de ayuda de terceras personas o la movilidad reducida "
+            "estén acreditados. El cálculo da por cumplidos esos requisitos."
+        )
+    if ascendientes:
+        t.aviso(
+            "El mínimo por ascendientes exige que convivan contigo al menos la mitad del período impositivo (art. "
+            "61.5.ª LIRPF) y no tengan rentas anuales superiores a 8.000 €, excluidas las exentas; el cálculo lo da "
+            "por cumplido."
+        )
+        reparto = _reparto_ascendientes(inp)
+        if inp.num_declaraciones_mismos_ascendientes is None:
+            t.aviso(
+                "Si otros descendientes de tus ascendientes (por ejemplo, un hermano que también conviva con ellos) "
+                "tienen derecho a los mismos mínimos, el mínimo por ascendientes y el de su discapacidad se reparten "
+                "entre todos a partes iguales (art. 61.1.ª LIRPF): indica cuántas declaraciones los aplican, la tuya "
+                "incluida. Si tienen distinto grado de parentesco (hijos y nietos), corresponden a los de grado más "
+                "cercano salvo que no tengan rentas anuales superiores a 8.000 €."
+            )
+        elif reparto > 1:
+            t.aviso(
+                f"El mínimo por ascendientes y el de su discapacidad se han prorrateado entre {reparto} declaraciones "
+                "(art. 61.1.ª LIRPF), con el mismo reparto para todos tus ascendientes."
+            )
+    asumidos = inp.num_ascendientes_discapacidad - inp.num_ascendientes_discapacidad_hasta_65
+    if asumidos > 0:
+        t.aviso(
+            f"Se ha entendido que {asumidos} de tus ascendientes con discapacidad "
+            + ("está" if asumidos == 1 else "están")
+            + " entre los mayores de 65 años que has indicado. Si alguno tiene 65 años o menos, indícalo: también da "
+            "derecho al mínimo por ascendientes (art. 59.1 LIRPF)."
+        )
+    for total, desc, asc, que in (
+        (
+            inp.num_familiares_discapacidad_a_cargo,
+            inp.num_descendientes_discapacidad,
+            inp.num_ascendientes_discapacidad,
+            "familiares con discapacidad a tu cargo",
+        ),
+        (
+            inp.num_familiares_discapacidad_65_a_cargo,
+            inp.num_descendientes_discapacidad_65,
+            inp.num_ascendientes_discapacidad_65,
+            "familiares a tu cargo con discapacidad del 65 % o más",
+        ),
+    ):
+        if total > desc + asc:
+            t.aviso(
+                f"Has indicado {total} {que}, pero solo {desc + asc} "
+                + ("consta" if desc + asc == 1 else "constan")
+                + " como descendientes o ascendientes con ese grado de discapacidad: el mínimo por discapacidad de "
+                "descendientes y ascendientes (art. 60.2 LIRPF) solo se ha aplicado a "
+                + ("ese" if desc + asc == 1 else "esos")
+                + f" {desc + asc}. Indica cuántos son hijos (o el grado de cada hijo en su detalle) y cuántos "
+                "ascendientes, y su grado de discapacidad."
+            )
+    sin_asistencia = (
+        inp.num_descendientes_discapacidad
+        - inp.num_descendientes_discapacidad_65
+        - inp.num_descendientes_asistencia
+        + inp.num_ascendientes_discapacidad
+        - inp.num_ascendientes_discapacidad_65
+        - inp.num_ascendientes_asistencia
+    )
+    if sin_asistencia > 0:
+        t.aviso(
+            f"Por cada descendiente o ascendiente con discapacidad del 33 % al 64 % que acredite necesitar ayuda de "
+            f"terceras personas o movilidad reducida, el mínimo aumenta en {m.gastos_asistencia:.2f} € en concepto de "
+            "gastos de asistencia (art. 60.2 LIRPF): indícalo si es tu caso."
+        )
+    for grado, asistencia, cual in (
+        (inp.grado_discapacidad, inp.necesita_asistencia, "tu mínimo por discapacidad"),
+        (
+            inp.grado_discapacidad_conyuge if inp.tributacion == "conjunta_biparental" else 0,
+            inp.necesita_asistencia_conyuge,
+            "el mínimo por discapacidad de tu cónyuge",
+        ),
+    ):
+        if 33 <= grado < 65 and not asistencia:
+            t.aviso(
+                f"Si se acredita la necesidad de ayuda de terceras personas o movilidad reducida, {cual} aumenta en "
+                f"{m.gastos_asistencia:.2f} € en concepto de gastos de asistencia (art. 60.1 LIRPF): indícalo si es "
+                "tu caso."
+            )
+    if (inp.necesita_asistencia and inp.grado_discapacidad < 33) or (
+        inp.necesita_asistencia_conyuge
+        and inp.tributacion == "conjunta_biparental"
+        and inp.grado_discapacidad_conyuge < 33
+    ):
+        t.aviso(
+            "Has indicado la necesidad de ayuda de terceras personas o movilidad reducida sin un grado de "
+            "discapacidad del 33 % o más: los gastos de asistencia forman parte del mínimo por discapacidad (art. "
+            "60.1 LIRPF) y no se han aplicado."
+        )
 
 
 def _cuota_con_minimo(escala: Escala, base: Decimal, minimo: Decimal) -> Decimal:

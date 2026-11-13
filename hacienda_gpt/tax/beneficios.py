@@ -178,36 +178,81 @@ def evaluar_beneficios(inp: IRPFInput, *, conocidos: set[str], params: IRPFParam
             m.fuente,
             faltan=["num_descendientes", "num_descendientes_menores_3"],
         )
-    if inp.num_ascendientes_mayores_65:
+    ascendientes = inp.num_ascendientes_mayores_65 + inp.num_ascendientes_discapacidad_hasta_65
+    if ascendientes:
         add(
             "minimo_ascendientes",
             "Mínimo por ascendientes",
             "aplicado",
-            f"Aplicado por {inp.num_ascendientes_mayores_65} ascendiente(s).",
+            f"Aplicado por {ascendientes} ascendiente(s): {-_importe_linea(base, 'Mínimo por ascendientes'):.0f} € de "
+            "mínimo.",
             [
-                "Mayores de 65 años (o con discapacidad), que convivan contigo al menos medio año y sin rentas superiores a 8.000 €."
+                "Mayores de 65 años (o con discapacidad, a cualquier edad), que convivan contigo al menos medio año y "
+                "sin rentas superiores a 8.000 €.",
+                "Si otros descendientes (por ejemplo, tus hermanos) también tienen derecho, se reparte a partes iguales.",
             ],
             m.fuente,
         )
-    elif "num_ascendientes_mayores_65" not in conocidos:
+    elif not conocidos & {"num_ascendientes_mayores_65", "num_ascendientes_discapacidad"}:
         add(
             "minimo_ascendientes",
             "Mínimo por ascendientes",
             "por_confirmar",
-            f"Si convives con padres o abuelos mayores de 65 años a tu cargo, suma {m.ascendiente:.0f} € de mínimo por "
-            f"cada uno ({m.incremento_ascendiente_mayor_75:.0f} € más si supera los 75).",
-            ["Que conviva contigo y no tenga rentas anuales superiores a 8.000 €."],
+            f"Si convives con padres o abuelos mayores de 65 años (o con discapacidad, a cualquier edad) a tu cargo, "
+            f"suma {m.ascendiente:.0f} € de mínimo por cada uno ({m.incremento_ascendiente_mayor_75:.0f} € más si "
+            "supera los 75).",
+            ["Que conviva contigo al menos medio año y no tenga rentas anuales superiores a 8.000 €."],
             m.fuente,
-            faltan=["num_ascendientes_mayores_65"],
+            faltan=["num_ascendientes_mayores_65", "num_ascendientes_discapacidad"],
         )
     if inp.grado_discapacidad >= 33:
         add(
             "minimo_discapacidad",
             "Mínimo por discapacidad",
             "aplicado",
-            f"Aplicado para un grado del {inp.grado_discapacidad} %.",
+            f"Aplicado para un grado del {inp.grado_discapacidad} %"
+            + (
+                ", con los gastos de asistencia."
+                if inp.grado_discapacidad >= 65 or inp.necesita_asistencia
+                else f". Si necesitas ayuda de terceras personas o tienes movilidad reducida, sube "
+                f"{m.gastos_asistencia:.0f} € más (gastos de asistencia)."
+            ),
             ["Grado de discapacidad reconocido igual o superior al 33 %."],
             m.fuente,
+        )
+    familiares = _importe_linea(base, "Mínimo por discapacidad de descendientes") + _importe_linea(
+        base, "Mínimo por discapacidad de ascendientes"
+    )
+    sin_desglose = inp.num_familiares_discapacidad_a_cargo - (
+        inp.num_descendientes_discapacidad + inp.num_ascendientes_discapacidad
+    )
+    if familiares:
+        add(
+            "minimo_discapacidad_familiares",
+            "Mínimo por discapacidad de descendientes y ascendientes",
+            "aplicado",
+            f"Aplicado por {inp.num_descendientes_discapacidad + inp.num_ascendientes_discapacidad} familiar(es) con "
+            f"discapacidad: {-familiares:.0f} € de mínimo.",
+            [
+                "Descendientes o ascendientes que den derecho a su mínimo y tengan reconocido un grado de discapacidad "
+                "del 33 % o más.",
+                "Gastos de asistencia: con un grado del 65 % o más, o si necesitan ayuda de terceras personas o tienen "
+                "movilidad reducida.",
+            ],
+            m.fuente,
+        )
+    elif sin_desglose > 0:
+        add(
+            "minimo_discapacidad_familiares",
+            "Mínimo por discapacidad de descendientes y ascendientes",
+            "por_confirmar",
+            f"Tienes familiares con discapacidad a tu cargo: por cada descendiente o ascendiente con un grado del 33 % "
+            f"o más el mínimo sube {m.discapacidad:.0f} € ({m.discapacidad_65:.0f} € desde el 65 %), y "
+            f"{m.gastos_asistencia:.0f} € más de gastos de asistencia desde el 65 % o si necesita ayuda de terceras "
+            "personas o tiene movilidad reducida. Indica si son hijos o ascendientes y su grado.",
+            ["Que den derecho al mínimo por descendientes o por ascendientes."],
+            m.fuente,
+            faltan=["num_descendientes_discapacidad", "num_ascendientes_discapacidad"],
         )
 
     # --- Work income --------------------------------------------------------

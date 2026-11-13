@@ -20,6 +20,8 @@ interface FieldDef {
   // Narrower amounts this field is the total of (the calculator keeps total ≥ sum of parts,
   // and takes an empty total as that sum).
   parts?: FieldDef[];
+  // Like `parts`, for a count whose parts are asked elsewhere in the form (named, not nested).
+  sumOf?: string[];
 }
 interface Group {
   title: string;
@@ -43,6 +45,16 @@ const GROUPS: Group[] = [
     fields: [
       { name: "num_descendientes", label: "Hijos a cargo", kind: "count" },
       { name: "num_descendientes_menores_3", label: "De ellos, menores de 3 años", kind: "count" },
+      { name: "num_descendientes_discapacidad", label: "Hijos con discapacidad del 33 % o más", kind: "count", hint: "Cuentan a cualquier edad si viven contigo" },
+      { name: "num_descendientes_discapacidad_65", label: "De ellos, con discapacidad del 65 % o más", kind: "count" },
+      { name: "num_descendientes_asistencia", label: "Hijos del 33 % al 64 % que necesitan ayuda de terceros", kind: "count", hint: "O que tienen movilidad reducida (desde el 65 % ya se suma)" },
+      { name: "num_ascendientes_mayores_65", label: "Padres o abuelos mayores de 65 que viven contigo", kind: "count", hint: "Al menos medio año y sin rentas de más de 8.000 €" },
+      { name: "num_ascendientes_mayores_75", label: "De ellos, mayores de 75", kind: "count" },
+      { name: "num_ascendientes_discapacidad", label: "Padres o abuelos con discapacidad del 33 % o más", kind: "count", hint: "Que viven contigo, tengan la edad que tengan" },
+      { name: "num_ascendientes_discapacidad_hasta_65", label: "De ellos, de 65 años o menos", kind: "count", hint: "También dan derecho al mínimo por ascendientes" },
+      { name: "num_ascendientes_discapacidad_65", label: "De ellos, con discapacidad del 65 % o más", kind: "count" },
+      { name: "num_ascendientes_asistencia", label: "Padres o abuelos del 33 % al 64 % que necesitan ayuda de terceros", kind: "count", hint: "O que tienen movilidad reducida" },
+      { name: "num_declaraciones_mismos_ascendientes", label: "Declaraciones que aplican el mínimo por ellos", kind: "count", hint: "Contando la tuya: 2 si un hermano también vive con ellos; se reparte" },
     ],
   },
   {
@@ -76,8 +88,10 @@ const REGIONAL_GROUPS: Group[] = [
     fields: [
       { name: "edad", label: "Tu edad", kind: "count", hint: "Varias deducciones (alquiler, mayores) dependen de ella" },
       { name: "grado_discapacidad", label: "Tu grado de discapacidad (%)", kind: "count" },
+      { name: "necesita_asistencia", label: "Necesito ayuda de terceras personas o tengo movilidad reducida", kind: "flag", hint: "Con una discapacidad del 33 % al 64 %, suma los gastos de asistencia al mínimo" },
       { name: "edad_conyuge", label: "Edad de tu cónyuge", kind: "count", hint: "En conjunta, a veces basta con que uno cumpla la edad" },
       { name: "grado_discapacidad_conyuge", label: "Discapacidad de tu cónyuge (%)", kind: "count" },
+      { name: "necesita_asistencia_conyuge", label: "Mi cónyuge necesita ayuda de terceras personas o tiene movilidad reducida", kind: "flag", hint: "Cuenta en la declaración conjunta" },
       { name: "base_imponible_resto_unidad_familiar", label: "Rentas netas de tu pareja", kind: "money", hint: "Cuentan para los límites de renta familiar" },
       { name: "dias_desempleo", label: "Días del año en desempleo", kind: "count", hint: "Inscrito como demandante de empleo" },
       { name: "familia_numerosa", label: "Familia numerosa", kind: "flag" },
@@ -102,9 +116,18 @@ const REGIONAL_GROUPS: Group[] = [
       { name: "cotizaciones_empleada_hogar", label: "Cotizaciones de empleada de hogar", kind: "money" },
       { name: "gastos_cuidado_familiares", label: "Cuidado de hijos, mayores o personas con discapacidad", kind: "money", hint: "Pagado a cuidadores o centros, sin las cotizaciones" },
       { name: "progenitores_trabajan", label: "Trabajamos los dos progenitores (o yo, si no hay otro)", kind: "flag", hint: "Por cuenta ajena o propia, de alta en la Seguridad Social o en una mutualidad" },
-      { name: "num_ascendientes_mayores_75", label: "Ascendientes mayores de 75 a tu cargo", kind: "count" },
-      { name: "num_familiares_discapacidad_a_cargo", label: "Familiares con discapacidad a tu cargo", kind: "count" },
-      { name: "num_familiares_discapacidad_65_a_cargo", label: "De ellos, con discapacidad del 65 % o más", kind: "count" },
+      {
+        name: "num_familiares_discapacidad_a_cargo",
+        label: "Hijos y ascendientes con discapacidad a tu cargo (total)",
+        kind: "count",
+        sumOf: ["num_descendientes_discapacidad", "num_ascendientes_discapacidad"],
+      },
+      {
+        name: "num_familiares_discapacidad_65_a_cargo",
+        label: "De ellos, con discapacidad del 65 % o más (total)",
+        kind: "count",
+        sumOf: ["num_descendientes_discapacidad_65", "num_ascendientes_discapacidad_65"],
+      },
       { name: "num_personas_acogidas_mayores_o_discapacidad", label: "Mayores de 65 o con discapacidad que acoges", kind: "count", hint: "Sin parentesco cercano y sin cobrar por ello" },
       { name: "menores_acogidos", label: "Menores en acogimiento familiar", kind: "count" },
       { name: "dias_acogimiento", label: "Días del año de convivencia con ellos", kind: "count" },
@@ -221,6 +244,7 @@ interface ChildRow {
   fecha: string; // AAAA-MM-DD, or ""
   edad: string; // age at 31 December; ignored when the date is given
   discapacidad: string;
+  asistencia: boolean; // needs third parties' help or has reduced mobility (counts from 33 % to 64 %)
   etapa: string;
   adopcion: string; // year of the adoption, or ""
   internacional: boolean;
@@ -230,7 +254,13 @@ interface ChildRow {
 }
 type ApiChild = Record<string, unknown>;
 
-const emptyChild = (): ChildRow => ({ id: newId(), fecha: "", edad: "", discapacidad: "", etapa: "", adopcion: "", internacional: false, multiple: false, mesesGuarderia: "", gastos: {} });
+const emptyChild = (): ChildRow => ({ id: newId(), fecha: "", edad: "", discapacidad: "", asistencia: false, etapa: "", adopcion: "", internacional: false, multiple: false, mesesGuarderia: "", gastos: {} });
+
+/** Whether the degree of a row admits the assistance flag (33 % to 64 %; from 65 % it always counts). */
+function admitsAssistance(row: ChildRow): boolean {
+  const grade = parseNumber(row.discapacidad);
+  return grade !== null && grade >= 33 && grade < 65;
+}
 
 const text = (value: unknown): string => (typeof value === "number" || typeof value === "string" ? String(value) : "");
 
@@ -257,6 +287,7 @@ function parseChildrenFact(facts: Fact[]): { rows: ChildRow[]; broken: boolean; 
       fecha: typeof item.fecha_nacimiento === "string" ? item.fecha_nacimiento : "",
       edad: typeof item.fecha_nacimiento === "string" ? "" : text(item.edad),
       discapacidad: text(item.grado_discapacidad),
+      asistencia: item.necesita_asistencia === true,
       etapa: typeof item.etapa_educativa === "string" ? item.etapa_educativa : "",
       adopcion: text(item.ejercicio_adopcion),
       internacional: item.adopcion_internacional === true,
@@ -305,6 +336,7 @@ function childToApi(row: ChildRow): ApiChild {
   else out.edad = parseNumber(row.edad);
   const discapacidad = parseNumber(row.discapacidad);
   if (discapacidad) out.grado_discapacidad = discapacidad;
+  if (row.asistencia && admitsAssistance(row)) out.necesita_asistencia = true;
   if (row.etapa) out.etapa_educativa = row.etapa;
   const adopcion = parseNumber(row.adopcion);
   if (adopcion !== null) {
@@ -335,6 +367,10 @@ function derivedFromChildren(rows: ChildRow[], year: number): Record<string, str
   out.hijos_nacidos_ultimos_3_ejercicios = count((row) => arrival(row) <= 2);
   out.hijos_adoptados_en_el_ejercicio = count((row) => parseNumber(row.adopcion) === year);
   out.num_hijos_primer_ciclo_infantil = count((row) => row.etapa === "infantil_primer_ciclo");
+  const grade = (row: ChildRow) => parseNumber(row.discapacidad) ?? 0;
+  out.num_descendientes_discapacidad = count((row) => grade(row) >= 33);
+  out.num_descendientes_discapacidad_65 = count((row) => grade(row) >= 65);
+  out.num_descendientes_asistencia = count((row) => row.asistencia && admitsAssistance(row));
   const totals: Record<string, number> = {};
   for (const row of rows) {
     for (const [name, raw] of Object.entries(row.gastos)) {
@@ -425,12 +461,16 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
 
   const value = (name: string) => derived[name] ?? edits[name] ?? baseline[name] ?? "";
   // Totals smaller than their breakdown: the calculator would reject them, so they are not sent.
-  const partsSum = (field: FieldDef) => (field.parts ?? []).reduce((sum, part) => sum + Math.max(0, parseNumber(value(part.name)) ?? 0), 0);
+  const partNames = (field: FieldDef) => field.parts?.map((part) => part.name) ?? field.sumOf ?? [];
+  const partsSum = (field: FieldDef) => partNames(field).reduce((sum, name) => sum + Math.max(0, parseNumber(value(name)) ?? 0), 0);
   const totalProblem = (field: FieldDef): string | null => {
-    if (!field.parts) return null;
+    if (!field.parts && !field.sumOf) return null;
     const total = parseNumber(value(field.name)) ?? 0;
     const sum = partsSum(field);
-    return total > 0 && sum > total + 0.005 ? `El desglose suma ${formatMoney(sum)}, más que este total (${formatMoney(total)}). Sube el total o corrige el desglose.` : null;
+    if (!(total > 0 && sum > total + 0.005)) return null;
+    return field.sumOf
+      ? `Los indicados en «Familia» suman ${sum}, más que este total (${total}). Sube el total o déjalo vacío.`
+      : `El desglose suma ${formatMoney(sum)}, más que este total (${formatMoney(total)}). Sube el total o corrige el desglose.`;
   };
   const invalid = childProblems.some((problem) => problem !== null) || FIELDS.some((field) => totalProblem(field) !== null);
 
@@ -585,7 +625,7 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
     const fromChildren = field.name in derived;
     const sum = partsSum(field);
     const problem = totalProblem(field);
-    const autoTotal = !!field.parts && sum > 0 && !(parseNumber(current) ?? 0);
+    const autoTotal = !!(field.parts || field.sumOf) && sum > 0 && !(parseNumber(current) ?? 0);
     const input = (
       <label className="block">
         <span className="text-[12.5px] text-ink-soft">{field.label}</span>
@@ -615,7 +655,9 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
             {problem}
           </span>
         ) : autoTotal ? (
-          <span className="mt-1 block text-[11.5px] leading-snug text-muted">Sin total, se toma la suma del desglose: {formatMoney(sum)}.</span>
+          <span className="mt-1 block text-[11.5px] leading-snug text-muted">
+            {field.sumOf ? `Vacío, se toma la suma de los indicados en «Familia»: ${sum}.` : `Sin total, se toma la suma del desglose: ${formatMoney(sum)}.`}
+          </span>
         ) : (
           field.hint && <span className="mt-1 block text-[11.5px] leading-snug text-muted">{field.hint}</span>
         )}
@@ -702,6 +744,12 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
             <input type="checkbox" checked={row.multiple} onChange={(e) => setChild(row.id, { multiple: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--primary))]" />
             Parto o adopción múltiple
           </label>
+          {admitsAssistance(row) && (
+            <label className="flex items-center gap-2 text-[12.5px] text-ink">
+              <input type="checkbox" checked={row.asistencia} onChange={(e) => setChild(row.id, { asistencia: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--primary))]" />
+              Necesita ayuda de terceros o tiene movilidad reducida
+            </label>
+          )}
           {row.adopcion.trim() !== "" && (
             <label className="flex items-center gap-2 text-[12.5px] text-ink">
               <input type="checkbox" checked={row.internacional} onChange={(e) => setChild(row.id, { internacional: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--primary))]" />

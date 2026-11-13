@@ -175,8 +175,18 @@ EVALUATE_RULES_TOOL = ToolSpec(
 
 _INPUT_FIELDS_DOC = (
     "comunidad_autonoma, tributacion ('individual' | 'conjunta_biparental' | 'conjunta_monoparental'), edad, "
-    "grado_discapacidad, num_descendientes, num_descendientes_menores_3, descendientes_compartidos (bool), "
-    "num_ascendientes_mayores_65, num_ascendientes_mayores_75, rendimiento_trabajo_bruto, "
+    "grado_discapacidad (65 si la incapacidad está declarada judicialmente), necesita_asistencia (bool: con "
+    "discapacidad, necesita ayuda de terceras personas o tiene movilidad reducida), num_descendientes, "
+    "num_descendientes_menores_3, descendientes_compartidos (bool), num_ascendientes_mayores_65, "
+    "num_ascendientes_mayores_75. Mínimo por discapacidad de descendientes y ascendientes: "
+    "num_descendientes_discapacidad (hijos con discapacidad del 33 % o más, a cualquier edad), "
+    "num_descendientes_discapacidad_65 (de ellos, del 65 % o más), num_descendientes_asistencia (del 33 % al 64 % que "
+    "necesitan ayuda de terceras personas o tienen movilidad reducida); lo mismo para los ascendientes que conviven "
+    "con el usuario: num_ascendientes_discapacidad, num_ascendientes_discapacidad_65, num_ascendientes_asistencia y "
+    "num_ascendientes_discapacidad_hasta_65 (los de 65 años o menos, que no van en num_ascendientes_mayores_65 y "
+    "también dan el mínimo por ascendientes); num_declaraciones_mismos_ascendientes (declaraciones, la del usuario "
+    "incluida, que aplican el mínimo por los mismos ascendientes: se reparte entre ellas). "
+    "rendimiento_trabajo_bruto, "
     "cotizaciones_seguridad_social, otros_gastos_deducibles_trabajo, rendimiento_actividad_neto, "
     "rendimiento_alquiler_neto (ya reducido), rendimiento_alquiler_vivienda_sin_reducir (la calculadora aplica la "
     "reducción del art. 23.2 con arrendamiento_fecha_contrato AAAA-MM-DD y, si constan, arrendamiento_gran_tenedor, "
@@ -193,13 +203,15 @@ _INPUT_FIELDS_DOC = (
     "cotizaciones_empleada_hogar, hijos_nacidos_ultimos_3_ejercicios, donativos_fundaciones_madrid, familia_numerosa. Para las deducciones del resto de comunidades: "
     "alquiler_vivienda_habitual, gastos_guarderia, gastos_libros_texto, hijos_nacidos_en_el_ejercicio, "
     "familia_numerosa_especial (bool), familia_monoparental (bool), edad, grado_discapacidad, menores_acogidos, "
-    "hijos_adoptados_en_el_ejercicio, gastos_cuidado_familiares, num_familiares_discapacidad_a_cargo, "
+    "hijos_adoptados_en_el_ejercicio, gastos_cuidado_familiares, "
     "donativos_autonomicos, inversion_vivienda_habitual, inversion_empresas_nueva_creacion, "
     "gastos_eficiencia_energetica, gastos_salud, gastos_deporte_cultura, viudedad (bool), "
     "vivienda_en_municipio_rural "
     "(bool), municipio_rural_o_despoblacion (bool), base_imponible_resto_unidad_familiar, miembros_unidad_familiar. "
-    "Datos más finos de las deducciones autonómicas — cónyuge: edad_conyuge, grado_discapacidad_conyuge; a cargo: "
-    "num_familiares_discapacidad_65_a_cargo, num_personas_acogidas_mayores_o_discapacidad; municipio: "
+    "Datos más finos de las deducciones autonómicas — cónyuge: edad_conyuge, grado_discapacidad_conyuge, "
+    "necesita_asistencia_conyuge (bool); a cargo: num_familiares_discapacidad_a_cargo y "
+    "num_familiares_discapacidad_65_a_cargo (TOTAL de hijos y ascendientes con discapacidad; si los das por separado "
+    "arriba no hace falta: se suman), num_personas_acogidas_mayores_o_discapacidad; municipio: "
     "habitantes_municipio; partes del año (días): dias_alquiler_vivienda_habitual, dias_acogimiento, dias_desempleo; "
     "declaraciones entre las que se reparte la deducción (la del usuario incluida): "
     "num_declaraciones_mismo_alquiler, num_declaraciones_misma_vivienda; condiciones (bool): progenitores_trabajan, "
@@ -217,7 +229,8 @@ _INPUT_FIELDS_DOC = (
     "puede ser menor que la suma de sus partes (el cálculo lo rechaza). Detalle de cada hijo: `descendientes`, una "
     "lista con un objeto por hijo (ver el esquema). Con ese detalle NO indiques num_descendientes, "
     "num_descendientes_menores_3, hijos_nacidos_en_el_ejercicio, hijos_nacidos_ultimos_3_ejercicios, "
-    "hijos_adoptados_en_el_ejercicio ni num_hijos_primer_ciclo_infantil, ni el total de los gastos que repartas por "
+    "hijos_adoptados_en_el_ejercicio, num_hijos_primer_ciclo_infantil, num_descendientes_discapacidad, "
+    "num_descendientes_discapacidad_65 ni num_descendientes_asistencia, ni el total de los gastos que repartas por "
     "hijo: se obtienen del detalle, y una cifra distinta se rechaza"
 )
 
@@ -235,7 +248,19 @@ _DESCENDIENTE_SCHEMA: dict[str, Any] = {
             "type": "string",
             "description": "AAAA-MM-DD. Alternativa a `edad`; permite prorratear por días.",
         },
-        "grado_discapacidad": {"type": "integer", "minimum": 0, "maximum": 100},
+        "grado_discapacidad": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Grado reconocido; 65 si su incapacidad está declarada judicialmente.",
+        },
+        "necesita_asistencia": {
+            "type": "boolean",
+            "description": (
+                "Con discapacidad del 33 % al 64 %: necesita ayuda de terceras personas o tiene movilidad reducida "
+                "(añade los gastos de asistencia al mínimo por discapacidad; desde el 65 % se añaden siempre)."
+            ),
+        },
         "etapa_educativa": {"type": "string", "enum": _ETAPAS_EDUCATIVAS},
         "ejercicio_adopcion": {"type": "integer", "description": "Año de la adopción; omítelo si no es adoptado."},
         "adopcion_internacional": {"type": "boolean"},

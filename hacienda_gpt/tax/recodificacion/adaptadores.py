@@ -737,6 +737,9 @@ REGLAS_CIFRAS = Reglas(
             "discapacidad",
             "discapacidad_65",
             "gastos_asistencia",
+            "discapacidad_descendientes",
+            "discapacidad_65_descendientes",
+            "gastos_asistencia_descendientes",
             "tramo_primero",
             "importe_por_hijo",
             "incremento_guarderia",
@@ -1291,6 +1294,8 @@ def _cifras_del_irpf() -> list[Cifras]:
                 "Mínimo por descendientes",
                 "Mínimo por ascendientes",
                 "Mínimo por discapacidad del contribuyente",
+                "Mínimo por discapacidad de descendientes",
+                "Mínimo por discapacidad de ascendientes",
             ),
         ),
         Cifras(

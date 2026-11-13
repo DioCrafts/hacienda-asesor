@@ -26,10 +26,20 @@ PROFILE_FACT_TYPES: dict[str, str] = {
     "estado_civil": "string",
     "edad": "number",
     "grado_discapacidad": "number",
+    "necesita_asistencia": "boolean",
     "num_descendientes": "number",
     "num_descendientes_menores_3": "number",
     "num_ascendientes_mayores_65": "number",
     "num_ascendientes_mayores_75": "number",
+    # Minimum for disability of descendants and ascendants (art. 60.2 LIRPF).
+    "num_descendientes_discapacidad": "number",
+    "num_descendientes_discapacidad_65": "number",
+    "num_descendientes_asistencia": "number",
+    "num_ascendientes_discapacidad": "number",
+    "num_ascendientes_discapacidad_65": "number",
+    "num_ascendientes_asistencia": "number",
+    "num_ascendientes_discapacidad_hasta_65": "number",
+    "num_declaraciones_mismos_ascendientes": "number",
     "rendimiento_trabajo_bruto": "number",
     "cotizaciones_seguridad_social": "number",
     "retenciones": "number",
@@ -90,6 +100,7 @@ PROFILE_FACT_TYPES: dict[str, str] = {
     # Finer facts for regional deductions: spouse, municipality, parts of the year, sharing.
     "edad_conyuge": "number",
     "grado_discapacidad_conyuge": "number",
+    "necesita_asistencia_conyuge": "boolean",
     "num_familiares_discapacidad_65_a_cargo": "number",
     "num_personas_acogidas_mayores_o_discapacidad": "number",
     "habitantes_municipio": "number",
@@ -150,7 +161,19 @@ RECUENTOS_DEL_DETALLE: tuple[str, ...] = (
     "hijos_nacidos_ultimos_3_ejercicios",
     "hijos_adoptados_en_el_ejercicio",
     "num_hijos_primer_ciclo_infantil",
+    "num_descendientes_discapacidad",
+    "num_descendientes_discapacidad_65",
+    "num_descendientes_asistencia",
 )
+# Counts that hold others (IRPFInput takes one left at zero as the sum of its parts and rejects one smaller than
+# that sum), inner ones first. A part may also come from the children's detail.
+RECUENTOS_DESGLOSADOS: dict[str, tuple[str, ...]] = {
+    "num_descendientes_discapacidad": ("num_descendientes_discapacidad_65", "num_descendientes_asistencia"),
+    "num_descendientes": ("num_descendientes_discapacidad",),
+    "num_ascendientes_discapacidad": ("num_ascendientes_discapacidad_65", "num_ascendientes_asistencia"),
+    "num_familiares_discapacidad_a_cargo": ("num_descendientes_discapacidad", "num_ascendientes_discapacidad"),
+    "num_familiares_discapacidad_65_a_cargo": ("num_descendientes_discapacidad_65", "num_ascendientes_discapacidad_65"),
+}
 
 # Facts of a self-employed activity, annual totals without VAT; also merged into the extractor's
 # vocabulary. Kept apart from PROFILE_FACT_TYPES because they are not IRPFInput fields:
@@ -406,6 +429,40 @@ def _conciliar(merged: dict[str, Any], origen: dict[str, int]) -> None:
         if suma > importe_total + Decimal("0.01") and cede(total, capa_partes):
             # The calculator takes a missing total as the sum of its parts.
             del merged[total]
+
+    # The same for the counts that hold others; a part may come from the children's detail.
+    del_detalle: dict[str, int] = {}
+    if capa_detalle >= 0:
+        grados = [(int(h.get("grado_discapacidad") or 0), bool(h.get("necesita_asistencia"))) for h in hijos]
+        del_detalle = {
+            "num_descendientes": len(grados),
+            "num_descendientes_discapacidad": sum(1 for g, _ in grados if g >= 33),
+            "num_descendientes_discapacidad_65": sum(1 for g, _ in grados if g >= 65),
+            "num_descendientes_asistencia": sum(1 for g, a in grados if 33 <= g < 65 and a),
+        }
+    recuentos: dict[str, tuple[Decimal, int]] = {}
+
+    def recuento(nombre: str) -> tuple[Decimal, int]:
+        """(count, layer it comes from) as the calculator will see it."""
+        if nombre in recuentos:
+            return recuentos[nombre]
+        if nombre in merged:
+            return _decimal(merged[nombre]) or Decimal(0), origen[nombre]
+        if nombre in del_detalle:
+            return Decimal(del_detalle[nombre]), capa_detalle
+        return Decimal(0), -1
+
+    for total, partes in RECUENTOS_DESGLOSADOS.items():
+        valores = [recuento(parte) for parte in partes]
+        suma = sum((valor for valor, _ in valores), Decimal(0))
+        capa_partes = max((capa for valor, capa in valores if valor), default=-1)
+        actual, _ = recuento(total)
+        if actual and suma > actual and total in merged and cede(total, capa_partes):
+            # Left out, the calculator takes the sum of the parts.
+            del merged[total]
+            actual = Decimal(0)
+        if not actual:
+            recuentos[total] = (suma, capa_partes)
 
 
 def _merge_irpf(*sources: dict[str, Any] | None) -> dict[str, Any]:

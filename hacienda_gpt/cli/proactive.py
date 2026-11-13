@@ -65,7 +65,7 @@ from hacienda_gpt.tax.recodificacion import (
     todos_los_objetivos,
 )
 from hacienda_gpt.tax.recodificacion.nucleo import leer_texto, resumen_de
-from hacienda_gpt.tax.rollover import preparar_ejercicio
+from hacienda_gpt.tax.rollover import heredar_citas, preparar_ejercicio
 from hacienda_gpt.tax.verificacion import cargar_y_verificar, leer_snapshot, url_de
 from hacienda_gpt.tax.vigencia_normas import estado_desde_xml, guardar_estados, leer_estados
 
@@ -615,10 +615,16 @@ def params_rollover(destino: int, origen: int | None, force: bool, dry_run: bool
         raise click.ClickException(f"{path.name} ya existe; usa --force para sobrescribirlo.")
     texto_de = _texto_del_boe()
     data, informe = preparar_ejercicio(origen, destino, texto_de, hoy=hoy_en_espana())
+    citas_heredadas: list[str] = []
     if not dry_run:
         path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        citas_heredadas = heredar_citas(origen, destino, data)
         load_params.cache_clear()
-    salida: dict[str, Any] = {"fichero": None if dry_run else str(path), **informe.model_dump()}
+    salida: dict[str, Any] = {
+        "fichero": None if dry_run else str(path),
+        **informe.model_dump(),
+        "citas_heredadas": citas_heredadas,
+    }
     if recode and not dry_run and informe.deducciones_retiradas:
         # What the rollover left out is re-read from the current text: proposals, not data.
         salida["recodificacion"] = _recodificar(

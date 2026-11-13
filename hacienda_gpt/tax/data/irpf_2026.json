@@ -7857,6 +7857,31 @@
           "verificado": true
         }
       },
+      "minimos": {
+        "contribuyente": "5550",
+        "incremento_mayor_65": "1150",
+        "incremento_mayor_75": "1400",
+        "descendientes": [
+          "2400",
+          "2700",
+          "4000",
+          "4500"
+        ],
+        "incremento_descendiente_menor_3": "2800",
+        "ascendiente": "1150",
+        "incremento_ascendiente_mayor_75": "1400",
+        "discapacidad": "3000",
+        "discapacidad_65": "9000",
+        "gastos_asistencia": "3000",
+        "discapacidad_descendientes": "3300",
+        "discapacidad_65_descendientes": "9900",
+        "fuente": {
+          "referencia": "art. 31 bis Ley 10/2017 de La Rioja (añadido por la Ley 2/2018, de 30 de enero, con efectos desde el 1-1-2018): mínimo por discapacidad de descendientes; los demás importes, los estatales de los arts. 57 a 60 LIRPF",
+          "en_vigor_desde": "2018-01-01",
+          "verificado": true,
+          "nota": "La ley riojana solo cambia el mínimo por discapacidad de descendientes (3.300 € y 9.900 €) y dice que no modifica los gastos de asistencia; no toca el de ascendientes ni los demás mínimos, que son los estatales."
+        }
+      },
       "otras_deducciones": [
         "art. 32.1: nacimiento y adopción de hijos",
         "art. 32.2: adquisición, construcción o rehabilitación de vivienda habitual en pequeños municipios",
@@ -7885,7 +7910,7 @@
         "disp. transitoria 1.ª d): obras de adecuación de vivienda habitual para personas con discapacidad (régimen transitorio)"
       ],
       "notas": [
-        "La Rioja eleva un 10 % el mínimo por discapacidad de descendientes (3.300 € y 9.900 €, art. 31 bis): la calculadora no lo aplica."
+        "En La Rioja el mínimo por discapacidad de descendientes del gravamen autonómico es de 3.300 € y de 9.900 € con un grado del 65 % o más (art. 31 bis), sin cambiar los gastos de asistencia: se aplica a los descendientes con discapacidad que indiques."
       ],
       "deducciones_calculables": [
         {
@@ -8737,6 +8762,12 @@
       "boe_id": "varios (véase fuente_principal de cada comunidad)",
       "revisado_el": "2026-11-12",
       "resultado": "Un segundo lector releyó cada deducción contra el artículo completo: ninguna cifra errónea; se retiraron las que concedían sin poder comprobar un requisito decisivo o sin prorratear, y se reforzaron avisos. Se añadieron deducciones de vivienda, donativos, inversión, salud, deporte, acogimiento y viudedad. Total: 131 deducciones calculables en las 15 comunidades."
+    },
+    {
+      "norma": "Mínimo por discapacidad de descendientes y ascendientes (art. 60.2 LIRPF) en el Estado y en las comunidades con mínimos propios",
+      "boe_id": "BOE-A-2006-20764; BOCM-m-2010-90068; BOE-A-2021-17915; BOE-A-2015-945 (redacción de BOE-A-2025-25707); BOE-A-2014-6925; BOC-j-2009-90008; BOCL-h-2013-90254; BOE-A-2024-6951; BOE-A-1998-8202; BOE-A-2011-18161; BOE-A-2017-13750",
+      "revisado_el": "2026-11-13",
+      "resultado": "Leídos los arts. 58 a 61 LIRPF y el artículo de mínimos de cada comunidad, en la redacción aplicable a 2025 y a 2026 (la misma). El Estado (3.000 € y 9.000 € desde el 65 %, más 3.000 € de gastos de asistencia) y Madrid, Andalucía, Asturias, Canarias, Castilla y León, la Comunidad Valenciana y Galicia imprimen para ascendientes y descendientes los mismos importes que para el contribuyente; Baleares los incrementa un 10 % junto con los del contribuyente; Cataluña solo cambia el mínimo del contribuyente. La Rioja (art. 31 bis Ley 10/2017) eleva solo el de descendientes a 3.300 € y 9.900 €, sin cambiar los gastos de asistencia: se añaden sus mínimos. Las citas literales de los mínimos están en evidencia_parametros.json."
     }
   ],
   "reduccion_arrendamiento": {

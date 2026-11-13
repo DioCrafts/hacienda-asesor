@@ -14,6 +14,7 @@ from __future__ import annotations
 from datetime import date
 import hashlib
 import json
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -127,3 +128,30 @@ def _aplicar(
         fuente["nota"] = f"Sin verificar para este ejercicio: {motivo}."
         fuente.pop("version_historica", None)
     informe.sin_verificar.append(f"{check.descripcion} — {motivo}")
+
+
+def heredar_citas(origen: int, destino: int, data: dict[str, Any], *, data_dir: Path = DATA_DIR) -> list[str]:
+    """Carry the quotes of ``evidencia_parametros.json`` from year ``origen`` to ``destino`` for every group that
+    is still in the new file. Returns the paths carried.
+
+    Each entry is bound to its group's figures by ``sha256_valor``, so a quote never vouches for a group whose
+    figures changed: ``verificacion`` falls back to the figures check for it. Without this, every group checked by
+    quote in ``origen`` would silently go back to the weaker figures check in ``destino``.
+    """
+    path = data_dir / "evidencia_parametros.json"
+    if not path.exists():
+        return []
+    evidencia: dict[str, dict[str, Any]] = json.loads(path.read_text(encoding="utf-8"))
+    previas = evidencia.get(f"irpf_{origen}.json", {})
+    heredadas: dict[str, Any] = {}
+    for ruta, entrada in previas.items():
+        try:
+            _nodo(data, ruta.split("/"))
+        except (KeyError, IndexError, TypeError):
+            continue
+        heredadas[ruta] = entrada
+    if not heredadas:
+        return []
+    evidencia[f"irpf_{destino}.json"] = {**heredadas, **evidencia.get(f"irpf_{destino}.json", {})}
+    path.write_text(json.dumps(evidencia, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return sorted(heredadas)
