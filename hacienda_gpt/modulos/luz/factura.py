@@ -133,7 +133,11 @@ def _regimen(
 ) -> Regimen:
     iee, iva = datos.impuestos.iee_general, datos.impuestos.iva_general
     general = Regimen(
-        iee.tipo, iee.minimo_eur_mwh, iva.tipo, "art. 99 Ley 38/1992 (BOE-A-1992-28741)", "art. 90 LIVA (BOE-A-1992-28740)"
+        iee.tipo,
+        iee.minimo_eur_mwh,
+        iva.tipo,
+        "art. 99 Ley 38/1992 (BOE-A-1992-28741)",
+        "art. 90 LIVA (BOE-A-1992-28740)",
     )
     tramo = datos.tramo_fiscal(dia)
     if tramo is None or tramo.estado == "no_aplicada":
@@ -222,7 +226,9 @@ def calcular_factura(
         sin_precio = [k for k in sin_precio if k not in precios_pvpc]
         if sin_precio:
             f, i = sin_precio[0]
-            raise FacturaError(f"Faltan precios PVPC de {len(sin_precio)} hora(s), p. ej. el {f:%d-%m-%Y} hora {i + 1}.")
+            raise FacturaError(
+                f"Faltan precios PVPC de {len(sin_precio)} hora(s), p. ej. el {f:%d-%m-%Y} hora {i + 1}."
+            )
 
     # --- split the period where a regulated figure changes ------------------------------------------
     def clave(d: date) -> tuple[object, ...]:
@@ -241,7 +247,7 @@ def calcular_factura(
         else:
             tramos.append([d])
 
-    total_kwh_periodo = (
+    total_kwh_periodo: dict[str, Decimal] = (
         {p: sum((por_dia[d][p] for d in dias), CERO) for p in PERIODOS}
         if por_dia is not None
         else {p: Decimal(totales[p]) for p in PERIODOS}  # type: ignore[index]
@@ -280,7 +286,7 @@ def calcular_factura(
                     _Bruta(
                         1,
                         f"Potencia {p.upper()} ({nombre}): peajes y cargos",
-                        f"{fmt(anual, 6)} €/kW·año",
+                        f"{fmt(anual, 6)} €/kW·año ÷ {nanio} días",
                         reg,
                         ndias,
                         "días",
@@ -297,7 +303,7 @@ def calcular_factura(
                         _Bruta(
                             2,
                             "Potencia P1: margen de comercialización fijo (PVPC)",
-                            f"{fmt(ccf, 3)} €/kW·año",
+                            f"{fmt(ccf, 3)} €/kW·año ÷ {nanio} días",
                             reg,
                             ndias,
                             "días",
@@ -313,7 +319,7 @@ def calcular_factura(
             else:
                 assert oferta.potencia_eur_kw_anio is not None
                 precio = getattr(oferta.potencia_eur_kw_anio, p)
-                importe, precio_texto = kw * precio * ndias / nanio, f"{fmt(precio, 6)} €/kW·año"
+                importe, precio_texto = kw * precio * ndias / nanio, f"{fmt(precio, 6)} €/kW·año ÷ {nanio} días"
             etiqueta = "Potencia" if oferta.incluye_peajes_cargos else "Potencia (margen de la comercializadora)"
             brutas.append(
                 _Bruta(
@@ -381,7 +387,8 @@ def calcular_factura(
                 brutas.append(
                     _Bruta(
                         6,
-                        f"Energía {p.upper()}" + ("" if oferta.incluye_peajes_cargos else " (precio de la comercializadora)"),
+                        f"Energía {p.upper()}"
+                        + ("" if oferta.incluye_peajes_cargos else " (precio de la comercializadora)"),
                         f"{fmt(precio, 6)} €/kWh",
                         reg,
                         kwh[p],
@@ -457,10 +464,10 @@ def calcular_factura(
     for b in brutas:
         k = (b.orden, b.concepto, b.precio_texto, b.regimen, b.multiplicador)
         if k in fusionadas:
-            f = fusionadas[k]
-            f.cantidad += b.cantidad
-            f.importe += b.importe
-            f.kwh += b.kwh
+            previa = fusionadas[k]
+            previa.cantidad += b.cantidad
+            previa.importe += b.importe
+            previa.kwh += b.kwh
         else:
             fusionadas[k] = _Bruta(**{**b.__dict__})
     regimenes = list(dict.fromkeys(b.regimen for b in fusionadas.values()))
@@ -485,7 +492,12 @@ def calcular_factura(
             cantidad = fmt(b.cantidad, 3 if b.unidad == "kWh" else 0)
             importe = euros(b.importe)
             lineas.append(
-                Linea(b.concepto + sufijo(reg), f"{b.multiplicador}{cantidad} {b.unidad} × {b.precio_texto}", importe, b.fuente)
+                Linea(
+                    b.concepto + sufijo(reg),
+                    f"{b.multiplicador}{cantidad} {b.unidad} × {b.precio_texto}",
+                    importe,
+                    b.fuente,
+                )
             )
             base_iee += importe
             kwh_reg += b.kwh
@@ -534,7 +546,12 @@ def calcular_factura(
             elif b.orden == 11:
                 importe = euros(b.importe)
                 lineas.append(
-                    Linea(b.concepto + sufijo(reg), f"{fmt(b.cantidad, 0)} {b.unidad} × {b.precio_texto}", importe, b.fuente)
+                    Linea(
+                        b.concepto + sufijo(reg),
+                        f"{fmt(b.cantidad, 0)} {b.unidad} × {b.precio_texto}",
+                        importe,
+                        b.fuente,
+                    )
                 )
                 g = (datos.impuestos.iva_general.tipo, "art. 90 LIVA (BOE-A-1992-28740)")
                 iva_bases[g] = iva_bases.get(g, CERO) + importe

@@ -241,7 +241,7 @@ def potencia_optima(
         else:
             assert actual.potencia_eur_kw_anio is not None
             precios = {p: getattr(actual.potencia_eur_kw_anio, p) for p in ("p1", "p2")}
-        if not actual.incluye_peajes_cargos and peaje is not None:
+        if not actual.incluye_peajes_cargos and peaje is not None and cargo is not None:
             for p in ("p1", "p2"):
                 precios[p] += peaje.potencia_eur_kw_anio[p] + cargo.potencia_eur_kw_anio[p]  # type: ignore[index]
         delta = {
@@ -275,9 +275,7 @@ class HorasBaratas:
     bloque_media: Decimal | None
 
 
-def horas_baratas(
-    dia: date, precios: dict[tuple[date, int], Decimal], zona: Zona, n: int, bloque: int
-) -> HorasBaratas:
+def horas_baratas(dia: date, precios: dict[tuple[date, int], Decimal], zona: Zona, n: int, bloque: int) -> HorasBaratas:
     del_dia = sorted((i, p) for (d, i), p in precios.items() if d == dia)
     if not del_dia:
         raise FacturaError(f"No hay precios del {dia:%d-%m-%Y}.")

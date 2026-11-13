@@ -122,7 +122,9 @@ def importar_csv(texto: str, zona: Zona = "peninsula") -> Importacion:
     cabecera = [_normaliza(c) for c in filas[0]]
     i_fecha = _columna(cabecera, "fecha", "date", "dia")
     i_hora = _columna(cabecera, "hora", "hour", "time", "periodo_horario")
-    i_kwh = _columna(cabecera, "consumo", "ae_kwh", "ae", "energia_activa", "consumption", "kwh", excluir=("vertid", "as_"))
+    i_kwh = _columna(
+        cabecera, "consumo", "ae_kwh", "ae", "energia_activa", "consumption", "kwh", excluir=("vertid", "as_")
+    )
     i_cups = _columna(cabecera, "cups")
     i_metodo = _columna(cabecera, "metodo", "real", "estimad", "obtencion", "method")
     i_vertida = _columna(cabecera, "vertid", "as_kwh", "excedent", "surplus")
@@ -299,7 +301,13 @@ class ConsumoGuardado(_Model):
                 for m, r in sorted(self.meses.items())
             },
             "manual": [
-                {"desde": t.desde.isoformat(), "hasta": t.hasta.isoformat(), "p1": num(t.p1), "p2": num(t.p2), "p3": num(t.p3)}
+                {
+                    "desde": t.desde.isoformat(),
+                    "hasta": t.hasta.isoformat(),
+                    "p1": num(t.p1),
+                    "p2": num(t.p2),
+                    "p3": num(t.p3),
+                }
                 for t in self.manual
             ],
             "maximetro": [

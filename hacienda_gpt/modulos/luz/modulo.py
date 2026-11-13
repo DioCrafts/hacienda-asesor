@@ -70,7 +70,9 @@ HECHOS: tuple[HechoModulo, ...] = (
         validar_cups,
         sensible=True,
     ),
-    HechoModulo(HECHO_P1, "number", "Potencia contratada P1 (kW)", "Potencia punta-llano de la factura.", validar_potencia),
+    HechoModulo(
+        HECHO_P1, "number", "Potencia contratada P1 (kW)", "Potencia punta-llano de la factura.", validar_potencia
+    ),
     HechoModulo(HECHO_P2, "number", "Potencia contratada P2 (kW)", "Potencia valle de la factura.", validar_potencia),
     HechoModulo(
         HECHO_ZONA,
@@ -177,7 +179,7 @@ class ModuloLuz:
         try:
             p1 = Decimal(str(perfil[HECHO_P1]))
             p2 = Decimal(str(perfil.get(HECHO_P2) or perfil[HECHO_P1]))
-            zona = perfil.get(HECHO_ZONA) or "peninsula"
+            zona = zona_valida(perfil.get(HECHO_ZONA) or "peninsula")
             resultado = comparar(Contrato(p1, p2, zona), consumo, ofertas, actual)
         except (FacturaError, DatoNoDisponibleError, ValueError):
             return salida

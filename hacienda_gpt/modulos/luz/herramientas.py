@@ -111,7 +111,9 @@ def _consumo(ctx: ContextoModulo) -> ConsumoGuardado | None:
     try:
         return cargar_consumo(ctx.perfil.get(HECHO_CONSUMO))
     except ValidationError as exc:
-        raise _EntradaError(f"El consumo guardado no es válido ({exc.errors()[0]['msg']}): vuelve a importarlo.") from exc
+        raise _EntradaError(
+            f"El consumo guardado no es válido ({exc.errors()[0]['msg']}): vuelve a importarlo."
+        ) from exc
 
 
 def _precios_pegados(valor: Any, zona: Zona, avisos: list[str]) -> dict[tuple[date, int], Decimal] | None:
@@ -142,7 +144,9 @@ def calcular(args: Mapping[str, Any], ctx: ContextoModulo) -> ResultadoHerramien
         desde = _fecha(args, "fecha_inicio")
         hasta = _fecha(args, "fecha_fin")
         if desde is None or hasta is None:
-            return _error("Indica «fecha_inicio» y «fecha_fin» del periodo de facturación, tal como salen en la factura.")
+            return _error(
+                "Indica «fecha_inicio» y «fecha_fin» del periodo de facturación, tal como salen en la factura."
+            )
         contrato = _contrato(args, ctx)
         oferta = _oferta(args.get("oferta") or ctx.perfil.get(HECHO_TARIFA), "la tarifa (luz_tarifa_actual)")
         tipos = str(args.get("tipos_reducidos") or "auto")
@@ -151,7 +155,7 @@ def calcular(args: Mapping[str, Any], ctx: ContextoModulo) -> ResultadoHerramien
         avisos: list[str] = []
         lecturas: list[Lectura] | None = None
         dias_kwh = None
-        totales = None
+        totales: dict[str, Decimal] | None = None
         origen = ""
         if args.get("csv"):
             lecturas = importar_csv(str(args["csv"]), contrato.zona).lecturas
@@ -273,9 +277,11 @@ def comparar_tarifas(args: Mapping[str, Any], ctx: ContextoModulo) -> ResultadoH
             dif = f"; {'ahorras' if d < 0 else 'pagarías'} {fmt(abs(d))} € respecto a la actual"
         partes.append(f"{n}. {c.oferta.nombre}{marca}: {fmt(c.total)} € (≈ {fmt(c.anual)} €/año){dif}.")
         if c.oferta.permanencia_hasta:
-            partes.append(f"   Permanencia hasta {c.oferta.permanencia_hasta:%d-%m-%Y}"
-                          + (f", penalización {fmt(c.oferta.penalizacion_eur)} €" if c.oferta.penalizacion_eur else "")
-                          + ".")
+            partes.append(
+                f"   Permanencia hasta {c.oferta.permanencia_hasta:%d-%m-%Y}"
+                + (f", penalización {fmt(c.oferta.penalizacion_eur)} €" if c.oferta.penalizacion_eur else "")
+                + "."
+            )
     mejor = resultado.mejor()
     if mejor is not None and act is not None:
         if mejor.es_actual:
@@ -286,8 +292,14 @@ def comparar_tarifas(args: Mapping[str, Any], ctx: ContextoModulo) -> ResultadoH
     partes.extend(f"No comparada: {d}" for d in resultado.descartadas)
     partes.extend(f"Aviso: {a}" for a in resultado.avisos + avisos)
     datos = cargar_regulados()
-    citas = datos.citas("BOE-A-2024-26218", "BOE-A-2025-26348", "BOE-A-2024-27289", "BOE-A-2025-26705",
-                        "BOE-A-1992-28741", "BOE-A-1992-28740")
+    citas = datos.citas(
+        "BOE-A-2024-26218",
+        "BOE-A-2025-26348",
+        "BOE-A-2024-27289",
+        "BOE-A-2025-26705",
+        "BOE-A-1992-28741",
+        "BOE-A-1992-28740",
+    )
     partes.append(_fuentes_texto(citas))
     resumen = (
         f"Más barata: {mejor.oferta.nombre} ({fmt(mejor.total)} € en {resultado.dias} días)" if mejor else "Sin datos"
@@ -314,7 +326,7 @@ def importar(args: Mapping[str, Any], ctx: ContextoModulo) -> ResultadoHerramien
             dias = sorted({x.fecha for x in imp.lecturas})
             total = sum((x.kwh for x in imp.lecturas), CERO)
             resumen_lectura = (
-                f"Leídas {len(imp.lecturas)} horas del {dias[0]:%d-%m-%Y} al {dias[-1]:%d-%m-%Y} "
+                f"Leídas {fmt(Decimal(len(imp.lecturas)), 0)} horas del {dias[0]:%d-%m-%Y} al {dias[-1]:%d-%m-%Y} "
                 f"({fmt(total, 3)} kWh, formato {imp.formato})."
             )
         else:
@@ -372,7 +384,9 @@ def importar(args: Mapping[str, Any], ctx: ContextoModulo) -> ResultadoHerramien
             ctx.registrar(hechos)
         except ValueError as exc:
             return _error(f"No se ha podido guardar: {exc}")
-        partes.append("Guardado en tu expediente" + (" (incluido el CUPS del fichero)." if HECHO_CUPS in hechos else "."))
+        partes.append(
+            "Guardado en tu expediente" + (" (incluido el CUPS del fichero)." if HECHO_CUPS in hechos else ".")
+        )
     else:
         partes.append("No se ha guardado (no hay permiso de escritura en esta llamada).")
     partes.extend(f"Aviso: {a}" for a in avisos)
@@ -417,11 +431,15 @@ def baratas(args: Mapping[str, Any], ctx: ContextoModulo) -> ResultadoHerramient
         if oferta is not None and oferta.tipo == "fijo" and oferta.energia_eur_kwh is not None:
             e = oferta.energia_eur_kwh
             if e.p1 == e.p2 == e.p3:
-                partes.append(f"Tu tarifa «{oferta.nombre}» tiene precio único ({fmt(e.p1, 6)} €/kWh): la hora no cambia "
-                              "lo que pagas por la energía.")
+                partes.append(
+                    f"Tu tarifa «{oferta.nombre}» tiene precio único ({fmt(e.p1, 6)} €/kWh): la hora no cambia "
+                    "lo que pagas por la energía."
+                )
             else:
-                partes.append(f"Con tu tarifa «{oferta.nombre}»: punta {fmt(e.p1, 6)}, llano {fmt(e.p2, 6)}, valle "
-                              f"{fmt(e.p3, 6)} €/kWh. Lo más barato es concentrar consumo en valle.")
+                partes.append(
+                    f"Con tu tarifa «{oferta.nombre}»: punta {fmt(e.p1, 6)}, llano {fmt(e.p2, 6)}, valle "
+                    f"{fmt(e.p3, 6)} €/kWh. Lo más barato es concentrar consumo en valle."
+                )
         precios = _precios_pegados(args.get("precios_pvpc"), zona, avisos)
         if precios is None and (oferta is None or oferta.tipo == "pvpc" or args.get("consultar_pvpc")):
             try:
@@ -433,7 +451,9 @@ def baratas(args: Mapping[str, Any], ctx: ContextoModulo) -> ResultadoHerramient
             r = horas_baratas(dia, precios, zona, max(1, min(n, 24)), max(1, min(bloque, 24)))
             partes.append("Precio PVPC hora a hora (€/kWh, incluye peajes y cargos, sin impuestos):")
             partes.append("; ".join(f"{h:02d} h {fmt(p, 5)}" for h, p in r.precios))
-            partes.append("Horas más baratas: " + ", ".join(f"{h:02d}-{h + 1:02d} h ({fmt(p, 5)})" for h, p in r.baratas))
+            partes.append(
+                "Horas más baratas: " + ", ".join(f"{h:02d}-{h + 1:02d} h ({fmt(p, 5)})" for h, p in r.baratas)
+            )
             partes.append("Horas más caras: " + ", ".join(f"{h:02d}-{h + 1:02d} h ({fmt(p, 5)})" for h, p in r.caras))
             if r.bloque_inicio is not None and r.bloque_media is not None:
                 partes.append(
@@ -483,7 +503,9 @@ def potencia(args: Mapping[str, Any], ctx: ContextoModulo) -> ResultadoHerramien
         f"Máximo observado ({r.fuente_datos}): P1 {fmt(r.max_p1, 3)} kW, P2 {fmt(r.max_p2, 3)} kW.",
     ]
     if maximos:
-        partes.append(f"Potencia suficiente con margen: P1 {fmt(r.recomendada_p1, 1)} kW, P2 {fmt(r.recomendada_p2, 1)} kW.")
+        partes.append(
+            f"Potencia suficiente con margen: P1 {fmt(r.recomendada_p1, 1)} kW, P2 {fmt(r.recomendada_p2, 1)} kW."
+        )
         if r.ahorro_anual is not None:
             partes.append(f"Bajando a esa potencia ahorrarías unos {fmt(r.ahorro_anual)} € al año con tu tarifa.")
         if r.recomendada_p1 > contrato.potencia_p1_kw:
@@ -538,13 +560,19 @@ def herramientas() -> list[HerramientaModulo]:
                         "oferta": _OFERTA_SCHEMA,
                         "potencia_p1_kw": {"type": "number"},
                         "potencia_p2_kw": {"type": "number"},
-                        "precios_pvpc": {"type": "string", "description": "JSON del indicador 1001 de ESIOS (opcional)."},
+                        "precios_pvpc": {
+                            "type": "string",
+                            "description": "JSON del indicador 1001 de ESIOS (opcional).",
+                        },
                         "tipos_reducidos": {
                             "type": "string",
                             "enum": ["auto", "si", "no"],
                             "description": "Meses con rebaja condicional de IVA/impuesto eléctrico: auto = tipos generales.",
                         },
-                        "total_factura_real": {"type": "number", "description": "Total de la factura real, para comparar."},
+                        "total_factura_real": {
+                            "type": "number",
+                            "description": "Total de la factura real, para comparar.",
+                        },
                     },
                     "required": ["fecha_inicio", "fecha_fin"],
                 },
@@ -561,7 +589,11 @@ def herramientas() -> list[HerramientaModulo]:
                 input_schema={
                     "type": "object",
                     "properties": {
-                        "ofertas": {"type": "array", "items": _OFERTA_SCHEMA, "description": "Ofertas extra a comparar."},
+                        "ofertas": {
+                            "type": "array",
+                            "items": _OFERTA_SCHEMA,
+                            "description": "Ofertas extra a comparar.",
+                        },
                         "incluir_pvpc": {"type": "boolean"},
                         "dias": {"type": "integer", "description": "Días hacia atrás (por defecto 365)."},
                     },
@@ -610,7 +642,10 @@ def herramientas() -> list[HerramientaModulo]:
                         "fecha": fecha,
                         "horas": {"type": "integer", "description": "Cuántas horas baratas listar (6)."},
                         "bloque_horas": {"type": "integer", "description": "Horas seguidas a programar (3)."},
-                        "precios_pvpc": {"type": "string", "description": "JSON del indicador 1001 de ESIOS (opcional)."},
+                        "precios_pvpc": {
+                            "type": "string",
+                            "description": "JSON del indicador 1001 de ESIOS (opcional).",
+                        },
                         "consultar_pvpc": {"type": "boolean"},
                     },
                 },

@@ -305,7 +305,7 @@ def comprobar_evidencias(datos: Regulados, textos: dict[str, str] | None = None)
 
     # Hour ranges of the periods: every "a h-b h" must be printed in the table quote, in this order.
     tabla = _compacto(datos.periodos_2_0td.evidencia[0].cita)
-    esperado = []
+    esperado: list[str] = []
     for horas in (datos.periodos_2_0td.peninsula_baleares_canarias, datos.periodos_2_0td.ceuta_melilla):
         for periodo in PERIODOS:
             esperado.extend(f"{a} h-{b} h" for a, b in getattr(horas, periodo))
