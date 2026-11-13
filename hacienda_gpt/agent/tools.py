@@ -1275,7 +1275,7 @@ class Toolbox:
                 problemas = "; ".join(e["msg"].removeprefix("Value error, ") for e in exc.errors())
                 raise DatosInvalidosError(
                     f"No se puede formar la declaración conjunta sumando los datos de los dos cónyuges: {problemas}. "
-                    "Los gastos repartidos por hijo en `descendientes` deben figurar solo en conyuge_a."
+                    "Un gasto repartido por hijo en `descendientes` debe darse por hijo en los dos cónyuges (los mismos hijos) o solo en uno."
                 ) from exc
         except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
             return _error(str(exc))

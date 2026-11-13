@@ -612,8 +612,9 @@ supone el máximo útil y se dice). Después del 31 de diciembre solo quedan las
 opciones de la declaración.
 
 **Límites**: la conjunta suma las cifras de los dos cónyuges con las reglas de
-`comparar_declaracion_conjunta` (edad y discapacidad del primero, rentas de los hijos
-a cero); en las individuales, la base imponible del resto de la unidad familiar de
+`comparar_declaracion_conjunta`: un solo mínimo del contribuyente con la edad y la
+discapacidad de cada cónyuge (art. 84.2.2.º), el límite de planes de pensiones de cada
+uno (art. 84.2.1.º) y rentas de los hijos a cero; en las individuales, la base imponible del resto de la unidad familiar de
 cada cónyuge es la del otro. Un donativo va entero a un destino y lo paga un cónyuge
 (no se reparte). Las pérdidas latentes son las que indica el usuario (solo
 patrimoniales: las de bonos son rendimientos del capital). Que una deducción

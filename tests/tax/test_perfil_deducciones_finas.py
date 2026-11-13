@@ -329,7 +329,7 @@ def test_joint_tool_reports_a_sum_that_contradicts_the_detail() -> None:
     mal = toolbox.execute(
         _call("comparar_declaracion_conjunta", ejercicio=2026, conyuge_a=a, conyuge_b={"gastos_guarderia": 600})
     )
-    assert mal.is_error and "solo en conyuge_a" in mal.content and "gastos_guarderia" in mal.content
+    assert mal.is_error and "por hijo en los dos cónyuges" in mal.content and "gastos_guarderia" in mal.content
 
 
 # --------------------------------------------------------------------------- #
