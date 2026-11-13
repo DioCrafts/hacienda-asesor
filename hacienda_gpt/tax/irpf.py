@@ -83,6 +83,20 @@ class Descendiente(BaseModel):
         return ejercicio - (self.ejercicio_adopcion or ejercicio - self.edad)
 
 
+class PrevisionSocialMiembro(BaseModel):
+    """One member's own figures inside a joint return, for the limits of art. 52 LIRPF that art. 84.2.1.º
+    applies member by member: their contributions and the income their 30 % cap is worked out from."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    aportacion_plan_pensiones: Decimal = Field(default=ZERO, ge=0)
+    contribucion_empresa_plan_pensiones: Decimal = Field(default=ZERO, ge=0)
+    rendimiento_trabajo_bruto: Decimal = Field(default=ZERO, ge=0)
+    cotizaciones_seguridad_social: Decimal = Field(default=ZERO, ge=0)
+    otros_gastos_deducibles_trabajo: Decimal = Field(default=ZERO, ge=0)
+    rendimiento_actividad_neto: Decimal = ZERO
+
+
 class IRPFInput(BaseModel):
     """One scenario. Amounts are annual, in euros; absent means zero."""
 
@@ -135,6 +149,10 @@ class IRPFInput(BaseModel):
     # Reductions and deductions
     aportacion_plan_pensiones: Decimal = Field(default=ZERO, ge=0)
     contribucion_empresa_plan_pensiones: Decimal = Field(default=ZERO, ge=0)
+    # Joint return only: each member's contributions and own income, since art. 84.2.1.º LIRPF applies the
+    # art. 52 limits member by member. The totals above (contributions, work and activity income) are then
+    # their sums. ``conjunta._conjunta`` fills it from each spouse's figures.
+    prevision_social_por_miembro: list[PrevisionSocialMiembro] | None = Field(default=None, min_length=1, max_length=20)
     donativos: Decimal = Field(default=ZERO, ge=0)
     donativos_recurrentes: bool = False
     pagos_vivienda_habitual_pre2013: Decimal = Field(default=ZERO, ge=0)
@@ -293,6 +311,25 @@ class IRPFInput(BaseModel):
                 )
         return self
 
+    @model_validator(mode="after")
+    def _miembros_de_la_conjunta(self) -> IRPFInput:
+        """The members' figures of a joint return add up to its totals (a total left at zero is their sum)."""
+        miembros = self.prevision_social_por_miembro
+        if miembros is None:
+            return self
+        if self.tributacion == "individual":
+            raise ValueError("«prevision_social_por_miembro» solo se usa en la declaración conjunta")
+        for campo in PrevisionSocialMiembro.model_fields:
+            suma = sum((getattr(m, campo) for m in miembros), ZERO)
+            if not getattr(self, campo):
+                setattr(self, campo, suma)
+            elif abs(getattr(self, campo) - suma) > CENT:
+                raise ValueError(
+                    f"«{campo}» ({getattr(self, campo):.2f} €) no coincide con la suma de los miembros de la unidad "
+                    f"familiar en «prevision_social_por_miembro» ({suma:.2f} €)"
+                )
+        return self
+
 
 class Linea(BaseModel):
     """One line of the computation, traceable to its legal basis."""
@@ -351,6 +388,16 @@ class _Trace:
             self.avisos.append(text)
 
 
+def _rendimientos_para_prevision_social(bruto: Decimal, gastos: Decimal, actividad: Decimal, p: IRPFParams) -> Decimal:
+    """Net work income (after the art. 19.2 expenses, before the art. 20 reduction) plus net activity income:
+    what the 30 % cap of art. 52.1.a) is applied to."""
+    neto_trabajo = ZERO
+    if bruto:
+        neto_previo = bruto - gastos
+        neto_trabajo = max(ZERO, neto_previo - max(ZERO, min(p.trabajo.otros_gastos, neto_previo)))
+    return neto_trabajo + actividad
+
+
 def _reduccion_trabajo(neto_previo: Decimal, otras_rentas: Decimal, p: IRPFParams) -> Decimal:
     """Art. 20: reduction for low work income, phased out in two slopes."""
     r = p.trabajo.reduccion
@@ -373,30 +420,57 @@ def _minimo_descendientes(inp: IRPFInput, m: Minimos) -> Decimal:
     return descendientes
 
 
+def _incremento_por_edad(edad: int | None, m: Minimos) -> Decimal:
+    """Art. 57.2: what the taxpayer minimum rises by over 65 and over 75."""
+    incremento = ZERO
+    if edad is not None and edad > 65:
+        incremento += m.incremento_mayor_65
+    if edad is not None and edad > 75:
+        incremento += m.incremento_mayor_75
+    return incremento
+
+
+def _minimo_discapacidad_propia(grado: int, m: Minimos) -> Decimal:
+    """Art. 60.1: the taxpayer's own disability minimum, with the assistance expenses from 65 %."""
+    if grado >= 65:
+        return m.discapacidad_65 + m.gastos_asistencia
+    if grado >= 33:
+        return m.discapacidad
+    return ZERO
+
+
 def _minimo(inp: IRPFInput, m: Minimos, t: _Trace | None = None) -> Decimal:
     """Personal and family minimum under ``m`` (state amounts, or a community's).
 
-    With a trace, each component is recorded as its own line.
+    A joint return with both spouses has one taxpayer minimum (art. 57.1) but the age increments
+    (art. 57.2) and disability minimum (art. 60.1) of each spouse: art. 84.2.2.º LIRPF, «se tendrán en
+    cuenta las circunstancias personales de cada uno de los cónyuges». The other spouse's are
+    ``edad_conyuge`` and ``grado_discapacidad_conyuge``. With a trace, each component is its own line.
     """
-    total = m.contribuyente
-    if inp.edad is not None and inp.edad > 65:
-        total += m.incremento_mayor_65
-    if inp.edad is not None and inp.edad > 75:
-        total += m.incremento_mayor_75
+    total = m.contribuyente + _incremento_por_edad(inp.edad, m)
 
     descendientes = _minimo_descendientes(inp, m)
 
     mayores_75 = min(inp.num_ascendientes_mayores_75, inp.num_ascendientes_mayores_65)
     ascendientes = m.ascendiente * inp.num_ascendientes_mayores_65 + m.incremento_ascendiente_mayor_75 * mayores_75
 
-    discapacidad = ZERO
-    if inp.grado_discapacidad >= 65:
-        discapacidad = m.discapacidad_65 + m.gastos_asistencia
-    elif inp.grado_discapacidad >= 33:
-        discapacidad = m.discapacidad
+    discapacidad = _minimo_discapacidad_propia(inp.grado_discapacidad, m)
+
+    edad_conyuge = discapacidad_conyuge = ZERO
+    if inp.tributacion == "conjunta_biparental":
+        edad_conyuge = _incremento_por_edad(inp.edad_conyuge, m)
+        discapacidad_conyuge = _minimo_discapacidad_propia(inp.grado_discapacidad_conyuge, m)
 
     if t is not None:
         t.linea("Mínimo del contribuyente", total, m.fuente)
+        if edad_conyuge:
+            t.linea(
+                "Incremento del mínimo por la edad del cónyuge (conjunta, art. 84.2.2.º LIRPF)", edad_conyuge, m.fuente
+            )
+        if discapacidad_conyuge:
+            t.linea(
+                "Mínimo por discapacidad del cónyuge (conjunta, art. 84.2.2.º LIRPF)", discapacidad_conyuge, m.fuente
+            )
         if descendientes:
             label = "Mínimo por descendientes" + (" (50 %, compartido)" if inp.descendientes_compartidos else "")
             t.linea(label, descendientes, m.fuente)
@@ -409,7 +483,7 @@ def _minimo(inp: IRPFInput, m: Minimos, t: _Trace | None = None) -> Decimal:
         if discapacidad:
             t.linea("Mínimo por discapacidad del contribuyente", discapacidad, m.fuente)
 
-    return total + descendientes + ascendientes + discapacidad
+    return total + edad_conyuge + descendientes + ascendientes + discapacidad + discapacidad_conyuge
 
 
 def _cuota_con_minimo(escala: Escala, base: Decimal, minimo: Decimal) -> Decimal:
@@ -854,24 +928,102 @@ def calcular_irpf(inp: IRPFInput, params: IRPFParams | None = None) -> IRPFResul
             "En tributación conjunta deben incluirse las rentas de todos los miembros de la unidad familiar; "
             "asegúrate de que las cifras aportadas las suman."
         )
+        if inp.tributacion == "conjunta_monoparental":
+            t.aviso(
+                "La reducción de la declaración conjunta monoparental no se aplica cuando convives con el padre o la "
+                "madre de alguno de los hijos de la unidad familiar (art. 84.2.4.º LIRPF); no se ha comprobado."
+            )
+        t.aviso(
+            "En tributación conjunta los importes y límites de la individual se aplican una sola vez a las rentas "
+            "sumadas de la unidad familiar, sin multiplicarlos por el número de miembros (art. 84.2 LIRPF): los "
+            f"{p.trabajo.otros_gastos:.0f} € de otros gastos del trabajo, la reducción y la deducción por "
+            "rendimientos del trabajo y los límites de renta de las deducciones estatales. Los límites de los planes "
+            "de pensiones se aplican a cada miembro (art. 84.2.1.º LIRPF)"
+            + (
+                " y los incrementos del mínimo por edad y el mínimo por discapacidad, a cada cónyuge (art. 84.2.2.º "
+                "LIRPF)."
+                if inp.tributacion == "conjunta_biparental"
+                else "."
+            )
+        )
 
     ps = p.prevision_social
-    aportado = inp.aportacion_plan_pensiones + inp.contribucion_empresa_plan_pensiones
+    # (own contribution, employer contribution, income of the 30 % cap) of each partícipe: the return's
+    # taxpayer, or each member of a joint return whose figures are known (art. 84.2.1.º LIRPF).
+    miembros = inp.prevision_social_por_miembro if inp.tributacion != "individual" else None
+    participes = (
+        [
+            (
+                m.aportacion_plan_pensiones,
+                m.contribucion_empresa_plan_pensiones,
+                _rendimientos_para_prevision_social(
+                    m.rendimiento_trabajo_bruto,
+                    m.cotizaciones_seguridad_social + m.otros_gastos_deducibles_trabajo,
+                    m.rendimiento_actividad_neto,
+                    p,
+                ),
+            )
+            for m in miembros
+        ]
+        if miembros
+        else [
+            (
+                inp.aportacion_plan_pensiones,
+                inp.contribucion_empresa_plan_pensiones,
+                neto_trabajo_sin_reduccion + inp.rendimiento_actividad_neto,
+            )
+        ]
+    )
+    aportado = sum((propia + empresa for propia, empresa, _ in participes), ZERO)
     if aportado:
-        limite_importe = min(inp.aportacion_plan_pensiones, ps.limite_general) + min(
-            inp.contribucion_empresa_plan_pensiones, ps.incremento_contribucion_empresarial
-        )
-        limite_porcentual = ps.porcentaje_rendimientos * max(
-            ZERO, neto_trabajo_sin_reduccion + inp.rendimiento_actividad_neto
-        )
-        reduccion_ps = max(ZERO, min(limite_importe, limite_porcentual, general))
+        # Art. 52.1: the lesser of the amount limits and 30 % of the partícipe's net work and activity income.
+        limites = [
+            (
+                min(propia, ps.limite_general) + min(empresa, ps.incremento_contribucion_empresarial),
+                ps.porcentaje_rendimientos * max(ZERO, rendimientos),
+            )
+            for propia, empresa, rendimientos in participes
+        ]
+        limite_importe = sum((importe for importe, _ in limites), ZERO)
+        reducible = sum((min(importe, porcentual) for importe, porcentual in limites), ZERO)
+        reduccion_ps = max(ZERO, min(reducible, general))
         general -= reduccion_ps
         t.linea("Reducción por aportaciones a sistemas de previsión social", -reduccion_ps, ps.fuente)
-        if inp.aportacion_plan_pensiones > ps.limite_general:
+        if miembros:
             t.aviso(
-                f"Solo se han reducido {ps.limite_general:.0f} € de tu aportación individual. El límite puede ser "
-                "mayor si aportas al mismo plan de empleo al que contribuye tu empresa (tabla del art. 52.1 LIRPF), "
-                "lo que no se calcula aquí."
+                "En la declaración conjunta, los límites de reducción por aportaciones a sistemas de previsión social "
+                "se han aplicado a cada miembro de la unidad familiar (art. 84.2.1.º LIRPF), en el orden indicado: "
+                + "; ".join(
+                    f"{n}.º, {min(importe, porcentual):.2f} € reducibles de {propia + empresa:.2f} € aportados "
+                    f"(límite del {ps.porcentaje_rendimientos * 100:.0f} % de sus rendimientos netos del trabajo y "
+                    f"de actividades: {porcentual:.2f} €)"
+                    for n, ((propia, empresa, _), (importe, porcentual)) in enumerate(
+                        zip(participes, limites, strict=True), start=1
+                    )
+                    if propia + empresa
+                )
+                + "."
+            )
+        elif inp.tributacion != "individual":
+            t.aviso(
+                "En la declaración conjunta, los límites de los planes de pensiones se aplican a cada miembro de la "
+                "unidad familiar (art. 84.2.1.º LIRPF). Sin las cifras de cada uno («prevision_social_por_miembro») "
+                "se ha aplicado un único límite a las aportaciones sumadas: la reducción puede ser mayor si aportáis "
+                "los dos, o menor si aporta quien no tiene rendimientos del trabajo o de actividades."
+            )
+        if any(propia > ps.limite_general for propia, _, _ in participes):
+            t.aviso(
+                (
+                    f"Solo se han reducido {ps.limite_general:.0f} € de tu aportación individual. El límite puede ser "
+                    "mayor si aportas al mismo plan de empleo al que contribuye tu empresa (tabla del art. 52.1 LIRPF), "
+                    "lo que no se calcula aquí."
+                )
+                if not miembros
+                else (
+                    f"Solo se han reducido {ps.limite_general:.0f} € de la aportación individual de cada miembro que "
+                    "aporta más. El límite puede ser mayor si aporta al mismo plan de empleo al que contribuye su "
+                    "empresa (tabla del art. 52.1 LIRPF), lo que no se calcula aquí."
+                )
             )
         if reduccion_ps < limite_importe:
             t.aviso(

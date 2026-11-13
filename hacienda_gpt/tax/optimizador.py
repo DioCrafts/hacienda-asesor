@@ -49,7 +49,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from hacienda_gpt.tax.conjunta import _conjunta
+from hacienda_gpt.tax.conjunta import _conjunta, hijos_comunes
 from hacienda_gpt.tax.irpf import IRPFInput, IRPFResult, _minimo_descendientes, calcular_irpf
 from hacienda_gpt.tax.params import (
     GASTOS_DESGLOSADOS,
@@ -602,19 +602,6 @@ def _agregar_lineas(resultados: Iterable[IRPFResult]) -> dict[str, tuple[Decimal
 
 Donativo = tuple[str, int, Decimal]  # (destination, donor 0/1, amount)
 
-# The household's children, copied to a spouse who gave none (maternity stays with the mother).
-_HIJOS_COMUNES = (
-    "num_descendientes",
-    "num_descendientes_menores_3",
-    "hijos_nacidos_en_el_ejercicio",
-    "hijos_nacidos_ultimos_3_ejercicios",
-    "hijos_adoptados_en_el_ejercicio",
-    "num_hijos_primer_ciclo_infantil",
-    "num_hijos_gastos_educativos",
-    "familia_numerosa",
-    "familia_numerosa_especial",
-)
-
 
 @dataclass(frozen=True)
 class _Punto:
@@ -706,34 +693,32 @@ class _Optimizador:
         self.estado = _Estado()
 
         self.con_conyuge = conyuge is not None
-        if (
-            conyuge is not None
-            and contribuyente.num_descendientes
-            and not conyuge.num_descendientes
-            and not conocidos_conyuge & {"num_descendientes", "descendientes"}
-        ):
-            # The children are common (the house convention): the spouse's return gets them too, without
-            # their expenses, which stay in the user's figures.
-            comunes: dict[str, Any] = {campo: getattr(contribuyente, campo) for campo in _HIJOS_COMUNES}
-            if contribuyente.descendientes:
-                comunes["descendientes"] = [h.model_copy(update={"gastos": {}}) for h in contribuyente.descendientes]
-            conyuge = conyuge.model_copy(update=comunes)
-            self.supuestos.append(
-                "Tu cónyuge no ha indicado hijos: se han tomado los tuyos como comunes. Sus gastos (guardería, "
-                "colegio…) figuran solo en tu declaración."
-            )
-        hijos = max(contribuyente.num_descendientes, conyuge.num_descendientes if conyuge else 0) > 0
+        self.hijos_de_ambos = False
         if conyuge is not None:
             if contribuyente.tributacion == "conjunta_monoparental":
                 raise DatosInvalidosError(
                     "Con los datos de tu cónyuge, la declaración conjunta es la de la unidad familiar con cónyuge "
                     "(conjunta_biparental), no la monoparental."
                 )
-            # The house convention of comparar_tributacion: children are common, the minimum is shared.
-            self.individuales = [
-                contribuyente.model_copy(update={"tributacion": "individual", "descendientes_compartidos": hijos}),
-                conyuge.model_copy(update={"tributacion": "individual", "descendientes_compartidos": hijos}),
-            ]
+            # Children common to both separate returns, each applying half the minimum (as comparar_tributacion).
+            comunes = hijos_comunes(
+                contribuyente,
+                conyuge,
+                sin_hijos_a=bool(conocidos & {"num_descendientes", "descendientes"}),
+                sin_hijos_b=bool(conocidos_conyuge & {"num_descendientes", "descendientes"}),
+            )
+            if comunes.copiados_b:
+                self.supuestos.append(
+                    "Tu cónyuge no ha indicado hijos: se han tomado los tuyos como comunes. Sus gastos (guardería, "
+                    "colegio…) figuran solo en tu declaración."
+                )
+            if comunes.copiados_a:
+                self.supuestos.append(
+                    "No has indicado hijos: se han tomado los de tu cónyuge como comunes. Sus gastos (guardería, "
+                    "colegio…) figuran solo en su declaración."
+                )
+            self.hijos_de_ambos = bool(comunes.a.num_descendientes and comunes.b.num_descendientes)
+            self.individuales = [x.model_copy(update={"tributacion": "individual"}) for x in (comunes.a, comunes.b)]
             self.base_conjunta = contribuyente.tributacion == "conjunta_biparental"
         # A single return already marked joint without the spouse's own figures: it is kept as it is.
         self.conjunta_sin_desglose = conyuge is None and contribuyente.tributacion == "conjunta_biparental"
@@ -758,11 +743,6 @@ class _Optimizador:
             res = self._calcular(("R", i), _fijo(inp, self.p))
             self.rn.append(self._rendimientos_para_limite(inp, res))
         self.tope30 = [_abajo(ps.porcentaje_rendimientos * max(ZERO, rn)) for rn in self.rn]
-        if self.con_conyuge and any(rn < 0 for rn in self.rn):
-            self.avisos.append(
-                "Uno de los cónyuges tiene rendimientos netos del trabajo y de actividades negativos: en conjunta, "
-                "el límite del 30 % de cada cónyuge puede no reflejarse exactamente."
-            )
         self.util = [
             min(ps.limite_general, max(ZERO, tope - min(e, ps.incremento_contribucion_empresarial)))
             for tope, e in zip(self.tope30, self.e0, strict=True)
@@ -861,7 +841,8 @@ class _Optimizador:
             problemas = "; ".join(e["msg"].removeprefix("Value error, ") for e in exc.errors())
             raise DatosInvalidosError(
                 f"No se puede formar la declaración conjunta sumando los datos de los dos cónyuges: {problemas}. "
-                "Los gastos repartidos por hijo en `descendientes` deben figurar solo en los datos del contribuyente."
+                "Un gasto repartido por hijo en `descendientes` debe darse por hijo también en el otro cónyuge, o "
+                "solo en uno de los dos."
             ) from exc
 
     def _rendimientos_para_limite(self, inp: IRPFInput, res: IRPFResult) -> Decimal:
@@ -1146,34 +1127,6 @@ class _Optimizador:
             self._entradas[clave] = inp
         return res
 
-    def _reducible(self, i: int, aportacion: Decimal) -> Decimal:
-        """What one member's contributions reduce, before the base cap (art. 52.1 per member, art. 84.2.1.º)."""
-        ps = self.p.prevision_social
-        importe = min(aportacion, ps.limite_general) + min(self.e0[i], ps.incremento_contribucion_empresarial)
-        return min(importe, self.tope30[i])
-
-    def _params_conjunta(self, reducible: Decimal) -> IRPFParams:
-        """Parameters whose single art. 52 limit is the sum of the members' own limits.
-
-        ``IRPFInput`` has one contribution field, so a joint return built by adding both spouses'
-        figures would apply the limits once to the sum. Art. 84.2.1.º LIRPF applies them to each
-        member: the optimiser works out each spouse's reducible amount from the data limits and
-        hands the calculator their sum as the return's limit (no percentage cap left to apply: it
-        is already inside each member's figure). Only the base cap remains, as in the law.
-        """
-        ps = self.p.prevision_social
-        return self.p.model_copy(
-            update={
-                "prevision_social": ps.model_copy(
-                    update={
-                        "limite_general": reducible,
-                        "incremento_contribucion_empresarial": ZERO,
-                        "porcentaje_rendimientos": Decimal(1),
-                    }
-                )
-            }
-        )
-
     def _bi(self, i: int, perdida: Decimal) -> Decimal:
         """Base imponible (general + savings) of spouse ``i`` after realising ``perdida``; no other lever moves it."""
         clave = (i, perdida)
@@ -1199,21 +1152,24 @@ class _Optimizador:
             assert self._j0 is not None
             j0 = self._j0
             perdida = punto.perdida[0] + punto.perdida[1]
-            cambios: dict[str, Any] = {"ganancias_patrimoniales": j0.ganancias_patrimoniales - perdida}
-            if self.con_conyuge:
-                reducible = sum((self._reducible(i, self.a0[i] + punto.pension[i]) for i in range(2)), ZERO)
-                cambios |= {"aportacion_plan_pensiones": reducible, "contribucion_empresa_plan_pensiones": ZERO}
-                params = self._params_conjunta(reducible)
-                clave_p: Decimal = reducible
-            else:
-                cambios["aportacion_plan_pensiones"] = j0.aportacion_plan_pensiones + punto.pension[0]
-                params = self.p
-                clave_p = punto.pension[0]
+            cambios: dict[str, Any] = {
+                "ganancias_patrimoniales": j0.ganancias_patrimoniales - perdida,
+                "aportacion_plan_pensiones": j0.aportacion_plan_pensiones + sum(punto.pension, ZERO),
+            }
+            if j0.prevision_social_por_miembro:
+                # Each spouse's own contribution (the user is the first member): the calculator applies each
+                # member's limits (art. 84.2.1.º LIRPF).
+                miembros = list(j0.prevision_social_por_miembro)
+                for i, extra in enumerate(punto.pension[: len(miembros)]):
+                    miembros[i] = miembros[i].model_copy(
+                        update={"aportacion_plan_pensiones": miembros[i].aportacion_plan_pensiones + extra}
+                    )
+                cambios["prevision_social_por_miembro"] = miembros
             don_clave = (don[0], 0, don[2]) if don is not None else None
             if don is not None:
                 cambios |= _sumar_donativo(j0, don[0], don[2])
-            clave: tuple[Any, ...] = ("J", clave_p, perdida, don_clave)
-            res = self._calcular(clave, _con_cambios(j0, cambios, params))
+            clave: tuple[Any, ...] = ("J", punto.pension, perdida, don_clave)
+            res = self._calcular(clave, _con_cambios(j0, cambios, self.p))
             declaraciones.append(("conjunta", self._entradas[clave], res))
         else:
             for i, base in enumerate(self.individuales):
@@ -1994,13 +1950,14 @@ class _Optimizador:
         )
         supuestos = list(self.supuestos)
         if self.con_conyuge:
+            if self.hijos_de_ambos:
+                supuestos.append(
+                    "Los hijos se han tomado como comunes: en las declaraciones individuales cada cónyuge aplica la "
+                    f"mitad del mínimo por descendientes ({_cita('art. 61.1.ª LIRPF')})."
+                )
             supuestos += [
-                "Los hijos se han tomado como comunes: en las declaraciones individuales cada cónyuge aplica la mitad "
-                f"del mínimo por descendientes ({_cita('art. 61.1.ª LIRPF')}).",
                 "En las declaraciones individuales, la base imponible del resto de la unidad familiar de cada cónyuge "
                 "es la del otro en cada escenario (no constan rentas de los hijos).",
-                "En la conjunta se usan la edad y la discapacidad del contribuyente; si tu cónyuge tiene más de 65 años "
-                "o discapacidad, su mínimo no está incluido y la conjunta saldría algo mejor.",
                 "En la conjunta, cada cónyuge aplica su propio límite de planes de pensiones "
                 f"({_cita('art. 84.2.1.º LIRPF')}).",
             ]

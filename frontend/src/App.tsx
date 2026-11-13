@@ -37,7 +37,8 @@ import { ObligationCardList } from "./components/ObligationCard";
 import { PrivacyPanel } from "./components/PrivacyPanel";
 import { RichText } from "./components/RichText";
 import { AutonomosPanel } from "./components/AutonomosPanel";
-import { SimulatorPanel } from "./components/SimulatorPanel";
+import { OptimizerPanel } from "./components/OptimizerPanel";
+import { type SimulatorSeed, SimulatorPanel } from "./components/SimulatorPanel";
 import { Sidebar } from "./components/Sidebar";
 import { SourceCardList } from "./components/SourceCard";
 import { TopBar } from "./components/TopBar";
@@ -110,6 +111,10 @@ function Advisor({ account }: { account?: AccountControls }) {
   const [caseOpen, setCaseOpen] = useState(false);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [autonomosOpen, setAutonomosOpen] = useState(false);
+  const [optimizerOpen, setOptimizerOpen] = useState(false);
+  // Figures the optimiser hands to the simulator ("Usar este plan en el simulador"): the simulator is
+  // remounted with them, for the conversation they were computed in.
+  const [simulatorSeed, setSimulatorSeed] = useState<{ id: number; conversationId: string; seed: SimulatorSeed } | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<{ caseId: string; items: AdvisorNotification[] } | null>(null);
   // Key of the last request that finished; while it differs from the current one we are loading.
@@ -306,6 +311,7 @@ function Advisor({ account }: { account?: AccountControls }) {
   function switchTo(id: string) {
     stopTurn();
     setActiveId(id);
+    setSimulatorSeed(null);
     setMenuOpen(false);
     setCaseError(null);
     setComposerSeed((seed) => ({ id: seed.id + 1, text: "" }));
@@ -403,6 +409,7 @@ function Advisor({ account }: { account?: AccountControls }) {
           onOpenCase={() => setCaseOpen(true)}
           onOpenSimulator={() => setSimulatorOpen(true)}
           onOpenAutonomos={() => setAutonomosOpen(true)}
+          onOpenOptimizer={() => setOptimizerOpen(true)}
           onOpenNotifications={() => setNotificationsOpen(true)}
           unreadNotifications={unreadNotifications}
           onOpenMenu={() => setMenuOpen(true)}
@@ -528,7 +535,8 @@ function Advisor({ account }: { account?: AccountControls }) {
       />
       {/* Keyed by conversation: figures typed for one consultation never leak into another. */}
       <SimulatorPanel
-        key={activeId}
+        key={simulatorSeed?.conversationId === activeId ? `${activeId}-plan-${simulatorSeed.id}` : activeId}
+        seed={simulatorSeed?.conversationId === activeId ? simulatorSeed.seed : null}
         open={simulatorOpen}
         onClose={() => setSimulatorOpen(false)}
         caseId={active.caseId}
@@ -550,6 +558,25 @@ function Advisor({ account }: { account?: AccountControls }) {
           // The panel has saved the income and expenses as facts of the case; the simulator
           // works the activity's net income out of them together with the rest of the case.
           setAutonomosOpen(false);
+          setSimulatorOpen(true);
+        }}
+      />
+      <OptimizerPanel
+        key={`optimizador-${activeId}`}
+        open={optimizerOpen}
+        onClose={() => setOptimizerOpen(false)}
+        caseId={active.caseId}
+        facts={active.facts}
+        taxPeriod={active.taxPeriod}
+        onSaveFact={handleChangeFact}
+        busy={busy}
+        onOpenSimulator={() => {
+          setOptimizerOpen(false);
+          setSimulatorOpen(true);
+        }}
+        onUseInSimulator={(seed) => {
+          setSimulatorSeed((prev) => ({ id: (prev?.id ?? 0) + 1, conversationId: activeId, seed }));
+          setOptimizerOpen(false);
           setSimulatorOpen(true);
         }}
       />

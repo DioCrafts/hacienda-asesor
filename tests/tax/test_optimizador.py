@@ -161,8 +161,9 @@ def test_joint_filing_flips_the_best_pension_allocation_and_a_greedy_search_miss
 
 
 def test_joint_return_with_per_member_limits_matches_the_calculator_where_one_limit_suffices() -> None:
-    """The joint return hands the calculator the sum of each member's limit (art. 84.2.1.º); when only
-    one member contributes within its own limit, that is exactly what the plain joint return computes."""
+    """The optimiser's joint return is the calculator's joint return of the two spouses' figures, which
+    applies each member's own art. 52 limits (art. 84.2.1.º LIRPF): with one contributor, and with both
+    contributing beyond what a single 1.500 € limit on the sum would allow."""
     sin_rentas = IRPFInput(ejercicio=2026, comunidad_autonoma="Madrid")
     plan = optimizar(ALTO, conyuge=sin_rentas, fecha=NOV, restricciones=SI)
     assert plan.optimo.tributacion == "conjunta_biparental"
@@ -176,6 +177,21 @@ def test_joint_return_with_per_member_limits_matches_the_calculator_where_one_li
     assert [(linea.concepto, linea.importe) for linea in decl.resultado.lineas] == [
         (linea.concepto, linea.importe) for linea in directo.lineas
     ]
+
+    # Both spouses contribute: 1.500 € and the spouse's own 30 % cap, 30 % × (4.000 - 254 - 2.000) = 523,80 €.
+    plan = optimizar(ALTO, conyuge=BAJO, fecha=NOV, restricciones=SI)
+    (decl,) = plan.optimo.declaraciones
+    aportaciones = {p.id: p.importe for p in plan.palancas}
+    directo = calcular_irpf(
+        _conjunta(
+            ALTO.model_copy(update={"aportacion_plan_pensiones": aportaciones["plan_pensiones_contribuyente"]}),
+            BAJO.model_copy(update={"aportacion_plan_pensiones": aportaciones["plan_pensiones_conyuge"]}),
+        )
+    )
+    assert decl.resultado == directo
+    assert next(
+        linea.importe for linea in directo.lineas if linea.concepto.startswith("Reducción por aportaciones")
+    ) == -(D(1500) + D("523.80"))
 
 
 def test_the_25_percent_cap_of_art_49_limits_loss_harvesting() -> None:
@@ -412,7 +428,7 @@ def test_brute_force_on_small_grids_never_beats_the_optimum() -> None:
     assert plan.optimo.resultado_total == mejor == totales[(D(1000), D(1000))]
 
 
-def test_brute_force_for_a_couple_within_what_the_plain_calculator_can_check() -> None:
+def test_brute_force_for_a_couple_with_the_plain_calculator() -> None:
     plan = optimizar(ALTO, conyuge=BAJO, fecha=NOV, restricciones=SI)
     hijos = False
     individuales = [x.model_copy(update={"descendientes_compartidos": hijos}) for x in (ALTO, BAJO)]
@@ -427,9 +443,8 @@ def test_brute_force_for_a_couple_within_what_the_plain_calculator_can_check() -
         a = a.model_copy(update={"base_imponible_resto_unidad_familiar": bi(rb)})
         b = b.model_copy(update={"base_imponible_resto_unidad_familiar": bi(ra)})
         puntos.append(calcular_irpf(a).resultado + calcular_irpf(b).resultado)
-        # Joint return, only where one 1.500 € limit on the sum is what the law gives (each within its own cap).
-        if xa + xb <= 1500 and xb <= D("523.80"):
-            puntos.append(calcular_irpf(_conjunta(a, b)).resultado)
+        # Joint return: the calculator applies each spouse's own limits (art. 84.2.1.º LIRPF).
+        puntos.append(calcular_irpf(_conjunta(a, b)).resultado)
     assert plan.optimo.resultado_total <= min(puntos)
 
 
@@ -662,6 +677,9 @@ def test_children_given_by_one_spouse_are_common_to_both_separate_returns() -> N
     )
     conyuge = next(d.resultado for d in sin.base.declaraciones if d.titular == "conyuge")
     assert not any(linea.concepto.startswith("Mínimo por descendientes") for linea in conyuge.lineas)
+    # ...and the parent applies the whole minimum: nobody else in the household shares it (art. 61.1.ª).
+    propia = next(d.resultado for d in sin.base.declaraciones if d.titular == "contribuyente")
+    assert any(linea.concepto == "Mínimo por descendientes" for linea in propia.lineas)
 
 
 def test_a_search_that_runs_out_of_budget_says_so_and_still_respects_the_constraints() -> None:

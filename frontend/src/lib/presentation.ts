@@ -611,6 +611,44 @@ export function verificationSummary(claims: ClaimCheck[]): string | null {
 }
 
 
+// ---- Autonomous communities ------------------------------------------------
+
+/** The communities the calculators know, as the simulator and the optimiser offer them. */
+export const COMUNIDADES: Array<{ value: string; label: string }> = [
+  { value: "", label: "Sin indicar" },
+  { value: "Andalucía", label: "Andalucía" },
+  { value: "Aragón", label: "Aragón" },
+  { value: "Asturias", label: "Principado de Asturias" },
+  { value: "Baleares", label: "Illes Balears" },
+  { value: "Canarias", label: "Canarias" },
+  { value: "Cantabria", label: "Cantabria" },
+  { value: "Castilla-La Mancha", label: "Castilla-La Mancha" },
+  { value: "Castilla y León", label: "Castilla y León" },
+  { value: "Cataluña", label: "Cataluña" },
+  { value: "Comunidad Valenciana", label: "Comunitat Valenciana" },
+  { value: "Extremadura", label: "Extremadura" },
+  { value: "Galicia", label: "Galicia" },
+  { value: "La Rioja", label: "La Rioja" },
+  { value: "Madrid", label: "Comunidad de Madrid" },
+  { value: "Murcia", label: "Región de Murcia" },
+  { value: "Otra", label: "Navarra, País Vasco, Ceuta o Melilla" },
+];
+
+// Accent- and case-insensitive match of a saved community name against the list.
+const plain = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+
+/** The list value for a `comunidad_autonoma` fact: "" when absent, "Otra" when not in the list. */
+export function comunidadDeExpediente(value: unknown): string {
+  if (typeof value !== "string") return "";
+  const saved = plain(value);
+  const match = COMUNIDADES.find((c) => c.value && c.value !== "Otra" && (saved.includes(plain(c.value)) || saved.includes(plain(c.label))));
+  return match ? match.value : "Otra";
+}
+
 // ---- Money -----------------------------------------------------------------
 
 const EUR_CENTS = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" });

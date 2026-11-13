@@ -41,8 +41,9 @@ HIJOS = [
     {"edad": 2, "etapa_educativa": "infantil_primer_ciclo", "gastos": {"gastos_guarderia": 1800}},
     {"fecha_nacimiento": "2018-05-01", "etapa_educativa": "primaria", "gastos": {"gastos_libros_texto": 120.5}},
 ]
-# Inputs that are not profile facts on purpose: the year, choices made per calculation, and the
-# children's detail (a structured fact of its own).
+# Inputs that are not profile facts on purpose: the year, choices made per calculation, the
+# children's detail (a structured fact of its own) and the members' figures of a joint return
+# (built by the joint comparison from each spouse's own figures).
 _NO_SON_HECHOS = {
     "ejercicio",
     "tributacion",
@@ -52,7 +53,10 @@ _NO_SON_HECHOS = {
     "donativos_recurrentes",
     "hijos_deduccion_maternidad",
     DESCENDIENTES,
+    "prevision_social_por_miembro",
 }
+# Inputs the agent's tools fill themselves (the joint comparison builds each member's figures).
+_NO_DESCRITOS = {"ejercicio", "prevision_social_por_miembro"}
 
 
 class _NoSearch:
@@ -247,7 +251,9 @@ def test_tool_schemas_describe_the_new_inputs() -> None:
     # Every calculator input is named in the description the model reads (the benefits tool
     # refers to the calculator's list).
     for spec in (CALCULATE_TOOL, JOINT_TOOL):
-        assert [name for name in IRPFInput.model_fields if name != "ejercicio" and name not in spec.description] == []
+        assert [
+            name for name in IRPFInput.model_fields if name not in _NO_DESCRITOS and name not in spec.description
+        ] == []
     assert "mismos `datos` que calcular_irpf" in BENEFITS_TOOL.description
     hijos = CALCULATE_TOOL.input_schema["properties"]["datos"]["properties"][DESCENDIENTES]
     assert hijos["type"] == "array"

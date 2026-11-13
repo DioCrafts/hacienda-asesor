@@ -9,7 +9,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import type { Benefit, Fact, Simulation } from "../api";
 import { ApiError, simulate } from "../api";
 import { newId } from "../lib/id";
-import { ETAPA_LABEL, factLabel, formatMoney } from "../lib/presentation";
+import { COMUNIDADES, ETAPA_LABEL, comunidadDeExpediente, factLabel, formatMoney } from "../lib/presentation";
 
 type FieldKind = "money" | "count" | "year" | "flag";
 interface FieldDef {
@@ -346,31 +346,6 @@ function derivedFromChildren(rows: ChildRow[], year: number): Record<string, str
   return out;
 }
 
-const COMUNIDADES = [
-  { value: "", label: "Sin indicar" },
-  { value: "Andalucía", label: "Andalucía" },
-  { value: "Aragón", label: "Aragón" },
-  { value: "Asturias", label: "Principado de Asturias" },
-  { value: "Baleares", label: "Illes Balears" },
-  { value: "Canarias", label: "Canarias" },
-  { value: "Cantabria", label: "Cantabria" },
-  { value: "Castilla-La Mancha", label: "Castilla-La Mancha" },
-  { value: "Castilla y León", label: "Castilla y León" },
-  { value: "Cataluña", label: "Cataluña" },
-  { value: "Comunidad Valenciana", label: "Comunitat Valenciana" },
-  { value: "Extremadura", label: "Extremadura" },
-  { value: "Galicia", label: "Galicia" },
-  { value: "La Rioja", label: "La Rioja" },
-  { value: "Madrid", label: "Comunidad de Madrid" },
-  { value: "Murcia", label: "Región de Murcia" },
-  { value: "Otra", label: "Navarra, País Vasco, Ceuta o Melilla" },
-];
-// Accent- and case-insensitive match of a saved community name against the list.
-const plain = (text: string) =>
-  text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
 const FIELDS = [...GROUPS, MADRID_GROUP, ...REGIONAL_GROUPS].flatMap((g) => g.fields).flatMap((f) => [f, ...(f.parts ?? [])]);
 const FLAGS = new Set(FIELDS.filter((f) => f.kind === "flag").map((f) => f.name));
 const TRIBUTACION = [
@@ -391,6 +366,15 @@ function parseNumber(raw: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Figures to start from instead of the saved case (e.g. the optimiser's plan); read once, on mount. */
+export interface SimulatorSeed {
+  edits: Record<string, string>;
+  tributacion?: string | null;
+  comunidad?: string | null;
+  /** Shown above the result while the seeded figures are on screen. */
+  note?: string;
+}
+
 interface SimulatorPanelProps {
   open: boolean;
   onClose: () => void;
@@ -400,17 +384,18 @@ interface SimulatorPanelProps {
   // Persist edited figures to the case (null removes the fact). Resolves true when saved.
   onSaveFact: (factName: string, value: number | string | boolean | null) => Promise<boolean>;
   busy: boolean;
+  seed?: SimulatorSeed | null;
 }
 
 const INPUT_CLASS = "w-full rounded-lg border bg-surface px-3 py-2 text-[16px] text-ink focus:outline-none sm:text-[14px]";
 const SMALL_INPUT_CLASS = "w-full rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[16px] text-ink focus:border-primary focus:outline-none sm:text-[13.5px]";
 
-export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSaveFact, busy }: SimulatorPanelProps) {
+export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSaveFact, busy, seed = null }: SimulatorPanelProps) {
   // Edits layered over the case facts: { field: raw text }. Empty = baseline.
-  const [edits, setEdits] = useState<Record<string, string>>({});
-  const [tributacion, setTributacion] = useState("individual");
+  const [edits, setEdits] = useState<Record<string, string>>(() => seed?.edits ?? {});
+  const [tributacion, setTributacion] = useState(seed?.tributacion ?? "individual");
   // null = keep whatever the case says.
-  const [comunidadEdit, setComunidadEdit] = useState<string | null>(null);
+  const [comunidadEdit, setComunidadEdit] = useState<string | null>(seed?.comunidad ?? null);
   // The detail of each child being edited; null = the one saved in the case.
   const [childrenEdit, setChildrenEdit] = useState<ChildRow[] | null>(null);
   // Breakdowns the user opened or closed by hand (otherwise open when they hold a figure).
@@ -428,13 +413,7 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
     return map;
   }, [facts]);
 
-  const savedComunidad = useMemo(() => {
-    const value = facts.find((f) => f.name === "comunidad_autonoma")?.value;
-    if (typeof value !== "string") return "";
-    const saved = plain(value);
-    const match = COMUNIDADES.find((c) => c.value && c.value !== "Otra" && (saved.includes(plain(c.value)) || saved.includes(plain(c.label))));
-    return match ? match.value : "Otra";
-  }, [facts]);
+  const savedComunidad = useMemo(() => comunidadDeExpediente(facts.find((f) => f.name === "comunidad_autonoma")?.value), [facts]);
 
   const savedChildren = useMemo(() => parseChildrenFact(facts), [facts]);
   const children = childrenEdit ?? savedChildren.rows;
@@ -808,6 +787,12 @@ export function SimulatorPanel({ open, onClose, caseId, facts, taxPeriod, onSave
                 {error}
                 {simulation && <span className="block text-[12px] text-muted">El resultado de abajo es el del último cálculo válido.</span>}
               </span>
+            </p>
+          )}
+
+          {seed?.note && changed && (
+            <p role="status" className="rounded-lg border border-primary/30 bg-primary-soft px-3 py-2 text-[13px] leading-snug text-primary-dark">
+              {seed.note}
             </p>
           )}
 
