@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<documento fecha_actualizacion="20250603071555">
+  <metadatos>
+    <identificador>BOE-A-2025-11062</identificador>
+    <origen_legislativo codigo="1">Estatal</origen_legislativo>
+    <departamento codigo="1020">Banco de España</departamento>
+    <rango codigo="1370">Resolución</rango>
+    <fecha_disposicion>20250602</fecha_disposicion>
+    <numero_oficial/>
+    <titulo>Resolución de 2 de junio de 2025, del Banco de España, por la que se publican determinados tipos de interés oficiales de referencia del mercado hipotecario.</titulo>
+    <diario codigo="BOE">Boletín Oficial del Estado</diario>
+    <fecha_publicacion>20250603</fecha_publicacion>
+    <diario_numero>133</diario_numero>
+    <seccion>3</seccion>
+    <subseccion/>
+    <pagina_inicial>72926</pagina_inicial>
+    <pagina_final>72926</pagina_final>
+    <suplemento_pagina_inicial/>
+    <suplemento_pagina_final/>
+    <url_pdf>https://www.boe.es/boe/dias/2025/06/03/pdfs/BOE-A-2025-11062.pdf</url_pdf>
+    <url_epub/>
+    <url_pdf_catalan/>
+    <url_pdf_euskera/>
+    <url_pdf_gallego/>
+    <url_pdf_valenciano/>
+    <estatus_legislativo/>
+    <fecha_vigencia/>
+    <estatus_derogacion>N</estatus_derogacion>
+    <fecha_derogacion/>
+    <judicialmente_anulada>N</judicialmente_anulada>
+    <fecha_anulacion/>
+    <vigencia_agotada>N</vigencia_agotada>
+    <estado_consolidacion codigo="0"/>
+    <letra_imagen>A</letra_imagen>
+    <suplemento_letra_imagen/>
+  </metadatos>
+  <analisis>
+    <materias/>
+    <notas/>
+    <referencias>
+      <anteriores/>
+      <posteriores/>
+    </referencias>
+    <alertas/>
+  </analisis>
+  <texto>
+    <table class="tabla" data-omitir-repetir-tfoot="true">
+      <caption>
+        <p class="centro_cursiva">Mayo 2025</p>
+      </caption>
+      <colgroup>
+        <col width="86%"/>
+        <col width="14%"/>
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="cabeza_tabla">Tipos de referencia<sup>1</sup></th>
+          <th class="cabeza_tabla">Porcentaje</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cuerpo_tabla_izq">1. Euríbor. Plazos:</td>
+          <td class="cuerpo_tabla_coma"> </td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Una semana.</td>
+          <td class="cuerpo_tabla_coma">2,158</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Un mes.</td>
+          <td class="cuerpo_tabla_coma">2,094</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Tres meses.</td>
+          <td class="cuerpo_tabla_coma">2,087</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Seis meses.</td>
+          <td class="cuerpo_tabla_coma">2,116</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Un año.</td>
+          <td class="cuerpo_tabla_coma">2,081</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">2. Permuta de intereses/<em>Interest Rate Swap</em> (<em>IRS</em>) al plazo de cinco años.</td>
+          <td class="cuerpo_tabla_coma">2,237</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">3. Tipo de interés de referencia basado en el Euro <em>short-term rate</em> (€<em>STR</em>). Plazos:</td>
+          <td class="cuerpo_tabla_coma"> </td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Una semana.</td>
+          <td class="cuerpo_tabla_coma">2,169</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Un mes.</td>
+          <td class="cuerpo_tabla_coma">2,170</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Tres meses.</td>
+          <td class="cuerpo_tabla_coma">2,355</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Seis meses.</td>
+          <td class="cuerpo_tabla_coma">2,644</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Un año.</td>
+          <td class="cuerpo_tabla_coma">3,129</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">4. Míbor (Tipo interbancario a un año)<sup>2</sup>.</td>
+          <td class="cuerpo_tabla_coma">2,081</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="parrafo_2">Madrid, 2 de junio de 2025.–La Directora General de Estrategia, Personas y Datos, Mayte Ledo Turiel.</p>
+    <p class="cita_con_pleca"><sup>1</sup> La definición y el proceso de determinación de estos tipos de interés oficiales de referencia se recogen en el anejo 8 de la Circular del Banco de España 5/2012, de 27 de junio.</p>
+    <p class="cita"><sup>2</sup> Este tipo tiene la consideración de tipo de interés oficial exclusivamente para los préstamos hipotecarios referenciados al mismo que se hubiesen formalizado con anterioridad al 1 de enero de 2000, conforme a lo previsto en el artículo 32 de la Ley 46/1998, de 17 de diciembre, sobre introducción del euro.</p>
+  </texto>
+</documento>

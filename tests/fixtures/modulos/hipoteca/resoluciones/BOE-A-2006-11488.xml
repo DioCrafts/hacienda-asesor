@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<documento fecha_actualizacion="20181023113318">
+  <metadatos>
+    <identificador>BOE-A-2006-11488</identificador>
+    <origen_legislativo codigo="1">Estatal</origen_legislativo>
+    <departamento codigo="1020">Banco de España</departamento>
+    <rango codigo="1590">Corrección (errores o erratas)</rango>
+    <fecha_disposicion/>
+    <numero_oficial/>
+    <titulo>Corrección de erratas de la Resolución de 16 de junio de 2006, del Banco de España, por la que mensualmente se hacen públicos los índices de referencia oficiales para los préstamos hipotecarios a tipo variable destinados a la adquisición de vivienda.</titulo>
+    <diario codigo="BOE">Boletín Oficial del Estado</diario>
+    <fecha_publicacion>20060627</fecha_publicacion>
+    <diario_numero>152</diario_numero>
+    <seccion>3</seccion>
+    <subseccion/>
+    <pagina_inicial>24274</pagina_inicial>
+    <pagina_final>24274</pagina_final>
+    <suplemento_pagina_inicial/>
+    <suplemento_pagina_final/>
+    <url_pdf>https://www.boe.es/boe/dias/2006/06/27/pdfs/A24274-24274.pdf</url_pdf>
+    <url_epub/>
+    <url_pdf_catalan/>
+    <url_pdf_euskera/>
+    <url_pdf_gallego/>
+    <url_pdf_valenciano/>
+    <estatus_legislativo/>
+    <fecha_vigencia/>
+    <estatus_derogacion>N</estatus_derogacion>
+    <fecha_derogacion/>
+    <judicialmente_anulada>N</judicialmente_anulada>
+    <fecha_anulacion/>
+    <vigencia_agotada>N</vigencia_agotada>
+    <estado_consolidacion codigo="0"/>
+    <letra_imagen>A</letra_imagen>
+    <suplemento_letra_imagen/>
+  </metadatos>
+  <analisis>
+    <materias/>
+    <notas/>
+    <referencias>
+      <anteriores/>
+      <posteriores/>
+    </referencias>
+    <alertas/>
+  </analisis>
+  <texto>
+    <p class="ATEXTO_NORMALySIG">
+Advertida errata por omisión en la inserción de la Resolución de 16 de junio de 2006, del Banco de España, por la que mensualmente se hacen públicos los índices de referencia oficiales para los préstamos hipotecarios a tipo variable destinados a la adquisición de vivienda, publicada en el «Boletín Oficial del Estado» número 150, de fecha 24 de junio de 2006, página 24023, primera y segunda columnas, se transcribe a continuación la oportuna rectificación:
+</p>
+    <p class="ATEXTO_BLANCO_4">
+En la segunda columna, antes del punto 1, debe decir: «Mayo 2006».</p>
+  </texto>
+</documento>

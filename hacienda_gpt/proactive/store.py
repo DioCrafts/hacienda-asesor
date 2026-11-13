@@ -12,13 +12,31 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 from threading import RLock
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-Kind = Literal["plazo", "fin_de_ejercicio", "cambio_normativo"]
+# The tax module's kinds (unchanged since before the modules existed), the weekly digest, and one kind per
+# household module: ``modulo:<clave>``. The kind lives in the JSON payload, so rows written before the
+# modules existed read exactly as they did: no migration is needed.
+KINDS_FISCALES = ("plazo", "fin_de_ejercicio", "cambio_normativo")
+KIND_RESUMEN = "resumen_semanal"
+PREFIJO_MODULO = "modulo:"
+Kind = Annotated[
+    str,
+    StringConstraints(
+        pattern=r"^(plazo|fin_de_ejercicio|cambio_normativo|resumen_semanal|modulo:[a-z][a-z0-9_]{1,30})$"
+    ),
+]
 Severity = Literal["info", "aviso", "urgente"]
+
+
+def modulo_de(kind: str) -> str | None:
+    """The module a notification belongs to: ``fiscal`` for the tax kinds, None for the weekly digest."""
+    if kind.startswith(PREFIJO_MODULO):
+        return kind[len(PREFIJO_MODULO) :]
+    return None if kind == KIND_RESUMEN else "fiscal"
 
 
 class Notification(BaseModel):
@@ -141,6 +159,27 @@ class NotificationStore:
                 "DELETE FROM notifications WHERE case_id = ? AND key LIKE ? ESCAPE '\\' AND key != ?",
                 (case_id, escaped + "%", keep_key),
             )
+            return cursor.rowcount
+
+    def remove_kind(self, case_id: str, kind: str) -> int:
+        """Delete every notification of one kind of a case (a module the user switched off). Returns how many.
+
+        Their delivery records go too, like in :meth:`delete_for_case`.
+        """
+        with self._lock, self._conn:
+            ids = [
+                row["id"]
+                for row in self._conn.execute(
+                    "SELECT id, payload_json FROM notifications WHERE case_id = ?", (case_id,)
+                )
+                if Notification.model_validate_json(row["payload_json"]).kind == kind
+            ]
+            if not ids:
+                return 0
+            marks = ",".join("?" * len(ids))
+            if self._has_deliveries_table():
+                self._conn.execute(f"DELETE FROM notification_deliveries WHERE notification_id IN ({marks})", ids)
+            cursor = self._conn.execute(f"DELETE FROM notifications WHERE id IN ({marks})", ids)
             return cursor.rowcount
 
     def _has_deliveries_table(self) -> bool:

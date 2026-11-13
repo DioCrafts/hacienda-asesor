@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<documento fecha_actualizacion="20221202071808">
+  <metadatos>
+    <identificador>BOE-A-2022-20272</identificador>
+    <origen_legislativo codigo="1">Estatal</origen_legislativo>
+    <departamento codigo="1020">Banco de España</departamento>
+    <rango codigo="1370">Resolución</rango>
+    <fecha_disposicion>20221201</fecha_disposicion>
+    <numero_oficial/>
+    <titulo>Resolución de 1 de diciembre de 2022, del Banco de España, por la que se publican determinados tipos de interés oficiales de referencia del mercado hipotecario.</titulo>
+    <diario codigo="BOE">Boletín Oficial del Estado</diario>
+    <fecha_publicacion>20221202</fecha_publicacion>
+    <diario_numero>289</diario_numero>
+    <seccion>3</seccion>
+    <subseccion/>
+    <pagina_inicial>165696</pagina_inicial>
+    <pagina_final>165696</pagina_final>
+    <suplemento_pagina_inicial/>
+    <suplemento_pagina_final/>
+    <url_pdf>https://www.boe.es/boe/dias/2022/12/02/pdfs/BOE-A-2022-20272.pdf</url_pdf>
+    <url_epub/>
+    <url_pdf_catalan/>
+    <url_pdf_euskera/>
+    <url_pdf_gallego/>
+    <url_pdf_valenciano/>
+    <estatus_legislativo/>
+    <fecha_vigencia/>
+    <estatus_derogacion>N</estatus_derogacion>
+    <fecha_derogacion/>
+    <judicialmente_anulada>N</judicialmente_anulada>
+    <fecha_anulacion/>
+    <vigencia_agotada>N</vigencia_agotada>
+    <estado_consolidacion codigo="0"/>
+    <letra_imagen>A</letra_imagen>
+    <suplemento_letra_imagen/>
+  </metadatos>
+  <analisis>
+    <materias/>
+    <notas/>
+    <referencias>
+      <anteriores/>
+      <posteriores/>
+    </referencias>
+    <alertas/>
+  </analisis>
+  <texto>
+    <p class="centro_cursiva">Noviembre de 2022</p>
+    <table class="tabla">
+      <colgroup>
+        <col width="86%"/>
+        <col width="14%"/>
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="cabeza_tabla">Tipos de referencia<sup>1</sup></th>
+          <th class="cabeza_tabla">Porcentaje</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cuerpo_tabla_izq">1. Euríbor. Plazos:</td>
+          <td class="cuerpo_tabla_coma"> </td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Una semana.</td>
+          <td class="cuerpo_tabla_coma">1,375</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Un mes.</td>
+          <td class="cuerpo_tabla_coma">1,423</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Tres meses.</td>
+          <td class="cuerpo_tabla_coma">1,825</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Seis meses.</td>
+          <td class="cuerpo_tabla_coma">2,321</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Un año.</td>
+          <td class="cuerpo_tabla_coma">2,828</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">2. Permuta de intereses/<em>Interest Rate Swap</em> (<em>IRS</em>) al plazo de cinco años.</td>
+          <td class="cuerpo_tabla_coma">2,809</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">3. Tipo de interés de referencia basado en el Euro short-term rate (€STR). Plazos:</td>
+          <td class="cuerpo_tabla_coma"> </td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Una semana.</td>
+          <td class="cuerpo_tabla_coma">1,404</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Un mes.</td>
+          <td class="cuerpo_tabla_coma">1,290</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Tres meses.</td>
+          <td class="cuerpo_tabla_coma">0,764</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Seis meses.</td>
+          <td class="cuerpo_tabla_coma">0,182</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">– Un año.</td>
+          <td class="cuerpo_tabla_coma">–0,195</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">4. Míbor (Tipo interbancario a un año)<sup>2</sup>.</td>
+          <td class="cuerpo_tabla_coma">2,828</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="parrafo_2">Madrid, 1 de diciembre de 2022.–El Director General de Economía y Estadística, Ángel Gavilán González.</p>
+    <p class="cita_con_pleca"><sup>1</sup> La definición y el proceso de determinación de estos tipos de interés oficiales de referencia se recogen en el anejo 8 de la Circular del Banco de España 5/2012, de 27 de junio.</p>
+    <p class="cita"><sup>2</sup> Este tipo tiene la consideración de tipo de interés oficial exclusivamente para los préstamos hipotecarios referenciados al mismo que se hubiesen formalizado con anterioridad al 1 de enero de 2000, conforme a lo previsto en el artículo 32 de la Ley 46/1998, de 17 de diciembre, sobre introducción del euro.</p>
+  </texto>
+</documento>

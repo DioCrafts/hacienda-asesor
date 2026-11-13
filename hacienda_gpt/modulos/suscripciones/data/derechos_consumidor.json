@@ -253,7 +253,7 @@
     },
     "atencion_cliente": {
       "titulo": "Canales para reclamar y plazo de respuesta (TRLGDCU)",
-      "resumen": "La empresa debe aceptar tus reclamaciones al menos por el medio por el que contrataste, por correo postal, por teléfono y por un medio electrónico, y responderlas como máximo en quince días.",
+      "resumen": "La empresa debe darte una clave identificativa y un justificante por escrito de tu reclamación; debe aceptar tus reclamaciones al menos por el medio por el que contrataste, por correo postal, por teléfono y por un medio electrónico, y responderlas como máximo en quince días.",
       "sectores": [
         "general",
         "telecomunicaciones",
@@ -261,15 +261,21 @@
         "suministros"
       ],
       "fuente": {
-        "referencia": "Art. 21.3 TRLGDCU",
+        "referencia": "Art. 21.2 y 21.3 TRLGDCU",
         "en_vigor_desde": "2025-12-28",
         "verificado": true,
-        "nota": "Apartado 3 modificado por la Ley 10/2025, de 26 de diciembre."
+        "nota": "Apartados 2 y 3 modificados por la Ley 10/2025, de 26 de diciembre."
       },
       "valores": {
         "plazo_respuesta_dias": "15"
       },
       "evidencia": [
+        {
+          "boe_id": "BOE-A-2007-20555",
+          "articulo": "art. 21.2",
+          "cita": "deberán asegurar que éste tenga constancia de sus quejas y reclamaciones, mediante la entrega de una clave identificativa y un justificante por escrito, en papel o en cualquier otro soporte duradero.",
+          "cifras": {}
+        },
         {
           "boe_id": "BOE-A-2007-20555",
           "articulo": "art. 21.3",

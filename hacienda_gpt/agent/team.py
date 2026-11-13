@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 import logging
 import re
 import threading
-from typing import Any
+from typing import Any, Protocol
 
 from langchain_core.documents import Document
 from pydantic import BaseModel, ConfigDict, Field
@@ -43,9 +43,9 @@ from hacienda_gpt.agent.prompts import (
     RESEARCHER_NORMATIVA_PROMPT,
     TEAM_BRIEFING_HEADER,
 )
-from hacienda_gpt.agent.providers.base import LLMProvider, ProviderError, ToolResult
+from hacienda_gpt.agent.providers.base import LLMProvider, ProviderError, ToolCall, ToolResult, ToolSpec
 from hacienda_gpt.agent.search import CorpusSearcher, SearchFilters
-from hacienda_gpt.agent.tools import Toolbox
+from hacienda_gpt.agent.tools import Toolbox, ToolOutcome
 from hacienda_gpt.decision.schemas import CaseState
 
 logger = logging.getLogger(__name__)
@@ -150,6 +150,14 @@ class LockedSearcher:
             return self._inner.search(query, k=k, filters=filters)
 
 
+class ToolRunner(Protocol):
+    """What a subagent needs from its tools: the advisor's :class:`Toolbox`, or a module specialist's."""
+
+    def specs(self) -> list[ToolSpec]: ...
+
+    def execute(self, call: ToolCall) -> ToolOutcome: ...
+
+
 @dataclass
 class SubagentRun:
     agent: str
@@ -172,7 +180,7 @@ def run_subagent(
     *,
     agent: str,
     system: str,
-    toolbox: Toolbox,
+    toolbox: ToolRunner,
     user_message: str,
     max_steps: int,
     emit: Emit,

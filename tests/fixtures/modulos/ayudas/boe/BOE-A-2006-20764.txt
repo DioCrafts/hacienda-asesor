@@ -1,0 +1,5 @@
+# Extracto literal de https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764 descargado el 2026-11-13. Texto consolidado: «Última actualización, publicada el 11/11/2026»
+# Solo los párrafos citados en hacienda_gpt/modulos/ayudas/data/prestaciones_2026.json; generado, no editar a mano.
+
+4. Se podrá solicitar a la Agencia Estatal de Administración Tributaria el abono del importe de la deducción previsto en el apartado 1 anterior de forma anticipada. En estos supuestos, no se minorará la cuota diferencial del impuesto.
+3. Se podrá solicitar a la Agencia Estatal de Administración Tributaria el abono de las deducciones de forma anticipada. En estos supuestos, no se minorará la cuota diferencial del impuesto.

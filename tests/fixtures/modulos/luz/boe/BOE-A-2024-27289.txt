@@ -1,0 +1,20 @@
+En su virtud, previo acuerdo de la Comisión Delegada del Gobierno para Asuntos Económicos, dispongo:
+Primero.
+Los precios aplicables a los distintos segmentos tarifarios de los cargos del sistema eléctrico a partir del 1 de enero de 2025 son:
+a) Precios de los términos de potencia:
+Segmento tarifario Término de potencia de los cargos (euros/kW año)
+Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6
+1 3,971618 0,255423
+2 4,935064 2,469687 1,794284 1,794284 1,794284 0,822511
+3 5,122811 2,563728 1,862840 1,862840 1,862840 0,853802
+4 3,008289 1,505746 1,093923 1,093923 1,093923 0,501382
+5 2,408681 1,205367 0,875748 0,875748 0,875748 0,401447
+6 1,178247 0,589615 0,428453 0,428453 0,428453 0,196374
+b) Precios de los términos de energía:
+Segmento tarifario Término de energía de los cargos (euros/kWh)
+Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6
+1 0,058305 0,011661 0,002915
+a) El valor unitario correspondiente a los sujetos obligados que desarrollen la actividad de producción será de 0,432343 euros/MWh producido.
+b) El valor unitario correspondiente a los sujetos obligados titulares de activos de transporte será de 0,003434 euros/€ retribuido.
+c) El valor unitario correspondiente a los sujetos obligados que desarrollan la actividad de distribución será de 0,802443 euros/CUPS.
+d) El valor unitario correspondiente a los sujetos obligados que desarrollan la actividad de comercialización será de 4,650987 euros/CUPS.

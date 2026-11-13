@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<documento fecha_actualizacion="20181023201520">
+  <metadatos>
+    <identificador>BOE-A-2016-7978</identificador>
+    <origen_legislativo codigo="1">Estatal</origen_legislativo>
+    <departamento codigo="1020">Banco de España</departamento>
+    <rango codigo="1370">Resolución</rango>
+    <fecha_disposicion>20160818</fecha_disposicion>
+    <numero_oficial/>
+    <titulo>Resolución de 18 de agosto de 2016, del Banco de España, por la que se publican determinados tipos de referencia oficiales del mercado hipotecario.</titulo>
+    <diario codigo="BOE">Boletín Oficial del Estado</diario>
+    <fecha_publicacion>20160819</fecha_publicacion>
+    <diario_numero>200</diario_numero>
+    <seccion>3</seccion>
+    <subseccion/>
+    <pagina_inicial>61250</pagina_inicial>
+    <pagina_final>61250</pagina_final>
+    <suplemento_pagina_inicial/>
+    <suplemento_pagina_final/>
+    <url_pdf>https://www.boe.es/boe/dias/2016/08/19/pdfs/BOE-A-2016-7978.pdf</url_pdf>
+    <url_epub/>
+    <url_pdf_catalan/>
+    <url_pdf_euskera/>
+    <url_pdf_gallego/>
+    <url_pdf_valenciano/>
+    <estatus_legislativo/>
+    <fecha_vigencia/>
+    <estatus_derogacion>N</estatus_derogacion>
+    <fecha_derogacion/>
+    <judicialmente_anulada>N</judicialmente_anulada>
+    <fecha_anulacion/>
+    <vigencia_agotada>N</vigencia_agotada>
+    <estado_consolidacion codigo="0"/>
+    <letra_imagen>A</letra_imagen>
+    <suplemento_letra_imagen/>
+  </metadatos>
+  <analisis>
+    <materias/>
+    <notas/>
+    <referencias>
+      <anteriores/>
+      <posteriores/>
+    </referencias>
+    <alertas/>
+  </analisis>
+  <texto>
+    <p xmlns:xhtml="http://www.w3.org/1999/xhtml" class="centro_redonda">Julio de 2016</p>
+    <table xmlns:xhtml="http://www.w3.org/1999/xhtml" class="tabla_b_sica">
+      <colgroup>
+        <col class="row_column_1"/>
+        <col class="row_column_2"/>
+        <col class="row_column_3"/>
+      </colgroup>
+      <thead>
+        <tr class="row_column_4">
+          <td colspan="2">
+            <p class="cabeza_tabla">Tipos de referencia1</p>
+          </td>
+          <td>
+            <p class="cabeza_tabla">Porcentaje</p>
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row_column_5">
+          <td>
+            <p class="cuerpo_tabla_izq">1.</p>
+          </td>
+          <td>
+            <p class="cuerpo_tabla_izq">Tipo medio de los préstamos hipotecarios a más de tres años, para adquisición de vivienda libre, concedidos por las entidades de crédito en España	</p>
+          </td>
+          <td>
+            <p class="cuerpo_tabla_centro">2,007</p>
+          </td>
+        </tr>
+        <tr class="row_column_6">
+          <td>
+            <p class="cuerpo_tabla_izq">2.</p>
+          </td>
+          <td>
+            <p class="cuerpo_tabla_izq">Tipo medio de los préstamos hipotecarios entre uno y cinco años, para  adquisición de vivienda libre, concedidos por las entidades de crédito en la zona del euro (referido al mes anterior)	</p>
+          </td>
+          <td>
+            <p class="cuerpo_tabla_centro">2,000</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p xmlns:xhtml="http://www.w3.org/1999/xhtml" class="cita">1 La definición y la forma de cálculo de estos índices se recogen en la Circular del Banco de España 5/2012, de 27 de junio (BOE de 6 de julio).</p>
+    <p xmlns:xhtml="http://www.w3.org/1999/xhtml" class="parrafo_2">Madrid, 18 de agosto de 2016.–El Director General de Operaciones, Mercados y Sistemas de Pago, Javier Alonso Ruiz-Ojeda.</p>
+  </texto>
+</documento>

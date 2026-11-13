@@ -1,0 +1,28 @@
+Tercero. Metodología para determinar los peajes de transporte y distribución.
+Los valores de los términos de potencia y energía de los peajes acceso a las redes de transporte y distribución resultan de la aplicación de la Circular 3/2020, de 15 de enero.
+En virtud de cuanto antecede, el Consejo de la Comisión Nacional de los Mercados y la Competencia
+III. Resuelve
+Primero. Peajes de acceso a las redes de transporte y distribución aplicables a partir de 1 de enero de 2026.
+1. Los precios de los términos de potencia y de energía activa de aplicación a partir de 1 de enero de 2026 serán los establecidos en el anexo I.
+Grupo tarifario Término de potencia del peaje de distribución (€/kW año)
+Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6
+2.0 TD 20,091898 0,440487
+3.0 TD 12,918362 6,872617 2,191668 1,739724 0,531738 0,531738
+6.1 TD 18,051293 9,620916 3,695566 2,672006 0,055792 0,055792
+6.2 TD 10,337964 6,069064 1,522993 0,963003 0,044232 0,044232
+6.3 TD 5,032157 3,166260 1,032372 0,719052 0,029056 0,029056
+6.4 TD – – – – – –
+Grupo tarifario Término de potencia del peaje de transporte y distribución (€/kW año)
+Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6
+2.0 TD 23,324952 0,443770
+Grupo tarifario Término de energía del peaje de distribución (€/kWh)
+Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6
+2.0 TD 0,028685 0,014214 0,000073
+3.0 TD 0,020880 0,009452 0,003898 0,002126 0,000086 0,000028
+6.1 TD 0,020329 0,009380 0,004048 0,002250 0,000093 0,000026
+6.2 TD 0,009179 0,004687 0,001598 0,000802 0,000040 0,000018
+6.3 TD 0,005616 0,002773 0,001023 0,000527 0,000025 0,000011
+6.4 TD – – – – – –
+Grupo tarifario Término de energía del peaje de transporte y distribución (€/kWh)
+Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6
+2.0 TD 0,033261 0,016409 0,000077

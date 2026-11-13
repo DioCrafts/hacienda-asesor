@@ -1,0 +1,7 @@
+# Extracto literal de https://www.boe.es/buscar/act.php?id=BOE-A-2018-13593 descargado el 2026-11-13. Texto consolidado: «Última actualización, publicada el 21/03/2026»
+# Solo los párrafos citados en hacienda_gpt/modulos/ayudas/data/prestaciones_2026.json; generado, no editar a mano.
+
+Esta ayuda es compatible con la percepción de otras subvenciones, ayudas, ingresos o recursos para la misma finalidad procedentes de cualesquiera Administraciones o entes públicos o privados, nacionales o internacionales, de las que pudieran beneficiarse los destinatarios de la ayuda. Asimismo, será compatible con la percepción del Bono Social de Electricidad.
+En cada ejercicio serán beneficiarios del Bono Social Térmico aquellos consumidores que sean beneficiarios del bono social de electricidad previsto en el artículo 45 de la Ley 24/2013, de 26 de diciembre, del Sector Eléctrico, a 31 de diciembre del año anterior.
+3. La ayuda mínima por beneficiario será de 50 euros.
+4. La ayuda correspondiente a un consumidor vulnerable severo o en riesgo de exclusión social será un 60 % superior a la asignada en su zona climática a un consumidor vulnerable.

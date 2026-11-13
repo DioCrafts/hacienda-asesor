@@ -1,0 +1,713 @@
+{
+  "consultado_el": "2026-11-13",
+  "fuentes_principales": {
+    "BOE-A-2020-1066": {
+      "norma": "Circular 3/2020, de 15 de enero, de la CNMC, metodología de cálculo de los peajes de transporte y distribución de electricidad (texto consolidado)",
+      "boe_id": "BOE-A-2020-1066",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2020-1066",
+      "fecha": "2025-02-05",
+      "tipo_texto": "consolidado",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "d4d830834dc37d4ec05a5f5c0c126cd1f7ef1ff295f6a735c2b712a83978aaeb"
+    },
+    "BOE-A-2024-26218": {
+      "norma": "Resolución de 4 de diciembre de 2024, de la CNMC, por la que se establecen los valores de los peajes de acceso a las redes de transporte y distribución de electricidad de aplicación a partir del 1 de enero de 2025",
+      "boe_id": "BOE-A-2024-26218",
+      "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2024-26218",
+      "fecha": "2024-12-16",
+      "tipo_texto": "diario",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "f45fbbafd6662d8a8484359ff0696149f7f6a772389e8962986f4dccdf64251d"
+    },
+    "BOE-A-2025-26348": {
+      "norma": "Resolución de 18 de diciembre de 2025, de la CNMC, por la que se establecen los valores de los peajes de acceso a las redes de transporte y distribución de electricidad de aplicación a partir del 1 de enero de 2026",
+      "boe_id": "BOE-A-2025-26348",
+      "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-26348",
+      "fecha": "2025-12-22",
+      "tipo_texto": "diario",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "d8fe55826ccacba16a7005d69623c7ae3e6ff435458334e84fd7a83cb9d46bf2"
+    },
+    "BOE-A-2021-4239": {
+      "norma": "Real Decreto 148/2021, de 9 de marzo, metodología de cálculo de los cargos del sistema eléctrico (texto consolidado)",
+      "boe_id": "BOE-A-2021-4239",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2021-4239",
+      "fecha": "2022-03-19",
+      "tipo_texto": "consolidado",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "e6ae6b9e599dd237337882779122e9a4cbff1a6c28bbb53344a3155c1a3e870e"
+    },
+    "BOE-A-2024-27289": {
+      "norma": "Orden TED/1487/2024, de 26 de diciembre, precios de los cargos del sistema eléctrico y diversos costes regulados para 2025 y reparto de la financiación del bono social",
+      "boe_id": "BOE-A-2024-27289",
+      "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2024-27289",
+      "fecha": "2024-12-28",
+      "tipo_texto": "diario",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "fffc192d52528ba7eca4e402403bbccb7c1b5d795c1c9c951470c9fcb11ff94b"
+    },
+    "BOE-A-2025-26705": {
+      "norma": "Orden TED/1524/2025, de 23 de diciembre, precios de los cargos del sistema eléctrico y diversos costes regulados para 2026 y reparto de la financiación del bono social",
+      "boe_id": "BOE-A-2025-26705",
+      "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-26705",
+      "fecha": "2025-12-27",
+      "tipo_texto": "diario",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "7bf923057b0a897b67e65ab7ffd045adb44674ac888a0476bcf3ff34ffc1dea6"
+    },
+    "BOE-A-2026-13759": {
+      "norma": "Orden TED/634/2026, de 17 de junio, reparto de las cantidades a financiar relativas al bono social correspondiente al año 2026",
+      "boe_id": "BOE-A-2026-13759",
+      "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-13759",
+      "fecha": "2026-06-25",
+      "tipo_texto": "diario",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "d59d1d9c20fe68246b7d6cd4c750dbb2de1d03347fc56eb622a6101118e3795a"
+    },
+    "BOE-A-2014-3376": {
+      "norma": "Real Decreto 216/2014, de 28 de marzo, metodología de cálculo de los precios voluntarios para el pequeño consumidor (PVPC) (texto consolidado)",
+      "boe_id": "BOE-A-2014-3376",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2014-3376",
+      "fecha": "2023-06-14",
+      "tipo_texto": "consolidado",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "e650bfe6f9b32c2b0df459db24fa40d558d55bc91804aba2b73d257a7191acd5"
+    },
+    "BOE-A-2016-12274": {
+      "norma": "Orden ETU/1948/2016, de 22 de diciembre, valores de los costes de comercialización de las comercializadoras de referencia (texto consolidado)",
+      "boe_id": "BOE-A-2016-12274",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2016-12274",
+      "fecha": "2019-05-29",
+      "tipo_texto": "consolidado",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "0b013ad9a3ef5f1c461c30624611ea49482e939484afa6424d9bd328820b1e4e"
+    },
+    "BOE-A-2013-8561": {
+      "norma": "Orden IET/1491/2013, de 1 de agosto, revisión de peajes de acceso y precio de alquiler de los contadores electrónicos (texto consolidado)",
+      "boe_id": "BOE-A-2013-8561",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-8561",
+      "fecha": "2016-11-03",
+      "tipo_texto": "consolidado",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "3d8c63a9ecc7e14c19ed9503ea8ae3f64ae2287e9293927595659d10c838c33b"
+    },
+    "BOE-A-1992-28741": {
+      "norma": "Ley 38/1992, de 28 de diciembre, de Impuestos Especiales (texto consolidado)",
+      "boe_id": "BOE-A-1992-28741",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1992-28741",
+      "fecha": "2026-09-30",
+      "tipo_texto": "consolidado",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "13a930328cf8c8a2545d27d45c5e700b35d3cb6bbc5653b96e625143d3400f4b"
+    },
+    "BOE-A-1992-28740": {
+      "norma": "Ley 37/1992, de 28 de diciembre, del Impuesto sobre el Valor Añadido (texto consolidado)",
+      "boe_id": "BOE-A-1992-28740",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1992-28740",
+      "fecha": "2026-10-07",
+      "tipo_texto": "consolidado",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "47fdb498fa0abfdd1f01d3eb853e512a5608a352571e607e7749095780e4988d"
+    },
+    "BOE-A-2026-6544": {
+      "norma": "Real Decreto-ley 7/2026, de 20 de marzo, Plan Integral de Respuesta a la Crisis en Oriente Medio (texto consolidado; convalidado por Resolución de 26 de marzo de 2026)",
+      "boe_id": "BOE-A-2026-6544",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2026-6544",
+      "fecha": "2026-09-30",
+      "tipo_texto": "consolidado",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "f3c2161b88a9955ad442d898ee2e55e3d9f2d53adbce9d5a0d500fc11e83abfb"
+    },
+    "BOE-A-2026-14112": {
+      "norma": "Real Decreto-ley 18/2026, de 29 de junio, medidas en el marco del Plan Integral de Respuesta a la Crisis en Oriente Medio",
+      "boe_id": "BOE-A-2026-14112",
+      "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-14112",
+      "fecha": "2026-06-30",
+      "tipo_texto": "diario",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "26db2085ff6b830970a1f4faaf5a8fbbe1c366e79e4a157dbf34ea8152972ed7"
+    },
+    "BOE-A-2026-20265": {
+      "norma": "Real Decreto-ley 25/2026, de 29 de septiembre, por el que se adoptan y se prorrogan determinadas medidas en el marco del Plan Integral de Respuesta a la Crisis en Oriente Medio",
+      "boe_id": "BOE-A-2026-20265",
+      "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-20265",
+      "fecha": "2026-09-30",
+      "tipo_texto": "diario",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "322ca71455d1e18bb113ed84e142df3958e5a535c3ecc2a0f3edba636bcca6b6"
+    },
+    "BOE-A-2024-21316": {
+      "norma": "Resolución de 15 de octubre de 2024, de la Dirección General de Trabajo, relación de fiestas laborales para el año 2025",
+      "boe_id": "BOE-A-2024-21316",
+      "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2024-21316",
+      "fecha": "2024-10-18",
+      "tipo_texto": "diario",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "fc3047c47560edd4d28d015ddf371baad66846881a7205c80307f82b454b7300"
+    },
+    "BOE-A-2025-21667": {
+      "norma": "Resolución de 17 de octubre de 2025, de la Dirección General de Trabajo, relación de fiestas laborales para el año 2026",
+      "boe_id": "BOE-A-2025-21667",
+      "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-21667",
+      "fecha": "2025-10-28",
+      "tipo_texto": "diario",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "7728567f2742abae91e208870e17c77d16b969696a4ff382c91ec62d9d94f709"
+    },
+    "BOE-A-2026-21254": {
+      "norma": "Resolución de 8 de octubre de 2026, de la Dirección General de Trabajo, relación de fiestas laborales para el año 2027",
+      "boe_id": "BOE-A-2026-21254",
+      "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-21254",
+      "fecha": "2026-10-13",
+      "tipo_texto": "diario",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "ab77fa2ded99bb409507c6c53650adf984c96b3adbcfde8efcdaa3a9dee5f5ce"
+    }
+  },
+  "no_modelado": [
+    "Autoconsumo (energía vertida y compensación de excedentes), peajes 2.0TDA y contratos de más de 15 kW (3.0TD y superiores).",
+    "Excesos de potencia y energía reactiva: en 2.0TD con contador inteligente la potencia la limita el propio contador.",
+    "Bono social (descuentos del 42,5 % y 57,5 % del Real Decreto-ley 7/2026 en 2026) y tope de energía con descuento: el módulo calcula la factura sin descuento de vulnerable.",
+    "Ofertas indexadas al mercado distintas del PVPC (fórmulas propias de cada comercializadora), regularizaciones, refacturaciones e intereses de demora.",
+    "Ceuta y Melilla: periodos horarios cargados, pero sus impuestos indirectos (IPSI) no; Canarias: el IGIC sustituye al IVA y no está cargado.",
+    "Para 2025 no se ha encontrado en el BOE (búsqueda por título) ninguna rebaja temporal del IVA ni del Impuesto Especial sobre la Electricidad: se aplican los tipos generales de la ley."
+  ],
+  "periodos_2_0td": {
+    "peninsula_baleares_canarias": {
+      "p1": [[10, 14], [18, 22]],
+      "p2": [[8, 10], [14, 18], [22, 24]],
+      "p3": [[0, 8]]
+    },
+    "ceuta_melilla": {
+      "p1": [[11, 15], [19, 23]],
+      "p2": [[8, 11], [15, 19], [23, 24]],
+      "p3": [[0, 8]]
+    },
+    "fuente": {
+      "referencia": "art. 7.3 y 7.4 de la Circular 3/2020 de la CNMC",
+      "en_vigor_desde": "2021-06-01",
+      "verificado": true,
+      "nota": "Horas en hora local de cada sistema. Sábados, domingos, 6 de enero y festivos nacionales de fecha fija no sustituibles: todo el día P3. La potencia se factura en dos periodos: P1 (punta-llano) y P2 (valle). La Circular 1/2025 solo cambió el segundo párrafo del art. 7.4 (excesos), no las horas."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2020-1066",
+        "articulo": "art. 7.3 Circular 3/2020",
+        "cita": "La discriminación horaria de tres periodos diferencia las horas del año en tres periodos horarios: periodo 1 (punta), periodo 2 (llano) y periodo 3 (valle). Se consideran horas punta, llano y valle las siguientes: Invierno y verano (lunes a viernes laborables) Península, Illes Balears y Canarias Ceuta y Melilla P1 P2 P3 P1 P2 P3 10 h-14 h 18 h-22 h 8 h-10 h 14 h-18 h 22 h-24 h 0 h-8 h 11 h-15 h 19 h-23 h 8 h-11 h 15 h-19 h 23 h-24 h 0 h-8 h",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2020-1066",
+        "articulo": "art. 7.3 Circular 3/2020",
+        "cita": "Se consideran como horas del periodo 3 (valle) todas las horas de los sábados, domingos, el 6 de enero y los días festivos de ámbito nacional, definidos como tales en el calendario oficial del año correspondiente, con exclusión tanto de los festivos sustituibles como de los que no tienen fecha fija.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2020-1066",
+        "articulo": "art. 7.4 Circular 3/2020",
+        "cita": "La discriminación horaria de dos periodos diferencia las horas del año en dos periodos horarios: punta-llano y valle. El periodo punta-llano de la discriminación horaria de dos periodos agrupa los periodos P1 (punta) y P2 (llano) de la discriminación horaria en tres periodos, mientras que el periodo valle de la discriminación horaria de dos periodos se corresponde con el periodo 3 de la discriminación horaria de tres periodos.",
+        "cifras": {}
+      }
+    ]
+  },
+  "festivos": [
+    {"fecha": "2025-01-01", "boe_id": "BOE-A-2024-21316", "cita": "1 Año Nuevo. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2025-05-01", "boe_id": "BOE-A-2024-21316", "cita": "1 Fiesta del Trabajo. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2025-08-15", "boe_id": "BOE-A-2024-21316", "cita": "15 Asunción de la Virgen. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2025-11-01", "boe_id": "BOE-A-2024-21316", "cita": "1 Todos los Santos. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2025-12-06", "boe_id": "BOE-A-2024-21316", "cita": "6 Día de la Constitución Española. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2025-12-08", "boe_id": "BOE-A-2024-21316", "cita": "8 Inmaculada Concepción. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2025-12-25", "boe_id": "BOE-A-2024-21316", "cita": "25 Natividad del Señor. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2026-01-01", "boe_id": "BOE-A-2025-21667", "cita": "1 Año Nuevo. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2026-05-01", "boe_id": "BOE-A-2025-21667", "cita": "1 Fiesta del Trabajo. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2026-08-15", "boe_id": "BOE-A-2025-21667", "cita": "15 Asunción de la Virgen. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2026-10-12", "boe_id": "BOE-A-2025-21667", "cita": "12 Fiesta Nacional de España. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2026-12-08", "boe_id": "BOE-A-2025-21667", "cita": "8 Inmaculada Concepción. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2026-12-25", "boe_id": "BOE-A-2025-21667", "cita": "25 Natividad del Señor. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2027-01-01", "boe_id": "BOE-A-2026-21254", "cita": "1 Año Nuevo. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2027-05-01", "boe_id": "BOE-A-2026-21254", "cita": "1 Fiesta del Trabajo. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2027-10-12", "boe_id": "BOE-A-2026-21254", "cita": "12 Fiesta Nacional de España. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2027-11-01", "boe_id": "BOE-A-2026-21254", "cita": "1 Todos los Santos. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2027-12-06", "boe_id": "BOE-A-2026-21254", "cita": "6 Día de la Constitución Española. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2027-12-08", "boe_id": "BOE-A-2026-21254", "cita": "8 Inmaculada Concepción. * * * * * * * * * * * * * * * * * * *"},
+    {"fecha": "2027-12-25", "boe_id": "BOE-A-2026-21254", "cita": "25 Natividad del Señor. * * * * * * * * * * * * * * * * * * *"}
+  ],
+  "festivos_nota": "Solo las filas marcadas con «*» en todas las comunidades (fiesta nacional no sustituible) y con fecha fija; el Viernes Santo es no sustituible pero no tiene fecha fija y queda fuera. El 6 de enero lo añade expresamente la Circular 3/2020. Años cargados: 2025, 2026 y 2027.",
+  "peajes": [
+    {
+      "desde": "2025-01-01",
+      "hasta": "2025-12-31",
+      "potencia_eur_kw_anio": {"p1": "22.958932", "p2": "0.442165"},
+      "energia_eur_kwh": {"p1": "0.034234", "p2": "0.016540", "p3": "0.000079"},
+      "fuente": {
+        "referencia": "Resolución CNMC de 4-12-2024, anexo I.1 (peaje de transporte y distribución 2.0 TD)",
+        "en_vigor_desde": "2025-01-01",
+        "verificado": true,
+        "nota": "La corrección de errores (BOE-A-2024-27271) y la modificación del anexo II (BOE-A-2025-5341) no afectan a estas cifras del 2.0 TD."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2024-26218",
+          "articulo": "Resuelve primero.1",
+          "cita": "1. Los precios de los términos de potencia y de energía activa de aplicación a partir de 1 de enero de 2025 serán los establecidos en el anexo I.",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2024-26218",
+          "articulo": "anexo I.1.a)",
+          "cita": "Grupo tarifario Término de potencia del peaje de transporte y distribución (€/kW año) Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6 2.0 TD 22,958932 0,442165",
+          "cifras": {"potencia_eur_kw_anio.p1": "22,958932", "potencia_eur_kw_anio.p2": "0,442165"}
+        },
+        {
+          "boe_id": "BOE-A-2024-26218",
+          "articulo": "anexo I.1.b)",
+          "cita": "Grupo tarifario Término de energía del peaje de transporte y distribución (€/kWh) Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6 2.0 TD 0,034234 0,016540 0,000079 – – –",
+          "cifras": {"energia_eur_kwh.p1": "0,034234", "energia_eur_kwh.p2": "0,016540", "energia_eur_kwh.p3": "0,000079"}
+        }
+      ]
+    },
+    {
+      "desde": "2026-01-01",
+      "hasta": "2026-12-31",
+      "potencia_eur_kw_anio": {"p1": "23.324952", "p2": "0.443770"},
+      "energia_eur_kwh": {"p1": "0.033261", "p2": "0.016409", "p3": "0.000077"},
+      "fuente": {
+        "referencia": "Resolución CNMC de 18-12-2025, anexo I.1 (peaje de transporte y distribución 2.0 TD)",
+        "en_vigor_desde": "2026-01-01",
+        "verificado": true,
+        "nota": "La resolución no tiene fecha final; el módulo la aplica hasta el 31-12-2026 y exige cargar la de 2027 para fechas posteriores."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2025-26348",
+          "articulo": "Resuelve primero.1",
+          "cita": "1. Los precios de los términos de potencia y de energía activa de aplicación a partir de 1 de enero de 2026 serán los establecidos en el anexo I.",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2025-26348",
+          "articulo": "anexo I.1.a)",
+          "cita": "Grupo tarifario Término de potencia del peaje de transporte y distribución (€/kW año) Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6 2.0 TD 23,324952 0,443770",
+          "cifras": {"potencia_eur_kw_anio.p1": "23,324952", "potencia_eur_kw_anio.p2": "0,443770"}
+        },
+        {
+          "boe_id": "BOE-A-2025-26348",
+          "articulo": "anexo I.1.b)",
+          "cita": "Grupo tarifario Término de energía del peaje de transporte y distribución (€/kWh) Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6 2.0 TD 0,033261 0,016409 0,000077",
+          "cifras": {"energia_eur_kwh.p1": "0,033261", "energia_eur_kwh.p2": "0,016409", "energia_eur_kwh.p3": "0,000077"}
+        }
+      ]
+    }
+  ],
+  "cargos": [
+    {
+      "desde": "2025-01-01",
+      "hasta": "2025-12-31",
+      "potencia_eur_kw_anio": {"p1": "3.971618", "p2": "0.255423"},
+      "energia_eur_kwh": {"p1": "0.058305", "p2": "0.011661", "p3": "0.002915"},
+      "fuente": {
+        "referencia": "Orden TED/1487/2024, apartado primero (segmento tarifario 1 = peaje 2.0 TD según el art. 3 del RD 148/2021)",
+        "en_vigor_desde": "2025-01-01",
+        "verificado": true
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2024-27289",
+          "articulo": "apartado primero.a)",
+          "cita": "Los precios aplicables a los distintos segmentos tarifarios de los cargos del sistema eléctrico a partir del 1 de enero de 2025 son: a) Precios de los términos de potencia: Segmento tarifario Término de potencia de los cargos (euros/kW año) Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6 1 3,971618 0,255423",
+          "cifras": {"potencia_eur_kw_anio.p1": "3,971618", "potencia_eur_kw_anio.p2": "0,255423"}
+        },
+        {
+          "boe_id": "BOE-A-2024-27289",
+          "articulo": "apartado primero.b)",
+          "cita": "b) Precios de los términos de energía: Segmento tarifario Término de energía de los cargos (euros/kWh) Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6 1 0,058305 0,011661 0,002915",
+          "cifras": {"energia_eur_kwh.p1": "0,058305", "energia_eur_kwh.p2": "0,011661", "energia_eur_kwh.p3": "0,002915"}
+        },
+        {
+          "boe_id": "BOE-A-2021-4239",
+          "articulo": "art. 3.2 RD 148/2021",
+          "cita": "Segmento tarifario de cargos. 1 2 3 4 5 6 Peaje de transporte y distribución Circular 3/2020. 2.0 TD 3.0 TD 6.1 TD 6.2 TD 6.3 TD 6.4 TD",
+          "cifras": {}
+        }
+      ]
+    },
+    {
+      "desde": "2026-01-01",
+      "hasta": "2026-12-31",
+      "potencia_eur_kw_anio": {"p1": "4.379461", "p2": "0.281653"},
+      "energia_eur_kwh": {"p1": "0.064292", "p2": "0.012858", "p3": "0.003215"},
+      "fuente": {
+        "referencia": "Orden TED/1524/2025, apartado primero (segmento tarifario 1 = peaje 2.0 TD)",
+        "en_vigor_desde": "2026-01-01",
+        "verificado": true
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2025-26705",
+          "articulo": "apartado primero.a)",
+          "cita": "Los precios aplicables a los distintos segmentos tarifarios de los cargos del sistema eléctrico a partir del 1 de enero de 2026 son: a) Precios de los términos de potencia: Segmento tarifario Término de potencia de los cargos (euros/kW año) Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6 1 4,379461 0,281653",
+          "cifras": {"potencia_eur_kw_anio.p1": "4,379461", "potencia_eur_kw_anio.p2": "0,281653"}
+        },
+        {
+          "boe_id": "BOE-A-2025-26705",
+          "articulo": "apartado primero.b)",
+          "cita": "b) Precios de los términos de energía: Segmento tarifario Término de energía de los cargos (euros/kWh) Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6 1 0,064292 0,012858 0,003215",
+          "cifras": {"energia_eur_kwh.p1": "0,064292", "energia_eur_kwh.p2": "0,012858", "energia_eur_kwh.p3": "0,003215"}
+        },
+        {
+          "boe_id": "BOE-A-2021-4239",
+          "articulo": "art. 3.2 RD 148/2021",
+          "cita": "Segmento tarifario de cargos. 1 2 3 4 5 6 Peaje de transporte y distribución Circular 3/2020. 2.0 TD 3.0 TD 6.1 TD 6.2 TD 6.3 TD 6.4 TD",
+          "cifras": {}
+        }
+      ]
+    }
+  ],
+  "bono_social": [
+    {
+      "desde": "2025-01-01",
+      "hasta": "2025-12-31",
+      "eur_cups_anio": "4.650987",
+      "fuente": {
+        "referencia": "Orden TED/1487/2024, apartado undécimo.d) y art. 8.4 RD 216/2014",
+        "en_vigor_desde": "2025-01-01",
+        "verificado": true,
+        "nota": "Valor unitario que paga la comercializadora por CUPS y año. En el PVPC se factura por días (art. 8.4 RD 216/2014); una comercializadora libre puede trasladarlo o no: si tu oferta indica otra cifra, se usa la de la oferta."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2024-27289",
+          "articulo": "apartado undécimo.d)",
+          "cita": "d) El valor unitario correspondiente a los sujetos obligados que desarrollan la actividad de comercialización será de 4,650987 euros/CUPS.",
+          "cifras": {"eur_cups_anio": "4,650987 euros/CUPS"}
+        },
+        {
+          "boe_id": "BOE-A-2014-3376",
+          "articulo": "art. 8.4 RD 216/2014",
+          "cita": "La facturación de este término se realizará de forma proporcional al número de días del año incluidos en el período de facturación correspondiente, teniendo en cuenta el valor unitario definido en el artículo 14 bis del Real Decreto 897/2017",
+          "cifras": {}
+        }
+      ]
+    },
+    {
+      "desde": "2026-01-01",
+      "hasta": "2026-06-30",
+      "eur_cups_anio": "6.979247",
+      "fuente": {
+        "referencia": "Orden TED/1524/2025, apartado décimo.d)",
+        "en_vigor_desde": "2026-01-01",
+        "verificado": true
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2025-26705",
+          "articulo": "apartado décimo.d)",
+          "cita": "d) El valor unitario correspondiente a los sujetos obligados que desarrollan la actividad de comercialización será de 6,979247 euros/CUPS.",
+          "cifras": {"eur_cups_anio": "6,979247 euros/CUPS"}
+        }
+      ]
+    },
+    {
+      "desde": "2026-07-01",
+      "hasta": "2026-12-31",
+      "eur_cups_anio": "9.011295",
+      "fuente": {
+        "referencia": "Orden TED/634/2026, apartados segundo.d) y tercero",
+        "en_vigor_desde": "2026-07-01",
+        "verificado": true,
+        "nota": "La orden surte efectos el 26-6-2026 y se aplica «desde la liquidación 7 de 2026» (julio). El módulo la aplica desde el 1-7-2026; si tu factura cambia de valor otro día, indícalo en la oferta."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2026-13759",
+          "articulo": "apartado segundo.d)",
+          "cita": "d) El valor unitario correspondiente a los sujetos obligados que desarrollan la actividad de comercialización será de 9,011295 euros/CUPS.",
+          "cifras": {"eur_cups_anio": "9,011295 euros/CUPS"}
+        },
+        {
+          "boe_id": "BOE-A-2026-13759",
+          "articulo": "apartado tercero",
+          "cita": "La presente orden surtirá efectos a partir del día siguiente al de su publicación en el «Boletín Oficial del Estado» y será de aplicación desde la liquidación 7 de 2026 de acuerdo con el calendario de liquidaciones del sector eléctrico.",
+          "cifras": {}
+        }
+      ]
+    }
+  ],
+  "alquiler_contador": {
+    "monofasico_eur_mes": "0.81",
+    "trifasico_eur_mes": "1.36",
+    "fuente": {
+      "referencia": "Orden IET/1491/2013, disposición transitoria única",
+      "en_vigor_desde": "2013-08-03",
+      "verificado": true,
+      "nota": "Precio medio provisional «hasta que se apruebe el precio definitivo»; no se ha encontrado en el BOE una orden posterior que lo sustituya. La orden lo fija en euros/mes: el módulo lo pasa a días como 12 meses / días del año. Si el contador es tuyo no se paga alquiler."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2013-8561",
+        "articulo": "disposición transitoria única.1.a)",
+        "cita": "a) Contadores electrónicos monofásicos con discriminación horaria y con posibilidad de telegestión para consumidores domésticos, considerando no solo el precio del propio equipo sino también los costes asociados a su instalación y operación y mantenimiento de los mismos (incluidos los costes asociados a la verificación): 0,81 euros/mes.",
+        "cifras": {"monofasico_eur_mes": "0,81 euros/mes"}
+      },
+      {
+        "boe_id": "BOE-A-2013-8561",
+        "articulo": "disposición transitoria única.1.b)",
+        "cita": "b) Contadores electrónicos trifásicos con discriminación horaria y con posibilidad de telegestión para consumidores domésticos, considerando no solo el precio del propio equipo sino también los costes asociados a su instalación y operación y mantenimiento de los mismos (incluidos los costes asociados a la verificación): 1,36 euros/mes.",
+        "cifras": {"trifasico_eur_mes": "1,36 euros/mes"}
+      }
+    ]
+  },
+  "pvpc": {
+    "ccf_eur_kw_anio": "3.113",
+    "fuente": {
+      "referencia": "art. 8.1 RD 216/2014 y anexo II.1 de la Orden ETU/1948/2016",
+      "en_vigor_desde": "2016-01-01",
+      "verificado": false,
+      "nota": "La orden fija el término fijo de comercialización (CCF) para 2016-2018 y no se ha encontrado en el BOE una orden posterior que lo cambie: el módulo sigue usando 3,113 €/kW y año sobre la potencia P1. Compruébalo con la línea «margen de comercialización» de una factura PVPC real."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2016-12274",
+        "articulo": "anexo II.1",
+        "cita": "1. Valores del término fijo (CCF) de los costes de comercialización a aplicar en el primer periodo de tres años 2016-2018: Año Término fijo de los costes de comercialización (CCF) – €/kW y año 2016 3,113 2017 3,113 2018 3,113",
+        "cifras": {"ccf_eur_kw_anio": "3,113"}
+      },
+      {
+        "boe_id": "BOE-A-2014-3376",
+        "articulo": "art. 8.1 RD 216/2014",
+        "cita": "La facturación de este término se realizará de forma proporcional al número de días del año incluidos en el período de facturación correspondiente.",
+        "cifras": {}
+      }
+    ]
+  },
+  "impuestos": {
+    "iee_general": {
+      "tipo": "0.0511269632",
+      "minimo_eur_mwh": "1",
+      "fuente": {
+        "referencia": "arts. 97 y 99 de la Ley 38/1992",
+        "en_vigor_desde": "2021-01-01",
+        "verificado": true,
+        "nota": "Base: la del IVA del suministro de electricidad (art. 97), que el módulo toma como potencia + energía + financiación del bono social, sin el alquiler del contador. Mínimo de «otros usos» (doméstico): 1 euro por MWh."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-1992-28741",
+          "articulo": "art. 99.1 Ley 38/1992",
+          "cita": "1. Sin perjuicio de lo establecido en el apartado 2 de este artículo, el impuesto se exigirá al tipo del 5,11269632 por ciento.",
+          "cifras": {"tipo": "5,11269632 por ciento"}
+        },
+        {
+          "boe_id": "BOE-A-1992-28741",
+          "articulo": "art. 99.2.b) Ley 38/1992",
+          "cita": "b) 1 euro por megavatio-hora (MWh), cuando la electricidad suministrada o consumida se destine a otros usos.",
+          "cifras": {"minimo_eur_mwh": "1 euro por megavatio-hora"}
+        },
+        {
+          "boe_id": "BOE-A-1992-28741",
+          "articulo": "art. 97 Ley 38/1992",
+          "cita": "Estará constituida por la base imponible que se habría determinado a efectos del Impuesto sobre el Valor Añadido, excluidas las cuotas del propio Impuesto sobre la Electricidad, para un suministro de energía eléctrica efectuado a título oneroso",
+          "cifras": {}
+        }
+      ]
+    },
+    "iva_general": {
+      "tipo": "0.21",
+      "fuente": {
+        "referencia": "art. 90 de la Ley 37/1992",
+        "en_vigor_desde": "2012-09-01",
+        "verificado": true,
+        "nota": "La base del IVA incluye el Impuesto sobre la Electricidad y el alquiler del contador."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-1992-28740",
+          "articulo": "art. 90.Uno LIVA",
+          "cita": "Uno. El Impuesto se exigirá al tipo del 21 por ciento, salvo lo dispuesto en el artículo siguiente.",
+          "cifras": {"tipo": "21 por ciento"}
+        }
+      ]
+    },
+    "tramos_temporales": [
+      {
+        "desde": "2026-03-22",
+        "hasta": "2026-05-31",
+        "estado": "aplicada",
+        "iee_tipo": "0.005",
+        "iee_minimo_eur_mwh": "1",
+        "iva_tipo": "0.10",
+        "iva_potencia_max_kw": "10",
+        "condicion": null,
+        "fuente": {
+          "referencia": "arts. 40 y 42 del Real Decreto-ley 7/2026 (art. 42 en la redacción del RDL 10/2026)",
+          "en_vigor_desde": "2026-03-22",
+          "verificado": true,
+          "nota": "Vigencia legal hasta el 30-6-2026, pero junio quedó sin rebaja (ver el tramo siguiente)."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2026-6544",
+            "articulo": "art. 40.Uno RDL 7/2026",
+            "cita": "Uno. Con efectos desde la entrada en vigor de este real decreto-ley y vigencia hasta el 30 de junio de 2026, el Impuesto Especial sobre la Electricidad se exigirá al tipo impositivo del 0,5 por ciento. Las cuotas resultantes de la aplicación de dicho tipo impositivo no podrán ser inferiores a las cuantías siguientes:",
+            "cifras": {"iee_tipo": "0,5 por ciento"}
+          },
+          {
+            "boe_id": "BOE-A-2026-6544",
+            "articulo": "art. 40.Uno.b) RDL 7/2026",
+            "cita": "b) 1 euro por megavatio-hora (MWh), cuando la electricidad suministrada o consumida se destine a otros usos.",
+            "cifras": {"iee_minimo_eur_mwh": "1 euro por megavatio-hora"}
+          },
+          {
+            "boe_id": "BOE-A-2026-6544",
+            "articulo": "art. 42.a) RDL 7/2026",
+            "cita": "Con efectos desde la entrada en vigor de este real decreto-ley y vigencia hasta el 30 de junio de 2026, se aplicará el tipo del 10 por ciento del Impuesto sobre el Valor Añadido a las entregas, importaciones y adquisiciones intracomunitarias de: a) Energía eléctrica efectuadas a favor de: – Titulares de contratos de suministro de electricidad, cuya potencia contratada (término fijo de potencia) sea inferior o igual a 10 kW,",
+            "cifras": {"iva_tipo": "10 por ciento", "iva_potencia_max_kw": "10 kW"}
+          }
+        ]
+      },
+      {
+        "desde": "2026-06-01",
+        "hasta": "2026-06-30",
+        "estado": "no_aplicada",
+        "condicion": "Condicionada al IPC de la electricidad de abril de 2026; el RDL 18/2026 dice que no se aplicó.",
+        "fuente": {
+          "referencia": "preámbulo del Real Decreto-ley 18/2026",
+          "en_vigor_desde": "2026-06-01",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2026-14112",
+            "articulo": "preámbulo RDL 18/2026",
+            "cita": "La rebaja de tipos no fue de aplicación durante el mes de junio de 2026, último periodo de vigencia, pues su mantenimiento había quedado subordinado a la subida del IPC de la electricidad y del gas natural, dada su favorable evolución.",
+            "cifras": {}
+          }
+        ]
+      },
+      {
+        "desde": "2026-08-01",
+        "hasta": "2026-08-31",
+        "estado": "condicional",
+        "iee_tipo": "0.005",
+        "iee_minimo_eur_mwh": "1",
+        "iva_tipo": "0.10",
+        "iva_potencia_max_kw": "10",
+        "condicion": "Solo si el IPC de la electricidad de junio de 2026 superó en más de un 15 % el de junio de 2025 (dato del INE publicado en julio). El BOE no dice si se cumplió.",
+        "fuente": {
+          "referencia": "arts. 10.1 y 12 del Real Decreto-ley 18/2026",
+          "en_vigor_desde": "2026-08-01",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2026-14112",
+            "articulo": "art. 10.1 RDL 18/2026",
+            "cita": "1. Si en el mes de junio de 2026 el IPC de la subclase 04.5.10 Electricidad supera en más de un 15 por ciento el IPC del mismo mes del año anterior, de acuerdo con la información que publique en julio el Instituto Nacional de Estadística, durante el mes de agosto de 2026 se aplicará el tipo del 10 por ciento del Impuesto sobre el Valor Añadido a las entregas, importaciones y adquisiciones intracomunitarias de energía eléctrica efectuadas a favor de: a) Titulares de contratos de suministro de electricidad, cuya potencia contratada (término fijo de potencia) sea inferior o igual a 10 kW,",
+            "cifras": {"iva_tipo": "10 por ciento", "iva_potencia_max_kw": "10 kW"}
+          },
+          {
+            "boe_id": "BOE-A-2026-14112",
+            "articulo": "art. 12 RDL 18/2026",
+            "cita": "Si en el mes de junio de 2026 el IPC de la subclase 04.5.10 Electricidad supera en más de un 15 por ciento el IPC del mismo mes del año anterior, de acuerdo con la información que publique en julio el Instituto Nacional de Estadística, el tipo impositivo del Impuesto Especial sobre la Electricidad durante el mes de agosto de 2026 será del 0,5 por ciento.",
+            "cifras": {"iee_tipo": "0,5 por ciento"}
+          },
+          {
+            "boe_id": "BOE-A-2026-14112",
+            "articulo": "art. 12.b) RDL 18/2026",
+            "cita": "b) 1 euro por megavatio-hora (MWh), cuando la electricidad suministrada o consumida se destine a otros usos.",
+            "cifras": {"iee_minimo_eur_mwh": "1 euro por megavatio-hora"}
+          }
+        ]
+      },
+      {
+        "desde": "2026-09-01",
+        "hasta": "2026-09-30",
+        "estado": "no_aplicada",
+        "condicion": "Condicionada al IPC de la electricidad de julio de 2026; el RDL 25/2026 dice que no se aplicó.",
+        "fuente": {
+          "referencia": "preámbulo del Real Decreto-ley 25/2026",
+          "en_vigor_desde": "2026-09-01",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2026-20265",
+            "articulo": "preámbulo RDL 25/2026",
+            "cita": "La rebaja de tipos no fue de aplicación durante el mes de septiembre de 2026, último periodo de vigencia, pues su mantenimiento había quedado subordinado a la subida del IPC de la electricidad y del gas natural, dada su favorable evolución.",
+            "cifras": {}
+          }
+        ]
+      },
+      {
+        "desde": "2026-11-01",
+        "hasta": "2026-11-30",
+        "estado": "condicional",
+        "iee_tipo": "0.005",
+        "iee_minimo_eur_mwh": "1",
+        "iva_tipo": "0.10",
+        "iva_potencia_max_kw": "10",
+        "condicion": "Solo si el IPC de la electricidad de septiembre de 2026 superó en más de un 15 % el de septiembre de 2025 (dato del INE publicado en octubre). El BOE no dice si se cumplió.",
+        "fuente": {
+          "referencia": "arts. 18.1 y 20 del Real Decreto-ley 25/2026",
+          "en_vigor_desde": "2026-11-01",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2026-20265",
+            "articulo": "art. 18.1 RDL 25/2026",
+            "cita": "1. Si en el mes de septiembre de 2026 el IPC de la subclase 04.5.1.0 Electricidad supera en más de un 15 por ciento el IPC del mismo mes del año anterior, de acuerdo con la información que publique en octubre el Instituto Nacional de Estadística, durante el mes de noviembre de 2026 se aplicará el tipo del 10 por ciento del Impuesto sobre el Valor Añadido a las entregas, importaciones y adquisiciones intracomunitarias de energía eléctrica efectuadas a favor de: a) Titulares de contratos de suministro de electricidad, cuya potencia contratada (término fijo de potencia) sea inferior o igual a 10 kW,",
+            "cifras": {"iva_tipo": "10 por ciento", "iva_potencia_max_kw": "10 kW"}
+          },
+          {
+            "boe_id": "BOE-A-2026-20265",
+            "articulo": "art. 20 RDL 25/2026",
+            "cita": "Si en el mes de septiembre de 2026 el IPC de la subclase 04.5.1.0 Electricidad supera en más de un 15 por ciento el IPC del mismo mes del año anterior, de acuerdo con la información que publique en octubre el Instituto Nacional de Estadística, el tipo impositivo del Impuesto Especial sobre la Electricidad durante el mes de noviembre de 2026 será del 0,5 por ciento.",
+            "cifras": {"iee_tipo": "0,5 por ciento"}
+          },
+          {
+            "boe_id": "BOE-A-2026-20265",
+            "articulo": "art. 20.b) RDL 25/2026",
+            "cita": "b) 1 euro por megavatio-hora (MWh), cuando la electricidad suministrada o consumida se destine a otros usos.",
+            "cifras": {"iee_minimo_eur_mwh": "1 euro por megavatio-hora"}
+          }
+        ]
+      },
+      {
+        "desde": "2026-12-01",
+        "hasta": "2026-12-31",
+        "estado": "condicional",
+        "iee_tipo": "0.005",
+        "iee_minimo_eur_mwh": "1",
+        "iva_tipo": "0.10",
+        "iva_potencia_max_kw": "10",
+        "condicion": "Solo si el IPC de la electricidad de octubre de 2026 superó en más de un 15 % el de octubre de 2025 (dato del INE publicado en noviembre). El BOE no dice si se cumplió.",
+        "fuente": {
+          "referencia": "arts. 19.1 y 21 del Real Decreto-ley 25/2026",
+          "en_vigor_desde": "2026-12-01",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2026-20265",
+            "articulo": "art. 19.1 RDL 25/2026",
+            "cita": "1. Si en el mes de octubre de 2026 el IPC de la subclase 04.5.1.0 Electricidad supera en más de un 15 por ciento el IPC del mismo mes del año anterior, de acuerdo con la información que publique en noviembre el Instituto Nacional de Estadística, durante el mes de diciembre de 2026 se aplicará el tipo del 10 por ciento del Impuesto sobre el Valor Añadido a las entregas, importaciones y adquisiciones intracomunitarias de energía eléctrica efectuadas a favor de: a) Titulares de contratos de suministro de electricidad, cuya potencia contratada (término fijo de potencia) sea inferior o igual a 10 kW,",
+            "cifras": {"iva_tipo": "10 por ciento", "iva_potencia_max_kw": "10 kW"}
+          },
+          {
+            "boe_id": "BOE-A-2026-20265",
+            "articulo": "art. 21 RDL 25/2026",
+            "cita": "Si en el mes de octubre de 2026 el IPC de la subclase 04.5.1.0 Electricidad supera en más de un 15 por ciento el IPC del mismo mes del año anterior, de acuerdo con la información que publique en noviembre el Instituto Nacional de Estadística, el tipo impositivo del Impuesto Especial sobre la Electricidad durante el mes de diciembre de 2026 será del 0,5 por ciento.",
+            "cifras": {"iee_tipo": "0,5 por ciento"}
+          },
+          {
+            "boe_id": "BOE-A-2026-20265",
+            "articulo": "art. 21.b) RDL 25/2026",
+            "cita": "b) 1 euro por megavatio-hora (MWh), cuando la electricidad suministrada o consumida se destine a otros usos.",
+            "cifras": {"iee_minimo_eur_mwh": "1 euro por megavatio-hora"}
+          }
+        ]
+      }
+    ]
+  }
+}

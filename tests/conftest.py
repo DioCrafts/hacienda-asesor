@@ -11,6 +11,10 @@ import pytest
 os.environ["FORMAT_WATCH"] = "false"
 os.environ["FORMAT_STATE_PATH"] = os.path.join(tempfile.gettempdir(), "hacienda-tests-formatos", "_estado.json")
 os.environ["FORMAT_DIR"] = os.path.join(tempfile.gettempdir(), "hacienda-tests-formatos", "formatos")
+# Same for the baseline of the household modules' BOE sources (params-check).
+os.environ["MODULOS_FUENTES_STATE_PATH"] = os.path.join(
+    tempfile.gettempdir(), "hacienda-tests-formatos", "_modulos_fuentes.json"
+)
 
 
 def _ensure_module(name: str) -> types.ModuleType:

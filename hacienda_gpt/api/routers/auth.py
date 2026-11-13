@@ -36,6 +36,7 @@ from hacienda_gpt.auth.store import (
     User,
 )
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
+from hacienda_gpt.modulos.acciones import AccionStore
 from hacienda_gpt.proactive.store import NotificationStore
 
 _limiter_lock = threading.Lock()
@@ -162,8 +163,14 @@ def build_router(
     *,
     get_case_store: Callable[[], SQLiteCaseStateStore],
     get_notification_store: Callable[[], NotificationStore],
+    get_accion_store: Callable[..., AccionStore] | None = None,
 ) -> APIRouter:
     router = APIRouter()
+
+    def _sin_acciones() -> AccionStore | None:
+        return None
+
+    accion_store_dep = Annotated[AccionStore | None, Depends(get_accion_store or _sin_acciones)]
     guarded = [Depends(require_api_key), Depends(require_auth_enabled)]
     auth_store_dep = Annotated[AuthStore, Depends(get_auth_store)]
     user_dep = Annotated[User, Depends(require_user)]
@@ -278,8 +285,13 @@ def build_router(
         store: auth_store_dep,
         cases: case_store_dep,
         notifications: notification_store_dep,
+        acciones: accion_store_dep,
     ) -> dict[str, Any]:
-        """Everything stored about the user, as one JSON document (access / portability)."""
+        """Everything stored about the user, as one JSON document (access / portability).
+
+        The household modules' facts are facts of the case, so they are in ``case.facts``; their notices are in
+        ``notifications``, and the actions they prepared in ``pending_actions``.
+        """
         exported_cases: list[dict[str, Any]] = []
         for case_id in store.case_ids_of(user.id):
             case = cases.get_case(case_id)
@@ -291,6 +303,7 @@ def build_router(
                     "audit_events": cases.list_audit_events(case_id),
                     "notifications": [n.model_dump(mode="json") for n in notifications.list(case_id)],
                     "notification_deliveries": notifications.deliveries_for_case(case_id),
+                    "pending_actions": acciones.exportar(case_id) if acciones is not None else [],
                 }
             )
         return {
@@ -300,6 +313,7 @@ def build_router(
             # Token hashes are credentials, not data about the user: they are left out.
             "sessions": [s.model_dump(mode="json", exclude={"user_id"}) for s in store.list_sessions(user.id)],
             "consents": [c.model_dump(mode="json") for c in store.consent_history(user.id)],
+            "module_choices": [c.model_dump(mode="json") for c in store.module_choice_history(user.id)],
             "cases": exported_cases,
             "not_included": (
                 "El historial de conversaciones se guarda solo en tu navegador, no en el servidor. "
@@ -315,6 +329,7 @@ def build_router(
         store: auth_store_dep,
         cases: case_store_dep,
         notifications: notification_store_dep,
+        acciones: accion_store_dep,
         limiter: Annotated[LoginRateLimiter, Depends(get_login_limiter)],
     ) -> Response:
         """Erase the account and everything attached to it. Irreversible."""
@@ -328,6 +343,8 @@ def build_router(
         # exists and the user can simply ask again.
         for case_id in store.case_ids_of(user.id):
             notifications.delete_for_case(case_id)
+            if acciones is not None:
+                acciones.delete_for_case(case_id)
             cases.delete_case(case_id)
         store.delete_user(user.id)
         limiter.reset(key)

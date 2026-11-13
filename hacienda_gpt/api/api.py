@@ -5,7 +5,7 @@ from datetime import UTC, date, datetime
 import json
 import queue
 import threading
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Response
@@ -68,6 +68,7 @@ from hacienda_gpt.api.observability import ApiMetrics, observability_middleware
 from hacienda_gpt.api.routers import auth as auth_router
 from hacienda_gpt.api.routers import autonomos as autonomos_router
 from hacienda_gpt.api.routers import consumo as consumo_router
+from hacienda_gpt.api.routers import modulos as modulos_router
 from hacienda_gpt.api.security import (
     RateLimiter,
     make_rate_limit_middleware,
@@ -101,7 +102,12 @@ from hacienda_gpt.decision.state_store import CaseVersionConflictError
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.decision.turn_service import process_turn
 from hacienda_gpt.llm.grounding import AnswerEnvelope
+from hacienda_gpt.modulos.acciones import AccionPendiente, AccionStore
+from hacienda_gpt.modulos.contrato import Modulo
+from hacienda_gpt.modulos.perfil import TIPO_DE_HECHO, HechoInvalidoError, hecho_de_modulo, normalizar_valor
+from hacienda_gpt.modulos.preferencias import modulos_activos_para_caso
 from hacienda_gpt.ops.consumo import PresupuestoAgotadoError, contexto_consumo, medir
+from hacienda_gpt.proactive.bandeja import avisos_de_modulos, kind_de
 from hacienda_gpt.proactive.jobs import ejecutar_para_caso, hoy_en_espana
 from hacienda_gpt.proactive.store import Notification, NotificationStore
 from hacienda_gpt.settings import API_RATE_LIMIT_PER_MIN, DECISION_STATE_DB_PATH
@@ -169,6 +175,20 @@ def _build_notification_store() -> NotificationStore:
 def get_notification_store() -> NotificationStore:
     # Thin wrapper so tests can override it via app.dependency_overrides.
     return _build_notification_store()
+
+
+_accion_stores: dict[str, AccionStore] = {}
+_accion_stores_lock = threading.Lock()
+
+
+def get_accion_store(cases: Annotated[SQLiteCaseStateStore, Depends(get_case_store)]) -> AccionStore:
+    """Pending actions live in the cases' SQLite file (one backup and one erasure cover them), so they
+    follow whichever case store is in use. Overridable via ``app.dependency_overrides``."""
+    with _accion_stores_lock:
+        store = _accion_stores.get(cases.db_path)
+        if store is None:
+            store = _accion_stores[cases.db_path] = AccionStore(cases.db_path)
+        return store
 
 
 @_thread_safe_singleton
@@ -429,6 +449,8 @@ class AgentResponse(AgentResult):
     # (and let the user correct) the facts the answer was based on.
     facts: list[Fact] = Field(default_factory=list)
     tax_period: str | None = None
+    # Actions a module specialist prepared in this turn: they wait for the user's confirmation.
+    pending_actions: list[AccionPendiente] = Field(default_factory=list)
 
 
 @_thread_safe_singleton
@@ -465,14 +487,43 @@ def _load_agent_case(case_id: str | None, store: SQLiteCaseStateStore, access: C
     return case
 
 
+def _modulos_del_turno(case_id: str | None, access: CaseAccess) -> dict[str, Any]:
+    """``{"modulos": [...]}`` for ``agent.run`` when the user has a household module on besides the tax one.
+
+    Empty otherwise, so the agent is called exactly as before the modules existed.
+    """
+    if case_id is not None:
+        modulos = modulos_activos_para_caso(case_id, access.store)
+    else:
+        from hacienda_gpt.modulos.preferencias import modulos_activos_para
+
+        modulos = modulos_activos_para(access.user.id if access.user is not None else None, access.store)
+    return {"modulos": modulos} if any(m.clave != "fiscal" for m in modulos) else {}
+
+
+def _guardar_acciones(result: AgentResult, acciones: AccionStore) -> list[AccionPendiente]:
+    """Store the actions the specialists proposed (once each: a repeated identical call is one action)."""
+    vistas: set[str] = set()
+    guardadas: list[AccionPendiente] = []
+    for accion in result.acciones_propuestas:
+        firma = json.dumps([accion.case_id, accion.herramienta, accion.argumentos], sort_keys=True, default=str)
+        if firma in vistas:
+            continue
+        vistas.add(firma)
+        guardadas.append(acciones.add(accion))
+    return guardadas
+
+
 def _finish_agent_turn(
     payload: AgentRequest,
     case: CaseState | None,
     result: AgentResult,
     store: SQLiteCaseStateStore,
+    acciones: AccionStore | None = None,
 ) -> AgentResponse:
     """Persist what the agent changed on the case, audit the turn, build the response."""
     case_updated = False
+    pendientes: list[AccionPendiente] = []
     if payload.case_id is not None:
         if result.updated_case is not None:
             try:
@@ -483,20 +534,24 @@ def _finish_agent_turn(
                     detail="El caso se modificó concurrentemente; vuelve a cargarlo y reintenta.",
                 ) from exc
             case_updated = True
-        store.append_audit_event(
-            payload.case_id,
-            {
-                "event_type": "agent_answer",
-                "input": payload.query,
-                "mode": result.mode.value,
-                "provider": result.provider,
-                "model": result.model,
-                "tool_trace": [entry.model_dump(mode="json") for entry in result.tool_trace],
-                "citations": [{"fragment_id": c.fragment_id, "locator": c.locator} for c in result.citations],
-                "claims": [claim.model_dump(mode="json") for claim in result.claims],
-                "warnings": result.warnings,
-            },
-        )
+        if result.acciones_propuestas and acciones is not None:
+            pendientes = _guardar_acciones(result, acciones)
+        event = {
+            "event_type": "agent_answer",
+            "input": payload.query,
+            "mode": result.mode.value,
+            "provider": result.provider,
+            "model": result.model,
+            "tool_trace": [entry.model_dump(mode="json") for entry in result.tool_trace],
+            "citations": [{"fragment_id": c.fragment_id, "locator": c.locator} for c in result.citations],
+            "claims": [claim.model_dump(mode="json") for claim in result.claims],
+            "warnings": result.warnings,
+        }
+        if pendientes:
+            event["pending_actions"] = [
+                {"id": a.id, "modulo": a.modulo, "herramienta": a.herramienta} for a in pendientes
+            ]
+        store.append_audit_event(payload.case_id, event)
 
     final_case = result.updated_case or case
     return AgentResponse(
@@ -506,6 +561,7 @@ def _finish_agent_turn(
         obligations=list(final_case.obligation_candidates) if final_case is not None else [],
         facts=list(final_case.facts) if final_case is not None else [],
         tax_period=final_case.tax_period if final_case is not None else None,
+        pending_actions=pendientes,
     )
 
 
@@ -515,6 +571,7 @@ def post_agent(
     agent: Annotated[TaxAgent, Depends(get_agent)],
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
     access: Annotated[CaseAccess, Depends(get_case_access)],
+    acciones: Annotated[AccionStore, Depends(get_accion_store)],
 ) -> AgentResponse:
     """Tool-using advisor: searches the corpus, cites fragments, verifies claims.
 
@@ -528,7 +585,12 @@ def post_agent(
             user_id=access.user.id if access.user is not None else (case.user_id if case is not None else None),
             case_id=payload.case_id,
         ):
-            result = agent.run(payload.query, chat_history=payload.chat_history, case=case)
+            result = agent.run(
+                payload.query,
+                chat_history=payload.chat_history,
+                case=case,
+                **_modulos_del_turno(payload.case_id, access),
+            )
     except PresupuestoAgotadoError as exc:
         raise HTTPException(status_code=429, detail=str(exc)) from exc
     except ProviderError as exc:
@@ -536,7 +598,7 @@ def post_agent(
             status_code=503,
             detail=f"No se pudo procesar la consulta: {exc}",
         ) from exc
-    return _finish_agent_turn(payload, case, result, store)
+    return _finish_agent_turn(payload, case, result, store, acciones)
 
 
 # Seconds between keep-alive lines while the model is working, so proxies and
@@ -550,6 +612,7 @@ def post_agent_stream(
     agent: Annotated[TaxAgent, Depends(get_agent)],
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
     access: Annotated[CaseAccess, Depends(get_case_access)],
+    acciones: Annotated[AccionStore, Depends(get_accion_store)],
 ) -> StreamingResponse:
     """Same as ``/agent``, streamed as NDJSON so the UI can show live progress.
 
@@ -561,6 +624,7 @@ def post_agent_stream(
     agent unavailable, 401) are still plain HTTP errors.
     """
     case = _load_agent_case(payload.case_id, store, access)
+    modulos = _modulos_del_turno(payload.case_id, access)
     events: queue.Queue[dict] = queue.Queue()
 
     def work() -> None:
@@ -575,8 +639,9 @@ def post_agent_stream(
                     chat_history=payload.chat_history,
                     case=case,
                     on_event=lambda event: events.put({"event": "progress", "data": event}),
+                    **modulos,
                 )
-            response = _finish_agent_turn(payload, case, result, store)
+            response = _finish_agent_turn(payload, case, result, store, acciones)
             events.put({"event": "result", "data": response.model_dump(mode="json")})
         except PresupuestoAgotadoError as exc:
             events.put({"event": "error", "data": {"status": 429, "detail": str(exc)}})
@@ -650,6 +715,7 @@ def put_case_fact(
     fact_name: str,
     payload: FactUpdateRequest,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+    access: Annotated[CaseAccess, Depends(get_case_access)],
 ) -> CaseState:
     """Set one fact of a case to a value the user typed — correcting what the
     advisor recorded, or filling it in directly. The value is coerced to the
@@ -659,7 +725,7 @@ def put_case_fact(
         raise HTTPException(status_code=404, detail="case not found")
     expected = EXPECTED_FACT_TYPE.get(fact_name)
     if expected is None:
-        raise HTTPException(status_code=404, detail="fact not found")
+        return _put_module_fact(case, fact_name, payload.value, store, access)
 
     raw = payload.value
     value = _coerce_value(
@@ -704,6 +770,42 @@ def put_case_fact(
     )
 
 
+def _put_module_fact(
+    case: CaseState, fact_name: str, raw: str | float | bool, store: SQLiteCaseStateStore, access: CaseAccess
+) -> CaseState:
+    """A household module's fact: validated by the module (``validar``), JSON facts stored canonical.
+
+    Only facts of a module the owner of the case has switched on can be written.
+    """
+    propio = hecho_de_modulo(fact_name)
+    if propio is None:
+        raise HTTPException(status_code=404, detail="fact not found")
+    modulo, hecho = propio
+    if modulo.clave not in {m.clave for m in modulos_activos_para_caso(case.case_id, access.store)}:
+        raise HTTPException(
+            status_code=409, detail=f"El módulo «{modulo.nombre}» no está activado: actívalo para guardar sus datos."
+        )
+    try:
+        value = normalizar_valor(hecho, raw)
+    except HechoInvalidoError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    fact = Fact(
+        fact_id=f"fact_{fact_name}",
+        name=fact_name,
+        value=value,
+        value_type=TIPO_DE_HECHO[hecho.tipo],
+        source="user_edit",
+        confidence=1.0,
+    )
+    facts = [*(existing for existing in case.facts if existing.name != fact_name), fact]
+    return _save_case_after_user_edit(
+        case,
+        facts,
+        store,
+        {"event_type": "fact_edited_by_user", "fact_name": fact_name, "value": value, "modulo": modulo.clave},
+    )
+
+
 @app.delete(
     "/cases/{case_id}/facts/{fact_name}",
     response_model=CaseState,
@@ -732,15 +834,17 @@ def delete_case_fact(
     )
     anonimizados = store.redact_fact_in_audit(case_id, fact_name)
     planes = notifications.remove_superseded(case_id, key_prefix="fin_de_ejercicio:", keep_key="")
-    store.append_audit_event(
-        case_id,
-        {
-            "event_type": "fact_value_erased",
-            "fact_name": fact_name,
-            "audit_events_redacted": anonimizados,
-            "year_end_plans_removed": planes,
-        },
-    )
+    erased: dict[str, object] = {
+        "event_type": "fact_value_erased",
+        "fact_name": fact_name,
+        "audit_events_redacted": anonimizados,
+        "year_end_plans_removed": planes,
+    }
+    propio = hecho_de_modulo(fact_name)
+    if propio is not None:
+        # The module's notices may quote the value: they go too (the next run rebuilds them from what is left).
+        erased["module_notices_removed"] = notifications.remove_kind(case_id, kind_de(propio[0].clave))
+    store.append_audit_event(case_id, erased)
     return updated
 
 
@@ -1006,12 +1110,19 @@ def post_case_proactive_run(
     case_id: str,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
     notifications: Annotated[NotificationStore, Depends(get_notification_store)],
+    access: Annotated[CaseAccess, Depends(get_case_access)],
 ) -> ProactiveRunResponse:
     """Run the deterministic proactive jobs (deadlines + year-end plan) for this case now. No LLM."""
     case = store.get_case(case_id)
     if case is None:
         raise HTTPException(status_code=404, detail="case not found")
-    created = ejecutar_para_caso(case, hoy=hoy_en_espana(), store=notifications)
+    hoy = hoy_en_espana()
+    created = ejecutar_para_caso(case, hoy=hoy, store=notifications)
+    otros = [m for m in modulos_activos_para_caso(case_id, access.store) if m.clave != "fiscal"]
+    if otros:
+        # The household modules the owner switched on: their notices land in the same inbox.
+        por_modulo, _fallidos = avisos_de_modulos(case, hoy=hoy, store=notifications, modulos=otros)
+        created.update({kind_de(clave): n for clave, n in por_modulo.items()})
     return ProactiveRunResponse(
         case_id=case_id,
         unread=notifications.count_unread(case_id),
@@ -1038,7 +1149,18 @@ def export_case_audit(
 # importing them from this module in the router) so there is no circular import
 # and ``app.dependency_overrides`` keeps working inside the router.
 app.include_router(
-    auth_router.build_router(get_case_store=get_case_store, get_notification_store=get_notification_store)
+    auth_router.build_router(
+        get_case_store=get_case_store,
+        get_notification_store=get_notification_store,
+        get_accion_store=get_accion_store,
+    )
+)
+app.include_router(
+    modulos_router.build_router(
+        get_case_store=get_case_store,
+        get_notification_store=get_notification_store,
+        get_accion_store=get_accion_store,
+    )
 )
 app.include_router(autonomos_router.router)
 app.include_router(consumo_router.router)

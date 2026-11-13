@@ -1,0 +1,60 @@
+{
+  "version": "2026-11-13",
+  "descripcion": "Detección declarativa de columnas de las exportaciones CSV/XLSX de bancos españoles. Las columnas se reconocen SOLO por el nombre de su cabecera (sin acentos, en minúsculas y sin signos), nunca por su posición. Los perfiles de banco no cambian el mapeo: sirven para nombrar el banco y avisar si la cabecera encontrada no coincide con la esperada.",
+  "campos": {
+    "fecha": ["fecha", "fecha operacion", "f operacion", "fecha de operacion", "f operativa", "fecha operativa", "fecha contable", "fecha movimiento", "fecha transaccion", "date", "booking date", "transaction date"],
+    "fecha_valor": ["fecha valor", "f valor", "value date"],
+    "concepto": ["concepto", "descripcion", "description", "concepto comun", "descripcion del movimiento", "detalle del movimiento", "texto"],
+    "detalle": ["concepto ampliado", "concepto complementario", "mas datos", "observaciones", "comentario", "movimiento", "referencia 1", "referencia 2", "beneficiario", "ordenante", "remitente", "informacion adicional", "payee"],
+    "importe": ["importe", "importe eur", "importe euros", "cantidad", "amount"],
+    "cargo": ["cargo", "cargos", "debe", "gastos", "salida", "debito"],
+    "abono": ["abono", "abonos", "haber", "ingresos", "entrada", "credito"],
+    "saldo": ["saldo", "disponible", "saldo disponible", "balance"],
+    "divisa": ["divisa", "moneda", "currency"],
+    "signo": ["d h", "debe haber", "signo", "tipo movimiento"]
+  },
+  "bancos": {
+    "santander": {
+      "nombre": "Banco Santander",
+      "identificadores": ["banco santander", "santander"],
+      "cabeceras_esperadas": ["fecha operacion", "fecha valor", "concepto", "importe", "saldo"],
+      "verificado": false,
+      "nota": "Cabecera esperada no contrastada con una exportación real desde esta máquina; se usa solo para avisar si no coincide."
+    },
+    "bbva": {
+      "nombre": "BBVA",
+      "identificadores": ["bbva"],
+      "cabeceras_esperadas": ["f valor", "fecha", "concepto", "movimiento", "importe", "divisa", "disponible"],
+      "verificado": false,
+      "nota": "Cabecera esperada no contrastada con una exportación real desde esta máquina; se usa solo para avisar si no coincide."
+    },
+    "caixabank": {
+      "nombre": "CaixaBank",
+      "identificadores": ["caixabank", "la caixa"],
+      "cabeceras_esperadas": ["concepto", "fecha", "importe", "saldo"],
+      "verificado": false,
+      "nota": "Cabecera esperada no contrastada con una exportación real desde esta máquina; se usa solo para avisar si no coincide."
+    },
+    "ing": {
+      "nombre": "ING",
+      "identificadores": ["ing direct", "ing bank", "ing"],
+      "cabeceras_esperadas": ["f valor", "descripcion", "comentario", "importe", "saldo"],
+      "verificado": false,
+      "nota": "Cabecera esperada no contrastada con una exportación real desde esta máquina; se usa solo para avisar si no coincide."
+    },
+    "sabadell": {
+      "nombre": "Banco Sabadell",
+      "identificadores": ["banco sabadell", "sabadell"],
+      "cabeceras_esperadas": ["f operativa", "concepto", "f valor", "importe", "saldo"],
+      "verificado": false,
+      "nota": "Cabecera esperada no contrastada con una exportación real desde esta máquina; se usa solo para avisar si no coincide."
+    },
+    "openbank": {
+      "nombre": "Openbank",
+      "identificadores": ["openbank"],
+      "cabeceras_esperadas": ["fecha operacion", "fecha valor", "concepto", "importe", "saldo"],
+      "verificado": false,
+      "nota": "Cabecera esperada no contrastada con una exportación real desde esta máquina; se usa solo para avisar si no coincide."
+    }
+  }
+}

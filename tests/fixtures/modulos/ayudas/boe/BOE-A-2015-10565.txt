@@ -1,0 +1,6 @@
+# Extracto literal de https://www.boe.es/buscar/act.php?id=BOE-A-2015-10565 descargado el 2026-11-13. Texto consolidado: «Última actualización, publicada el 06/11/2024»
+# Solo los párrafos citados en hacienda_gpt/modulos/ayudas/data/prestaciones_2026.json; generado, no editar a mano.
+
+2. Siempre que por Ley o en el Derecho de la Unión Europea no se exprese otro cómputo, cuando los plazos se señalen por días, se entiende que éstos son hábiles, excluyéndose del cómputo los sábados, los domingos y los declarados festivos.
+El plazo concluirá el mismo día en que se produjo la notificación, publicación o silencio administrativo en el mes o el año de vencimiento. Si en el mes de vencimiento no hubiera día equivalente a aquel en que comienza el cómputo, se entenderá que el plazo expira el último día del mes.
+5. Cuando el último día del plazo sea inhábil, se entenderá prorrogado al primer día hábil siguiente.

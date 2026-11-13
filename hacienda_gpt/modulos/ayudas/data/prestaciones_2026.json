@@ -1,0 +1,670 @@
+{
+  "ejercicio": 2026,
+  "consultado_el": "2026-11-13",
+  "fuentes_principales": {
+    "BOE-A-2021-21007": {
+      "norma": "Ley 19/2021, de 20 de diciembre, por la que se establece el ingreso mínimo vital (texto consolidado)",
+      "boe_id": "BOE-A-2021-21007",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2021-21007",
+      "consolidado_a": "2026-10-03",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "47fd629801bb9780f3eedf350ca14c84b4d7151cbd1c62993b4beb3db13cfa29"
+    },
+    "BOE-A-2015-11724": {
+      "norma": "Texto refundido de la Ley General de la Seguridad Social, Real Decreto Legislativo 8/2015 (texto consolidado)",
+      "boe_id": "BOE-A-2015-11724",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-11724",
+      "consolidado_a": "2026-11-11",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "eb8fbee3aa9bf236ee2beda1ec0245420c30447ff513b4ec106354f7d3217cc7"
+    },
+    "BOE-A-2026-2548": {
+      "norma": "Real Decreto-ley 3/2026, de 3 de febrero, para la revalorización de las pensiones públicas (convalidado; texto consolidado)",
+      "boe_id": "BOE-A-2026-2548",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2026-2548",
+      "consolidado_a": "2026-02-04",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "42cef2deb1e36e1d087a5a15f1c92efec36674906c610f19fc819b8769464356"
+    },
+    "BOE-A-2022-22128": {
+      "norma": "Ley 31/2022, de 23 de diciembre, de Presupuestos Generales del Estado para el año 2023 (prorrogada; texto consolidado)",
+      "boe_id": "BOE-A-2022-22128",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2022-22128",
+      "consolidado_a": "2026-09-30",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "6da2e90df65881c8f73662f2e7564e0c74c5b042a29c7aad4148f75487c3ab07"
+    },
+    "BOE-A-2017-11505": {
+      "norma": "Real Decreto 897/2017, de 6 de octubre, consumidor vulnerable y bono social (texto consolidado)",
+      "boe_id": "BOE-A-2017-11505",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2017-11505",
+      "consolidado_a": "2026-01-28",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "1ab78a26edc6a2650a3b4f4678756a458f54b7cf5082f3ba4b2258cd1d6db203"
+    },
+    "BOE-A-2017-11532": {
+      "norma": "Orden ETU/943/2017, de 6 de octubre, que desarrolla el Real Decreto 897/2017 (texto consolidado)",
+      "boe_id": "BOE-A-2017-11532",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2017-11532",
+      "consolidado_a": "2022-10-19",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "436cade3299e7c0532c8f344429c852f28b4660b1219745d797b2a505bf6fecd"
+    },
+    "BOE-A-2026-6544": {
+      "norma": "Real Decreto-ley 7/2026, de 20 de marzo, Plan Integral de Respuesta a la Crisis en Oriente Medio (convalidado; texto consolidado)",
+      "boe_id": "BOE-A-2026-6544",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2026-6544",
+      "consolidado_a": "2026-09-30",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "f3c2161b88a9955ad442d898ee2e55e3d9f2d53adbce9d5a0d500fc11e83abfb"
+    },
+    "BOE-A-2018-13593": {
+      "norma": "Real Decreto-ley 15/2018, de 5 de octubre, transición energética y protección de los consumidores (bono social térmico; texto consolidado)",
+      "boe_id": "BOE-A-2018-13593",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2018-13593",
+      "consolidado_a": "2026-03-21",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "2b9d7a7d1e7318f44f3a6a01ac5537631fc1797f6248d38dbc042a3cf1684133"
+    },
+    "BOE-A-2022-22685": {
+      "norma": "Real Decreto-ley 20/2022, de 27 de diciembre (incremento del ingreso mínimo vital y del complemento de infancia para 2023; texto consolidado)",
+      "boe_id": "BOE-A-2022-22685",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2022-22685",
+      "consolidado_a": "2023-12-28",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "45b6709aaffc5d47eefb3029a94ae0caaa2789b7030d2dd602c4cb2446b6ab64"
+    },
+    "BOE-A-2026-23604": {
+      "norma": "Real Decreto-ley 35/2026, de 10 de noviembre, de protección a las familias monoparentales (pendiente de convalidación; texto consolidado)",
+      "boe_id": "BOE-A-2026-23604",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2026-23604",
+      "consolidado_a": "2026-11-11",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "e800802b384bac370794c923861ee440bdbc871cd86d18b99750a372bcfcc196"
+    },
+    "BOE-A-2006-20764": {
+      "norma": "Ley 35/2006, de 28 de noviembre, del IRPF (texto consolidado)",
+      "boe_id": "BOE-A-2006-20764",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764",
+      "consolidado_a": "2026-11-11",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "88f3cbaead89b2f21538971a7a1e3b9b0bacb3ced6e45deec6f5219db3c9e0a1"
+    },
+    "BOE-A-2015-10565": {
+      "norma": "Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común (art. 30, cómputo de plazos)",
+      "boe_id": "BOE-A-2015-10565",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-10565",
+      "consolidado_a": "2024-11-06",
+      "consultado_el": "2026-11-13",
+      "sha256_html": "1f50daa98890beb1e83d90c4dbc2c787da446fc005ae5c00549113e78c5f44e6"
+    }
+  },
+  "no_modelado": [
+    "Ayudas autonómicas y locales (rentas mínimas autonómicas, ayudas por hijo de las comunidades, bonos de transporte): los boletines autonómicos no se leen.",
+    "Asignación por hijo a cargo sin discapacidad: solo la conservan quienes ya la cobraban (disposición transitoria sexta de la Ley 19/2021); no puede solicitarse de nuevo.",
+    "Prestación por parto o adopción múltiples (art. 359 y 360 LGSS): su cuantía se expresa en veces el salario mínimo interprofesional, que no se ha leído.",
+    "Pensiones no contributivas de jubilación e invalidez, subsidios por desempleo y prestación por cese de actividad.",
+    "Compatibilidad del ingreso mínimo vital con rentas del trabajo (Real Decreto 789/2022) y su incremento por alquiler: se calcula sin ellos, lo que puede subestimar el derecho.",
+    "Cuantía del complemento de ayuda para la infancia en 2026: la ley fija importes que normas anuales han actualizado y no se ha podido leer el importe vigente.",
+    "Deducciones del IRPF por maternidad, familia numerosa o discapacidad a cargo: viven en el módulo fiscal; aquí solo se remite a ellas."
+  ],
+  "iprem": {
+    "mensual": "600",
+    "pagas_anuales": "14",
+    "fuente": {
+      "referencia": "disp. adic. 90.ª Ley 31/2022 (PGE 2023, prorrogada) y art. 3.2.a) RD 897/2017",
+      "en_vigor_desde": "2023-01-01",
+      "verificado": true,
+      "nota": "Los Presupuestos de 2023 siguen prorrogados en 2026 (lo dice la exposición de motivos del RDL 3/2026). Ninguna norma estatal publicada hasta el 13/11/2026 que se haya localizado en el BOE fija otro IPREM para 2026; si se aprueba, este dato debe actualizarse."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2022-22128",
+        "articulo": "disp. adic. 90.ª Ley 31/2022",
+        "cita": "b) El IPREM mensual, 600 euros.",
+        "cifras": {"mensual": "600 euros"}
+      },
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 3.2.a) RD 897/2017",
+        "cita": "a) Que su renta o, en caso de formar parte de una unidad de convivencia, la renta conjunta anual de la unidad de convivencia a la que pertenezca sea igual o inferior a 1,5 veces el Indicador Público de Renta de Efectos Múltiples (IPREM) de 14 pagas.",
+        "cifras": {"pagas_anuales": "14 pagas"}
+      },
+      {
+        "boe_id": "BOE-A-2026-2548",
+        "articulo": "exposición de motivos RDL 3/2026",
+        "cita": "la prórroga automática de la Ley de Presupuestos Generales del Estado para 2023, conforme prevé el artículo 134.4 de la Constitución Española"
+      }
+    ],
+    "avisos": [
+      "IPREM de 2023 (600 euros al mes) aplicado en 2026 por la prórroga de los Presupuestos."
+    ]
+  },
+  "imv": {
+    "pension_no_contributiva_anual": "8803.20",
+    "porcentaje_pnc": "1.00",
+    "meses": "12",
+    "complemento_discapacidad": "0.22",
+    "grado_discapacidad_complemento": "0.65",
+    "incremento_por_miembro": "0.30",
+    "escala_maxima": "2.20",
+    "complemento_monoparental": "0.22",
+    "margen_minimo": "10",
+    "importe_minimo": "10",
+    "patrimonio_veces": "3",
+    "activos_veces": "6",
+    "edad_minima_titular": "23",
+    "escala_patrimonio": [
+      {"adultos": 1, "menores": 1, "o_mas": false, "factor": "1.4"},
+      {"adultos": 1, "menores": 2, "o_mas": false, "factor": "1.8"},
+      {"adultos": 1, "menores": 3, "o_mas": false, "factor": "2.2"},
+      {"adultos": 1, "menores": 4, "o_mas": true, "factor": "2.6"},
+      {"adultos": 2, "menores": 0, "o_mas": false, "factor": "1.4"},
+      {"adultos": 2, "menores": 1, "o_mas": false, "factor": "1.8"},
+      {"adultos": 2, "menores": 2, "o_mas": false, "factor": "2.2"},
+      {"adultos": 2, "menores": 3, "o_mas": true, "factor": "2.6"},
+      {"adultos": 3, "menores": 0, "o_mas": false, "factor": "1.8"},
+      {"adultos": 3, "menores": 1, "o_mas": false, "factor": "2.2"},
+      {"adultos": 3, "menores": 2, "o_mas": true, "factor": "2.6"},
+      {"adultos": 4, "menores": 0, "o_mas": false, "factor": "2.2"},
+      {"adultos": 4, "menores": 1, "o_mas": false, "factor": "2.6"}
+    ],
+    "escala_patrimonio_otros": "2.6",
+    "fuente": {
+      "referencia": "arts. 5, 11, 13 y anexos II y III de la Ley 19/2021; art. 2.5 RDL 3/2026",
+      "en_vigor_desde": "2026-01-01",
+      "verificado": true,
+      "nota": "La renta garantizada de 2026 se obtiene de la pensión no contributiva fijada por el RDL 3/2026 (art. 13.2.a de la Ley 19/2021). La escala del anexo I (1,3; 1,6; 1,9; 2,2) es la misma que resulta del art. 13.2.b) y no se guarda aparte."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2026-2548",
+        "articulo": "art. 2.5 RDL 3/2026",
+        "cita": "5. Las pensiones no contributivas del sistema de la Seguridad Social de incapacidad y jubilación tendrán un importe anual de 8.803,20 euros.",
+        "cifras": {"pension_no_contributiva_anual": "8.803,20 euros"}
+      },
+      {
+        "boe_id": "BOE-A-2021-21007",
+        "articulo": "art. 13.2.a) Ley 19/2021",
+        "cita": "a) En el caso de una persona beneficiaria individual, la cuantía mensual de renta garantizada ascenderá al 100 por ciento del importe anual de las pensiones no contributivas fijadas anualmente en la Ley de Presupuestos Generales del Estado, dividido por doce.",
+        "cifras": {"porcentaje_pnc": "100 por ciento", "meses": "doce"}
+      },
+      {
+        "boe_id": "BOE-A-2021-21007",
+        "articulo": "art. 13.2.a) Ley 19/2021",
+        "cita": "A esta cantidad se sumará un complemento equivalente a un 22 por ciento en el supuesto de que el beneficiario individual tenga un grado de discapacidad reconocido igual o superior al sesenta y cinco por ciento.",
+        "cifras": {"complemento_discapacidad": "22 por ciento", "grado_discapacidad_complemento": "sesenta y cinco por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2021-21007",
+        "articulo": "art. 13.2.b) Ley 19/2021",
+        "cita": "b) En el caso de una unidad de convivencia la cuantía mensual de la letra a) se incrementará en un 30 por ciento por miembro adicional a partir del segundo hasta un máximo del 220 por ciento.",
+        "cifras": {"incremento_por_miembro": "30 por ciento", "escala_maxima": "220 por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2021-21007",
+        "articulo": "art. 13.2.c) Ley 19/2021",
+        "cita": "c) A la cuantía mensual establecida en la letra b) se sumará un complemento de monoparentalidad equivalente a un 22 por ciento de la cuantía establecida en la letra a) en el supuesto de que la unidad de convivencia sea monoparental.",
+        "cifras": {"complemento_monoparental": "22 por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2021-21007",
+        "articulo": "art. 13.2.d) Ley 19/2021",
+        "cita": "d) Igualmente, a la cuantía mensual establecida en la letra b) se sumará un complemento equivalente a un 22 por ciento de la cuantía establecida en la letra a) en el supuesto de que en la unidad de convivencia esté incluida alguna persona con un grado de discapacidad reconocida igual o superior al sesenta y cinco por ciento.",
+        "cifras": {"complemento_discapacidad": "22 por ciento", "grado_discapacidad_complemento": "sesenta y cinco por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2021-21007",
+        "articulo": "art. 11.2 Ley 19/2021",
+        "cita": "sea inferior, al menos en 10 euros, a la cuantía mensual de la renta garantizada con esta prestación que corresponda en función de la modalidad y del número de miembros de la unidad de convivencia en los términos del artículo 13.",
+        "cifras": {"margen_minimo": "10 euros"}
+      },
+      {
+        "boe_id": "BOE-A-2021-21007",
+        "articulo": "art. 13.1 Ley 19/2021",
+        "cita": "siempre que la cuantía resultante sea igual o superior a 10 euros mensuales.",
+        "cifras": {"importe_minimo": "10 euros"}
+      },
+      {
+        "boe_id": "BOE-A-2021-21007",
+        "articulo": "art. 11.3 Ley 19/2021",
+        "cita": "No se apreciará que concurre este requisito cuando la persona beneficiaria individual sea titular de un patrimonio neto valorado, de acuerdo con los criterios que se contemplan en el artículo 20, en un importe igual o superior a tres veces la cuantía correspondiente de renta garantizada por el ingreso mínimo vital para una persona beneficiaria individual.",
+        "cifras": {"patrimonio_veces": "tres veces"}
+      },
+      {
+        "boe_id": "BOE-A-2021-21007",
+        "articulo": "anexo III Ley 19/2021",
+        "cita": "El límite de test de activos para un adulto será de 6 veces la renta garantizada, con una escala de incrementos igual a la del anexo II, según el tipo de unidad de convivencia.",
+        "cifras": {"activos_veces": "6 veces"}
+      },
+      {
+        "boe_id": "BOE-A-2021-21007",
+        "articulo": "art. 5.2 Ley 19/2021",
+        "cita": "2. Las personas titulares, cuando estén integradas en una unidad de convivencia, deberán tener una edad mínima de 23 años",
+        "cifras": {"edad_minima_titular": "23 años"}
+      },
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Un adulto y un menor. 1,4", "cifras": {"escala_patrimonio.0.factor": "1,4"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Un adulto y dos menores. 1,8", "cifras": {"escala_patrimonio.1.factor": "1,8"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Un adulto y tres menores. 2,2", "cifras": {"escala_patrimonio.2.factor": "2,2"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Un adulto y cuatro o más menores. 2,6", "cifras": {"escala_patrimonio.3.factor": "2,6"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Dos adultos. 1,4", "cifras": {"escala_patrimonio.4.factor": "1,4"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Dos adultos y un menor. 1,8", "cifras": {"escala_patrimonio.5.factor": "1,8"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Dos adultos y dos menores. 2,2", "cifras": {"escala_patrimonio.6.factor": "2,2"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Dos adultos y tres o más menores. 2,6", "cifras": {"escala_patrimonio.7.factor": "2,6"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Tres adultos. 1,8", "cifras": {"escala_patrimonio.8.factor": "1,8"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Tres adultos y un menor. 2,2", "cifras": {"escala_patrimonio.9.factor": "2,2"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Tres adultos y dos o más menores. 2,6", "cifras": {"escala_patrimonio.10.factor": "2,6"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Cuatro adultos. 2,2", "cifras": {"escala_patrimonio.11.factor": "2,2"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Cuatro adultos y un menor. 2,6", "cifras": {"escala_patrimonio.12.factor": "2,6"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "anexo II Ley 19/2021", "cita": "Otros. 2,6.", "cifras": {"escala_patrimonio_otros": "2,6"}},
+      {
+        "boe_id": "BOE-A-2021-21007",
+        "articulo": "art. 14.1 Ley 19/2021",
+        "cita": "1. El derecho a la prestación del ingreso mínimo vital nacerá a partir del primer día del mes siguiente al de la fecha de presentación de la solicitud."
+      },
+      {
+        "boe_id": "BOE-A-2021-21007",
+        "articulo": "art. 20.3 Ley 19/2021",
+        "cita": "A la suma de ingresos detallados anteriormente se restará el importe del impuesto sobre la renta devengada y las cotizaciones sociales."
+      }
+    ],
+    "avisos": [
+      "No se aplica la exclusión parcial de las rentas del trabajo del Real Decreto 789/2022 ni el posible incremento por alquiler (art. 13.3): el derecho real puede ser mayor que el calculado."
+    ]
+  },
+  "capi": {
+    "umbral_ingresos": "3.00",
+    "umbral_patrimonio": "1.50",
+    "cuantia_ley_menor_3": "100",
+    "cuantia_ley_3_a_6": "70",
+    "cuantia_ley_6_a_18": "50",
+    "fuente": {
+      "referencia": "arts. 11.6 y 13.2.e) Ley 19/2021; art. 79 RDL 20/2022",
+      "en_vigor_desde": "2022-01-01",
+      "verificado": true,
+      "nota": "Las cuantías por menor son las del texto de la ley. El art. 79 del RDL 20/2022 las incrementó para 2023 y no se ha localizado la norma que fija las de 2026: no se presentan como importe de 2026."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2021-21007",
+        "articulo": "art. 11.6 Ley 19/2021",
+        "cita": "6. Se establece un complemento de ayuda para la infancia para aquellas unidades de convivencia que incluyan menores de edad entre sus miembros, siempre que en el ejercicio inmediatamente anterior al de la solicitud los ingresos computables, de acuerdo con lo dispuesto en el artículo 20 de la presente Ley, sean inferiores al 300% de los umbrales del anexo I y el patrimonio neto sea inferior al 150% de los límites fijados en el anexo II, cumpliendo el test de activos definido en el anexo III.",
+        "cifras": {"umbral_ingresos": "300%", "umbral_patrimonio": "150%"}
+      },
+      {"boe_id": "BOE-A-2021-21007", "articulo": "art. 13.2.e) Ley 19/2021", "cita": "Menores de tres años: 100 euros.", "cifras": {"cuantia_ley_menor_3": "100 euros"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "art. 13.2.e) Ley 19/2021", "cita": "Mayores de tres años y menores de seis años: 70 euros.", "cifras": {"cuantia_ley_3_a_6": "70 euros"}},
+      {"boe_id": "BOE-A-2021-21007", "articulo": "art. 13.2.e) Ley 19/2021", "cita": "Mayores de seis años y menores de 18 años: 50 euros.", "cifras": {"cuantia_ley_6_a_18": "50 euros"}},
+      {
+        "boe_id": "BOE-A-2022-22685",
+        "articulo": "art. 79 RDL 20/2022",
+        "cita": "El complemento a la infancia, con efectos 1 de enero de 2023, se incrementará en el porcentaje resultante de lo regulado en el párrafo anterior."
+      }
+    ],
+    "avisos": [
+      "Importe del complemento no calculado: la cuantía vigente en 2026 no se ha podido leer en el BOE."
+    ]
+  },
+  "hijo_discapacidad": {
+    "edad_limite": "18",
+    "grado_menor": "0.33",
+    "grado_mayor": "0.65",
+    "grado_asistencia": "0.75",
+    "importe_menor": "1000.00",
+    "importe_mayor_65": "5962.80",
+    "importe_mayor_75": "8942.40",
+    "fuente": {
+      "referencia": "arts. 351, 352, 353 y 355 LGSS; art. 2.6 RDL 3/2026",
+      "en_vigor_desde": "2026-01-01",
+      "verificado": true,
+      "nota": "La asignación por hijo con discapacidad no tiene límite de ingresos."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2015-11724",
+        "articulo": "art. 351.a) LGSS",
+        "cita": "a) Una asignación económica por cada hijo menor de dieciocho años de edad y afectado por una discapacidad en un grado igual o superior al 33 por ciento, o mayor de dicha edad cuando el grado de discapacidad sea igual o superior al 65 por ciento, a cargo del beneficiario",
+        "cifras": {"edad_limite": "dieciocho años", "grado_menor": "33 por ciento", "grado_mayor": "65 por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2026-2548",
+        "articulo": "art. 2.6.a) RDL 3/2026",
+        "cita": "a) La cuantía de la asignación económica establecida en el artículo 353.1 del citado texto refundido, en el supuesto de hijo o hija menor de dieciocho años y de menor a cargo en régimen de acogimiento familiar permanente o guarda con fines de adopción con un grado de discapacidad igual o superior al 33 por ciento, será en cómputo anual de 1.000,00 euros.",
+        "cifras": {"importe_menor": "1.000,00 euros", "grado_menor": "33 por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2026-2548",
+        "articulo": "art. 2.6.a) RDL 3/2026",
+        "cita": "La cuantía de la asignación económica establecida en el artículo 353.1 del citado texto refundido, en el supuesto de hijo o hija mayor de dieciocho años a cargo con un grado de discapacidad igual o superior al 65 por ciento, será en cómputo anual de 5.962,80 euros.",
+        "cifras": {"importe_mayor_65": "5.962,80 euros", "grado_mayor": "65 por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2026-2548",
+        "articulo": "art. 2.6.b) RDL 3/2026",
+        "cita": "b) La cuantía de la asignación económica establecida en el artículo 353.2 del citado texto refundido, para los casos de hijo o hija a cargo mayor de dieciocho años con un grado de discapacidad igual o superior al 75 por ciento y que, como consecuencia de pérdidas anatómicas o funcionales, necesite el concurso de otra persona para realizar los actos más esenciales de la vida, tales como vestirse, desplazarse, comer o análogos, será en cómputo anual de 8.942,40 euros.",
+        "cifras": {"importe_mayor_75": "8.942,40 euros", "grado_asistencia": "75 por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2015-11724",
+        "articulo": "art. 355.2.a) LGSS",
+        "cita": "a) En caso de nacimiento del derecho, a partir del día primero del trimestre natural inmediatamente siguiente a la fecha en que se haya solicitado el reconocimiento del mismo."
+      },
+      {
+        "boe_id": "BOE-A-2015-11724",
+        "articulo": "art. 352.1.a) LGSS",
+        "cita": "a) Residan legalmente en territorio español."
+      }
+    ],
+    "avisos": []
+  },
+  "nacimiento": {
+    "importe": "1000",
+    "grado_progenitor": "0.65",
+    "incremento_por_hijo": "0.15",
+    "limite_general": "15356.00",
+    "limite_familia_numerosa": "23109.00",
+    "incremento_familia_numerosa": "3745.00",
+    "diferencia_minima": "10.00",
+    "prescripcion_anios": "5",
+    "fuente": {
+      "referencia": "arts. 53.1, 357 y 358 LGSS; art. 2.7 RDL 3/2026",
+      "en_vigor_desde": "2026-01-01",
+      "verificado": true,
+      "nota": "El incremento del 15 por ciento por hijo a cargo desde el segundo se aplica de forma lineal sobre el límite general (interpretación del art. 357.3 LGSS; la ley no dice si es acumulativo)."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2015-11724",
+        "articulo": "art. 357.1 LGSS",
+        "cita": "1. En los casos de nacimiento o adopción de hijo en España en una familia numerosa o que, con tal motivo, adquiera dicha condición, en una familia monoparental o en los supuestos de madres o padres que tengan reconocido un grado de discapacidad igual o superior al 65 por ciento se tendrá derecho a una prestación económica del sistema de la Seguridad Social en la cuantía y en las condiciones que se establecen en esta sección.",
+        "cifras": {"grado_progenitor": "65 por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2015-11724",
+        "articulo": "art. 357.2 LGSS",
+        "cita": "Se entenderá por familia monoparental la constituida por un solo progenitor con el que convive el hijo nacido o adoptado y que constituye el sustentador único de la familia."
+      },
+      {
+        "boe_id": "BOE-A-2015-11724",
+        "articulo": "art. 357.3 LGSS",
+        "cita": "Dicha cuantía contemplará un incremento del 15 por ciento por cada hijo a cargo, a partir del segundo, este incluido.",
+        "cifras": {"incremento_por_hijo": "15 por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2015-11724",
+        "articulo": "art. 357.3 LGSS",
+        "cita": "En el supuesto de convivencia de ambos progenitores, si la suma de los ingresos percibidos por ambos superase los límites de ingresos establecidos en los párrafos anteriores, no se reconocerá la condición de beneficiario a ninguno de ellos."
+      },
+      {
+        "boe_id": "BOE-A-2015-11724",
+        "articulo": "art. 358.1 LGSS",
+        "cita": "1. La prestación por nacimiento o adopción de hijo, regulada en la presente sección, consistirá en un pago único de 1.000 euros.",
+        "cifras": {"importe": "1.000 euros"}
+      },
+      {
+        "boe_id": "BOE-A-2015-11724",
+        "articulo": "art. 358.2 LGSS",
+        "cita": "2. En los casos en que los ingresos anuales percibidos, de cualquier naturaleza, superen el límite establecido en el artículo 357.3 pero sean inferiores al resultado de sumar a dicho límite el importe de la prestación, la cuantía de esta última será igual a la diferencia entre los ingresos percibidos por el beneficiario y el resultado de la indicada suma."
+      },
+      {
+        "boe_id": "BOE-A-2026-2548",
+        "articulo": "art. 2.7 RDL 3/2026",
+        "cita": "Los límites de ingresos en el año 2026 para acceder a esta prestación de conformidad con lo previsto en el artículo 357.3 del citado texto legal, quedan fijados en 15.356,00 euros anuales y, si se trata de familias numerosas, en 23.109,00 euros anuales, incrementándose en 3.745,00 euros anuales por cada hijo o hija a cargo a partir del cuarto, este incluido.",
+        "cifras": {"limite_general": "15.356,00 euros", "limite_familia_numerosa": "23.109,00 euros", "incremento_familia_numerosa": "3.745,00 euros"}
+      },
+      {
+        "boe_id": "BOE-A-2026-2548",
+        "articulo": "art. 2.7 RDL 3/2026",
+        "cita": "No se reconocerá la prestación en los supuestos en los que la diferencia a que se refiere el primer párrafo del artículo 358.2 del texto refundido de la Ley General de la Seguridad Social sea inferior a 10,00 euros.",
+        "cifras": {"diferencia_minima": "10,00 euros"}
+      },
+      {
+        "boe_id": "BOE-A-2015-11724",
+        "articulo": "art. 53.1 LGSS",
+        "cita": "1. El derecho al reconocimiento de las prestaciones prescribirá a los cinco años, contados desde el día siguiente a aquel en que tenga lugar el hecho causante de la prestación de que se trate",
+        "cifras": {"prescripcion_anios": "cinco años"}
+      }
+    ],
+    "avisos": []
+  },
+  "bono_social_electrico": {
+    "multiplicador_base": "1.5",
+    "incremento_adulto": "0.3",
+    "incremento_menor": "0.5",
+    "incremento_circunstancias": "1",
+    "grado_discapacidad_circunstancia": "0.33",
+    "otros_ingresos_pensionista": "500",
+    "severo_fraccion": "0.50",
+    "severo_pensionista": "1",
+    "severo_familia_numerosa": "2",
+    "descuento_vulnerable": "0.425",
+    "descuento_severo": "0.575",
+    "descuentos_hasta": "2026-12-31",
+    "descuento_vulnerable_general": "0.35",
+    "descuento_severo_general": "0.50",
+    "duracion_anios": "2",
+    "fuente": {
+      "referencia": "arts. 3, 6.3, 9.2 RD 897/2017; art. 4 Orden ETU/943/2017; art. 1 RDL 7/2026",
+      "en_vigor_desde": "2026-01-01",
+      "verificado": true,
+      "nota": "Los descuentos del 42,5 % y 57,5 % son excepcionales para 2026 (RDL 7/2026, convalidado); desde el 1 de enero de 2027 vuelven los del art. 6.3 del RD 897/2017 salvo nueva prórroga."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 3.1 RD 897/2017",
+        "cita": "tendrá la consideración de consumidor vulnerable la persona titular de un punto de suministro de electricidad en su vivienda habitual que, siendo persona física, esté acogida al precio voluntario para el pequeño consumidor (PVPC) y cumpla los restantes requisitos del presente artículo."
+      },
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 3.2.a) RD 897/2017",
+        "cita": "a) Que su renta o, en caso de formar parte de una unidad de convivencia, la renta conjunta anual de la unidad de convivencia a la que pertenezca sea igual o inferior a 1,5 veces el Indicador Público de Renta de Efectos Múltiples (IPREM) de 14 pagas.",
+        "cifras": {"multiplicador_base": "1,5 veces"}
+      },
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 3.2.a) RD 897/2017",
+        "cita": "Cuando la unidad de convivencia esté formada por más de una persona, el multiplicador de renta respecto al índice IPREM de 14 pagas se incrementará en 0,3 por cada miembro adicional mayor de edad que conforme la unidad de convivencia y 0,5 por cada menor de edad de la unidad de convivencia.",
+        "cifras": {"incremento_adulto": "0,3", "incremento_menor": "0,5"}
+      },
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 3.2.b) RD 897/2017",
+        "cita": "b) Estar en posesión del título de familia numerosa."
+      },
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 3.2.c) RD 897/2017",
+        "cita": "c) Que el propio consumidor y, en el caso de formar parte de una unidad de convivencia, todos los miembros de la misma que tengan ingresos, sean pensionistas del Sistema de la Seguridad Social por jubilación o incapacidad permanente, percibiendo la cuantía mínima vigente en cada momento para dichas clases de pensión, y no perciban otros ingresos cuya cuantía agregada anual supere los 500 euros.",
+        "cifras": {"otros_ingresos_pensionista": "500 euros"}
+      },
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 3.2.d) RD 897/2017",
+        "cita": "d) Que el consumidor o algún miembro de su unidad de convivencia sea beneficiario del Ingreso Mínimo Vital conforme a lo establecido en la Ley 19/2021, de 20 de diciembre, por la que se establece el ingreso mínimo vital."
+      },
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 3.3 RD 897/2017",
+        "cita": "3. Los multiplicadores de renta respecto del índice IPREM de 14 pagas establecidos en el apartado 2.a) se incrementarán, en cada caso, en 1 siempre que se acredite alguna de las siguientes circunstancias especiales:",
+        "cifras": {"incremento_circunstancias": "1"}
+      },
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 3.3.a) RD 897/2017",
+        "cita": "a) Que el consumidor o alguno de los miembros de la unidad de convivencia tenga discapacidad reconocida igual o superior al 33%.",
+        "cifras": {"grado_discapacidad_circunstancia": "33%"}
+      },
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 3.3.e) RD 897/2017",
+        "cita": "e) Que la unidad de convivencia está integrada por un único progenitor y, al menos, un menor."
+      },
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 3.4 RD 897/2017",
+        "cita": "4. Cuando, cumpliendo los requisitos anteriores, el consumidor y, en su caso, la unidad de convivencia a la que pertenezca, tenga una renta anual inferior o igual al 50 % del umbral que corresponda según el apartado 2.a), incrementados en su caso conforme a lo dispuesto en el apartado 3, el consumidor será considerado vulnerable severo. Asimismo, también será considerado vulnerable severo cuando el consumidor, y, en su caso, la unidad de convivencia a que pertenezca, tenga una renta anual inferior o igual a una vez el IPREM a 14 pagas, en el caso de que se encuentre en la situación del apartado 2.c), o dos veces el mismo en el caso de que se encuentre en la situación del apartado 2.b).",
+        "cifras": {"severo_fraccion": "50 %", "severo_pensionista": "una vez", "severo_familia_numerosa": "dos veces"}
+      },
+      {
+        "boe_id": "BOE-A-2026-6544",
+        "articulo": "art. 1.1 RDL 7/2026",
+        "cita": "serán los siguientes con carácter excepcional, en el período comprendido entre el 1 de enero y el 31 de diciembre de 2026.",
+        "fechas": {"descuentos_hasta": "31 de diciembre de 2026"}
+      },
+      {
+        "boe_id": "BOE-A-2026-6544",
+        "articulo": "art. 1.1 RDL 7/2026",
+        "cita": "El descuento correspondiente al consumidor vulnerable será del 42,5 por ciento. En el caso del consumidor vulnerable severo, el descuento será del 57,5 por ciento.",
+        "cifras": {"descuento_vulnerable": "42,5 por ciento", "descuento_severo": "57,5 por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 6.3 RD 897/2017",
+        "cita": "3. La TUR de aplicación al consumidor vulnerable será el precio resultante de aplicar un descuento del 35 por ciento en todos los términos que componen el PVPC.",
+        "cifras": {"descuento_vulnerable_general": "35 por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 6.3 RD 897/2017",
+        "cita": "En el caso del consumidor vulnerable severo, el descuento será del 50 por ciento.",
+        "cifras": {"descuento_severo_general": "50 por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2017-11505",
+        "articulo": "art. 9.2 RD 897/2017",
+        "cita": "2. El bono social se aplicará durante el plazo de dos años, salvo que con anterioridad se produzca la pérdida de alguna de las condiciones que dan derecho a su percepción.",
+        "cifras": {"duracion_anios": "dos años"}
+      },
+      {
+        "boe_id": "BOE-A-2017-11532",
+        "articulo": "art. 4.1 Orden ETU/943/2017",
+        "cita": "se considerará la cuantía de la base imponible general y del ahorro, reguladas en los artículos 48 y 49, respectivamente, de la Ley 35/2006, de 28 de noviembre, del Impuesto sobre la Renta de las Personas Físicas, relativa al último período impositivo del que tenga constancia la Agencia Estatal de la Administración Tributaria"
+      }
+    ],
+    "avisos": [
+      "El descuento se aplica sobre el PVPC y solo hasta un límite anual de energía (anexo I del RD 897/2017): no se calcula en euros."
+    ]
+  },
+  "bono_social_termico": {
+    "ayuda_minima": "50",
+    "incremento_severo": "0.60",
+    "fuente": {
+      "referencia": "arts. 6, 8 y 9 y anexo I RDL 15/2018 (redacción del RDL 7/2026)",
+      "en_vigor_desde": "2026-03-22",
+      "verificado": true,
+      "nota": "La cuantía exacta depende de la zona climática de la vivienda y del presupuesto de cada año (coeficiente del anexo I); solo la ayuda mínima está fijada en la norma."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2018-13593",
+        "articulo": "art. 8 RDL 15/2018",
+        "cita": "En cada ejercicio serán beneficiarios del Bono Social Térmico aquellos consumidores que sean beneficiarios del bono social de electricidad previsto en el artículo 45 de la Ley 24/2013, de 26 de diciembre, del Sector Eléctrico, a 31 de diciembre del año anterior."
+      },
+      {
+        "boe_id": "BOE-A-2018-13593",
+        "articulo": "anexo I.3 RDL 15/2018",
+        "cita": "3. La ayuda mínima por beneficiario será de 50 euros.",
+        "cifras": {"ayuda_minima": "50 euros"}
+      },
+      {
+        "boe_id": "BOE-A-2018-13593",
+        "articulo": "anexo I.4 RDL 15/2018",
+        "cita": "4. La ayuda correspondiente a un consumidor vulnerable severo o en riesgo de exclusión social será un 60 % superior a la asignada en su zona climática a un consumidor vulnerable.",
+        "cifras": {"incremento_severo": "60 %"}
+      },
+      {
+        "boe_id": "BOE-A-2018-13593",
+        "articulo": "art. 6 RDL 15/2018",
+        "cita": "Asimismo, será compatible con la percepción del Bono Social de Electricidad."
+      }
+    ],
+    "avisos": []
+  },
+  "titulo_monoparental": {
+    "edad_hijos": "21",
+    "umbral_especial_iprem": "1.50",
+    "solicitable_desde": "2027-01-01",
+    "fuente": {
+      "referencia": "arts. 1, 3 y 4 y disp. final 6.ª RDL 35/2026",
+      "en_vigor_desde": "2026-11-12",
+      "verificado": true,
+      "nota": "Real Decreto-ley publicado el 11/11/2026 y pendiente de convalidación por el Congreso: si no se convalida, decae.",
+      "condicionada_a": "BOE-A-2026-23604"
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2026-23604",
+        "articulo": "art. 1.1.a) RDL 35/2026",
+        "cita": "a) Familia formada por una sola persona progenitora y uno o más descendientes menores de edad sobre los que tenga la guarda y custodia."
+      },
+      {
+        "boe_id": "BOE-A-2026-23604",
+        "articulo": "art. 3.1.a) RDL 35/2026",
+        "cita": "a) Ser personas en estado civil de soltería y menores de veintiún años o ser personas con un grado de discapacidad igual o superior al treinta y tres por ciento o estar incapacitadas para trabajar, cualquiera que fuera su edad.",
+        "cifras": {"edad_hijos": "veintiún años"}
+      },
+      {
+        "boe_id": "BOE-A-2026-23604",
+        "articulo": "art. 4.a) RDL 35/2026",
+        "cita": "2.º Las que cuentan con una hija o hijo, cuando sus ingresos anuales, divididos por el número de integrantes, no superen en cómputo anual el ciento cincuenta por ciento del IPREM vigente, incluidas las pagas extraordinarias.",
+        "cifras": {"umbral_especial_iprem": "ciento cincuenta por ciento"}
+      },
+      {
+        "boe_id": "BOE-A-2026-23604",
+        "articulo": "disp. final 6.ª RDL 35/2026",
+        "cita": "Sin perjuicio de ello, la fecha a partir de la cual se podrá solicitar el ejercicio de los beneficios y derechos incluidos en este real decreto-ley es el 1 de enero de 2027.",
+        "fechas": {"solicitable_desde": "1 de enero de 2027"}
+      }
+    ],
+    "avisos": [
+      "Pendiente de convalidación del Real Decreto-ley 35/2026."
+    ]
+  },
+  "plazos": {
+    "fuente": {
+      "referencia": "art. 30 Ley 39/2015",
+      "en_vigor_desde": "2016-10-02",
+      "verificado": true,
+      "nota": "Reglas usadas para estimar el último día de las convocatorias. Los festivos no se cuentan (no se leen los calendarios): la fecha estimada puede adelantarse a la real, nunca retrasarse."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2015-10565",
+        "articulo": "art. 30.2 Ley 39/2015",
+        "cita": "cuando los plazos se señalen por días, se entiende que éstos son hábiles, excluyéndose del cómputo los sábados, los domingos y los declarados festivos."
+      },
+      {
+        "boe_id": "BOE-A-2015-10565",
+        "articulo": "art. 30.4 Ley 39/2015",
+        "cita": "El plazo concluirá el mismo día en que se produjo la notificación, publicación o silencio administrativo en el mes o el año de vencimiento. Si en el mes de vencimiento no hubiera día equivalente a aquel en que comienza el cómputo, se entenderá que el plazo expira el último día del mes."
+      },
+      {
+        "boe_id": "BOE-A-2015-10565",
+        "articulo": "art. 30.5 Ley 39/2015",
+        "cita": "5. Cuando el último día del plazo sea inhábil, se entenderá prorrogado al primer día hábil siguiente."
+      }
+    ],
+    "avisos": []
+  },
+  "remisiones_fiscales": {
+    "fuente": {
+      "referencia": "arts. 81.4 y 81 bis.3 LIRPF",
+      "en_vigor_desde": "2023-01-01",
+      "verificado": true,
+      "nota": "Las cuantías y requisitos de estas deducciones los calcula el módulo fiscal."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 81.4 LIRPF",
+        "cita": "4. Se podrá solicitar a la Agencia Estatal de Administración Tributaria el abono del importe de la deducción previsto en el apartado 1 anterior de forma anticipada."
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 81 bis.3 LIRPF",
+        "cita": "3. Se podrá solicitar a la Agencia Estatal de Administración Tributaria el abono de las deducciones de forma anticipada."
+      }
+    ],
+    "avisos": []
+  }
+}

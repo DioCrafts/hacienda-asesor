@@ -76,6 +76,14 @@ class Session(BaseModel):
     revoked_at: datetime | None = None
 
 
+class ModuleChoice(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    modulo: str
+    activo: bool
+    timestamp: datetime
+
+
 class ConsentRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -141,6 +149,20 @@ class AuthStore:
                     )
                     """)
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_case_owners_user ON case_owners(user_id)")
+                # Which household modules the user switched on or off (append-only, like the consents:
+                # the history is the record of what the user chose and when).
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS user_module_choices (
+                        seq INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id TEXT NOT NULL,
+                        modulo TEXT NOT NULL,
+                        activo INTEGER NOT NULL,
+                        timestamp TEXT NOT NULL
+                    )
+                    """)
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_user_module_choices_user ON user_module_choices(user_id, modulo, seq)"
+                )
             self._conn = conn
         return self._conn
 
@@ -235,6 +257,7 @@ class AuthStore:
             conn.execute("DELETE FROM auth_sessions WHERE user_id = ?", (user_id,))
             conn.execute("DELETE FROM user_consents WHERE user_id = ?", (user_id,))
             conn.execute("DELETE FROM case_owners WHERE user_id = ?", (user_id,))
+            conn.execute("DELETE FROM user_module_choices WHERE user_id = ?", (user_id,))
             cursor = conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
             return cursor.rowcount == 1
 
@@ -345,6 +368,38 @@ class AuthStore:
     def has_consent(self, user_id: str, consent_type: ConsentType) -> bool:
         record = self.current_consents(user_id).get(consent_type)
         return record is not None and record.granted
+
+    # --- household modules ---------------------------------------------------
+
+    def record_module_choice(self, user_id: str, modulo: str, activo: bool) -> ModuleChoice:
+        """Append the user's decision to switch a module on or off. Never updated: the history is the record."""
+        choice = ModuleChoice(modulo=modulo, activo=activo, timestamp=_now())
+        with self._write() as conn:
+            conn.execute(
+                "INSERT INTO user_module_choices (user_id, modulo, activo, timestamp) VALUES (?, ?, ?, ?)",
+                (user_id, modulo, int(activo), choice.timestamp.isoformat()),
+            )
+        return choice
+
+    def module_choice_history(self, user_id: str) -> list[ModuleChoice]:
+        with self._read() as conn:
+            rows = conn.execute(
+                "SELECT modulo, activo, timestamp FROM user_module_choices WHERE user_id = ? ORDER BY seq",
+                (user_id,),
+            ).fetchall()
+        return [
+            ModuleChoice(
+                modulo=row["modulo"], activo=bool(row["activo"]), timestamp=datetime.fromisoformat(row["timestamp"])
+            )
+            for row in rows
+        ]
+
+    def module_choices(self, user_id: str) -> dict[str, ModuleChoice]:
+        """The latest decision per module (modules never decided on are absent)."""
+        current: dict[str, ModuleChoice] = {}
+        for choice in self.module_choice_history(user_id):
+            current[choice.modulo] = choice
+        return current
 
     # --- case ownership ------------------------------------------------------
 

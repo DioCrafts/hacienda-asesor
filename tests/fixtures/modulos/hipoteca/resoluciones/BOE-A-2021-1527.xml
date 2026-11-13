@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<documento fecha_actualizacion="20210202071616">
+  <metadatos>
+    <identificador>BOE-A-2021-1527</identificador>
+    <origen_legislativo codigo="1">Estatal</origen_legislativo>
+    <departamento codigo="1020">Banco de España</departamento>
+    <rango codigo="1370">Resolución</rango>
+    <fecha_disposicion>20210201</fecha_disposicion>
+    <numero_oficial/>
+    <titulo>Resolución de 1 de febrero de 2021, del Banco de España, por la que se publican determinados tipos de interés oficiales de referencia del mercado hipotecario.</titulo>
+    <diario codigo="BOE">Boletín Oficial del Estado</diario>
+    <fecha_publicacion>20210202</fecha_publicacion>
+    <diario_numero>28</diario_numero>
+    <seccion>3</seccion>
+    <subseccion/>
+    <pagina_inicial>12266</pagina_inicial>
+    <pagina_final>12266</pagina_final>
+    <suplemento_pagina_inicial/>
+    <suplemento_pagina_final/>
+    <url_pdf>https://www.boe.es/boe/dias/2021/02/02/pdfs/BOE-A-2021-1527.pdf</url_pdf>
+    <url_epub/>
+    <url_pdf_catalan/>
+    <url_pdf_euskera/>
+    <url_pdf_gallego/>
+    <url_pdf_valenciano/>
+    <estatus_legislativo/>
+    <fecha_vigencia/>
+    <estatus_derogacion>N</estatus_derogacion>
+    <fecha_derogacion/>
+    <judicialmente_anulada>N</judicialmente_anulada>
+    <fecha_anulacion/>
+    <vigencia_agotada>N</vigencia_agotada>
+    <estado_consolidacion codigo="0"/>
+    <letra_imagen>A</letra_imagen>
+    <suplemento_letra_imagen/>
+  </metadatos>
+  <analisis>
+    <materias/>
+    <notas/>
+    <referencias>
+      <anteriores/>
+      <posteriores/>
+    </referencias>
+    <alertas/>
+  </analisis>
+  <texto>
+    <p class="centro_cursiva">Enero de 2021</p>
+    <table class="tabla">
+      <colgroup>
+        <col width="87%"/>
+        <col width="13%"/>
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="cabeza_tabla">Tipos de referencia<sup>1</sup></th>
+          <th class="cabeza_tabla"> Porcentaje</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cuerpo_tabla_izq">1. Tipo de rendimiento interno en el mercado secundario de la deuda pública de plazo entre dos y seis años</td>
+          <td class="cuerpo_tabla_centro">–0,382</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">2. Euríbor a una semana.</td>
+          <td class="cuerpo_tabla_centro">–0,568</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">3. Euríbor a un mes.</td>
+          <td class="cuerpo_tabla_centro">–0,562</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">4. Euríbor a tres meses.</td>
+          <td class="cuerpo_tabla_centro">–0,547</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">5. Euríbor a seis meses.</td>
+          <td class="cuerpo_tabla_centro">–0,529</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">6. Euríbor a un año.</td>
+          <td class="cuerpo_tabla_centro">–0,505</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">7. Permuta de intereses/<em>Interest Rate Swap</em> (<em>IRS</em>) al plazo de cinco años.</td>
+          <td class="cuerpo_tabla_centro">–0,449</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">8. Míbor (Tipo interbancario a un año)<sup>2</sup>.</td>
+          <td class="cuerpo_tabla_centro">–0,505</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="parrafo_2">Madrid, 1 de febrero de 2021.–El Director General de Estabilidad Financiera, Regulación y Resolución, Ángel Estrada García.</p>
+    <p class="cita_con_pleca"><sup>(1)</sup> La definición y la forma de cálculo de estos índices se recogen en el anejo 8 de la Circular del Banco de España 5/2012, de 27 de junio, según redacción dada al mismo por la Circular 1/2021, de 28 de enero. (BOE de 30 de enero de 2021).</p>
+    <p class="cita"><sup>(2)</sup> Este tipo tiene la consideración de tipo de interés oficial exclusivamente para los préstamos hipotecarios referenciados al mismo que se hubiesen formalizado con anterioridad al 1 de enero de 2000, conforme a lo previsto en el artículo 32 de la Ley 46/1998, de 17 de diciembre, sobre introducción del euro.</p>
+  </texto>
+</documento>

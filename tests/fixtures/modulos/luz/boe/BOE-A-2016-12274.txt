@@ -1,0 +1,37 @@
+–
+€/kWh
+Periodo 2
+Término variable
+de los costes
+de comercialización (CCVh)
+–
+€/kWh
+Periodo 3
+2014
+0,001890
+0,001884
+0,001788
+2015
+0,002262
+0,002254
+0,002140
+2016
+0,001824
+0,001817
+0,001725
+Subir
+[Bloque 10: #ai-2]
+ANEXO II
+Valores de los costes de comercialización a incluir en el precio voluntario para el pequeño consumidor de aplicación en los años 2016, 2017 y 2018 del primer periodo trianual
+1. Valores del término fijo (CCF) de los costes de comercialización a aplicar en el primer periodo de tres años 2016-2018:
+Año
+Término fijo de los costes
+de comercialización (CCF)
+–
+€/kW y año
+2016
+3,113
+2017
+3,113
+2018
+3,113

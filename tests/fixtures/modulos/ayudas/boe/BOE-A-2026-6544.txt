@@ -1,0 +1,5 @@
+# Extracto literal de https://www.boe.es/buscar/act.php?id=BOE-A-2026-6544 descargado el 2026-11-13. Texto consolidado: «Última actualización, publicada el 30/09/2026»
+# Solo los párrafos citados en hacienda_gpt/modulos/ayudas/data/prestaciones_2026.json; generado, no editar a mano.
+
+1. Los descuentos del bono social aplicables a los consumidores domésticos de energía eléctrica recogidos en el artículo 6.3 del Real Decreto 897/2017, de 6 de octubre, por el que se regula la figura del consumidor vulnerable, el bono social y otras medidas de protección para los consumidores domésticos de energía eléctrica, serán los siguientes con carácter excepcional, en el período comprendido entre el 1 de enero y el 31 de diciembre de 2026.
+El descuento correspondiente al consumidor vulnerable será del 42,5 por ciento. En el caso del consumidor vulnerable severo, el descuento será del 57,5 por ciento.

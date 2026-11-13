@@ -79,8 +79,11 @@ class Registro:
         return self.modulos.get(clave)
 
     def activos(self) -> list[Modulo]:
-        """Registered modules minus the ones the operator switched off (``MODULOS_DESACTIVADOS``)."""
-        apagados = desactivados_por_operador()
+        """Registered modules minus the ones the operator switched off (``MODULOS_DESACTIVADOS``).
+
+        The tax module cannot be switched off: the advisor's own tools are the tax tools.
+        """
+        apagados = desactivados_por_operador() - {FISCAL}
         return [modulo for clave, modulo in self.modulos.items() if clave not in apagados]
 
     def hechos(self) -> dict[str, tuple[Modulo, HechoModulo]]:

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<documento fecha_actualizacion="20181023113349">
+  <metadatos>
+    <identificador>BOE-A-2008-9040</identificador>
+    <origen_legislativo codigo="1">Estatal</origen_legislativo>
+    <departamento codigo="1020">Banco de España</departamento>
+    <rango codigo="1590">Corrección (errores o erratas)</rango>
+    <fecha_disposicion/>
+    <numero_oficial/>
+    <titulo>Corrección de erratas de la Resolución de 19 de mayo de 2008, del Banco de España, por la que mensualmente se hacen públicos los índices de referencia oficiales para los préstamos hipotecarios a tipo variable destinados a la adquisición de vivienda.</titulo>
+    <diario codigo="BOE">Boletín Oficial del Estado</diario>
+    <fecha_publicacion>20080524</fecha_publicacion>
+    <diario_numero>126</diario_numero>
+    <seccion>3</seccion>
+    <subseccion/>
+    <pagina_inicial>24423</pagina_inicial>
+    <pagina_final>24423</pagina_final>
+    <suplemento_pagina_inicial/>
+    <suplemento_pagina_final/>
+    <url_pdf>https://www.boe.es/boe/dias/2008/05/24/pdfs/A24423-24423.pdf</url_pdf>
+    <url_epub/>
+    <url_pdf_catalan/>
+    <url_pdf_euskera/>
+    <url_pdf_gallego/>
+    <url_pdf_valenciano/>
+    <estatus_legislativo/>
+    <fecha_vigencia/>
+    <estatus_derogacion>N</estatus_derogacion>
+    <fecha_derogacion/>
+    <judicialmente_anulada>N</judicialmente_anulada>
+    <fecha_anulacion/>
+    <vigencia_agotada>N</vigencia_agotada>
+    <estado_consolidacion codigo="0"/>
+    <letra_imagen>A</letra_imagen>
+    <suplemento_letra_imagen/>
+  </metadatos>
+  <analisis>
+    <materias/>
+    <notas/>
+    <referencias>
+      <anteriores/>
+      <posteriores/>
+    </referencias>
+    <alertas/>
+  </analisis>
+  <texto>
+    <p class="ATEXTO_NORMAL">
+Advertida errata en la inserción de la Resolución de 19 de mayo de 2008, del Banco de España, por la que mensualmente se hacen públicos los índices de referencia oficiales para los préstamos hipotecarios a tipo variable destinados a la adquisición de vivienda, publicada en el «Boletín Oficial del Estado» número 125, de fecha 23 de mayo de 2008, páginas 24321 y 24322, se transcribe a continuación la oportuna rectificación:
+</p>
+    <p class="ATEXTO_BLANCO_4">
+En la página 24321, segunda columna, tipo medio de los préstamos hipotecarios a más de tres años para adquisición de vivienda libre, c) Del conjunto de entidades de crédito, en la columna: Porcentaje, donde dice: «5,148», debe decir: «5,418».</p>
+  </texto>
+</documento>

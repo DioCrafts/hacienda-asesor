@@ -1,0 +1,43 @@
+De 10 h a 15 h
+De 19 h a 23 h
+–
+P5
+–
+–
+–
+De 8 h a 10 h
+De 15 h a 19 h
+De 23 h a 0 h
+–
+P6
+De 0 h a 8 h
+De 0 h a 8 h
+De 0 h a 8 h
+De 0 h a 8 h
+Todas las horas del día.
+3. Discriminación horaria de tres periodos: La discriminación horaria de tres periodos será de aplicación al término de energía del peaje 2.0 TD.
+La discriminación horaria de tres periodos diferencia las horas del año en tres periodos horarios: periodo 1 (punta), periodo 2 (llano) y periodo 3 (valle). Se consideran horas punta, llano y valle las siguientes:
+Invierno y verano (lunes a viernes laborables)
+Península, Illes Balears y Canarias
+Ceuta y Melilla
+P1
+P2
+P3
+P1
+P2
+P3
+10 h-14 h
+18 h-22 h
+8 h-10 h
+14 h-18 h
+22 h-24 h
+0 h-8 h
+11 h-15 h
+19 h-23 h
+8 h-11 h
+15 h-19 h
+23 h-24 h
+0 h-8 h
+Se consideran como horas del periodo 3 (valle) todas las horas de los sábados, domingos, el 6 de enero y los días festivos de ámbito nacional, definidos como tales en el calendario oficial del año correspondiente, con exclusión tanto de los festivos sustituibles como de los que no tienen fecha fija.
+4. Discriminación horaria de dos periodos: La discriminación horaria de dos periodos será de aplicación al término de facturación de potencia y excesos de potencia de aplicación al peaje 2.0 TD.
+La discriminación horaria de dos periodos diferencia las horas del año en dos periodos horarios: punta-llano y valle. El periodo punta-llano de la discriminación horaria de dos periodos agrupa los periodos P1 (punta) y P2 (llano) de la discriminación horaria en tres periodos, mientras que el periodo valle de la discriminación horaria de dos periodos se corresponde con el periodo 3 de la discriminación horaria de tres periodos.

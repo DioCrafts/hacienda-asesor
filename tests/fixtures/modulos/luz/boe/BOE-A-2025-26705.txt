@@ -1,0 +1,21 @@
+Mediante Acuerdo de fecha 22 de diciembre de 2025 la Comisión Delegada del Gobierno para Asuntos Económicos ha autorizado a la Vicepresidenta Tercera del Gobierno y Ministra para la Transición Ecológica y el Reto Demográfico a dictar la presente orden.
+En su virtud, previo Acuerdo de la Comisión Delegada del Gobierno para Asuntos Económicos, dispongo:
+Primero.
+Los precios aplicables a los distintos segmentos tarifarios de los cargos del sistema eléctrico a partir del 1 de enero de 2026 son:
+a) Precios de los términos de potencia:
+Segmento tarifario Término de potencia de los cargos (euros/kW año)
+Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6
+1 4,379461 0,281653
+2 5,441843 2,723298 1,978538 1,978538 1,978538 0,906974
+3 5,648870 2,826996 2,054134 2,054134 2,054134 0,941478
+4 3,317209 1,660371 1,206258 1,206258 1,206258 0,552868
+5 2,656027 1,329146 0,965679 0,965679 0,965679 0,442671
+6 1,299240 0,650162 0,472451 0,472451 0,472451 0,216540
+b) Precios de los términos de energía:
+Segmento tarifario Término de energía de los cargos (euros/kWh)
+Periodo 1 Periodo 2 Periodo 3 Periodo 4 Periodo 5 Periodo 6
+1 0,064292 0,012858 0,003215
+a) El valor unitario correspondiente a los sujetos obligados que desarrollen la actividad de producción será de 0,641653 euros/MWh producido.
+b) El valor unitario correspondiente a los sujetos obligados titulares de activos de transporte será de 0,005712 euros/euro retribuido.
+c) El valor unitario correspondiente a los sujetos obligados que desarrollan la actividad de distribución será de 1,160441 euros/CUPS.
+d) El valor unitario correspondiente a los sujetos obligados que desarrollan la actividad de comercialización será de 6,979247 euros/CUPS.

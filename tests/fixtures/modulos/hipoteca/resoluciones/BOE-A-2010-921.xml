@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<documento fecha_actualizacion="20181023185420">
+  <metadatos>
+    <identificador>BOE-A-2010-921</identificador>
+    <origen_legislativo codigo="1">Estatal</origen_legislativo>
+    <departamento codigo="1020">Banco de España</departamento>
+    <rango codigo="1370">Resolución</rango>
+    <fecha_disposicion>20100119</fecha_disposicion>
+    <numero_oficial/>
+    <titulo>Resolución de 19 de enero de 2010, del Banco de España por la que mensualmente se hacen públicos determinados índices de referencia oficiales para los préstamos hipotecarios a tipo variable destinados a la adquisición de vivienda.</titulo>
+    <diario codigo="BOE">Boletín Oficial del Estado</diario>
+    <fecha_publicacion>20100120</fecha_publicacion>
+    <diario_numero>17</diario_numero>
+    <seccion>3</seccion>
+    <subseccion/>
+    <pagina_inicial>5566</pagina_inicial>
+    <pagina_final>5566</pagina_final>
+    <suplemento_pagina_inicial/>
+    <suplemento_pagina_final/>
+    <url_pdf>https://www.boe.es/boe/dias/2010/01/20/pdfs/BOE-A-2010-921.pdf</url_pdf>
+    <url_epub/>
+    <url_pdf_catalan/>
+    <url_pdf_euskera/>
+    <url_pdf_gallego/>
+    <url_pdf_valenciano/>
+    <estatus_legislativo/>
+    <fecha_vigencia/>
+    <estatus_derogacion>N</estatus_derogacion>
+    <fecha_derogacion/>
+    <judicialmente_anulada>N</judicialmente_anulada>
+    <fecha_anulacion/>
+    <vigencia_agotada>N</vigencia_agotada>
+    <estado_consolidacion codigo="0"/>
+    <letra_imagen>A</letra_imagen>
+    <suplemento_letra_imagen/>
+  </metadatos>
+  <analisis>
+    <materias/>
+    <notas/>
+    <referencias>
+      <anteriores/>
+      <posteriores/>
+    </referencias>
+    <alertas/>
+  </analisis>
+  <texto>
+    <p class="parrafo">Índices de referencia oficiales para los préstamos hipotecarios a tipo variable destinados a la adquisición de vivienda<sup>1</sup>.</p>
+    <p class="centro_cursiva">Diciembre de 2009</p>
+    <table class="tabla">
+      <tr>
+        <td>
+          <p class="cuerpo_tabla_centro">   </p>
+        </td>
+        <td>
+          <p class="cabeza_tabla">Porcentaje</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p class="cuerpo_tabla_izq">1. Tipo medio de los préstamos hipotecarios a más de tres años para adquisición de vivienda libre:</p>
+        </td>
+        <td>
+          <p class="cuerpo_tabla_centro">   </p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p class="cuerpo_tabla_izq">De bancos</p>
+        </td>
+        <td>
+          <p class="cuerpo_tabla_centro">2,484</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p class="cuerpo_tabla_izq">De cajas de ahorro</p>
+        </td>
+        <td>
+          <p class="cuerpo_tabla_centro">3,058</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p class="cuerpo_tabla_izq">Del conjunto de entidades de crédito</p>
+        </td>
+        <td>
+          <p class="cuerpo_tabla_centro">2,819</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p class="cuerpo_tabla_izq">2. Tipo activo de referencia de las cajas de ahorro</p>
+        </td>
+        <td>
+          <p class="cuerpo_tabla_centro">4,625</p>
+        </td>
+      </tr>
+    </table>
+    <p class="parrafo_2">Madrid, 19 de enero de 2010.–El Director General de Regulación, José María Roldán Alegre.</p>
+    <p class="cita_con_pleca">1 La definición y forma de cálculo de estos índices se recoge en la Circular del Banco de España 5/1994, de 22 de julio (BOE de 3 de agosto), 7/1999, de 29 de junio (BOE de 9 de julio) y 1/2000, de 28 de enero (BOE de 10 de febrero).</p>
+  </texto>
+</documento>

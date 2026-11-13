@@ -1,0 +1,33 @@
+# Extracto literal de https://www.boe.es/buscar/act.php?id=BOE-A-2021-21007 descargado el 2026-11-13. Texto consolidado: «Última actualización, publicada el 03/10/2026»
+# Solo los párrafos citados en hacienda_gpt/modulos/ayudas/data/prestaciones_2026.json; generado, no editar a mano.
+
+2. Las personas titulares, cuando estén integradas en una unidad de convivencia, deberán tener una edad mínima de 23 años, o ser mayores de edad o menores emancipados en caso de tener hijos o menores en régimen de guarda con fines de adopción o acogimiento familiar permanente o huérfanos absolutos cuando sean los únicos miembros de la unidad de convivencia y ninguno de ellos alcance la edad de 23 años.
+2. Se apreciará que concurre este requisito cuando el promedio mensual del conjunto de ingresos y rentas anuales computables de la persona beneficiaria individual o del conjunto de miembros de la unidad de convivencia, correspondientes al ejercicio anterior, en los términos establecidos en el artículo 20, sea inferior, al menos en 10 euros, a la cuantía mensual de la renta garantizada con esta prestación que corresponda en función de la modalidad y del número de miembros de la unidad de convivencia en los términos del artículo 13.
+3. No se apreciará que concurre este requisito cuando la persona beneficiaria individual sea titular de un patrimonio neto valorado, de acuerdo con los criterios que se contemplan en el artículo 20, en un importe igual o superior a tres veces la cuantía correspondiente de renta garantizada por el ingreso mínimo vital para una persona beneficiaria individual. En el caso de las unidades de convivencia, se entenderá que no concurre este requisito cuando sean titulares de un patrimonio neto valorado en un importe igual o superior a la cuantía resultante de aplicar la escala de incrementos que figura en el anexo II.
+6. Se establece un complemento de ayuda para la infancia para aquellas unidades de convivencia que incluyan menores de edad entre sus miembros, siempre que en el ejercicio inmediatamente anterior al de la solicitud los ingresos computables, de acuerdo con lo dispuesto en el artículo 20 de la presente Ley, sean inferiores al 300% de los umbrales del anexo I y el patrimonio neto sea inferior al 150% de los límites fijados en el anexo II, cumpliendo el test de activos definido en el anexo III.
+1. La cuantía mensual de la prestación de ingreso mínimo vital que corresponde a la persona beneficiaria individual o a la unidad de convivencia vendrá determinada por la diferencia entre la cuantía de la renta garantizada, según lo establecido en el apartado siguiente, y el conjunto de todas las rentas e ingresos de la persona beneficiaria o de los miembros que componen esa unidad de convivencia del ejercicio anterior, en los términos establecidos en los artículos 11, 16 y 19, siempre que la cuantía resultante sea igual o superior a 10 euros mensuales.
+a) En el caso de una persona beneficiaria individual, la cuantía mensual de renta garantizada ascenderá al 100 por ciento del importe anual de las pensiones no contributivas fijadas anualmente en la Ley de Presupuestos Generales del Estado, dividido por doce.
+A esta cantidad se sumará un complemento equivalente a un 22 por ciento en el supuesto de que el beneficiario individual tenga un grado de discapacidad reconocido igual o superior al sesenta y cinco por ciento.
+b) En el caso de una unidad de convivencia la cuantía mensual de la letra a) se incrementará en un 30 por ciento por miembro adicional a partir del segundo hasta un máximo del 220 por ciento.
+c) A la cuantía mensual establecida en la letra b) se sumará un complemento de monoparentalidad equivalente a un 22 por ciento de la cuantía establecida en la letra a) en el supuesto de que la unidad de convivencia sea monoparental. A los efectos de determinar la cuantía de la prestación, se entenderá por unidad de convivencia monoparental la constituida por un solo adulto que conviva con uno o más descendientes hasta el segundo grado menores de edad sobre los que tenga la guarda y custodia exclusiva, o que conviva con uno o más menores en régimen de acogimiento familiar permanente o guarda con fines de adopción cuando se trata del único acogedor o guardador, o cuando el otro progenitor, guardador o acogedor se encuentre ingresado en prisión o en un centro hospitalario por un periodo ininterrumpido igual o superior a un año.
+d) Igualmente, a la cuantía mensual establecida en la letra b) se sumará un complemento equivalente a un 22 por ciento de la cuantía establecida en la letra a) en el supuesto de que en la unidad de convivencia esté incluida alguna persona con un grado de discapacidad reconocida igual o superior al sesenta y cinco por ciento.
+Menores de tres años: 100 euros.
+Mayores de tres años y menores de seis años: 70 euros.
+Mayores de seis años y menores de 18 años: 50 euros.
+1. El derecho a la prestación del ingreso mínimo vital nacerá a partir del primer día del mes siguiente al de la fecha de presentación de la solicitud.
+No se computarán las rentas previstas en el apartado 1.f). A la suma de ingresos detallados anteriormente se restará el importe del impuesto sobre la renta devengada y las cotizaciones sociales.
+Un adulto y un menor. 1,4
+Un adulto y dos menores. 1,8
+Un adulto y tres menores. 2,2
+Un adulto y cuatro o más menores. 2,6
+Dos adultos. 1,4
+Dos adultos y un menor. 1,8
+Dos adultos y dos menores. 2,2
+Dos adultos y tres o más menores. 2,6
+Tres adultos. 1,8
+Tres adultos y un menor. 2,2
+Tres adultos y dos o más menores. 2,6
+Cuatro adultos. 2,2
+Cuatro adultos y un menor. 2,6
+Otros. 2,6.
+El límite de test de activos para un adulto será de 6 veces la renta garantizada, con una escala de incrementos igual a la del anexo II, según el tipo de unidad de convivencia.

@@ -1,0 +1,6 @@
+Subir
+[Bloque 7: #dt]
+Disposición transitoria única. Precio de alquiler de los contadores electrónicos con discriminación horaria y con posibilidad de telegestión para consumidores domésticos.
+1. Hasta que se apruebe el precio definitivo de los contadores electrónicos con base en el informe de la Comisión Nacional de los Mercados y la Competencia o, en su caso, la Comisión Nacional de Energía al que se refiere la disposición adicional única de la presente orden, el precio medio del alquiler de los contadores electrónicos será el siguiente:
+a) Contadores electrónicos monofásicos con discriminación horaria y con posibilidad de telegestión para consumidores domésticos, considerando no solo el precio del propio equipo sino también los costes asociados a su instalación y operación y mantenimiento de los mismos (incluidos los costes asociados a la verificación): 0,81 euros/mes.
+b) Contadores electrónicos trifásicos con discriminación horaria y con posibilidad de telegestión para consumidores domésticos, considerando no solo el precio del propio equipo sino también los costes asociados a su instalación y operación y mantenimiento de los mismos (incluidos los costes asociados a la verificación): 1,36 euros/mes.

@@ -7,6 +7,7 @@ so the model orchestrates and reasons but never has to recall a figure.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -1031,6 +1032,10 @@ def _cifras_del_conyuge(guardado: Any, pedido: dict[str, Any] | None) -> tuple[d
     return cifras, [f"Cónyuge B: cifras guardadas en el expediente — {resumen_conyuge(base, usados)}."]
 
 
+# A tool the core adds to a run (the household modules' specialists): its spec and its handler.
+ExtraTool = tuple[ToolSpec, Callable[[dict[str, Any]], ToolOutcome]]
+
+
 class Toolbox:
     """Holds the per-run state the tools read and mutate."""
 
@@ -1043,9 +1048,12 @@ class Toolbox:
         default_k: int = 6,
         graph: DoctrineGraph | None = None,
         allowed: frozenset[str] | None = None,
+        extra: Sequence[ExtraTool] = (),
     ) -> None:
         # Subagents get a subset of the tools (a researcher must not edit the case).
         self._allowed = allowed
+        # Tools added by the core for this run (``consultar_<modulo>``), after the tax ones.
+        self._extra = tuple(extra)
         self._graph = graph
         self._searcher = searcher
         self.ledger = ledger
@@ -1074,6 +1082,7 @@ class Toolbox:
             specs.append(VALIDITY_TOOL)
         if self.case is not None:
             specs.extend([READ_CASE_TOOL, RECORD_FACTS_TOOL, EVALUATE_RULES_TOOL])
+        specs.extend(spec for spec, _handler in self._extra)
         if self._allowed is not None:
             specs = [spec for spec in specs if spec.name in self._allowed]
         return specs
@@ -1138,6 +1147,7 @@ class Toolbox:
             RECORD_FACTS_TOOL.name: self._record_facts,
             EVALUATE_RULES_TOOL.name: self._evaluate_rules,
         }
+        handlers.update({spec.name: handler for spec, handler in self._extra if spec.name not in handlers})
         handler = handlers.get(call.name)
         unavailable = (
             (call.name in _CASE_ONLY_TOOLS and self.case is None)

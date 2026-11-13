@@ -1,0 +1,4 @@
+# Extracto literal de https://www.boe.es/buscar/act.php?id=BOE-A-2022-22128 descargado el 2026-11-13. Texto consolidado: «Última actualización, publicada el 30/09/2026»
+# Solo los párrafos citados en hacienda_gpt/modulos/ayudas/data/prestaciones_2026.json; generado, no editar a mano.
+
+b) El IPREM mensual, 600 euros.

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<documento fecha_actualizacion="20241020172434">
+  <metadatos>
+    <identificador>BOE-A-2021-15173</identificador>
+    <origen_legislativo codigo="1">Estatal</origen_legislativo>
+    <departamento codigo="1020">Banco de España</departamento>
+    <rango codigo="1370">Resolución</rango>
+    <fecha_disposicion>20210917</fecha_disposicion>
+    <numero_oficial/>
+    <titulo>Resolución de 17 de septiembre de 2021, del Banco de España, por la que se publican determinados tipos de interés oficiales de referencia del mercado hipotecario.</titulo>
+    <diario codigo="BOE">Boletín Oficial del Estado</diario>
+    <fecha_publicacion>20210918</fecha_publicacion>
+    <diario_numero>224</diario_numero>
+    <seccion>3</seccion>
+    <subseccion/>
+    <pagina_inicial>114622</pagina_inicial>
+    <pagina_final>114622</pagina_final>
+    <suplemento_pagina_inicial/>
+    <suplemento_pagina_final/>
+    <url_pdf>https://www.boe.es/boe/dias/2021/09/18/pdfs/BOE-A-2021-15173.pdf</url_pdf>
+    <url_epub/>
+    <url_pdf_catalan/>
+    <url_pdf_euskera/>
+    <url_pdf_gallego/>
+    <url_pdf_valenciano/>
+    <estatus_legislativo/>
+    <fecha_vigencia/>
+    <estatus_derogacion>N</estatus_derogacion>
+    <fecha_derogacion/>
+    <judicialmente_anulada>N</judicialmente_anulada>
+    <fecha_anulacion/>
+    <vigencia_agotada>N</vigencia_agotada>
+    <estado_consolidacion codigo="0"/>
+    <letra_imagen>A</letra_imagen>
+    <suplemento_letra_imagen/>
+  </metadatos>
+  <analisis>
+    <materias/>
+    <notas/>
+    <referencias>
+      <anteriores/>
+      <posteriores>
+        <posterior referencia="BOE-A-2021-15299" orden="">
+          <palabra codigo="202">CORRECCIÓN de erratas</palabra>
+          <texto>en BOE num. 226 de 21 de septiembre de 2021</texto>
+        </posterior>
+      </posteriores>
+    </referencias>
+    <alertas/>
+  </analisis>
+  <texto>
+    <p class="centro_cursiva">Agosto de 2021</p>
+    <table class="tabla">
+      <colgroup>
+        <col/>
+        <col/>
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="cabeza_tabla">Tipos de referencia<sup>1</sup></th>
+          <th class="cabeza_tabla">Porcentaje</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cuerpo_tabla_izq">1. Tipo medio de los préstamos hipotecarios a más de tres años, para adquisición de vivienda libre, concedidos por las entidades de crédito en España.</td>
+          <td class="cuerpo_tabla_centro">1,450</td>
+        </tr>
+        <tr>
+          <td class="cuerpo_tabla_izq">2. Tipo medio de los préstamos a la vivienda entre uno y cinco años concedidos por las entidades de crédito en la zona euro (referido al mes anterior).</td>
+          <td class="cuerpo_tabla_centro">1,529</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="parrafo_2">Madrid, 17 de septiembre de 2021.–El Director General de Estabilidad Financiera, Regulación y Resolución, Angel Estrada García.</p>
+    <p class="cita_con_pleca"><sup>1</sup> La definición y proceso de determinación de estos tipos de interés oficiales se recogen en el anejo 8 de la Circular del Banco de España 5/2012, de 27 de junio.</p>
+  </texto>
+</documento>

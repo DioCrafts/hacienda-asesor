@@ -8,6 +8,7 @@ stand behind.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from datetime import UTC, date, datetime
 from decimal import Decimal
 import hashlib
@@ -385,8 +386,21 @@ def ejecutar_para_caso(case: CaseState, *, hoy: date, store: NotificationStore) 
     }
 
 
-def ejecutar_para_todos(case_store: SQLiteCaseStateStore, store: NotificationStore, *, hoy: date) -> dict[str, Any]:
-    """Run both jobs over every case that is not closed. One failing case never stops the batch."""
+def ejecutar_para_todos(
+    case_store: SQLiteCaseStateStore,
+    store: NotificationStore,
+    *,
+    hoy: date,
+    modulos_de: Callable[[CaseState], Sequence[Any]] | None = None,
+    auth: Any | None = None,
+) -> dict[str, Any]:
+    """Run both jobs over every case that is not closed. One failing case never stops the batch.
+
+    Then the household modules switched on for each case's owner (``modulos_de``; by default the owner's
+    choices in ``auth``, or the defaults) write their notices (see :mod:`hacienda_gpt.proactive.bandeja`). The
+    summary gains ``modulos`` (notices per module) and ``errores_modulos`` only when some module beyond the
+    tax one is on, so a tax-only deployment reports exactly what it always did.
+    """
     summary: dict[str, Any] = {"hoy": hoy.isoformat(), "cases": 0, "plazo": 0, "fin_de_ejercicio": 0, "errors": 0}
     for case in case_store.list_all_cases():
         if case.status == CaseStatus.CLOSED:
@@ -400,4 +414,19 @@ def ejecutar_para_todos(case_store: SQLiteCaseStateStore, store: NotificationSto
             continue
         summary["plazo"] += created["plazo"]
         summary["fin_de_ejercicio"] += created["fin_de_ejercicio"]
+
+    from hacienda_gpt.proactive.bandeja import avisos_de_modulos_para_todos
+
+    def por_defecto(case: CaseState) -> Sequence[Any]:
+        from hacienda_gpt.modulos.preferencias import modulos_activos_para_caso
+
+        return modulos_activos_para_caso(case.case_id, auth)
+
+    try:
+        modulos = avisos_de_modulos_para_todos(case_store, store, hoy=hoy, modulos_de=modulos_de or por_defecto)
+    except Exception:  # the household modules never take the tax jobs down with them
+        logger.exception("Household module notices failed")
+        modulos = {"modulos": {}, "errores_modulos": 1}
+    if modulos["modulos"] or modulos["errores_modulos"]:
+        summary.update(modulos)
     return summary

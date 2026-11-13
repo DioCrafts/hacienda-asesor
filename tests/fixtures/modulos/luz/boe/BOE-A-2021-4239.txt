@@ -1,0 +1,14 @@
+Segmento tarifario de cargos.
+1
+2
+3
+4
+5
+6
+Peaje de transporte y distribución Circular 3/2020.
+2.0 TD
+3.0 TD
+6.1 TD
+6.2 TD
+6.3 TD
+6.4 TD
