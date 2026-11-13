@@ -25,6 +25,7 @@ from hacienda_gpt.decision.rules_engine import evaluate_rules
 from hacienda_gpt.decision.schemas import CaseState, Fact, parse_fiscal_year
 from hacienda_gpt.doctrine.citas import extract_citations, identify_document
 from hacienda_gpt.doctrine.grafo import DoctrineGraph
+from hacienda_gpt.proactive.jobs import hoy_en_espana
 from hacienda_gpt.tax.actividad import ActividadInput, calcular_rendimiento_actividad
 from hacienda_gpt.tax.autonomos_params import ejercicios_autonomos_disponibles
 from hacienda_gpt.tax.beneficios import evaluar_beneficios
@@ -32,6 +33,7 @@ from hacienda_gpt.tax.calendario import aviso_festivos, proximos_vencimientos
 from hacienda_gpt.tax.conjunta import comparar_tributacion
 from hacienda_gpt.tax.irpf import IRPFInput, IRPFResult
 from hacienda_gpt.tax.iva import Modelo303Input, calcular_modelo_303
+from hacienda_gpt.tax.optimizador import PlanOptimo, optimizar_desde_hechos
 from hacienda_gpt.tax.pagos_fraccionados import Modelo130Input, calcular_modelo_130
 from hacienda_gpt.tax.params import EjercicioNoDisponibleError, EtapaEducativa, ejercicios_disponibles, load_params
 from hacienda_gpt.tax.patrimonio import PatrimonioInput, calcular_patrimonio
@@ -704,6 +706,114 @@ BENEFITS_TOOL = ToolSpec(
 )
 
 
+_POSICION_LATENTE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "descripcion": {"type": "string", "description": "Qué es (p. ej. 'Fondo indexado', 'Acciones X')."},
+        "importe": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Pérdida (o plusvalía) que realizaría la venta, en euros y en positivo.",
+        },
+        "tipo": {
+            "type": "string",
+            "enum": ["valores_cotizados", "valores_no_cotizados", "otro_elemento"],
+            "description": "Cambia la regla de recompra (art. 33.5 e, f y g LIRPF). Por defecto, valores cotizados.",
+        },
+        "titular": {"type": "string", "enum": ["contribuyente", "conyuge"], "description": "Por defecto, el usuario."},
+    },
+    "required": ["importe"],
+}
+# Constraints of the optimiser (hacienda_gpt.tax.optimizador.Restricciones), as tool arguments.
+_RESTRICCIONES = (
+    "aportacion_maxima_pensiones",
+    "aportacion_maxima_pensiones_conyuge",
+    "acepta_iliquidez",
+    "donativo_previsto",
+    "presupuesto_donativos",
+    "donativo_recurrente_importe_anterior",
+    "perdidas_latentes",
+    "ganancias_latentes",
+)
+
+OPTIMIZE_TOOL = ToolSpec(
+    name="optimizar_impuestos",
+    description=(
+        "Busca de forma determinista la MEJOR COMBINACIÓN de las opciones que la ley deja al contribuyente para "
+        "pagar menos IRPF en el ejercicio: aportar a planes de pensiones (cada cónyuge), declarar conjunta o "
+        "individualmente, a qué tipo de entidad donar lo que ya piensa donar (o hasta el presupuesto que diga) y "
+        "vender inversiones con pérdidas latentes. Las opciones interactúan (una aportación puede llevar la base por "
+        "debajo del límite de una deducción autonómica; la conjunta cambia todos los umbrales), así que calcula las "
+        "combinaciones con la calculadora en vez de sumar ahorros por separado. Devuelve el plan: qué hacer y antes "
+        "de cuándo, el ahorro de cada medida dentro del plan y por separado, su naturaleza (ahorro definitivo, "
+        "diferimiento o gasto), sus requisitos no comprobados y sus citas, y los cálculos actual y óptimo, todo "
+        "como fragmentos citables [F#]. Úsala para «¿cómo pago menos?», «¿qué me conviene hacer antes de fin de "
+        "año?» o «¿conjunta o individual?». Después del 31 de diciembre solo quedan las opciones de la declaración. "
+        "Parte del expediente; `datos` añade o corrige cifras del usuario y `conyuge` son las del otro cónyuge (sin "
+        "ellas no se compara la conjunta). Las restricciones son las que diga el usuario: no las inventes; si no las "
+        "ha dicho, omítelas y traslada los supuestos del resultado. "
+        f"Campos admitidos en `datos` y `conyuge`: {_INPUT_FIELDS_DOC}."
+    ),
+    input_schema={
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "ejercicio": {"type": "integer", "description": "Año fiscal. Por defecto, el del expediente."},
+            "datos": _datos_schema("Cifras del usuario que añadir o corregir sobre el expediente."),
+            "conyuge": {
+                "type": "object",
+                "description": (
+                    "Cifras del otro cónyuge (salario, cotizaciones, retenciones, aportaciones…). No repitas aquí los "
+                    "gastos de los hijos que ya estén en `descendientes` del usuario."
+                ),
+            },
+            "aportacion_maxima_pensiones": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Lo que el usuario puede aportar todavía este año a planes de pensiones, en euros.",
+            },
+            "aportacion_maxima_pensiones_conyuge": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Lo mismo para el cónyuge.",
+            },
+            "acepta_iliquidez": {
+                "type": "boolean",
+                "description": "false si el usuario no quiere inmovilizar dinero hasta la jubilación.",
+            },
+            "donativo_previsto": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Lo que el usuario va a donar este año de todos modos: el optimizador solo elige a qué "
+                "tipo de entidad y, si declaran por separado, qué cónyuge lo paga.",
+            },
+            "presupuesto_donativos": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Lo máximo que estaría dispuesto a donar en total. Sin él, nunca se propone donar más.",
+            },
+            "donativo_recurrente_importe_anterior": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Lo que donó el año pasado a una entidad a la que también donó el anterior (sin bajar "
+                "el importe): permite el porcentaje de donativos recurrentes.",
+            },
+            "perdidas_latentes": {
+                "type": "array",
+                "items": _POSICION_LATENTE_SCHEMA,
+                "description": "Inversiones que hoy darían pérdida si se vendieran.",
+            },
+            "ganancias_latentes": {
+                "type": "array",
+                "items": _POSICION_LATENTE_SCHEMA,
+                "description": "Inversiones con plusvalía latente (solo para avisar si realizarlas sale gratis).",
+            },
+        },
+    },
+)
+
+
 CALENDAR_TOOL = ToolSpec(
     name="calendario_fiscal",
     description=(
@@ -787,6 +897,78 @@ def _render_result(nombre: str, result: IRPFResult) -> str:
     return "\n".join(lines)
 
 
+_NATURALEZA = {
+    "ahorro_definitivo": "ahorro definitivo",
+    "diferimiento": "diferimiento (se recupera más adelante)",
+    "requiere_gastar": "requiere gastar",
+}
+
+
+def _render_plan(plan: PlanOptimo) -> str:
+    """The optimiser's plan as a citable text: every figure the answer may quote is in it."""
+    modo = {
+        "individual": "individual",
+        "conjunta_biparental": "conjunta",
+        "conjunta_monoparental": "conjunta monoparental",
+    }
+    lines = [
+        f"Plan óptimo del IRPF {plan.ejercicio} a {plan.fecha.strftime('%d/%m/%Y')} "
+        + (
+            "(antes del cierre del ejercicio)"
+            if plan.fase == "antes_del_cierre"
+            else "(solo opciones de la declaración)"
+        ),
+        f"- Situación actual: resultado {_money(plan.base.resultado_total)} (tributación "
+        f"{modo[plan.base.tributacion]}; positivo = a pagar, negativo = a devolver).",
+        f"- Con el plan: resultado {_money(plan.optimo.resultado_total)} (tributación {modo[plan.optimo.tributacion]}).",
+        f"- Ahorro total del plan combinado: {_money(plan.ahorro_total)}.",
+    ]
+    if plan.palancas:
+        lines.append(
+            "Medidas (el ahorro de cada una es lo que aporta DENTRO del plan; no se suman los ahorros por separado):"
+        )
+        for n, p in enumerate(plan.palancas, start=1):
+            detalle = [
+                f"ahorro dentro del plan {_money(p.ahorro_marginal)}",
+                f"por sí sola {_money(p.ahorro_aislado)}"
+                + ("" if p.accion_aislada == p.accion else f" («{p.accion_aislada}»)"),
+                _NATURALEZA[p.naturaleza],
+            ]
+            if p.compromiso:
+                detalle.append(f"compromiso {_money(p.compromiso)}")
+            if p.ahorro_por_euro is not None:
+                detalle.append(f"{str(p.ahorro_por_euro).replace('.', ',')} € de ahorro por euro comprometido")
+            if p.coste_neto is not None:
+                detalle.append(f"coste neto {_money(p.coste_neto)}")
+            lines.append(f"{n}. {p.accion}: " + "; ".join(detalle) + f" [{p.referencia}]")
+            lines.extend(f"   - Requisito: {r}" for r in p.requisitos)
+        lines.append(
+            f"Suma de los ahorros por separado: {_money(plan.suma_ahorros_aislados)}; diferencia con el plan "
+            f"combinado: {_money(plan.interaccion)}."
+        )
+        lines.extend(f"  * {m}" for m in plan.explicacion_interaccion)
+    else:
+        lines.append("No hay ninguna combinación de las opciones disponibles que reduzca el impuesto.")
+    if plan.cambios_traza:
+        lines.append(
+            "Líneas del cálculo que cambian (suma del hogar): "
+            + "; ".join(f"{c.concepto}: {_money(c.antes)} → {_money(c.despues)}" for c in plan.cambios_traza)
+        )
+    for titulo, items in (
+        ("Opciones no disponibles", [f"{nd.nombre}: {nd.detalle}" for nd in plan.no_disponibles]),
+        ("Opciones descartadas", [f"{d.nombre}: {d.motivo} [{d.referencia}]" for d in plan.descartadas]),
+        ("Otras oportunidades", plan.oportunidades),
+        ("Supuestos (trasládalos al usuario)", plan.supuestos),
+        ("Datos que faltan", plan.datos_que_faltan),
+    ):
+        if items:
+            lines.append(f"{titulo}:")
+            lines.extend(f"  * {item}" for item in items)
+    lines.append(f"Búsqueda {plan.busqueda.metodo}: {plan.busqueda.nota}")
+    lines.append("Citas: " + "; ".join(plan.citas))
+    return "\n".join(lines)
+
+
 class Toolbox:
     """Holds the per-run state the tools read and mutate."""
 
@@ -823,6 +1005,7 @@ class Toolbox:
             PATRIMONIO_TOOL,
             ISD_TOOL,
             BENEFITS_TOOL,
+            OPTIMIZE_TOOL,
             CALENDAR_TOOL,
         ]
         if self._graph is not None:
@@ -886,6 +1069,7 @@ class Toolbox:
                 "sucesiones",
             ),
             BENEFITS_TOOL.name: self._benefits,
+            OPTIMIZE_TOOL.name: self._optimize,
             CALENDAR_TOOL.name: self._calendar,
             VALIDITY_TOOL.name: self._validity,
             READ_CASE_TOOL.name: self._read_case,
@@ -1144,6 +1328,59 @@ class Toolbox:
         )
         return ToolOutcome(
             content="\n\n".join(blocks), summary=f"mejor {comparacion.mejor}: {resumen.fragment_id}, {', '.join(ids)}"
+        )
+
+    def _optimize(self, arguments: dict[str, Any]) -> ToolOutcome:
+        conyuge = arguments.get("conyuge")
+        if conyuge is not None and not isinstance(conyuge, dict):
+            return _error("'conyuge' debe ser un objeto {campo: valor} con las cifras del otro cónyuge.")
+        restricciones = {k: arguments[k] for k in _RESTRICCIONES if arguments.get(k) is not None}
+        try:
+            year, facts, datos = self._scenario_base(arguments)
+            plan = optimizar_desde_hechos(
+                ejercicio=year,
+                fecha=hoy_en_espana(),
+                facts=facts,
+                datos=datos,
+                conyuge=conyuge,
+                restricciones=restricciones,
+            )
+        except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
+            return _error(str(exc))
+
+        texto = _render_plan(plan)
+        resumen = self.ledger.register(
+            text=texto,
+            metadata={
+                "title": f"Plan óptimo IRPF {plan.ejercicio}",
+                "source": f"calculadora://optimizador/{plan.ejercicio}/{len(self.ledger) + 1}",
+                "source_authority": "CALCULADORA",
+                "section": "Optimización determinista",
+            },
+        )
+        blocks = [f"[{resumen.fragment_id}] {texto}"]
+        ids: list[str] = []
+        # The returns of both scenarios, citable like any other calculation.
+        for escenario, hogar in (("Situación actual", plan.base), ("Plan óptimo", plan.optimo)):
+            for declaracion in hogar.declaraciones:
+                quien = {"contribuyente": "usuario", "conyuge": "cónyuge", "conjunta": "conjunta"}[declaracion.titular]
+                nombre = f"{escenario} ({quien})"
+                result = declaracion.resultado
+                fragment = self.ledger.register(
+                    text=_render_result(nombre, result),
+                    metadata={
+                        "title": f"Cálculo IRPF {result.ejercicio} — {nombre}",
+                        "source": f"calculadora://irpf/{result.ejercicio}/{len(self.ledger) + 1}",
+                        "source_authority": "CALCULADORA",
+                        "section": "Optimización determinista",
+                    },
+                )
+                ids.append(fragment.fragment_id)
+                blocks.append(f"[{fragment.fragment_id}] " + _render_result(nombre, result))
+        return ToolOutcome(
+            content="\n\n".join(blocks),
+            summary=f"ahorro {_money(plan.ahorro_total)} con {len(plan.palancas)} medida(s): "
+            f"{resumen.fragment_id}, {', '.join(ids)}",
         )
 
     def _calendar(self, arguments: dict[str, Any]) -> ToolOutcome:

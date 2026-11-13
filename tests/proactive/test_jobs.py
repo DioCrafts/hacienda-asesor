@@ -12,7 +12,7 @@ from hacienda_gpt.proactive.jobs import (
     recordatorios_de_plazos,
 )
 from hacienda_gpt.proactive.store import NotificationStore
-from hacienda_gpt.tax.simulador import simular
+from hacienda_gpt.tax.optimizador import optimizar_desde_hechos
 from . import SALARIED, make_case
 
 NOV = date(2026, 11, 12)
@@ -77,38 +77,55 @@ def test_year_end_calendar_entry_is_left_to_the_plan(store) -> None:
 # --------------------------------------------------------------------------- #
 
 
-def test_plan_lists_levers_by_saving_and_sums_the_amount(store) -> None:
+def test_plan_shows_the_combined_plan_and_each_lever_contribution(store) -> None:
     case = make_case(**SALARIED)
     assert plan_fin_de_ejercicio(case, hoy=NOV, store=store) == 1
     (plan,) = store.list(case.case_id)
 
-    simulacion = simular(ejercicio=2026, facts={f.name: f.value for f in case.facts})
-    disponibles = [b for b in simulacion.beneficios if b.estado == "disponible"]
-    by_id = {b.id: b for b in disponibles}
-    assert set(by_id) == {"plan_pensiones", "donativos"}
-    pensiones, donativos = by_id["plan_pensiones"], by_id["donativos"]
-    assert pensiones.ahorro_estimado > donativos.ahorro_estimado > 0
+    optimo = optimizar_desde_hechos(ejercicio=2026, fecha=NOV, facts={f.name: f.value for f in case.facts})
+    (pensiones,) = optimo.palancas
+    assert pensiones.id == "plan_pensiones_contribuyente" and pensiones.importe == Decimal("1500")
+    # The donation is not proposed: nobody said they would donate, and it requires spending.
+    assert all(p.id != "donativo" for p in optimo.palancas)
 
     assert plan.kind == "fin_de_ejercicio" and plan.severity == "aviso" and plan.due_date == date(2026, 12, 31)
-    assert plan.amount == pensiones.ahorro_estimado + donativos.ahorro_estimado == Decimal("738.50")
-    assert plan.title == "Plan de fin de ejercicio 2026: hasta 738,50 € de ahorro estimado"
+    assert plan.amount == optimo.ahorro_total == pensiones.ahorro_marginal == Decimal("538.50")
+    assert plan.title == "Plan de fin de ejercicio 2026: 538,50 € de ahorro estimado"
     assert plan.key.startswith("fin_de_ejercicio:2026:")
 
     body = plan.body
     assert "Quedan 49 días hasta el 31 de diciembre" in body
     assert "a devolver 109,57 €" in body and "cuota líquida estimada: 8.890,43 €" in body
-    # Ordered by saving, each with its amount.
-    assert body.index("1. **Aportación a plan de pensiones** — ahorro estimado: 538,50 €") < body.index(
-        "2. **Deducción por donativos** — ahorro estimado: 200,00 €"
+    assert "tu declaración quedaría a devolver 648,07 €: 538,50 € menos" in body
+    assert (
+        "1. **Aportación a tu plan de pensiones** — Aportar 1.500,00 € a tu plan de pensiones antes del 31/12/2026. "
+        "Ahorro dentro del plan: 538,50 € (diferimiento" in body
     )
-    # The liquidity caveat is carried verbatim from the benefit catalogue.
+    # The requirements travel with the lever, the illiquidity and the tax on redemption among them.
     assert all(requisito in body for requisito in pensiones.requisitos)
-    assert "ilíquido hasta la jubilación" in body
-    # Levers that only need a datum.
+    assert "inmovilizado hasta la jubilación" in body and "rendimiento del trabajo" in body
+    assert "no se pueden sumar" in body
+    # Donations only as information, with the rates read from the data.
+    assert "**Si pensabas donar**" in body and "80 %" in body
+    # What the plan assumed, and levers that only need a datum.
+    assert "no has indicado cuánto puedes aportar" in body
     assert "Tributación conjunta: indícame tu estado civil" in body
     assert "estimaciones de una calculadora" in body
-    assert plan.actions[0].startswith("Aportación a plan de pensiones:") and "538,50 €" in plan.actions[0]
+    assert plan.actions[0].startswith("Aportar 1.500,00 € a tu plan de pensiones") and "538,50 €" in plan.actions[0]
     assert pensiones.referencia in plan.sources
+
+
+def test_plan_with_several_levers_shows_each_marginal_contribution(store) -> None:
+    case = make_case(**SALARIED, familia_monoparental=True, num_descendientes=1)
+    assert plan_fin_de_ejercicio(case, hoy=NOV, store=store) == 1
+    (plan,) = store.list(case.case_id)
+    optimo = optimizar_desde_hechos(ejercicio=2026, fecha=NOV, facts={f.name: f.value for f in case.facts})
+    assert [p.id for p in optimo.palancas] == ["tributacion", "plan_pensiones_contribuyente"]
+    assert plan.amount == optimo.ahorro_total > 0
+    for n, palanca in enumerate(optimo.palancas, start=1):
+        eur = f"{palanca.ahorro_marginal:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        assert f"{n}. **{palanca.nombre}** — {palanca.accion}. Ahorro dentro del plan: {eur} €" in plan.body
+    assert "Presentar declaración conjunta (monoparental)" in plan.body
 
 
 def test_plan_passes_through_the_regional_caveat_and_missing_core_data(store) -> None:
@@ -167,14 +184,16 @@ def test_plan_is_regenerated_only_when_the_facts_change(store) -> None:
     assert plan_fin_de_ejercicio(changed, hoy=date(2026, 11, 14), store=store) == 1
     (second,) = store.list(case.case_id)  # the stale plan was replaced
     assert second.key != first.key and second.id != first.id
-    assert second.amount == Decimal("200.00") and "plan de pensiones** — ahorro" not in second.body
+    # The pension limit is used up: nothing left to propose.
+    assert second.amount is None and "**Aportación a tu plan de pensiones**" not in second.body
+    assert second.title == "Plan de fin de ejercicio 2026: tu situación antes del 31 de diciembre"
 
 
 def test_plan_replaces_the_request_for_figures(store) -> None:
     assert plan_fin_de_ejercicio(make_case(), hoy=NOV, store=store) == 1
     assert plan_fin_de_ejercicio(make_case(**SALARIED), hoy=NOV, store=store) == 1
     (only,) = store.list("c1")
-    assert only.amount == Decimal("738.50")
+    assert only.amount == Decimal("538.50")
 
 
 # --------------------------------------------------------------------------- #

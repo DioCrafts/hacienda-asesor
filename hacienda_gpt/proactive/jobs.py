@@ -1,8 +1,9 @@
 """Deterministic proactive jobs: deadline reminders and the year-end plan.
 
 Neither job calls an LLM. Dates come from the fiscal calendar and amounts from
-the IRPF calculator, so a daily run over every case costs nothing and can only
-say what those two modules already stand behind.
+the IRPF calculator (through the optimiser for the year-end plan), so a daily
+run over every case costs nothing and can only say what those modules already
+stand behind.
 """
 
 from __future__ import annotations
@@ -18,8 +19,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from hacienda_gpt.decision.schemas import CaseState, CaseStatus, parse_fiscal_year
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.proactive.store import Notification, NotificationStore
-from hacienda_gpt.tax.beneficios import Beneficio
 from hacienda_gpt.tax.calendario import proximos_vencimientos
+from hacienda_gpt.tax.optimizador import PalancaElegida, optimizar_desde_hechos
 from hacienda_gpt.tax.params import EjercicioNoDisponibleError, ejercicios_disponibles
 from hacienda_gpt.tax.profile import DatosInvalidosError
 from hacienda_gpt.tax.simulador import simular
@@ -167,12 +168,24 @@ def _elegir_avisos(avisos: list[str]) -> list[str]:
     return (aproximada + resto)[:MAX_AVISOS]
 
 
-def _palanca(index: int, b: Beneficio) -> str:
-    ahorro = f" — ahorro estimado: {_eur(b.ahorro_estimado)}" if b.ahorro_estimado is not None else ""
-    parts = [f"{index}. **{b.nombre}**{ahorro}. {b.detalle}"]
-    if b.requisitos:
-        parts.append("   Ten en cuenta: " + " ".join(b.requisitos))
-    parts.append(f"   Referencia: {b.referencia}" + ("" if b.verificado else " (parámetro no verificado)"))
+def _palanca(index: int, p: PalancaElegida) -> str:
+    """One lever of the combined plan: what to do, what it is worth inside the plan and on its own."""
+    naturaleza = {
+        "ahorro_definitivo": "ahorro definitivo",
+        "diferimiento": "diferimiento: lo recuperas más adelante",
+        "requiere_gastar": f"requiere gastar: coste neto {_eur(p.coste_neto or Decimal(0))}",
+    }[p.naturaleza]
+    linea = f"{index}. **{p.nombre}** — {p.accion}. Ahorro dentro del plan: {_eur(p.ahorro_marginal)} ({naturaleza})"
+    if p.ahorro_aislado != p.ahorro_marginal:
+        linea += (
+            f"; por sí sola ahorraría {_eur(p.ahorro_aislado)}"
+            if p.ahorro_aislado >= 0
+            else f"; por sí sola costaría {_eur(-p.ahorro_aislado)} más"
+        )
+    parts = [linea + "."]
+    if p.requisitos:
+        parts.append("   Ten en cuenta: " + " ".join(p.requisitos))
+    parts.append(f"   Referencia: {p.referencia}" + ("" if p.verificado else " (parámetro no verificado)"))
     return "\n".join(parts)
 
 
@@ -180,8 +193,11 @@ def plan_fin_de_ejercicio(case: CaseState, *, hoy: date, store: NotificationStor
     """Year-end optimiser: what the user can still do before 31 December. Returns 0 or 1.
 
     Acts only from 1 October to 31 December and only for a case whose fiscal
-    year is the current one. The plan is rewritten when the profile changes
-    (the key carries a hash of the facts) and replaces the previous one.
+    year is the current one. The plan is the optimiser's best COMBINATION of
+    levers (:mod:`hacienda_gpt.tax.optimizador`), with each lever's marginal
+    contribution: standalone savings are never added up. It is rewritten when
+    the profile changes (the key carries a hash of the facts) and replaces the
+    previous one.
     """
     ejercicio = parse_fiscal_year(case.tax_period)
     if ejercicio != hoy.year or not date(hoy.year, 10, 1) <= hoy <= date(hoy.year, 12, 31):
@@ -231,32 +247,29 @@ def plan_fin_de_ejercicio(case: CaseState, *, hoy: date, store: NotificationStor
         )
 
     try:
+        # The benefit catalogue only feeds the "one datum away" section; the plan is the optimiser's.
         simulacion = simular(ejercicio=ejercicio, facts=facts, con_beneficios=True)
+        plan = optimizar_desde_hechos(ejercicio=ejercicio, fecha=hoy, facts=facts)
     except EjercicioNoDisponibleError:
         return 0
     except DatosInvalidosError as exc:
         logger.warning("Year-end plan skipped for case %s: %s", case.case_id, exc)
         return 0
 
-    resultado = simulacion.escenarios[0].resultado
-    disponibles = sorted(
-        (b for b in simulacion.beneficios if b.estado == "disponible"),
-        key=lambda b: b.ahorro_estimado if b.ahorro_estimado is not None else Decimal(0),
-        reverse=True,
-    )
+    resultado = plan.base.declaraciones[0].resultado
     por_confirmar = [b for b in simulacion.beneficios if b.estado == "por_confirmar" and b.datos_que_faltan]
-    total = sum((b.ahorro_estimado for b in disponibles if b.ahorro_estimado is not None), Decimal(0))
+    total = plan.ahorro_total if plan.palancas else Decimal(0)
 
-    if resultado.resultado > 0:
-        estimacion = f"a pagar {_eur(resultado.resultado)}"
-    elif resultado.resultado < 0:
-        estimacion = f"a devolver {_eur(resultado.resultado)}"
+    if plan.base.resultado_total > 0:
+        estimacion = f"a pagar {_eur(plan.base.resultado_total)}"
+    elif plan.base.resultado_total < 0:
+        estimacion = f"a devolver {_eur(plan.base.resultado_total)}"
     else:
         estimacion = "ni a pagar ni a devolver (0,00 €)"
     sections = [
         plazo,
         f"**Resultado estimado con tus datos de hoy:** {estimacion} "
-        f"(cuota líquida estimada: {_eur(resultado.cuota_liquida)}).",
+        f"(cuota líquida estimada: {_eur(plan.base.cuota_liquida_total)}).",
     ]
     if simulacion.datos_no_aportados:
         sections.append(
@@ -265,21 +278,35 @@ def plan_fin_de_ejercicio(case: CaseState, *, hoy: date, store: NotificationStor
             + ". Lo he tomado como cero, así que el resultado real será distinto hasta que lo indiques."
         )
 
-    if disponibles:
-        block = ["**Qué puedes hacer antes de fin de año** (de mayor a menor ahorro estimado)"]
-        block += [_palanca(i, b) for i, b in enumerate(disponibles, start=1)]
-        if total > 0:
+    if plan.palancas:
+        optimo = plan.optimo.resultado_total
+        destino = f"a pagar {_eur(optimo)}" if optimo > 0 else f"a devolver {_eur(optimo)}" if optimo < 0 else "0,00 €"
+        block = [
+            f"**Qué puedes hacer antes de fin de año** — haciendo todo a la vez, tu declaración quedaría {destino}: "
+            f"{_eur(total)} menos."
+        ]
+        block += [_palanca(i, p) for i, p in enumerate(plan.palancas, start=1)]
+        block.append(
+            "El ahorro de cada medida es lo que aporta dentro del plan combinado (lo que pagarías de más sin ella): "
+            "las medidas interactúan y sus ahorros por separado no se pueden sumar."
+        )
+        if len(plan.palancas) > 1 and plan.interaccion:
             block.append(
-                f"Ahorro estimado sumando todas: {_eur(total)}. Cada ahorro es el impuesto que dejarías de pagar "
-                "haciendo la aportación o el donativo indicado (no es dinero que recibas sin desembolso), y se ha "
-                "calculado por separado: aplicadas a la vez pueden no sumar exactamente."
+                f"Juntas ahorran {_eur(abs(plan.interaccion))} {'más' if plan.interaccion > 0 else 'menos'} que la "
+                f"suma de cada una por separado ({_eur(plan.suma_ahorros_aislados)})."
             )
+            block += [f"- {motivo}" for motivo in plan.explicacion_interaccion]
         sections.append("\n".join(block))
     else:
         sections.append(
             "Con los datos actuales, la calculadora no encuentra ninguna medida con ahorro estimado que puedas "
             "tomar antes de fin de año."
         )
+    donativo = next((nd for nd in plan.no_disponibles if nd.id == "donativo" and nd.causa == "restricciones"), None)
+    if donativo is not None:
+        sections.append(f"**Si pensabas donar** (no lo incluyo en el plan: requiere gastar). {donativo.detalle}")
+    if plan.supuestos:
+        sections.append("**Supuestos del plan**\n" + "\n".join(f"- {s}" for s in plan.supuestos))
 
     if por_confirmar:
         block = ["**Podría corresponderte y solo falta un dato**"]
@@ -296,11 +323,7 @@ def plan_fin_de_ejercicio(case: CaseState, *, hoy: date, store: NotificationStor
     )
     sections.append("**Límites de esta estimación**\n" + "\n".join(limites))
 
-    actions = [
-        f"{b.nombre}: {b.detalle}"
-        + (f" Ahorro estimado: {_eur(b.ahorro_estimado)}." if b.ahorro_estimado is not None else "")
-        for b in disponibles
-    ]
+    actions = [f"{p.accion}. Ahorro dentro del plan: {_eur(p.ahorro_marginal)}." for p in plan.palancas]
     actions += [
         f"Indica al asesor {', '.join(_etiqueta(name) for name in b.datos_que_faltan)} " f"para comprobar «{b.nombre}»."
         for b in por_confirmar[:MAX_POR_CONFIRMAR]
@@ -308,7 +331,7 @@ def plan_fin_de_ejercicio(case: CaseState, *, hoy: date, store: NotificationStor
     actions.append("Pide al asesor que simule cada opción con tus cifras antes de mover dinero.")
 
     sources: list[str] = []
-    for reference in [*(b.referencia for b in disponibles), "art. 12 LIRPF (BOE-A-2006-20764)", resultado.fuente]:
+    for reference in [*(p.referencia for p in plan.palancas), "art. 12 LIRPF (BOE-A-2006-20764)", resultado.fuente]:
         if reference and reference not in sources:
             sources.append(reference)
 
@@ -319,7 +342,7 @@ def plan_fin_de_ejercicio(case: CaseState, *, hoy: date, store: NotificationStor
             kind="fin_de_ejercicio",
             key=key,
             title=(
-                f"Plan de fin de ejercicio {ejercicio}: hasta {_eur(total)} de ahorro estimado"
+                f"Plan de fin de ejercicio {ejercicio}: {_eur(total)} de ahorro estimado"
                 if total > 0
                 else f"Plan de fin de ejercicio {ejercicio}: tu situación antes del 31 de diciembre"
             ),

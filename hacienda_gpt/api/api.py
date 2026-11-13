@@ -8,7 +8,7 @@ import threading
 from typing import Annotated
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, HTTPException, Response
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -107,6 +107,7 @@ from hacienda_gpt.proactive.store import Notification, NotificationStore
 from hacienda_gpt.settings import API_RATE_LIMIT_PER_MIN, DECISION_STATE_DB_PATH
 from hacienda_gpt.tax.calendario import Vencimiento, aviso_festivos, proximos_vencimientos
 from hacienda_gpt.tax.documentos import AnalisisDocumento, DocumentoNoLegibleError, analizar_documento, decode_upload
+from hacienda_gpt.tax.optimizador import PlanOptimo, Restricciones, optimizar_desde_hechos
 from hacienda_gpt.tax.params import EjercicioNoDisponibleError, ejercicios_disponibles
 from hacienda_gpt.tax.profile import DatosInvalidosError, descendientes_a_texto
 from hacienda_gpt.tax.simulador import Simulacion, simular
@@ -752,6 +753,58 @@ def post_simulate(
         )
     except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+class OptimizeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # With a case, its facts are the user's figures; `datos` adds or overrides some (like /simulate).
+    case_id: str | None = None
+    ejercicio: int | None = None
+    datos: dict = Field(default_factory=dict)
+    # The spouse's figures, {field: value} with the calculator's names. Without them joint filing is not compared.
+    conyuge: dict | None = None
+    restricciones: Restricciones = Field(default_factory=Restricciones)
+    # The day the plan is made for (default: today in Spain). After 31 December of the fiscal year only the
+    # filing choices remain.
+    fecha: date | None = None
+
+
+# Body-validation errors of this route come back as one Spanish sentence (``detail`` is a string, like /simulate).
+_optimizador = APIRouter(route_class=autonomos_router._RutaConErroresEnEspanol)
+
+
+@_optimizador.post("/optimize", response_model=PlanOptimo, dependencies=[Depends(require_api_key)])
+def post_optimize(
+    payload: OptimizeRequest,
+    store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+    access: Annotated[CaseAccess, Depends(get_case_access)],
+) -> PlanOptimo:
+    """Deterministic tax optimiser — no LLM: the best combination of the household's levers.
+
+    Returns the current and optimal results with their traces, every lever of the plan with its
+    marginal and standalone saving, what could not be used and why, citations and a Spanish
+    explanation. Same ownership rules as /simulate; 422 with a readable message on bad data.
+    """
+    case = _load_agent_case(payload.case_id, store, access)
+    facts = {fact.name: fact.value for fact in case.facts} if case is not None else {}
+    year = payload.ejercicio
+    if year is None:
+        year = (parse_fiscal_year(case.tax_period) if case is not None else None) or max(ejercicios_disponibles())
+    try:
+        return optimizar_desde_hechos(
+            ejercicio=year,
+            fecha=payload.fecha or hoy_en_espana(),
+            facts=facts,
+            datos=payload.datos,
+            conyuge=payload.conyuge,
+            restricciones=payload.restricciones,
+        )
+    except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+app.include_router(_optimizador)
 
 
 class CalendarResponse(BaseModel):

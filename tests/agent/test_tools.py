@@ -66,6 +66,7 @@ def test_case_tools_only_offered_with_a_case() -> None:
         "buscar_fuentes",
         "calcular_irpf",
         "listar_beneficios_fiscales",
+        "optimizar_impuestos",
         "calendario_fiscal",
         "comparar_declaracion_conjunta",
         "calcular_rendimiento_actividad",

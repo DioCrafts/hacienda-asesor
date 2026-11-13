@@ -83,8 +83,9 @@ def test_run_proactive_jobs_on_demand(ctx, monkeypatch) -> None:
     assert set(body) == {"case_id", "unread", "notifications", "created"}
     assert body["created"] == {"plazo": 0, "fin_de_ejercicio": 1} and body["unread"] == 1
     (plan,) = body["notifications"]
-    assert plan["kind"] == "fin_de_ejercicio" and plan["amount"] == "738.50" and plan["due_date"] == "2026-12-31"
-    assert plan["title"] == "Plan de fin de ejercicio 2026: hasta 738,50 € de ahorro estimado"
+    # The optimiser's combined plan (the pension contribution); the donation is not proposed without a budget.
+    assert plan["kind"] == "fin_de_ejercicio" and plan["amount"] == "538.50" and plan["due_date"] == "2026-12-31"
+    assert plan["title"] == "Plan de fin de ejercicio 2026: 538,50 € de ahorro estimado"
 
     again = client.post("/cases/case-1/proactive/run").json()
     assert again["created"] == {"plazo": 0, "fin_de_ejercicio": 0} and len(again["notifications"]) == 1
@@ -93,7 +94,7 @@ def test_run_proactive_jobs_on_demand(ctx, monkeypatch) -> None:
     assert client.put("/cases/case-1/facts/aportacion_plan_pensiones", json={"value": 1500}).status_code == 200
     refreshed = client.post("/cases/case-1/proactive/run").json()
     assert refreshed["created"]["fin_de_ejercicio"] == 1 and len(refreshed["notifications"]) == 1
-    assert refreshed["notifications"][0]["amount"] == "200.00"
+    assert refreshed["notifications"][0]["amount"] is None
 
 
 def test_unknown_case_is_404_everywhere(ctx) -> None:

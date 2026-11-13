@@ -45,6 +45,7 @@ def test_search_then_answer_verified() -> None:
         "buscar_fuentes",
         "calcular_irpf",
         "listar_beneficios_fiscales",
+        "optimizar_impuestos",
         "calendario_fiscal",
         "comparar_declaracion_conjunta",
         "calcular_rendimiento_actividad",

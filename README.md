@@ -533,6 +533,167 @@ cuota acumulada que imprime la ley; se usa tal cual para cuadrar al céntimo.
 Ambas dependen del Real Decreto-ley 29/2026, que el 12-11-2026 no constaba
 convalidado; `irpf_2026.json` guarda en `revisiones` las normas contrastadas.
 
+### Optimizador fiscal
+
+Calcular cuánto puede ahorrar como máximo un hogar, dadas sus circunstancias, es
+**determinista** (`hacienda_gpt/tax/optimizador.py`); lo agéntico es todo lo demás.
+El catálogo de beneficios valora cada palanca por separado, pero las palancas
+interactúan: una aportación a un plan de pensiones baja la base liquidable y puede
+dejarla por debajo del límite de renta de una deducción autonómica, vender con
+pérdidas baja la base imponible, la declaración conjunta mueve todos los umbrales y
+el art. 49 LIRPF limita al 25 % la compensación entre rendimientos y ganancias. Por
+eso sumar ahorros calculados por separado se equivoca en los dos sentidos. El
+optimizador busca la **mejor combinación** y cada cifra que da sale de
+`calcular_irpf` sobre el escenario que describe, con la misma traza de líneas y
+referencias legales.
+
+**Palancas que ofrece** — solo elecciones que la ley deja al contribuyente, con los
+límites leídos de los datos del ejercicio:
+
+| Palanca | Base legal (de los datos) | Naturaleza del ahorro |
+|---|---|---|
+| Conjunta o individual (matrimonio con las cifras de los dos; monoparental si `familia_monoparental`) | `tributacion_conjunta` (art. 84.2.3.º y 4.º), arts. 83 y 84.2.1.º LIRPF | ahorro definitivo |
+| Aportación adicional a planes de pensiones de cada cónyuge, hasta lo que puede aportar | `prevision_social` (límite general y 30 % de rendimientos netos del trabajo y actividades, art. 52.1), cada cónyuge con su límite también en conjunta (art. 84.2.1.º) | diferimiento (tributa al rescatarlo, art. 17.2.a).3.ª) |
+| Destino y donante del donativo que el usuario ya va a hacer (o hasta su presupuesto): entidad de la Ley 49/2002, la misma de los dos años anteriores (45 %), o una que dé además una deducción autonómica de su comunidad | `donativos` (art. 19 Ley 49/2002), deducciones autonómicas con base en donativos | requiere gastar (con su coste neto) |
+| Vender inversiones con pérdidas latentes para compensar ganancias o, hasta el 25 %, rendimientos del capital | `compensacion_ahorro` (art. 49.1), con las reglas de recompra del art. 33.5 e), f) y g) | diferimiento |
+
+**Descartadas**, y por qué (salen también en cada plan): aportar al plan del cónyuge
+con rentas bajas (art. 51.7: sus límites no están en los datos); ampliar el límite con
+aportaciones propias a un plan de empleo (depende de la empresa y de una tabla que la
+calculadora no modela); elegir qué progenitor aplica el mínimo por descendientes (la
+ley lo prorratea, art. 61.1.ª) o las deducciones autonómicas por hijos o vivienda (se
+prorratean o corresponden a quien paga); la deducción por maternidad (corresponde a
+la madre); mover cobros del trabajo (se imputan cuando son exigibles, art. 14.1.a);
+invertir para deducir (empresas nuevas, eficiencia energética…: decisiones de
+inversión que el usuario puede simular, no que el optimizador deba proponer); y los
+donativos autonómicos cuya base se cruza con la estatal (Murcia, Cantabria: la
+calculadora no hace ese cruce). Las plusvalías latentes no son palanca (nunca bajan
+el impuesto del año), pero el plan avisa cuando realizarlas sale gratis porque las
+absorben pérdidas pendientes.
+
+**Búsqueda y garantías**
+- Para cada palanca continua, una rejilla de candidatos: cero, el máximo permitido y
+  cada importe que lleva una base vigilada justo a un umbral de los datos (límites de
+  renta de las deducciones autonómicas de la comunidad, extremos de las reducciones
+  progresivas, tramos de las escalas, mínimo personal, «otras rentas» de los arts. 20
+  y DA 61.ª, umbrales de la deducción estatal por alquiler, tramos y topes de
+  donativos, 30 % de rendimientos, compensación del art. 49), ±1 céntimo.
+- Por cada modalidad de declaración, si la rejilla es pequeña (hasta 20.000
+  combinaciones y dentro del presupuesto de 3.000 cálculos), se recorre **entera**
+  (`busqueda.metodo = "exhaustiva"`; en las declaraciones individuales de un
+  matrimonio, fijadas las palancas que las acoplan —el donativo y, si hay límites de
+  renta de la unidad familiar, las pérdidas—, cada declaración se optimiza por su
+  lado, lo que es exacto y mucho más barato); si no, ascenso por coordenadas reiniciado desde
+  el óptimo de cada palanca por separado y desde todas al máximo (`"heuristica"`, que
+  el plan declara). Después, un refinado con los umbrales recalculados en el óptimo y
+  un recorte que baja cada importe al mínimo que da el mismo resultado (nunca
+  comprometer más dinero del necesario).
+- Desempates: menos impuesto; después menos dinero comprometido; importes redondos;
+  la modalidad actual; valores menores. Sin aleatoriedad, `Decimal` en todo y orden
+  estable: la misma entrada da el mismo plan (byte a byte, con cualquier
+  `PYTHONHASHSEED`).
+- Rendimiento medido: `calcular_irpf` tarda 0,1 ms (sin comunidad) a 0,5 ms
+  (Comunidad Valenciana, la de más deducciones); un matrimonio con planes, pérdidas y
+  donativo se optimiza en 10-100 ms, y el caso más pesado probado (Valenciana, dos
+  hijos, los dos cónyuges con varias posiciones en pérdidas, donativo con presupuesto
+  y destinos autonómicos: 1.194 cálculos) en unos 0,7 s.
+
+**Honestidad del plan** — cada palanca elegida lleva su acción y plazo, su ahorro
+**dentro del plan** (lo que se pagaría de más sin ella) y **por sí sola**, el ahorro
+por euro comprometido, el coste neto si exige gastar, su referencia y los requisitos
+que la calculadora no puede comprobar (con la cita literal del BOE cuando es una
+regla, p. ej. la recompra de valores en dos meses del art. 33.5.f). Cuando la
+combinación vale más (o menos) que la suma de las palancas por separado, el plan
+explica por qué a partir de la traza: qué deducción solo activa la combinación, qué
+umbral deja de superarse o qué palanca no elegiría una búsqueda palanca a palanca.
+Lista también lo que no se ha podido usar (por la fecha, por las restricciones del
+usuario, por datos que faltan) y los supuestos (si no dice cuánto puede aportar, se
+supone el máximo útil y se dice). Después del 31 de diciembre solo quedan las
+opciones de la declaración.
+
+**Límites**: la conjunta suma las cifras de los dos cónyuges con las reglas de
+`comparar_declaracion_conjunta` (edad y discapacidad del primero, rentas de los hijos
+a cero); en las individuales, la base imponible del resto de la unidad familiar de
+cada cónyuge es la del otro. Un donativo va entero a un destino y lo paga un cónyuge
+(no se reparte). Las pérdidas latentes son las que indica el usuario (solo
+patrimoniales: las de bonos son rendimientos del capital). Que una deducción
+autonómica por donativos sea compatible con la estatal por la misma cantidad no se
+ha comprobado en cada ley y se dice como requisito.
+
+**Dónde se usa**
+- Herramienta del agente `optimizar_impuestos` (parte del expediente; `datos`,
+  `conyuge` y las restricciones como argumentos). Registra el plan y los cálculos
+  actual y óptimo de cada declaración como fragmentos citables `[F#]`. El prompt del
+  agente la usa para «¿cómo pago menos?» y «¿qué me conviene hacer antes de fin de
+  año?», y le prohíbe sumar ahorros calculados por separado.
+- El plan de fin de ejercicio de los agentes proactivos es el plan combinado (con el
+  ahorro de cada medida dentro del plan); los donativos solo como información.
+- `POST /optimize`, sin modelo de lenguaje, con las mismas reglas de acceso que
+  `/simulate` (clave de API, sesión y propiedad del expediente; 404 si el
+  expediente no es tuyo, 422 con una frase legible si los datos no valen).
+
+Petición (todo opcional salvo lo que necesite el cálculo; con `case_id`, los hechos
+del expediente son las cifras del usuario y `datos` las corrige; `fecha` por defecto
+es hoy en España):
+
+```json
+{
+  "ejercicio": 2026,
+  "fecha": "2026-11-13",
+  "datos": {"rendimiento_trabajo_bruto": 70000, "cotizaciones_seguridad_social": 4445, "retenciones": 15000,
+            "comunidad_autonoma": "Madrid", "ganancias_patrimoniales": 1200},
+  "conyuge": {"rendimiento_trabajo_bruto": 4000, "cotizaciones_seguridad_social": 254},
+  "restricciones": {
+    "aportacion_maxima_pensiones": 1500,
+    "acepta_iliquidez": true,
+    "donativo_previsto": 200,
+    "perdidas_latentes": [{"descripcion": "Fondo indexado", "importe": 900, "tipo": "valores_cotizados"}]
+  }
+}
+```
+
+`restricciones` admite además `aportacion_maxima_pensiones_conyuge`,
+`presupuesto_donativos` (máximo a donar; sin él nunca se propone donar más de lo
+previsto), `donativo_recurrente_importe_anterior` y `ganancias_latentes`; cada
+posición latente lleva `importe` (positivo), `tipo` (`valores_cotizados`,
+`valores_no_cotizados`, `otro_elemento`), `titular` (`contribuyente` o `conyuge`) y
+`descripcion`.
+
+Respuesta (`PlanOptimo`, recortada):
+
+```text
+{
+  "ejercicio": 2026, "fecha": "2026-11-13", "fase": "antes_del_cierre", "con_conyuge": true,
+  "base":   {"tributacion": "individual", "resultado_total": "2874.25", "cuota_liquida_total": "…",
+             "declaraciones": [{"titular": "contribuyente", "resultado": {IRPFResult}}, {"titular": "conyuge", …}]},
+  "optimo": {"tributacion": "conjunta_biparental", "resultado_total": "1791.79", "declaraciones": [{"titular": "conjunta", …}]},
+  "ahorro_total": "1082.46", "suma_ahorros_aislados": "857.22", "interaccion": "225.24",
+  "palancas": [
+    {"id": "tributacion", "accion": "Presentar declaración conjunta", "naturaleza": "ahorro_definitivo",
+     "ahorro_marginal": "76.46", "ahorro_aislado": "-148.78", "referencia": "art. 84.2.3.º y 4.º LIRPF", "requisitos": […], …},
+    {"id": "plan_pensiones_contribuyente", "accion": "Aportar 1.500,00 € a tu plan de pensiones antes del 31/12/2026",
+     "importe": "1500", "naturaleza": "diferimiento", "compromiso": "1500", "ahorro_marginal": "645.00",
+     "ahorro_aislado": "645.00", "ahorro_por_euro": "0.4300", "plazo": "2026-12-31", …},
+    {"id": "plan_pensiones_conyuge", "importe": "523.80", "ahorro_marginal": "225.24", "ahorro_aislado": "0.00", …},
+    {"id": "perdidas_contribuyente", "importe": "900", "ahorro_marginal": "171.00", …},
+    {"id": "donativo", "importe": "200", "opcion": "autonomica:donativos_fundaciones_madrid",
+     "naturaleza": "requiere_gastar", "ahorro_marginal": "190.00", "coste_neto": "10.00", …}
+  ],
+  "explicacion_interaccion": ["«Presentar declaración conjunta» por sí sola costaría 148,78 € más; dentro del plan ahorra 76,46 €: …", …],
+  "no_disponibles": [{"id", "nombre", "causa": "fecha|restricciones|faltan_datos|sin_margen|no_calculable", "detalle", "datos_que_faltan"}],
+  "descartadas": [{"id", "nombre", "motivo", "referencia"}],
+  "oportunidades": […], "cambios_traza": [{"concepto", "antes", "despues", "referencia"}],
+  "citas": […], "textos_legales": [{"referencia", "boe_id", "texto"}],
+  "avisos": […], "supuestos": […], "datos_que_faltan": […],
+  "busqueda": {"metodo": "exhaustiva", "evaluaciones": 89, "limite_evaluaciones": 3000, "combinaciones": 40, "candidatos": {…}, "nota": "…"},
+  "explicacion": "Con los datos actuales, tu IRPF de 2026 sale a pagar 2.874,25 € (declaraciones individuales).\nCon el plan óptimo …"
+}
+```
+
+Los importes son cadenas decimales (euros con céntimos); `ahorro_marginal` de las
+palancas no suma `ahorro_total` en general, y `ahorro_aislado` puede ser negativo
+(una palanca que por sí sola empeora y dentro del plan ahorra).
+
 ### Simulador, calendario y documentos
 
 - **`POST /simulate`** — la misma calculadora, sin modelo de lenguaje: devuelve
