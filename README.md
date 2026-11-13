@@ -876,14 +876,19 @@ fecha en que el BOE actualizó una ley con `consultado_el`, la fecha en que los
 ficheros la leyeron. El piloto (y `params-verify` al terminar) la anota solo,
 de forma determinista, en **todos** los ficheros que citan la ley (IRPF,
 autónomos, sociedades, patrimonio, ISD): nueva fecha de consolidación, huella
-de la página, `consultado_el` de hoy y una línea en `revisiones` donde el
-fichero la tiene. Solo cuando todas las comprobaciones de los grupos que la
+de la página, `consultado_el` de hoy y una línea en `revisiones`. Solo cuando todas las comprobaciones de los grupos que la
 citan coinciden, ningún grupo de un artículo modificado desde la lectura
 anterior queda sin releer contra el texto de hoy (ni es de los que el bucle no
 relee, como unos importes calculados) y no hay nada abierto sobre
 ella (propuesta pendiente o sin converger, norma en curso, grupo marcado como
 no verificado sin comprobación). Nunca toca una cifra ni una fuente fijada a
-una redacción con fecha; con `--snapshot-dir` solo lo simula.
+una redacción con fecha; con `--snapshot-dir` solo lo simula. En la vigilancia
+semanal de GitHub Actions, esas lecturas llegan al repositorio como un **pull
+request** (rama `vigilancia/lecturas-boe`) que abre un trabajo aparte, el único
+con permiso de escritura, después de comprobar con `params-lecturas` que en los
+ficheros solo han cambiado fechas, huellas y el registro: si cambia una cifra,
+una cita o una regla, la ejecución sale en rojo y no se abre nada
+(`docs/operacion.md`, apartado 4).
 
 Es idempotente (no paga dos veces por el mismo grupo y el mismo texto, ni
 repite un parte) y **seguro sin clave de LLM**: los pasos 1, 2 (salvo la lista

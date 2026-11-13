@@ -132,15 +132,7 @@ def _fuente_gallega(datos: Path, ejercicio: int) -> dict[str, Any]:
     return dict(_raw(datos, ejercicio)["comunidades"]["galicia"]["fuente_principal"])
 
 
-def _sin_procedencia(nodo: Any) -> Any:
-    """A parameter file without its sources and its log: what must never change when a reading is recorded."""
-    if isinstance(nodo, dict):
-        if isinstance(nodo.get("boe_id"), str) and "consolidado_a" in nodo:
-            return None
-        return {k: _sin_procedencia(v) for k, v in nodo.items() if k != "revisiones"}
-    if isinstance(nodo, list):
-        return [_sin_procedencia(v) for v in nodo]
-    return nodo
+_sin_procedencia = procedencia.sin_procedencia
 
 
 def _deduccion_objetivo(datos: Path) -> Objetivo:
@@ -750,3 +742,73 @@ def test_autopilot_rereads_what_changed_in_a_law_no_norm_announced(datos: Path, 
     )
     assert informe.procedencia["refrescadas"] == [{"boe_id": LEY, "consolidado_a": "2026-11-20", "simulado": True}]  # type: ignore[index]
     assert _fuente_gallega(otro, 2026)["consultado_el"] == "2026-11-12"
+
+
+def _todos(datos: Path) -> dict[str, Any]:
+    return {p.name: json.loads(p.read_text(encoding="utf-8")) for p in procedencia.ficheros_de_parametros(datos)}
+
+
+def test_a_run_that_only_recorded_readings_is_described_for_a_pull_request(tmp_path: Path) -> None:
+    datos = tmp_path / "data"
+    shutil.copytree(DATA_DIR, datos)
+    antes = _todos(datos)
+    procedencia.refrescar(
+        "BOE-A-2006-20764",
+        consolidado_a="2026-11-20",
+        pagina="<html>x</html>",
+        data_dir=datos,
+        hoy=DESPUES,
+        motivo="m.",
+    )
+    cambios = procedencia.cambios_de_lectura(antes, _todos(datos))
+    assert cambios.otros_cambios == []
+    [lectura] = cambios.lecturas
+    assert lectura.boe_id == "BOE-A-2006-20764" and lectura.consolidado_ahora == "2026-11-20"
+    assert lectura.consultado_ahora == DESPUES.isoformat()
+    assert lectura.ficheros == ["autonomos_2026.json", "irpf_2025.json", "irpf_2026.json", "sociedades_2026.json"]
+    cuerpo = procedencia.cuerpo_del_pr(cambios)
+    assert "`BOE-A-2006-20764`" in cuerpo and "→ 2026-11-20" in cuerpo and "ninguna cifra" in cuerpo
+    # Nothing changed: nothing to describe.
+    assert procedencia.cambios_de_lectura(antes, antes) == procedencia.CambiosDeLectura()
+
+
+def test_any_change_beyond_the_readings_keeps_the_file_out_of_an_automatic_pull_request(tmp_path: Path) -> None:
+    datos = tmp_path / "data"
+    shutil.copytree(DATA_DIR, datos)
+    antes = _todos(datos)
+    despues = json.loads(json.dumps(antes))
+    deduccion = despues["irpf_2026.json"]["comunidades"]["madrid"]["deducciones_calculables"][0]
+    deduccion["titulo"] = deduccion["titulo"] + " (editado)"
+    despues["isd_2026.json"]["fuentes_principales"] = {}  # a source removed is not a reading either
+    del despues["patrimonio_2026.json"]
+    cambios = procedencia.cambios_de_lectura(antes, despues)
+    assert cambios.otros_cambios == ["irpf_2026.json", "isd_2026.json", "patrimonio_2026.json"]
+    assert cambios.lecturas == []
+
+
+def test_the_command_compares_with_git_and_fails_on_other_changes(tmp_path: Path) -> None:
+    import subprocess
+
+    datos = tmp_path / "data"
+    shutil.copytree(DATA_DIR, datos)
+    for orden in (["init", "-q"], ["add", "."], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "x"]):
+        subprocess.run(["git", "-C", str(datos), *orden], check=True, capture_output=True)
+    procedencia.refrescar(
+        "BOE-A-2006-20764",
+        consolidado_a="2026-11-20",
+        pagina="<html>x</html>",
+        data_dir=datos,
+        hoy=DESPUES,
+        motivo="m.",
+    )
+    cuerpo = tmp_path / "pr.md"
+    hecho = CliRunner().invoke(cli_module.cli, ["params-lecturas", "--data-dir", str(datos), "--body", str(cuerpo)])
+    assert hecho.exit_code == 0, hecho.output
+    assert [x["boe_id"] for x in json.loads(hecho.output)["lecturas"]] == ["BOE-A-2006-20764"]
+    assert "BOE-A-2006-20764" in cuerpo.read_text(encoding="utf-8")
+
+    roto = json.loads((datos / "irpf_2026.json").read_text(encoding="utf-8"))
+    roto["comunidades"]["madrid"]["deducciones_calculables"][0]["titulo"] += " (editado)"
+    (datos / "irpf_2026.json").write_text(json.dumps(roto), encoding="utf-8")
+    hecho = CliRunner().invoke(cli_module.cli, ["params-lecturas", "--data-dir", str(datos)])
+    assert hecho.exit_code == 1 and json.loads(hecho.output)["otros_cambios"] == ["irpf_2026.json"]

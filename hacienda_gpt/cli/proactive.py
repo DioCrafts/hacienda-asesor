@@ -214,6 +214,52 @@ def boe_impact(changes_log: Path, snapshot_dir: Path, since: date | None, yes: b
     click.echo(json.dumps(summary, ensure_ascii=False))
 
 
+@cli.command("params-lecturas")
+@click.option("--base", default="HEAD", show_default=True, help="Versión de git con la que comparar los ficheros.")
+@click.option(
+    "--body",
+    "body_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=None,
+    help="Escribe aquí la descripción del PR (Markdown) cuando hay lecturas anotadas.",
+)
+@click.option(
+    "--data-dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    default=None,
+    help="Carpeta de los ficheros de parámetros (para pruebas; por defecto, la del paquete).",
+)
+def params_lecturas(base: str, body_path: Path | None, data_dir: Path | None) -> None:
+    """Dice qué ha cambiado una ejecución en los ficheros de parámetros respecto a git.
+
+    Pensado para la vigilancia programada, antes de abrir un PR con las lecturas
+    anotadas por params-verify o params-autopilot: lista cada ley cuya lectura se
+    anotó y termina con código 1 si algún fichero cambió en algo más que sus
+    fuentes y su registro (cifras, citas, reglas), que nunca deben entrar en un PR
+    automático.
+    """
+    import subprocess
+
+    from hacienda_gpt.tax.recodificacion import procedencia
+
+    antes: dict[str, Any] = {}
+    despues: dict[str, Any] = {}
+    for path in procedencia.ficheros_de_parametros(data_dir or DATA_DIR):
+        despues[path.name] = json.loads(path.read_text(encoding="utf-8"))
+        # "<rev>:./<name>" is resolved against -C, so this works from any working directory.
+        hecho = subprocess.run(
+            ["git", "-C", str(path.parent), "show", f"{base}:./{path.name}"], capture_output=True, text=True
+        )
+        if hecho.returncode == 0:
+            antes[path.name] = json.loads(hecho.stdout)
+    cambios = procedencia.cambios_de_lectura(antes, despues)
+    if body_path is not None and cambios.lecturas:
+        body_path.write_text(procedencia.cuerpo_del_pr(cambios), encoding="utf-8")
+    click.echo(cambios.model_dump_json(indent=2))
+    if cambios.otros_cambios:
+        raise SystemExit(1)
+
+
 @cli.command("params-check")
 @click.option(
     "--fail-on-stale", is_flag=True, help="Termina con código 1 si alguna norma ha cambiado (para cron o CI)."

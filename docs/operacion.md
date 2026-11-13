@@ -242,11 +242,30 @@ secreto `ANTHROPIC_API_KEY` solo hace su parte determinista y dice qué grupos e
 `params-check` compara la fecha en que el BOE actualizó cada ley con `consultado_el`, la fecha en
 que los ficheros la leyeron. Esa fecha ya no hay que editarla a mano: `params-verify` y
 `params-autopilot` la anotan solos, sin modelo, cuando la ley está al día (apartado 5, «La fecha
-de lectura de cada ley»). En Actions eso ocurre en la copia de trabajo del runner y **no se
-sube al repositorio**: el JSON de `params-verify` dice bajo `procedencia` qué leyes se
-anotarían y cuáles no, y por qué. Para que `params-check` vuelva a verde hay que anotarlas donde
-viven los ficheros de verdad (el servidor, con su cron del apartado 1, o tu copia de trabajo con
-`params-verify`) y subir el cambio. Una fuente fijada a una redacción con fecha (el fichero de
+de lectura de cada ley»). En Actions eso ocurre en la copia de trabajo del runner, y el
+flujo lo convierte en un **pull request**:
+
+1. `params-lecturas` compara los ficheros de parámetros con el commit revisado: lista cada ley
+   cuya lectura se anotó y **falla si un fichero cambió en algo más** que sus fuentes y su
+   registro `revisiones` (una cifra, una cita, una regla). Ese caso pone la ejecución en rojo y
+   no abre nada.
+2. Si solo hay lecturas, un segundo trabajo —el único con permiso de escritura, que no ejecuta
+   ningún modelo ni descarga nada del BOE— recibe esos ficheros, repite la comprobación y abre
+   (o actualiza) un PR desde la rama `vigilancia/lecturas-boe`, con la etiqueta `vigilancia` y
+   una tabla de leyes, fecha de consolidación anterior y nueva y ficheros tocados.
+3. Al fusionarlo, `params-check --fail-on-stale` deja de señalar esas leyes.
+
+Dos ajustes del repositorio:
+
+- **Settings → Actions → General → Workflow permissions**: marca «Allow GitHub Actions to
+  create and approve pull requests»; sin eso el paso que abre el PR falla.
+- Un PR abierto con el token por defecto **no lanza otros flujos** (la CI no correría sobre
+  él). Si quieres CI en esos PR, crea un secreto `VIGILANCIA_PR_TOKEN` con un token de grano
+  fino (o de una GitHub App) con permiso de escritura en contenidos y pull requests; el flujo
+  lo usa si existe.
+
+Las propuestas abiertas de semanas anteriores se restauran de la caché antes de
+`params-verify`, así que una ley con una propuesta pendiente no se anota. Una fuente fijada a una redacción con fecha (el fichero de
 autónomos de un ejercicio cerrado lee la ley «a 31-12-2025») ya no retiene la alarma: su texto
 no cambia.
 
@@ -381,9 +400,8 @@ actualización» de la página), sin modelo y solo si:
 
 Entonces escribe en **todos** los ficheros que la citan la nueva fecha de
 consolidación (nunca hacia atrás), `consultado_el` de hoy y la huella de la
-página, y una línea en `revisiones` donde el fichero tiene esa lista (los de
-autónomos, sociedades, patrimonio e ISD no la tienen: queda en la salida y en
-el parte). Valida cada fichero con su modelo antes de escribir ninguno. Nunca
+página, y una línea en `revisiones` (los ficheros de autónomos, sociedades,
+patrimonio e ISD la empiezan la primera vez). Valida cada fichero con su modelo antes de escribir ninguno. Nunca
 toca una cifra ni una fuente fijada a una redacción con fecha o al PDF de una
 orden. La salida (`procedencia`) dice qué leyes se anotaron, cuáles están al
 día y, de las demás, todos los motivos. Con `--snapshot-dir` solo se simula
@@ -568,8 +586,9 @@ Cuenta contra el presupuesto diario como cualquier otra ejecución.
 ### En GitHub Actions
 
 `vigilancia.yml` ejecuta `params-autopilot` después de `params-verify`, siempre:
-sin el secreto `ANTHROPIC_API_KEY` hace solo su parte determinista. No escribe
-en el repositorio (`RECODE_AUTO_APPLY` va a `false`): sube las propuestas, el
+sin el secreto `ANTHROPIC_API_KEY` hace solo su parte determinista. Lo único que
+llega al repositorio es el PR de lecturas del apartado 4; ninguna propuesta se
+escribe sola (`RECODE_AUTO_APPLY` va a `false`): sube las propuestas, el
 registro de novedades y el estado del piloto como artefacto
 (`recode-proposals`, que además se conserva en caché de una semana a otra) y,
 si existe el secreto `NOTIFY_WEBHOOK_URL`, envía el parte por ese canal. Para

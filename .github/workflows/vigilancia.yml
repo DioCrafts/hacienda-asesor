@@ -15,6 +15,14 @@ name: vigilancia
 # with the report. Nothing is written to the repository: a person downloads the
 # proposals and runs `params-apply`. Without the secret the deterministic part
 # still runs and the report says which groups are waiting.
+#
+# The one thing that does reach the repository is the record of a READING:
+# when the BOE has updated a law and every parameter quoting it still matches,
+# `params-verify` / `params-autopilot` write the new consolidation date, the date
+# read and the page hash into the parameter files. A second job, the only one
+# with write access, opens (or updates) a pull request with exactly those
+# changes, after checking again that nothing else in the files moved. Merging
+# it is what turns `params-check --fail-on-stale` green.
 
 on:
   schedule:
@@ -27,6 +35,8 @@ permissions:
 jobs:
   params-check:
     runs-on: ubuntu-latest
+    outputs:
+      hay_lecturas: ${{ steps.lecturas.outputs.hay }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -55,6 +65,17 @@ jobs:
           if report.get("errores") or not report.get("comprobadas"):
               sys.exit(f"params-check could not verify every law: {report.get('errores')}")
           PY
+      - name: Restore the autopilot's memory (proposals, novelties registry, state)
+        # So that a norm already handled, or a group already proposed (or rejected)
+        # for the same legal text, is not looked at or paid for again every Monday.
+        # Restored before params-verify too: a law with a proposal still open from an
+        # earlier week must not get its reading recorded.
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: recode-proposals
+          key: recode-proposals-${{ github.run_id }}
+          restore-keys: recode-proposals-
       - name: Do the parameters still match the text of each law?
         # Stronger than the date check above: literal quotes and figures are
         # looked up in today's consolidated texts. The JSON lists, per year,
@@ -62,16 +83,8 @@ jobs:
         if: always()
         shell: bash
         run: |
-          uv run python -m hacienda_gpt.cli.proactive params-verify --fail-on-mismatch | tee params-verify.json
-      - name: Restore the autopilot's memory (proposals, novelties registry, state)
-        # So that a norm already handled, or a group already proposed (or rejected)
-        # for the same legal text, is not looked at or paid for again every Monday.
-        if: always()
-        uses: actions/cache@v4
-        with:
-          path: recode-proposals
-          key: recode-proposals-${{ github.run_id }}
-          restore-keys: recode-proposals-
+          uv run python -m hacienda_gpt.cli.proactive params-verify --fail-on-mismatch --proposals-dir recode-proposals \
+            | tee params-verify.json
       - name: "Autopilot: amending norms, verification, re-encoding proposals, report"
         # One entry point: reads the BOE issues since the last run, finds the norms
         # that amend a law the parameters come from and the groups hanging from the
@@ -95,6 +108,25 @@ jobs:
         run: |
           uv run python -m hacienda_gpt.cli.proactive params-autopilot --output-dir recode-proposals/estado \
             | tee params-autopilot.json
+      - name: Readings recorded in the parameter files
+        # Compares the parameter files with the commit checked out. Lists every law
+        # whose reading was recorded and FAILS if a file changed in anything else
+        # (a figure, a quote, a rule): that must never travel in an automatic PR.
+        id: lecturas
+        if: always()
+        shell: bash
+        run: |
+          uv run python -m hacienda_gpt.cli.proactive params-lecturas --body pr-lecturas.md | tee params-lecturas.json
+          if [ -s pr-lecturas.md ]; then echo "hay=true" >> "$GITHUB_OUTPUT"; else echo "hay=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Hand the recorded readings to the job that opens the PR
+        if: always() && steps.lecturas.outcome == 'success' && steps.lecturas.outputs.hay == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lecturas-boe
+          path: |
+            hacienda_gpt/tax/data/*_20[0-9][0-9].json
+            pr-lecturas.md
+          retention-days: 7
       - name: Upload the proposals and the autopilot's report
         if: always()
         uses: actions/upload-artifact@v4
@@ -110,3 +142,41 @@ jobs:
         # status file with the same command on a schedule.
         if: always()
         run: uv run python -m hacienda_gpt.cli.proactive normas-check
+
+  lecturas-pr:
+    # The only job with write access. It runs no model and downloads nothing from
+    # the BOE: it takes the files the read-only job produced, checks them again
+    # and opens or updates one pull request.
+    needs: params-check
+    if: always() && needs.params-check.outputs.hay_lecturas == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync
+      - uses: actions/download-artifact@v4
+        with:
+          name: lecturas-boe
+          path: .
+      - name: Check again that only readings changed
+        run: uv run python -m hacienda_gpt.cli.proactive params-lecturas --body pr-lecturas.md
+      - name: Open or update the pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          # A pull request opened with the default token does not start other workflows
+          # (the CI would not run on it). Set a VIGILANCIA_PR_TOKEN secret (a fine-grained
+          # token or GitHub App token with contents and pull-requests write) to get CI on it.
+          token: ${{ secrets.VIGILANCIA_PR_TOKEN || github.token }}
+          branch: vigilancia/lecturas-boe
+          delete-branch: true
+          add-paths: hacienda_gpt/tax/data/*.json
+          commit-message: "Record the BOE readings of the laws the parameters come from"
+          title: "Vigilancia: anotar la relectura de leyes actualizadas en el BOE"
+          body-path: pr-lecturas.md
+          labels: vigilancia

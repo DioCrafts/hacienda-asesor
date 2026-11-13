@@ -631,3 +631,92 @@ __all__ = [
     "refrescar_lo_que_se_pueda",
     "releido_contra",
 ]
+
+
+# --------------------------------------------------------------------------- #
+# What a run changed in the files: only readings, or something else?
+# --------------------------------------------------------------------------- #
+
+
+def sin_procedencia(nodo: Any) -> Any:
+    """A parameter file without its sources and its log of readings: what recording a reading must never change."""
+    if isinstance(nodo, dict):
+        if isinstance(nodo.get("boe_id"), str) and "consolidado_a" in nodo:
+            return None
+        return {k: sin_procedencia(v) for k, v in nodo.items() if k != "revisiones"}
+    if isinstance(nodo, list):
+        return [sin_procedencia(v) for v in nodo]
+    return nodo
+
+
+class LecturaAnotada(_Registro):
+    boe_id: str
+    norma: str
+    consolidado_antes: str
+    consolidado_ahora: str
+    consultado_ahora: str
+    ficheros: list[str] = Field(default_factory=list)
+
+
+class CambiosDeLectura(_Registro):
+    # Laws whose reading was recorded, one entry per law (with every file that cites it).
+    lecturas: list[LecturaAnotada] = Field(default_factory=list)
+    # Files that changed in anything other than the sources and the log: never part of an automatic pull request.
+    otros_cambios: list[str] = Field(default_factory=list)
+
+
+def cambios_de_lectura(antes: Mapping[str, Any], despues: Mapping[str, Any]) -> CambiosDeLectura:
+    """Compare two versions of the parameter files (name -> parsed JSON; a file missing on one side counts as
+    another change): which law readings were recorded, and which files changed in anything else."""
+    informe = CambiosDeLectura()
+    por_ley: dict[str, LecturaAnotada] = {}
+    for nombre in sorted(set(antes) | set(despues)):
+        viejo, nuevo = antes.get(nombre), despues.get(nombre)
+        if viejo == nuevo:
+            continue
+        if viejo is None or nuevo is None or sin_procedencia(viejo) != sin_procedencia(nuevo):
+            informe.otros_cambios.append(nombre)
+            continue
+        previas = {tuple(f.ruta): f for f in fuentes_del_fichero(nombre, viejo)}
+        for fuente in fuentes_del_fichero(nombre, nuevo):
+            previa = previas.get(tuple(fuente.ruta))
+            if previa is None or (previa.consolidado_a, previa.consultado_el) == (
+                fuente.consolidado_a,
+                fuente.consultado_el,
+            ):
+                continue
+            lectura = por_ley.setdefault(
+                fuente.boe_id,
+                LecturaAnotada(
+                    boe_id=fuente.boe_id,
+                    norma=fuente.norma,
+                    consolidado_antes=previa.consolidado_a,
+                    consolidado_ahora=fuente.consolidado_a,
+                    consultado_ahora=fuente.consultado_el,
+                ),
+            )
+            lectura.consolidado_antes = min(lectura.consolidado_antes, previa.consolidado_a)
+            if nombre not in lectura.ficheros:
+                lectura.ficheros.append(nombre)
+    informe.lecturas = [por_ley[b] for b in sorted(por_ley)]
+    return informe
+
+
+def cuerpo_del_pr(cambios: CambiosDeLectura) -> str:
+    """Description (Spanish, Markdown) of a pull request that records the readings of ``cambios``."""
+    filas = "\n".join(
+        f"| {x.norma.split(' (')[0]} | `{x.boe_id}` | {x.consolidado_antes or '—'} → {x.consolidado_ahora} "
+        f"| {', '.join(f'`{f}`' for f in x.ficheros)} |"
+        for x in cambios.lecturas
+    )
+    return (
+        "La vigilancia semanal ha releído en el BOE estas leyes, que se habían actualizado desde la última lectura. "
+        "Todos los parámetros que se citan de ellas siguen coincidiendo literalmente con el texto vigente, y no "
+        "queda ninguna propuesta abierta ni grupo pendiente de releer, así que se anota la nueva lectura.\n\n"
+        "| Ley | BOE | Texto consolidado a | Ficheros |\n|---|---|---|---|\n"
+        f"{filas}\n\n"
+        "**Solo cambian** `consolidado_a`, `consultado_el`, `sha256_html` y el registro `revisiones`: ninguna "
+        "cifra, cita ni regla. El flujo lo comprueba antes de abrir este PR y no lo abre si cambia cualquier otra "
+        "cosa.\n\n"
+        "Al fusionarlo, `params-check --fail-on-stale` deja de señalar estas leyes."
+    )
