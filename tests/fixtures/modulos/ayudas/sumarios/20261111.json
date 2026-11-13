@@ -1,0 +1,202 @@
+{
+ "status": {
+  "code": "200",
+  "text": "ok"
+ },
+ "data": {
+  "sumario": {
+   "metadatos": {
+    "publicacion": "BOE",
+    "fecha_publicacion": "20261111"
+   },
+   "diario": [
+    {
+     "numero": "281",
+     "sumario_diario": {
+      "identificador": "BOE-S-2026-281",
+      "url_pdf": {
+       "szBytes": "387356",
+       "szKBytes": "378",
+       "texto": "https://www.boe.es/boe/dias/2026/11/11/pdfs/BOE-S-2026-281.pdf"
+      }
+     },
+     "seccion": [
+      {
+       "codigo": "1",
+       "nombre": "I. Disposiciones generales",
+       "departamento": [
+        {
+         "codigo": "7723",
+         "nombre": "JEFATURA DEL ESTADO",
+         "epigrafe": [
+          {
+           "nombre": "Medidas urgentes",
+           "item": {
+            "identificador": "BOE-A-2026-23602",
+            "control": "2026/17590",
+            "titulo": "Real Decreto-ley 33/2026, de 10 de noviembre, por el que se adoptan medidas urgentes en respuesta a los daños causados por las inundaciones y otros sucesos acaecidos entre los días 17 y 19 de octubre de 2026, como consecuencia de la Depresión Aislada en Niveles Altos (DANA), denominada Adam.",
+            "url_pdf": {
+             "szBytes": "402588",
+             "szKBytes": "393",
+             "pagina_inicial": "152058",
+             "pagina_final": "152092",
+             "texto": "https://www.boe.es/boe/dias/2026/11/11/pdfs/BOE-A-2026-23602.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23602",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23602"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9590",
+         "nombre": "MINISTERIO DE EDUCACIÓN, FORMACIÓN PROFESIONAL Y DEPORTES",
+         "epigrafe": [
+          {
+           "nombre": "Organización",
+           "item": {
+            "identificador": "BOE-A-2026-23606",
+            "control": "2026/17332",
+            "titulo": "Real Decreto 956/2026, de 4 de noviembre, por el que se regula la estructura y funcionamiento del Centro para la Innovación y el Desarrollo de la Educación a Distancia.",
+            "url_pdf": {
+             "szBytes": "270250",
+             "szKBytes": "264",
+             "pagina_inicial": "152143",
+             "pagina_final": "152154",
+             "texto": "https://www.boe.es/boe/dias/2026/11/11/pdfs/BOE-A-2026-23606.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23606",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23606"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "codigo": "3",
+       "nombre": "III. Otras disposiciones",
+       "departamento": [
+        {
+         "codigo": "5140",
+         "nombre": "MINISTERIO DE HACIENDA",
+         "epigrafe": [
+          {
+           "nombre": "Recursos",
+           "item": {
+            "identificador": "BOE-A-2026-23652",
+            "control": "2026/17558",
+            "titulo": "Resolución de 4 de noviembre de 2026, de la Secretaría General Técnica, por la que se emplaza a las personas interesadas en el recurso contencioso-administrativo 984/2026, interpuesto ante la Audiencia Nacional, Sala de lo Contencioso-Administrativo, Sección Segunda.",
+            "url_pdf": {
+             "szBytes": "191453",
+             "szKBytes": "187",
+             "pagina_inicial": "152424",
+             "pagina_final": "152424",
+             "texto": "https://www.boe.es/boe/dias/2026/11/11/pdfs/BOE-A-2026-23652.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23652",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23652"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "7320",
+         "nombre": "MINISTERIO DEL INTERIOR",
+         "epigrafe": [
+          {
+           "nombre": "Encomienda de gestión",
+           "item": {
+            "identificador": "BOE-A-2026-23653",
+            "control": "2026/17560",
+            "titulo": "Resolución de 5 de noviembre de 2026, de la Secretaría General Técnica, por la que se publica el Convenio por el que se formaliza la encomienda de gestión al Ayuntamiento de Almonaster la Real, para la ejecución de obras de reforma y rehabilitación de la casa-cuartel de la Guardia Civil de titularidad estatal radicada en el municipio, en el marco del Programa de Fomento de Empleo Agrario.",
+            "url_pdf": {
+             "szBytes": "226782",
+             "szKBytes": "221",
+             "pagina_inicial": "152425",
+             "pagina_final": "152430",
+             "texto": "https://www.boe.es/boe/dias/2026/11/11/pdfs/BOE-A-2026-23653.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23653",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23653"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "3120",
+         "nombre": "MINISTERIO DE AGRICULTURA, PESCA Y ALIMENTACIÓN",
+         "epigrafe": [
+          {
+           "nombre": "Sociedades agrarias de transformación",
+           "item": {
+            "identificador": "BOE-A-2026-23654",
+            "control": "2026/17299",
+            "titulo": "Resolución de 29 de octubre de 2026, de la Dirección General de Alimentación, por la que se publica la disolución de la Sociedad Agraria de Transformación n.º 665-CV «Grupodelavega».",
+            "url_pdf": {
+             "szBytes": "191468",
+             "szKBytes": "187",
+             "pagina_inicial": "152431",
+             "pagina_final": "152431",
+             "texto": "https://www.boe.es/boe/dias/2026/11/11/pdfs/BOE-A-2026-23654.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23654",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23654"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9593",
+         "nombre": "MINISTERIO DE POLÍTICA TERRITORIAL Y MEMORIA DEMOCRÁTICA",
+         "epigrafe": [
+          {
+           "nombre": "Lugares de memoria democrática",
+           "item": {
+            "identificador": "BOE-A-2026-23655",
+            "control": "2026/17490",
+            "titulo": "Resolución de 30 de octubre de 2026, de la Dirección General de Promoción de la Memoria Democrática, por la que se publica el Acuerdo de incoación del procedimiento de declaración de Lugar de Memoria Democrática del «Pasaje Begoña».",
+            "url_pdf": {
+             "szBytes": "224513",
+             "szKBytes": "219",
+             "pagina_inicial": "152432",
+             "pagina_final": "152437",
+             "texto": "https://www.boe.es/boe/dias/2026/11/11/pdfs/BOE-A-2026-23655.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23655",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23655"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "codigo": "5B",
+       "nombre": "V. Anuncios. - B. Otros anuncios oficiales",
+       "departamento": [
+        {
+         "codigo": "9595",
+         "nombre": "MINISTERIO PARA LA TRANSFORMACIÓN DIGITAL Y DE LA FUNCIÓN PÚBLICA",
+         "item": {
+          "identificador": "BOE-B-2026-36910",
+          "titulo": "Extracto de la Resolución de la Secretaría de Estado de Telecomunicaciones e Infraestructuras Digitales, por la que se convocan ayudas para el ecosistema de nodos edge en España dirigidas a los participantes directos en Proyectos Importantes de Interés Común Europeo de Servicios en la Nube (IPCEI-CIS). Programa FEDER Nodos Edge",
+          "url_pdf": {
+           "szBytes": "210695",
+           "szKBytes": "206",
+           "pagina_inicial": "59812",
+           "pagina_final": "59813",
+           "texto": "https://www.boe.es/boe/dias/2026/11/11/pdfs/BOE-B-2026-36910.pdf"
+          },
+          "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-B-2026-36910",
+          "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-B-2026-36910"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

@@ -88,6 +88,8 @@ export interface AgentResponse {
   case_updated: boolean;
   provider: string;
   model: string;
+  // Actions a module specialist prepared in this turn; they wait for the user's confirmation.
+  pending_actions?: Array<{ id: string; modulo: string; herramienta: string; resumen: string; estado: string }>;
 }
 
 // Live progress of a running agent turn (hacienda_gpt/agent/agent.py -> emit).
@@ -98,7 +100,7 @@ export type ProgressEvent =
   | { type: "tool_call"; tool: string; arguments: Record<string, unknown>; agent?: string }
   | { type: "tool_result"; tool: string; summary: string; is_error: boolean; agent?: string }
   // Team mode (complex questions): planner, researchers and critic at work.
-  | { type: "team"; stage: string; agent: string; status: string; complex?: boolean; objections?: boolean }
+  | { type: "team"; stage: string; agent: string; status: string; complex?: boolean; objections?: boolean; modulo?: string }
   | { type: "verifying"; citations: number }
   | { type: "revising"; problems: number };
 
@@ -464,6 +466,11 @@ export async function streamAgent(
   }
 }
 
+/** The case as stored now. */
+export function getCase(opts: { caseId: string; signal?: AbortSignal }): Promise<CaseState> {
+  return request(`/cases/${encodeURIComponent(opts.caseId)}`, undefined, isCaseState, { signal: opts.signal, method: "GET" });
+}
+
 /** Remove a fact the advisor recorded about the user; returns the updated case. */
 export function deleteCaseFact(opts: { caseId: string; factName: string; signal?: AbortSignal }): Promise<CaseState> {
   return request(
@@ -634,7 +641,8 @@ export function analyzeDocument(opts: {
 
 // ---- Proactive notifications -------------------------------------------------
 
-export type NotificationKind = "plazo" | "fin_de_ejercicio" | "cambio_normativo";
+// The tax kinds, the weekly digest, and one kind per household module ("modulo:<clave>").
+export type NotificationKind = "plazo" | "fin_de_ejercicio" | "cambio_normativo" | "resumen_semanal" | `modulo:${string}`;
 export type NotificationSeverity = "info" | "aviso" | "urgente";
 
 // Mirrors hacienda_gpt/proactive/store.py -> Notification.

@@ -4,7 +4,7 @@
   default) of the last day to stop it: one month before for insurance (art. 22.2 Ley 50/1980), two
   working days for telecom (art. 7 RD 899/2009), the estimated charge date otherwise;
 - a price increase detected in the last 120 days;
-- a double charge or a service charged twice detected in the last 120 days;
+- a double charge detected in the last 120 days, or a service still being charged twice;
 - a free trial that turned into a paid subscription in the last 60 days.
 
 Deterministic and idempotent: the key of each notice is built from the service id and the date of the
@@ -158,7 +158,7 @@ def _subida(s: ServicioGuardado, datos: DerechosConsumidor, hoy: date) -> list[A
             f"rescindir sin coste en {datos.entero('telecom_cambio_condiciones', 'plazo_rescision_meses')} mes desde la "
             "comunicación (art. 67.8 Ley 11/2022)"
         )
-        claves = ("telecom_cambio_condiciones",)
+        claves: tuple[str, ...] = ("telecom_cambio_condiciones",)
     elif s.sector == "seguros":
         derecho = (
             "la aseguradora debe comunicar cualquier modificación del contrato al menos "
@@ -190,7 +190,8 @@ def _subida(s: ServicioGuardado, datos: DerechosConsumidor, hoy: date) -> list[A
 
 def _duplicado(s: ServicioGuardado, datos: DerechosConsumidor, hoy: date) -> list[AvisoModulo]:
     d = s.duplicado
-    if d is None or (hoy - d.fecha).days > DIAS_RECIENTE:
+    # A double charge is a past event; a service paid twice goes on while both are active.
+    if d is None or (d.tipo == "cargo_doble" and (hoy - d.fecha).days > DIAS_RECIENTE):
         return []
     semanas = datos.entero("devolucion_adeudos", "plazo_devolucion_semanas")
     vence = d.fecha + timedelta(weeks=semanas) if s.medio == "adeudo" and d.tipo == "cargo_doble" else None
@@ -206,7 +207,7 @@ def _duplicado(s: ServicioGuardado, datos: DerechosConsumidor, hoy: date) -> lis
         )
     else:
         titulo = f"{s.etiqueta}: posible servicio duplicado"
-        cuerpo = f"{d.detalle}. Si es el mismo servicio contratado dos veces, da de baja uno de ellos."
+        cuerpo = f"Desde el {fecha(d.fecha)}, {d.detalle}. Si es el mismo servicio contratado dos veces, da de baja uno de ellos."
     return [
         AvisoModulo(
             clave=f"suscripciones:duplicado:{s.id}:{d.tipo}:{d.fecha.isoformat()}",

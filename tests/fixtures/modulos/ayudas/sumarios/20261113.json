@@ -1,0 +1,172 @@
+{
+ "status": {
+  "code": "200",
+  "text": "ok"
+ },
+ "data": {
+  "sumario": {
+   "metadatos": {
+    "publicacion": "BOE",
+    "fecha_publicacion": "20261113"
+   },
+   "diario": [
+    {
+     "numero": "283",
+     "sumario_diario": {
+      "identificador": "BOE-S-2026-283",
+      "url_pdf": {
+       "szBytes": "469745",
+       "szKBytes": "459",
+       "texto": "https://www.boe.es/boe/dias/2026/11/13/pdfs/BOE-S-2026-283.pdf"
+      }
+     },
+     "seccion": [
+      {
+       "codigo": "1",
+       "nombre": "I. Disposiciones generales",
+       "departamento": [
+        {
+         "codigo": "1220",
+         "nombre": "CORTES GENERALES",
+         "epigrafe": [
+          {
+           "nombre": "Medidas urgentes",
+           "item": {
+            "identificador": "BOE-A-2026-23754",
+            "control": "2026/17826",
+            "titulo": "Resolución de 12 de noviembre de 2026, del Congreso de los Diputados, por la que se ordena la publicación del Acuerdo de derogación del Real Decreto-ley 28/2026, de 6 de octubre, por el que se adoptan medidas urgentes para reforzar la estabilidad de los contratos de arrendamiento de vivienda habitual.",
+            "url_pdf": {
+             "szBytes": "190302",
+             "szKBytes": "186",
+             "pagina_inicial": "152984",
+             "pagina_final": "152984",
+             "texto": "https://www.boe.es/boe/dias/2026/11/13/pdfs/BOE-A-2026-23754.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23754",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23754"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9585",
+         "nombre": "MINISTERIO DE LA PRESIDENCIA, JUSTICIA Y RELACIONES CON LAS CORTES",
+         "epigrafe": [
+          {
+           "nombre": "Subvenciones",
+           "item": {
+            "identificador": "BOE-A-2026-23756",
+            "control": "2026/17661",
+            "titulo": "Real Decreto 977/2026, de 11 de noviembre, por el que se regula la concesión directa de subvenciones a las confesiones religiosas minoritarias firmantes de acuerdos de cooperación con el Estado.",
+            "url_pdf": {
+             "szBytes": "270177",
+             "szKBytes": "264",
+             "pagina_inicial": "152986",
+             "pagina_final": "152998",
+             "texto": "https://www.boe.es/boe/dias/2026/11/13/pdfs/BOE-A-2026-23756.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23756",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23756"
+           }
+          },
+          {
+           "nombre": "Energía eléctrica. Contaminación atmosférica",
+           "item": {
+            "identificador": "BOE-A-2026-23757",
+            "control": "2026/17662",
+            "titulo": "Real Decreto 978/2026, de 11 de noviembre, por el que se modifican el Real Decreto 1106/2020, de 15 de diciembre, por el que se regula el Estatuto de los consumidores electrointensivos, y el Real Decreto 309/2022, de 3 de mayo, por el que se establece el mecanismo de compensación de costes indirectos para los sectores y subsectores industriales a los que se considera expuestos a un riesgo significativo de fuga de carbono durante el periodo 2021-2030.",
+            "url_pdf": {
+             "szBytes": "410278",
+             "szKBytes": "401",
+             "pagina_inicial": "152999",
+             "pagina_final": "153027",
+             "texto": "https://www.boe.es/boe/dias/2026/11/13/pdfs/BOE-A-2026-23757.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23757",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23757"
+           }
+          },
+          {
+           "nombre": "Sector espacial",
+           "item": {
+            "identificador": "BOE-A-2026-23758",
+            "control": "2026/17663",
+            "titulo": "Real Decreto 979/2026, de 11 de noviembre, por el que se modifica el Real Decreto 278/1995, de 24 de febrero, por el que se crea en España el Registro previsto en el Convenio de 12 de noviembre de 1974 de la Asamblea General de las Naciones Unidas.",
+            "url_pdf": {
+             "szBytes": "297032",
+             "szKBytes": "290",
+             "pagina_inicial": "153028",
+             "pagina_final": "153037",
+             "texto": "https://www.boe.es/boe/dias/2026/11/13/pdfs/BOE-A-2026-23758.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23758",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23758"
+           }
+          },
+          {
+           "nombre": "Comunicación audiovisual",
+           "item": {
+            "identificador": "BOE-A-2026-23759",
+            "control": "2026/17664",
+            "titulo": "Real Decreto 980/2026, de 11 de noviembre, por el que se desarrolla el régimen jurídico de la obligación de promoción de obra audiovisual europea y de la diversidad lingüística.",
+            "url_pdf": {
+             "szBytes": "364810",
+             "szKBytes": "356",
+             "pagina_inicial": "153038",
+             "pagina_final": "153064",
+             "texto": "https://www.boe.es/boe/dias/2026/11/13/pdfs/BOE-A-2026-23759.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23759",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23759"
+           }
+          },
+          {
+           "nombre": "Organización",
+           "item": {
+            "identificador": "BOE-A-2026-23760",
+            "control": "2026/17665",
+            "titulo": "Real Decreto 981/2026, de 11 de noviembre, por el que se crea el Defensor/a de Víctimas de Accidentes de Transporte Colectivo, y se modifican el Real Decreto 1009/2023, de 5 de diciembre, por el que se establece la estructura orgánica básica de los departamentos ministeriales, y el Real Decreto 253/2024, de 12 de marzo, por el que se desarrolla la estructura orgánica básica del Ministerio de Transportes y Movilidad Sostenible.",
+            "url_pdf": {
+             "szBytes": "230913",
+             "szKBytes": "226",
+             "pagina_inicial": "153065",
+             "pagina_final": "153071",
+             "texto": "https://www.boe.es/boe/dias/2026/11/13/pdfs/BOE-A-2026-23760.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23760",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23760"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "codigo": "5B",
+       "nombre": "V. Anuncios. - B. Otros anuncios oficiales",
+       "departamento": [
+        {
+         "codigo": "9590",
+         "nombre": "MINISTERIO DE EDUCACIÓN, FORMACIÓN PROFESIONAL Y DEPORTES",
+         "item": {
+          "identificador": "BOE-B-2026-37127",
+          "titulo": "Extracto de la resolución de fecha de 10 de noviembre de 2026 de la Secretaría General de Formación Profesional por la que se procede a la convocatoria de ayudas destinadas a la incorporación de nuevos centros a la Red Estatal de Centros de Excelencia de la Formación Profesional en el año 2026",
+          "url_pdf": {
+           "szBytes": "205056",
+           "szKBytes": "200",
+           "pagina_inicial": "60238",
+           "pagina_final": "60238",
+           "texto": "https://www.boe.es/boe/dias/2026/11/13/pdfs/BOE-B-2026-37127.pdf"
+          },
+          "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-B-2026-37127",
+          "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-B-2026-37127"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

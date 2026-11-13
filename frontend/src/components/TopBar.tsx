@@ -1,7 +1,7 @@
 // Top bar: menu (mobile), the conversation title, and the two global actions —
 // open the user's case file and switch theme.
 
-import { Bell, BriefcaseBusiness, Calculator, ClipboardList, Menu, Moon, PiggyBank, Sun } from "lucide-react";
+import { Bell, BriefcaseBusiness, Calculator, ClipboardList, House, Menu, Moon, PiggyBank, Sun } from "lucide-react";
 
 import type { Theme } from "../lib/theme";
 
@@ -14,12 +14,15 @@ interface TopBarProps {
   onOpenOptimizer: () => void;
   onOpenNotifications: () => void;
   unreadNotifications: number;
+  // The household modules panel and how many actions wait for the user's confirmation.
+  onOpenModulos?: () => void;
+  pendingActions?: number;
   onOpenMenu: () => void;
   theme: Theme;
   onToggleTheme: () => void;
 }
 
-export function TopBar({ title, factCount, onOpenCase, onOpenSimulator, onOpenAutonomos, onOpenOptimizer, onOpenNotifications, unreadNotifications, onOpenMenu, theme, onToggleTheme }: TopBarProps) {
+export function TopBar({ title, factCount, onOpenCase, onOpenSimulator, onOpenAutonomos, onOpenOptimizer, onOpenNotifications, unreadNotifications, onOpenModulos, pendingActions = 0, onOpenMenu, theme, onToggleTheme }: TopBarProps) {
   return (
     <header className="flex items-center gap-1.5 border-b border-line bg-paper px-3 py-3 sm:gap-2 sm:px-6">
       <button type="button" onClick={onOpenMenu} aria-label="Abrir el menú" className="rounded-lg p-2 text-ink-soft hover:bg-line/60 lg:hidden">
@@ -40,6 +43,23 @@ export function TopBar({ title, factCount, onOpenCase, onOpenSimulator, onOpenAu
           </span>
         )}
       </button>
+      {onOpenModulos && (
+        <button
+          type="button"
+          onClick={onOpenModulos}
+          aria-label={pendingActions > 0 ? `Módulos: ${pendingActions} acciones pendientes de tu confirmación` : "Módulos del hogar"}
+          title="Módulos del hogar"
+          className="relative flex items-center gap-2 rounded-lg border border-line bg-surface px-2 py-2 text-[13.5px] font-semibold text-ink-soft transition hover:border-primary hover:text-primary-dark sm:px-3"
+        >
+          <House size={16} aria-hidden />
+          <span className="hidden md:inline">Módulos</span>
+          {pendingActions > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 min-w-[18px] rounded-pill bg-risk-high-fg px-1 text-center text-[11px] font-bold leading-[18px] text-white">
+              {pendingActions}
+            </span>
+          )}
+        </button>
+      )}
       <button
         type="button"
         onClick={onOpenSimulator}

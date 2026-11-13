@@ -9,12 +9,15 @@ import { Check, Copy, RotateCcw, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ProgressEvent } from "./api";
-import type { AdvisorNotification, AuthConfig, SessionResponse, SessionUser } from "./api";
+import type { AdvisorNotification, AuthConfig, CaseState, SessionResponse, SessionUser } from "./api";
+import type { AccionPendiente, ModulosResponse } from "./apiModulos";
+import { confirmarAccion, getAcciones, getModulos, rechazarAccion, setModulo } from "./apiModulos";
 import {
   ApiError,
   createCase,
   deleteCaseFact,
   getAuthConfig,
+  getCase,
   getMe,
   getNotifications,
   logout,
@@ -32,6 +35,7 @@ import { DoctrineNotice } from "./components/DoctrineNotice";
 import { AssistantBubble, UserBubble } from "./components/ChatBubbles";
 import { Composer } from "./components/Composer";
 import { EmptyState } from "./components/EmptyState";
+import { ModulosPanel } from "./components/ModulosPanel";
 import { NotificationsPanel } from "./components/NotificationsPanel";
 import { ObligationCardList } from "./components/ObligationCard";
 import { PrivacyPanel } from "./components/PrivacyPanel";
@@ -116,6 +120,13 @@ function Advisor({ account }: { account?: AccountControls }) {
   // remounted with them, for the conversation they were computed in.
   const [simulatorSeed, setSimulatorSeed] = useState<{ id: number; conversationId: string; seed: SimulatorSeed } | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  // Household modules: what exists and is on for this user, and the actions waiting for confirmation.
+  const [modulosOpen, setModulosOpen] = useState(false);
+  const [modulos, setModulos] = useState<ModulosResponse | null>(null);
+  const [modulosError, setModulosError] = useState<string | null>(null);
+  const [modulosTick, setModulosTick] = useState(0);
+  const [acciones, setAcciones] = useState<{ caseId: string; items: AccionPendiente[] } | null>(null);
+  const [accionesTick, setAccionesTick] = useState(0);
   const [notifications, setNotifications] = useState<{ caseId: string; items: AdvisorNotification[] } | null>(null);
   // Key of the last request that finished; while it differs from the current one we are loading.
   const [notificationsSettled, setNotificationsSettled] = useState<string | null>(null);
@@ -270,6 +281,8 @@ function Advisor({ account }: { account?: AccountControls }) {
           obligations: resp.obligations,
           taxPeriod: resp.tax_period ?? c.taxPeriod,
         }));
+        // A specialist prepared something that acts outside the app: it waits in «Módulos».
+        if (resp.pending_actions && resp.pending_actions.length > 0) setAccionesTick((n) => n + 1);
       } catch (err) {
         if (controller.signal.aborted) {
           // Stopped by the user: no turn is recorded and the question goes back
@@ -377,6 +390,67 @@ function Advisor({ account }: { account?: AccountControls }) {
     return () => controller.abort();
   }, [activeCaseId, notificationsKey]);
 
+  // The modules on offer (re-read when the panel opens, so a change made elsewhere shows up).
+  useEffect(() => {
+    const controller = new AbortController();
+    getModulos(controller.signal).then(
+      (resp) => {
+        setModulos(resp);
+        setModulosError(null);
+      },
+      (err: unknown) => {
+        if (!controller.signal.aborted) setModulosError(`No se pudieron cargar los módulos. ${errorMessage(err)}`);
+      },
+    );
+    return () => controller.abort();
+  }, [modulosTick]);
+
+  useEffect(() => {
+    if (!activeCaseId) return;
+    const controller = new AbortController();
+    getAcciones(activeCaseId, controller.signal).then(
+      (items) => setAcciones({ caseId: activeCaseId, items }),
+      () => undefined, // an older backend without modules: nothing pending
+    );
+    return () => controller.abort();
+  }, [activeCaseId, accionesTick]);
+
+  const currentAcciones = acciones && acciones.caseId === activeCaseId ? acciones.items : [];
+  const pendingActions = currentAcciones.filter((a) => a.estado === "pendiente").length;
+  const moduleNames = useMemo(() => Object.fromEntries((modulos?.modulos ?? []).map((m) => [m.clave, m.nombre])), [modulos]);
+  const moduleFacts = useMemo(() => new Set((modulos?.modulos ?? []).flatMap((m) => m.hechos.map((h) => h.nombre))), [modulos]);
+
+  function applyCase(updated: CaseState) {
+    upsert(active.id, (c) => ({ ...c, facts: updated.facts, obligations: updated.obligation_candidates, taxPeriod: updated.tax_period }));
+  }
+
+  async function handleToggleModulo(clave: string, activo: boolean, borrar: boolean): Promise<boolean> {
+    try {
+      setModulos(await setModulo(clave, activo, borrar));
+      setModulosError(null);
+      // Its notices, actions (and, when erased, its facts) changed on the server.
+      setNotificationsTick((n) => n + 1);
+      setAccionesTick((n) => n + 1);
+      if (borrar && active.caseId) {
+        applyCase(await getCase({ caseId: active.caseId }));
+      }
+      return true;
+    } catch (err) {
+      setModulosError(`No se pudo cambiar el módulo. ${errorMessage(err)}`);
+      return false;
+    }
+  }
+
+  async function handleDecide(id: string, confirmar: boolean): Promise<void> {
+    try {
+      const accion = confirmar ? await confirmarAccion(id) : await rechazarAccion(id);
+      setModulosError(accion.estado === "fallida" ? `La acción no se pudo completar: ${accion.resultado ?? ""}` : null);
+    } catch (err) {
+      setModulosError(`No se pudo ${confirmar ? "confirmar" : "rechazar"} la acción. ${errorMessage(err)}`);
+    }
+    setAccionesTick((n) => n + 1);
+  }
+
   const currentNotifications = notifications && notifications.caseId === activeCaseId ? notifications.items : [];
   const unreadNotifications = currentNotifications.filter((n) => !n.read_at).length;
 
@@ -388,7 +462,9 @@ function Advisor({ account }: { account?: AccountControls }) {
     );
   }
 
-  const visibleFactCount = active.facts.filter((f) => f.name !== "periodo_fiscal" && f.name !== "menciona_ingresos").length;
+  const visibleFactCount = active.facts.filter(
+    (f) => f.name !== "periodo_fiscal" && f.name !== "menciona_ingresos" && !moduleFacts.has(f.name),
+  ).length;
 
   return (
     <div className="flex h-[100dvh] w-screen overflow-hidden">
@@ -412,6 +488,12 @@ function Advisor({ account }: { account?: AccountControls }) {
           onOpenOptimizer={() => setOptimizerOpen(true)}
           onOpenNotifications={() => setNotificationsOpen(true)}
           unreadNotifications={unreadNotifications}
+          onOpenModulos={() => {
+            setModulosOpen(true);
+            setModulosTick((n) => n + 1);
+            setAccionesTick((n) => n + 1);
+          }}
+          pendingActions={pendingActions}
           onOpenMenu={() => setMenuOpen(true)}
           theme={theme}
           onToggleTheme={toggleTheme}
@@ -497,6 +579,20 @@ function Advisor({ account }: { account?: AccountControls }) {
         </div>
         <div className="border-t border-line bg-paper px-3 pb-3 pt-3 sm:px-8">
           <div className="mx-auto max-w-3xl">
+            {pendingActions > 0 && (
+              <div role="status" className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-risk-high-fg/40 bg-risk-high-bg px-3 py-2 text-[13px] text-ink">
+                <span>
+                  {pendingActions === 1 ? "Tienes 1 acción pendiente" : `Tienes ${pendingActions} acciones pendientes`} de tu confirmación. No se hará nada hasta que la confirmes.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setModulosOpen(true)}
+                  className="rounded-lg bg-surface px-2.5 py-1 text-[12.5px] font-semibold text-ink shadow-card hover:bg-line/60"
+                >
+                  Revisar
+                </button>
+              </div>
+            )}
             <Composer
               key={`${activeId}-${composerSeed.id}`}
               initialValue={composerSeed.text}
@@ -518,6 +614,24 @@ function Advisor({ account }: { account?: AccountControls }) {
         saving={removingFact}
         error={caseError}
         disabled={busy}
+        excludeFacts={moduleFacts}
+      />
+      <ModulosPanel
+        open={modulosOpen}
+        onClose={() => setModulosOpen(false)}
+        modulos={modulos}
+        loading={modulos === null && modulosError === null}
+        error={modulosError}
+        onToggle={handleToggleModulo}
+        caseId={active.caseId}
+        facts={active.facts}
+        onCaseUpdated={(updated) => {
+          applyCase(updated);
+          setNotificationsTick((n) => n + 1);
+        }}
+        acciones={currentAcciones}
+        onDecide={handleDecide}
+        disabled={busy}
       />
       <NotificationsPanel
         open={notificationsOpen}
@@ -532,6 +646,7 @@ function Advisor({ account }: { account?: AccountControls }) {
           setNotificationsOpen(false);
           void handleSubmit(question);
         }}
+        moduleNames={moduleNames}
       />
       {/* Keyed by conversation: figures typed for one consultation never leak into another. */}
       <SimulatorPanel

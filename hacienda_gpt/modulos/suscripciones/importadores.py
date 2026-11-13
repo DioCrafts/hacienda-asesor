@@ -12,7 +12,7 @@ from typing import Literal
 
 from hacienda_gpt.modulos.suscripciones.camt import es_camt, leer_camt
 from hacienda_gpt.modulos.suscripciones.lectura import TAMANO_MAXIMO, decodificar
-from hacienda_gpt.modulos.suscripciones.modelos import ErrorImportacion, Extracto
+from hacienda_gpt.modulos.suscripciones.modelos import Extracto, ImportacionError
 from hacienda_gpt.modulos.suscripciones.norma43 import es_norma43, leer_norma43
 from hacienda_gpt.modulos.suscripciones.ofx import codificacion_declarada, es_ofx, leer_ofx
 from hacienda_gpt.modulos.suscripciones.tablas import filas_csv, filas_xlsx, tabla_a_extracto
@@ -27,13 +27,13 @@ def bytes_de_entrada(contenido: str | None, contenido_base64: str | None) -> byt
         try:
             datos = base64.b64decode(contenido_base64, validate=False)
         except (binascii.Error, ValueError) as exc:
-            raise ErrorImportacion("El contenido en base64 no es válido.") from exc
+            raise ImportacionError("El contenido en base64 no es válido.") from exc
     elif contenido:
         datos = contenido.encode("utf-8")
     else:
-        raise ErrorImportacion("No se ha recibido el contenido del extracto.")
+        raise ImportacionError("No se ha recibido el contenido del extracto.")
     if len(datos) > TAMANO_MAXIMO:
-        raise ErrorImportacion("El fichero es demasiado grande (más de 20 MB). Exporta un periodo más corto.")
+        raise ImportacionError("El fichero es demasiado grande (más de 20 MB). Exporta un periodo más corto.")
     return datos
 
 
@@ -41,11 +41,11 @@ def detectar_formato(datos: bytes) -> str:
     if datos.startswith(b"PK\x03\x04"):
         return "xlsx"
     if datos.startswith(b"\xd0\xcf\x11\xe0"):
-        raise ErrorImportacion(
+        raise ImportacionError(
             "Es un Excel antiguo (.xls), que no se puede leer. Expórtalo de nuevo como XLSX o CSV, o usa Norma 43."
         )
     if datos.startswith(b"%PDF"):
-        raise ErrorImportacion(
+        raise ImportacionError(
             "Los extractos en PDF no se leen en esta fase. Descarga el extracto en Norma 43, CSV, Excel, OFX o camt.053."
         )
     texto = decodificar(datos[:20000])
@@ -65,13 +65,13 @@ def importar(
     mapeo_columnas: dict[str, str] | None = None,
     importes_positivos_son: str | None = None,
 ) -> Extracto:
-    """Parse a statement. Raises :class:`ErrorImportacion` with a Spanish message on any problem."""
+    """Parse a statement. Raises :class:`ImportacionError` with a Spanish message on any problem."""
     if formato not in FORMATOS:
-        raise ErrorImportacion(f"Formato desconocido «{formato}». Usa uno de: {', '.join(FORMATOS)}.")
+        raise ImportacionError(f"Formato desconocido «{formato}». Usa uno de: {', '.join(FORMATOS)}.")
     real = detectar_formato(datos) if formato == "auto" else formato
     if real == "xlsx":
         if not datos.startswith(b"PK"):
-            raise ErrorImportacion("El fichero no es un XLSX (envíalo en contenido_base64).")
+            raise ImportacionError("El fichero no es un XLSX (envíalo en contenido_base64).")
         return tabla_a_extracto(filas_xlsx(datos), "xlsx", banco, mapeo_columnas, importes_positivos_son)
     if real in {"ofx", "qfx"}:
         return leer_ofx(decodificar(datos, codificacion_declarada(datos)), real)

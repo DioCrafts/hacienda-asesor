@@ -1,0 +1,196 @@
+{
+ "status": {
+  "code": "200",
+  "text": "ok"
+ },
+ "data": {
+  "sumario": {
+   "metadatos": {
+    "publicacion": "BOE",
+    "fecha_publicacion": "20260603"
+   },
+   "diario": [
+    {
+     "numero": "135",
+     "sumario_diario": {
+      "identificador": "BOE-S-2026-135",
+      "url_pdf": {
+       "szBytes": "434751",
+       "szKBytes": "425",
+       "texto": "https://www.boe.es/boe/dias/2026/06/03/pdfs/BOE-S-2026-135.pdf"
+      }
+     },
+     "seccion": [
+      {
+       "codigo": "1",
+       "nombre": "I. Disposiciones generales",
+       "departamento": [
+        {
+         "codigo": "7723",
+         "nombre": "JEFATURA DEL ESTADO",
+         "epigrafe": [
+          {
+           "nombre": "Medidas urgentes",
+           "item": {
+            "identificador": "BOE-A-2026-11848",
+            "control": "2026/9016",
+            "titulo": "Real Decreto-ley 13/2026, de 2 de junio, por el que se adoptan medidas relativas a los recursos de los sistemas de financiación territorial.",
+            "url_pdf": {
+             "szBytes": "287485",
+             "szKBytes": "281",
+             "pagina_inicial": "75083",
+             "pagina_final": "75095",
+             "texto": "https://www.boe.es/boe/dias/2026/06/03/pdfs/BOE-A-2026-11848.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-11848",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-11848"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "1410",
+         "nombre": "TRIBUNAL CONSTITUCIONAL",
+         "epigrafe": [
+          {
+           "nombre": "Conflictos constitucionales",
+           "item": {
+            "identificador": "BOE-A-2026-11849",
+            "control": "2026/8938",
+            "titulo": "Corrección de errores en el Conflicto entre órganos constitucionales n.º 8598-2025, en relación con el acuerdo de disconformidad, firmado por el Secretario de Estado de Relaciones con las Cortes y Asuntos Constitucionales, de fecha 15 de septiembre de 2025, respecto a la tramitación de la enmienda número 8 del Grupo Parlamentario Popular en el Senado, por la que se introduce la disposición adicional decimocuarta en el Proyecto de Ley por la que se modifican la Ley 48/1960, de 21 de julio, sobre Navegación Aérea, y la Ley 21/2003, de 7 de julio, de Seguridad Aérea.",
+            "url_pdf": {
+             "szBytes": "195584",
+             "szKBytes": "191",
+             "pagina_inicial": "75096",
+             "pagina_final": "75097",
+             "texto": "https://www.boe.es/boe/dias/2026/06/03/pdfs/BOE-A-2026-11849.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-11849",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-11849"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "1430",
+         "nombre": "TRIBUNAL SUPREMO",
+         "epigrafe": [
+          {
+           "nombre": "Sentencias",
+           "item": {
+            "identificador": "BOE-A-2026-11850",
+            "control": "2026/8790",
+            "titulo": "Sentencia de 29 de abril de 2026, de la Sala Tercera del Tribunal Supremo, que estima el recurso contencioso-administrativo 671/2024, interpuesto por la Letrada de la Comunidad de Aragón, en la representación que le es propia, contra el Real Decreto 662/2024, de 9 de julio, por el que se establece el régimen al que ha de estar sometida la instalación de las plantas fotovoltaicas flotantes en los embalses situados en el dominio público hidráulico en las cuencas hidrográficas cuya gestión corresponde a la Administración General del Estado, y por el que se modifica el Reglamento del Dominio Público Hidráulico, aprobado por el Real Decreto 849/1986, de 11 de abril.",
+            "url_pdf": {
+             "szBytes": "194072",
+             "szKBytes": "190",
+             "pagina_inicial": "75098",
+             "pagina_final": "75098",
+             "texto": "https://www.boe.es/boe/dias/2026/06/03/pdfs/BOE-A-2026-11850.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-11850",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-11850"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "8140",
+         "nombre": "COMUNIDAD AUTÓNOMA DEL PAÍS VASCO",
+         "epigrafe": [
+          {
+           "nombre": "Transparencia",
+           "item": {
+            "identificador": "BOE-A-2026-11851",
+            "control": "2026/8860",
+            "titulo": "Ley 3/2026, de 14 de mayo, de Transparencia de Euskadi.",
+            "url_pdf": {
+             "szBytes": "488948",
+             "szKBytes": "477",
+             "pagina_inicial": "75099",
+             "pagina_final": "75142",
+             "texto": "https://www.boe.es/boe/dias/2026/06/03/pdfs/BOE-A-2026-11851.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-11851",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-11851"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "codigo": "3",
+       "nombre": "III. Otras disposiciones",
+       "departamento": [
+        {
+         "codigo": "9585",
+         "nombre": "MINISTERIO DE LA PRESIDENCIA, JUSTICIA Y RELACIONES CON LAS CORTES",
+         "epigrafe": [
+          {
+           "nombre": "Convenios",
+           "item": {
+            "identificador": "BOE-A-2026-11916",
+            "control": "2026/8896",
+            "titulo": "Resolución de 29 de mayo de 2026, de la Subsecretaría, por la que se publica el Convenio de asistencia jurídica entre la Abogacía General del Estado e Ingeniería y Economía del Transporte, S.M.E., M.P., SA.",
+            "url_pdf": {
+             "szBytes": "222529",
+             "szKBytes": "217",
+             "pagina_inicial": "75263",
+             "pagina_final": "75267",
+             "texto": "https://www.boe.es/boe/dias/2026/06/03/pdfs/BOE-A-2026-11916.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-11916",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-11916"
+           }
+          },
+          {
+           "nombre": "Recursos",
+           "item": {
+            "identificador": "BOE-A-2026-11918",
+            "control": "2026/8515",
+            "titulo": "Resolución de 11 de mayo de 2026, de la Secretaría General Técnica-Secretariado del Gobierno, por la que se acuerda la remisión del expediente administrativo correspondiente a los recursos contencioso-administrativos 1/92/2026, 1/93/2026, 1/100/2026 y 1/98/2026, interpuestos ante el Tribunal Supremo, Sala de lo Contencioso-Administrativo, Sección Quinta, y se emplaza a las personas interesadas.",
+            "url_pdf": {
+             "szBytes": "192434",
+             "szKBytes": "188",
+             "pagina_inicial": "75278",
+             "pagina_final": "75278",
+             "texto": "https://www.boe.es/boe/dias/2026/06/03/pdfs/BOE-A-2026-11918.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-11918",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-11918"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "codigo": "5B",
+       "nombre": "V. Anuncios. - B. Otros anuncios oficiales",
+       "departamento": [
+        {
+         "codigo": "9588",
+         "nombre": "MINISTERIO DE DERECHOS SOCIALES, CONSUMO Y AGENDA 2030",
+         "item": {
+          "identificador": "BOE-B-2026-18498",
+          "titulo": "Extracto de la Resolución del Instituto de Mayores y Servicios Sociales, por la que se convoca la concesión de subvenciones a personas mayores, personas con discapacidad y personas en situación de dependencia residentes en las Ciudades de Ceuta y de Melilla, durante el año 2026",
+          "url_pdf": {
+           "szBytes": "205090",
+           "szKBytes": "200",
+           "pagina_inicial": "29223",
+           "pagina_final": "29223",
+           "texto": "https://www.boe.es/boe/dias/2026/06/03/pdfs/BOE-B-2026-18498.pdf"
+          },
+          "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-B-2026-18498",
+          "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-B-2026-18498"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

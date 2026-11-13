@@ -20,9 +20,9 @@ merchants the catalogue does not know (see ``etiquetador.py``).
 
 from __future__ import annotations
 
+import calendar
 from collections import Counter
 from collections.abc import Sequence
-import calendar
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
@@ -30,6 +30,7 @@ import hashlib
 from statistics import median
 
 from hacienda_gpt.modulos.suscripciones import etiquetador
+from hacienda_gpt.modulos.suscripciones.formato import euros
 from hacienda_gpt.modulos.suscripciones.modelos import (
     CARGOS_POR_ANO,
     CambioPrecio,
@@ -192,7 +193,9 @@ def _cerca(a: date, b: date, periodicidad: str) -> bool:
     return abs((b - a).days - dias) <= tolerancia
 
 
-def _series_del_grupo(identidad: Identidad, paypal: bool, cargos: list[Cargo], span_dias: int, hasta: date) -> list[_Serie]:
+def _series_del_grupo(
+    identidad: Identidad, paypal: bool, cargos: list[Cargo], span_dias: int, hasta: date
+) -> list[_Serie]:
     cargos = sorted(cargos, key=lambda c: (c.fecha, c.importe))
     conocido = identidad.en_catalogo and identidad.recurrente
     # 1. same amount within a few days: possible double charges
@@ -260,7 +263,9 @@ def _series_del_grupo(identidad: Identidad, paypal: bool, cargos: list[Cargo], s
             if (
                 serie.periodicidad != "semanal"
                 and any(abs(c.importe - cargo.importe) <= CENTIMO for c in serie.cargos)
-                and serie.cargos[0].fecha - timedelta(days=dias) <= cargo.fecha <= serie.cargos[-1].fecha + timedelta(days=dias)
+                and serie.cargos[0].fecha - timedelta(days=dias)
+                <= cargo.fecha
+                <= serie.cargos[-1].fecha + timedelta(days=dias)
             ):
                 serie.duplicados.append(cargo)
                 break
@@ -370,7 +375,7 @@ def analizar(extracto: Extracto, *, usar_etiquetador: bool = True) -> Analisis:
             continue
         paypal = identidad.canal == "paypal"
         grupos.setdefault((identidad.clave, paypal), (identidad, []))[1].append(
-            Cargo(movimiento.fecha, -movimiento.importe, movimiento)
+            Cargo(movimiento.fecha, (-movimiento.importe).quantize(CENTIMO), movimiento)
         )
     series: list[_Serie] = []
     for (_, paypal), (identidad, cargos) in sorted(grupos.items()):
@@ -410,7 +415,7 @@ def _a_servicio(serie: _Serie, identificador: str, hasta: date, usar_etiquetador
             tipo="cargo_doble",
             fecha=c.fecha,
             importe=c.importe,
-            detalle=f"Dos cargos de {c.importe} € en {VENTANA_DOBLE_DIAS} días o menos",
+            detalle=f"dos cargos de {euros(c.importe)} en {VENTANA_DOBLE_DIAS} días o menos",
         )
         for c in serie.duplicados
     ]
@@ -478,7 +483,7 @@ def _marcar_servicios_duplicados(detectados: list[ServicioDetectado]) -> list[Se
                     tipo="servicio_duplicado",
                     fecha=inicio,
                     importe=propio.importe,
-                    detalle=f"También se cobra «{otro.etiqueta}» ({otro.importe} €, {otro.periodicidad})",
+                    detalle=f"también se cobra «{otro.etiqueta}» ({euros(otro.importe)}, {otro.periodicidad})",
                 )
                 actual = resultado[indice]
                 resultado[indice] = ServicioDetectado(

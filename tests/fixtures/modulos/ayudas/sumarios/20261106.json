@@ -1,0 +1,178 @@
+{
+ "status": {
+  "code": "200",
+  "text": "ok"
+ },
+ "data": {
+  "sumario": {
+   "metadatos": {
+    "publicacion": "BOE",
+    "fecha_publicacion": "20261106"
+   },
+   "diario": [
+    {
+     "numero": "277",
+     "sumario_diario": {
+      "identificador": "BOE-S-2026-277",
+      "url_pdf": {
+       "szBytes": "411233",
+       "szKBytes": "402",
+       "texto": "https://www.boe.es/boe/dias/2026/11/06/pdfs/BOE-S-2026-277.pdf"
+      }
+     },
+     "seccion": [
+      {
+       "codigo": "1",
+       "nombre": "I. Disposiciones generales",
+       "departamento": [
+        {
+         "codigo": "9562",
+         "nombre": "MINISTERIO DE ASUNTOS EXTERIORES, UNIÓN EUROPEA Y COOPERACIÓN",
+         "epigrafe": [
+          {
+           "nombre": "Acuerdos internacionales administrativos",
+           "item": {
+            "identificador": "BOE-A-2026-23264",
+            "control": "2026/17153",
+            "titulo": "Acuerdo entre el Principado de Andorra y el Reino de España en materia de acceso a la educación secundaria postobligatoria y a la educación superior no universitaria, hecho en Madrid y Andorra la Vella el 23 de julio de 2026.",
+            "url_pdf": {
+             "szBytes": "235671",
+             "szKBytes": "230",
+             "pagina_inicial": "149186",
+             "pagina_final": "149189",
+             "texto": "https://www.boe.es/boe/dias/2026/11/06/pdfs/BOE-A-2026-23264.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23264",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23264"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9585",
+         "nombre": "MINISTERIO DE LA PRESIDENCIA, JUSTICIA Y RELACIONES CON LAS CORTES",
+         "epigrafe": [
+          {
+           "nombre": "Seguridad alimentaria",
+           "item": {
+            "identificador": "BOE-A-2026-23265",
+            "control": "2026/17326",
+            "titulo": "Real Decreto 950/2026, de 4 de noviembre, por el que se establecen criterios para el fomento de una alimentación saludable y sostenible en centros de titularidad pública y en centros para personas en situación de dependencia o personas con necesidades especiales de titularidad privada.",
+            "url_pdf": {
+             "szBytes": "360465",
+             "szKBytes": "352",
+             "pagina_inicial": "149190",
+             "pagina_final": "149214",
+             "texto": "https://www.boe.es/boe/dias/2026/11/06/pdfs/BOE-A-2026-23265.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23265",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23265"
+           }
+          },
+          {
+           "nombre": "Especialidades sanitarias",
+           "item": {
+            "identificador": "BOE-A-2026-23266",
+            "control": "2026/17327",
+            "titulo": "Real Decreto 951/2026, de 4 de noviembre, por el que se modifica el Real Decreto 1146/2006, de 6 de octubre, por el que se regula la relación laboral especial de residencia para la formación de especialistas en Ciencias de la Salud.",
+            "url_pdf": {
+             "szBytes": "246789",
+             "szKBytes": "241",
+             "pagina_inicial": "149215",
+             "pagina_final": "149224",
+             "texto": "https://www.boe.es/boe/dias/2026/11/06/pdfs/BOE-A-2026-23266.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23266",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23266"
+           }
+          },
+          {
+           "nombre": "Biocidas",
+           "item": {
+            "identificador": "BOE-A-2026-23267",
+            "control": "2026/17328",
+            "titulo": "Real Decreto 952/2026, de 4 de noviembre, por el que se regula el registro y las condiciones de autorización, fabricación, comercialización y uso de biocidas.",
+            "url_pdf": {
+             "szBytes": "372523",
+             "szKBytes": "364",
+             "pagina_inicial": "149225",
+             "pagina_final": "149250",
+             "texto": "https://www.boe.es/boe/dias/2026/11/06/pdfs/BOE-A-2026-23267.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23267",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23267"
+           }
+          },
+          {
+           "nombre": "Contaminación",
+           "item": {
+            "identificador": "BOE-A-2026-23268",
+            "control": "2026/17329",
+            "titulo": "Real Decreto 953/2026, de 4 de noviembre, por el que se modifica el Real Decreto 1052/2022, de 27 de diciembre, por el que se regulan las zonas de bajas emisiones.",
+            "url_pdf": {
+             "szBytes": "211947",
+             "szKBytes": "207",
+             "pagina_inicial": "149251",
+             "pagina_final": "149254",
+             "texto": "https://www.boe.es/boe/dias/2026/11/06/pdfs/BOE-A-2026-23268.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23268",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23268"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9586",
+         "nombre": "MINISTERIO DE TRANSPORTES Y MOVILIDAD SOSTENIBLE",
+         "epigrafe": [
+          {
+           "nombre": "Subvenciones",
+           "item": {
+            "identificador": "BOE-A-2026-23269",
+            "control": "2026/17331",
+            "titulo": "Real Decreto 955/2026, de 5 de noviembre, por el que se regula la concesión directa de subvenciones a la Real Sociedad Geográfica y al Observatorio del Ebro durante el ejercicio presupuestario 2026.",
+            "url_pdf": {
+             "szBytes": "311270",
+             "szKBytes": "304",
+             "pagina_inicial": "149255",
+             "pagina_final": "149269",
+             "texto": "https://www.boe.es/boe/dias/2026/11/06/pdfs/BOE-A-2026-23269.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23269",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23269"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "codigo": "5B",
+       "nombre": "V. Anuncios. - B. Otros anuncios oficiales",
+       "departamento": [
+        {
+         "codigo": "9575",
+         "nombre": "MINISTERIO PARA LA TRANSICIÓN ECOLÓGICA Y EL RETO DEMOGRÁFICO",
+         "item": {
+          "identificador": "BOE-B-2026-36326",
+          "titulo": "Extracto de la Resolución de la Secretaría de Estado de Energía por la que se aprueba la convocatoria para la concesión de ayudas públicas en 2027 del Programa Nacional de Exploración Minera 2026-2030",
+          "url_pdf": {
+           "szBytes": "209151",
+           "szKBytes": "204",
+           "pagina_inicial": "58944",
+           "pagina_final": "58945",
+           "texto": "https://www.boe.es/boe/dias/2026/11/06/pdfs/BOE-B-2026-36326.pdf"
+          },
+          "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-B-2026-36326",
+          "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-B-2026-36326"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

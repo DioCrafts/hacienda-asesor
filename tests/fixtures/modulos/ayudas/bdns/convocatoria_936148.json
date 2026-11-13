@@ -1,0 +1,31 @@
+{
+  "id": 1093418,
+  "organo": {
+    "nivel1": "ESTADO",
+    "nivel2": "MINISTERIO DE TRANSPORTES Y MOVILIDAD SOSTENIBLE",
+    "nivel3": "SUBSECRETARÍA DE TRANSPORTES Y MOVILIDAD SOSTENIBLE"
+  },
+  "sedeElectronica": "https://sede.transportes.gob.es/areas-actividad/instituto-geografico-nacional/becas",
+  "codigoBDNS": "936148",
+  "fechaRecepcion": "2026-10-06",
+  "instrumentos": [{"descripcion": "SUBVENCIÓN Y ENTREGA DINERARIA SIN CONTRAPRESTACIÓN "}],
+  "tipoConvocatoria": "Concurrencia competitiva - canónica",
+  "presupuestoTotal": 230400,
+  "mrr": false,
+  "descripcion": "Resolución de la Subsecretaría de Transportes y Movilidad por la que se hace pública la convocatoria de becas para la formación en el Instituto Geográfico Nacional",
+  "tiposBeneficiarios": [{"descripcion": "PERSONAS FÍSICAS QUE NO DESARROLLAN ACTIVIDAD ECONÓMICA"}],
+  "sectores": [{"descripcion": "Actividades profesionales, científicas y técnicas", "codigo": "M"}],
+  "regiones": [{"descripcion": "ES - ESPAÑA"}],
+  "descripcionFinalidad": "Educación",
+  "descripcionBasesReguladoras": "Orden TRM/746/2024, de 7 de julio",
+  "sePublicaDiarioOficial": true,
+  "abierto": true,
+  "fechaInicioSolicitud": "2026-10-23",
+  "fechaFinSolicitud": "2026-11-19",
+  "textInicio": null,
+  "textFin": null,
+  "ayudaEstado": null,
+  "fondos": [],
+  "documentos": [],
+  "anuncios": []
+}

@@ -2,7 +2,7 @@
 
 Spanish bank exports mix encodings (UTF-8, UTF-8 with BOM, Windows-1252, ISO-8859-1), decimal commas
 and dots, thousands separators, trailing or bracketed signs and several date layouts. Every helper here
-is strict: a value it cannot read raises :class:`ErrorImportacion` (or returns ``None`` where the caller
+is strict: a value it cannot read raises :class:`ImportacionError` (or returns ``None`` where the caller
 decides), never a guess.
 """
 
@@ -14,7 +14,7 @@ from decimal import Decimal, InvalidOperation
 import re
 import unicodedata
 
-from hacienda_gpt.modulos.suscripciones.modelos import ErrorImportacion
+from hacienda_gpt.modulos.suscripciones.modelos import ImportacionError
 
 # Largest statement accepted, uncompressed (a year of a busy account is well under 5 MB).
 TAMANO_MAXIMO = 20 * 1024 * 1024
@@ -23,7 +23,7 @@ TAMANO_MAXIMO = 20 * 1024 * 1024
 def decodificar(datos: bytes, declarada: str | None = None) -> str:
     """Bytes -> text: the declared encoding if valid, else UTF-8 (with or without BOM), else Windows-1252."""
     if len(datos) > TAMANO_MAXIMO:
-        raise ErrorImportacion("El fichero es demasiado grande (más de 20 MB). Exporta un periodo más corto.")
+        raise ImportacionError("El fichero es demasiado grande (más de 20 MB). Exporta un periodo más corto.")
     candidatas = [declarada] if declarada else []
     candidatas += ["utf-8-sig", "cp1252", "latin-1"]
     for codificacion in candidatas:
@@ -31,7 +31,7 @@ def decodificar(datos: bytes, declarada: str | None = None) -> str:
             return datos.decode(codificacion)
         except (UnicodeDecodeError, LookupError):
             continue
-    raise ErrorImportacion("No se ha podido leer la codificación del fichero.")  # pragma: no cover (latin-1)
+    raise ImportacionError("No se ha podido leer la codificación del fichero.")  # pragma: no cover (latin-1)
 
 
 def sin_acentos(texto: str) -> str:
@@ -68,7 +68,7 @@ def leer_importe(bruto: str, decimal: str = ",") -> Decimal:
     """'-1.234,56 €' -> Decimal('-1234.56'); '(12,99)' and '12,99-' are negative too."""
     valor = _LIMPIA_IMPORTE.sub("", bruto.strip())
     if not valor:
-        raise ErrorImportacion("Importe vacío.")
+        raise ImportacionError("Importe vacío.")
     negativo = False
     if valor.startswith("(") and valor.endswith(")"):
         negativo, valor = True, valor[1:-1]
@@ -81,11 +81,11 @@ def leer_importe(bruto: str, decimal: str = ",") -> Decimal:
     miles = "." if decimal == "," else ","
     valor = valor.replace(miles, "").replace(decimal, ".")
     if not re.fullmatch(r"\d+(\.\d+)?", valor):
-        raise ErrorImportacion(f"Importe ilegible: «{bruto.strip()}».")
+        raise ImportacionError(f"Importe ilegible: «{bruto.strip()}».")
     try:
         numero = Decimal(valor)
     except InvalidOperation as exc:  # pragma: no cover (regex above)
-        raise ErrorImportacion(f"Importe ilegible: «{bruto.strip()}».") from exc
+        raise ImportacionError(f"Importe ilegible: «{bruto.strip()}».") from exc
     return -numero if negativo else numero
 
 
@@ -118,7 +118,7 @@ def orden_fechas(valores: Iterable[str]) -> str:
     if mes_primero and not dia_primero:
         return "mdy"
     if mes_primero and dia_primero:
-        raise ErrorImportacion("Las fechas de la columna mezclan los formatos día/mes y mes/día.")
+        raise ImportacionError("Las fechas de la columna mezclan los formatos día/mes y mes/día.")
     return "dmy"
 
 

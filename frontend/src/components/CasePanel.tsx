@@ -24,6 +24,8 @@ interface CasePanelProps {
   saving: string | null;
   error: string | null;
   disabled: boolean;
+  // Facts that belong to a household module: edited in «Módulos», not here.
+  excludeFacts?: ReadonlySet<string>;
 }
 
 // Internal flag, not something the user states or needs to manage.
@@ -110,7 +112,7 @@ function FactEditor({ fact, busy, onSave, onCancel }: EditorProps) {
   );
 }
 
-export function CasePanel({ open, onClose, facts, taxPeriod, obligations, caseId, onChangeFact, saving, error, disabled }: CasePanelProps) {
+export function CasePanel({ open, onClose, facts, taxPeriod, obligations, caseId, onChangeFact, saving, error, disabled, excludeFacts }: CasePanelProps) {
   // Which row is in edit mode / awaiting delete confirmation (by fact name).
   const [editing, setEditing] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -129,7 +131,7 @@ export function CasePanel({ open, onClose, facts, taxPeriod, obligations, caseId
   const yearFact: Pick<Fact, "name" | "value"> | null = taxPeriod ? { name: "periodo_fiscal", value: taxPeriod } : null;
   const rows: Array<Pick<Fact, "name" | "value"> & { removable: boolean }> = [
     ...(yearFact ? [{ ...yearFact, removable: false }] : []),
-    ...facts.filter((f) => f.name !== "periodo_fiscal" && !HIDDEN_FACTS.has(f.name)).map((f) => ({ name: f.name, value: f.value, removable: true })),
+    ...facts.filter((f) => f.name !== "periodo_fiscal" && !HIDDEN_FACTS.has(f.name) && !excludeFacts?.has(f.name)).map((f) => ({ name: f.name, value: f.value, removable: true })),
   ];
   const locked = disabled || saving !== null || !caseId;
 

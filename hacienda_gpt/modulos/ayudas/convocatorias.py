@@ -13,8 +13,8 @@ Regional bulletins are out of scope: only calls published in the BOE are seen.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping
 import calendar
+from collections.abc import Callable, Iterable, Mapping
 from datetime import date, timedelta
 import os
 import re
@@ -291,6 +291,8 @@ class Plazo(BaseModel):
     cita: str
     # True when holidays could not be counted (the real last day may be later, never earlier).
     estimado: bool = False
+    # Literal lead-in paragraph the sentence hangs from ("b) Para su inclusión en la lista de espera:").
+    contexto: str = ""
 
 
 # "quince días (15) hábiles"; "días" alone are working days (art. 30.2 Ley 39/2015).
@@ -332,6 +334,9 @@ _OTROS_PLAZOS = (
 )
 
 
+_ENUMERADO = re.compile(r"^(\d+\.?º|[a-z]\)|\d+\))\s")
+
+
 def _frases(parrafo: str) -> list[str]:
     return [f.strip() for f in re.split(r"(?<=[.;])\s+(?=[A-ZÁÉÍÓÚÑ0-9¿(])", parrafo) if f.strip()]
 
@@ -341,18 +346,20 @@ def _parrafos_de_plazo(doc: Documento) -> list[str]:
         e = plano(encabezado)
         if "plazo" in e and ("solicitud" in e or "presentacion" in e):
             return [encabezado, *parrafos] if parrafos else [encabezado]
-    return [
-        p
-        for p in doc.parrafos
-        if "plazo" in plano(p) and ("solicitud" in plano(p) or "presentacion" in plano(p))
-    ]
+    return [p for p in doc.parrafos if "plazo" in plano(p) and ("solicitud" in plano(p) or "presentacion" in plano(p))]
 
 
 def extraer_plazos(doc: Documento, publicacion: date) -> list[Plazo]:
     """Every application deadline the call states, each with its literal sentence."""
     plazos: list[Plazo] = []
     vistos: set[tuple[str, date]] = set()
+    entrada = ""
     for parrafo in _parrafos_de_plazo(doc):
+        enumerado = bool(_ENUMERADO.match(parrafo))
+        if parrafo.rstrip().endswith(":"):
+            entrada = parrafo
+        elif not enumerado:
+            entrada = ""
         for frase in _frases(parrafo):
             p = plano(frase)
             if any(o in p for o in _OTROS_PLAZOS):
@@ -379,7 +386,9 @@ def extraer_plazos(doc: Documento, publicacion: date) -> list[Plazo]:
                         fin = _siguiente_habil(publicacion + timedelta(days=n))
                         encontrados.append(("dias_naturales", fin, True))
                 for match in _RE_DIA_ORDINAL.finditer(p):
-                    encontrados.append(("dias_habiles", sumar_dias_habiles(publicacion, _ORDINALES[match.group(1)]), True))
+                    encontrados.append(
+                        ("dias_habiles", sumar_dias_habiles(publicacion, _ORDINALES[match.group(1)]), True)
+                    )
                 for match in _RE_MESES.finditer(p):
                     n = numero_texto(match.group(1))
                     if n is None or n > 24:
@@ -389,7 +398,8 @@ def extraer_plazos(doc: Documento, publicacion: date) -> list[Plazo]:
                 if (tipo, fin) in vistos:
                     continue
                 vistos.add((tipo, fin))
-                plazos.append(Plazo(tipo=tipo, fin=fin, cita=frase, estimado=estimado))
+                contexto = entrada if enumerado and entrada and entrada != parrafo else ""
+                plazos.append(Plazo(tipo=tipo, fin=fin, cita=frase, estimado=estimado, contexto=contexto))
     return sorted(plazos, key=lambda x: x.fin)
 
 
@@ -431,7 +441,6 @@ _ENTIDADES = (
     "diputacion",
     "comunidades autonomas",
     "universidades",
-    "centros educativos",
     "centros de formacion",
     "nuevos centros",
     "red estatal de centros",
@@ -445,8 +454,14 @@ _ENTIDADES = (
     "consorcio",
     "entidades beneficiarias",
     "administraciones publicas",
+    "organizaciones no gubernamentales",
 )
-_ACTIVIDAD = ("desarrollen actividad economica", "desarrollan actividad economica", "autonomos", "trabajadores por cuenta propia")
+_ACTIVIDAD = (
+    "desarrollen actividad economica",
+    "desarrollan actividad economica",
+    "autonomos",
+    "trabajadores por cuenta propia",
+)
 _INVESTIGACION = ("personal investigador", "investigadores", "predoctoral", "postdoctoral", "grupos de investigacion")
 
 
@@ -498,16 +513,46 @@ def clasificar_destinatario(titulo: str, beneficiarios: str) -> tuple[Destinatar
 
 # Themes: keywords (accent-free, lower case) a call is tagged with, for matching against the profile.
 TEMAS: dict[str, tuple[str, ...]] = {
-    "mayores": ("pensionista", "jubilacion", "personas mayores", "termalismo", "turismo social", "sesenta y cinco o mas"),
-    "familias": ("familias numerosas", "familias monoparentales", "hijos", "hijas", "natalidad", "crianza", "nacimiento"),
+    "mayores": (
+        "pensionista",
+        "jubilacion",
+        "personas mayores",
+        "termalismo",
+        "turismo social",
+        "sesenta y cinco o mas",
+    ),
+    "familias": (
+        "familias numerosas",
+        "familias monoparentales",
+        "hijos",
+        "hijas",
+        "natalidad",
+        "crianza",
+        "nacimiento",
+    ),
     "discapacidad": ("discapacidad", "dependencia"),
     "jovenes": ("jovenes", "juventud", "menores de 35", "menores de treinta y cinco"),
-    "estudios": ("becas", "beca ", "estudiantes", "alumnado", "titulados", "graduados", "licenciados", "matricula"),
+    "estudios": (
+        "becas",
+        "beca ",
+        "estudiantes",
+        "alumnado",
+        "titulados",
+        "graduados",
+        "licenciados",
+        "matricula",
+        "cursando estudios",
+        "cursar estudios",
+        "actividades formativas",
+    ),
     "vivienda": ("alquiler", "vivienda habitual", "rehabilitacion de vivienda"),
     "victimas": ("violencia de genero", "terrorismo"),
     "desempleo": ("desempleadas", "desempleo", "demandantes de empleo"),
     "energia": ("eficiencia energetica", "autoconsumo", "calefaccion"),
 }
+
+# Themes that, when the profile cannot judge them, do not stop a call from being proposed.
+TEMAS_SECUNDARIOS: frozenset[str] = frozenset({"desempleo", "energia"})
 
 COMUNIDADES: dict[str, tuple[str, ...]] = {
     "Andalucía": ("andalucia",),
@@ -565,7 +610,9 @@ def llm_activo() -> bool:
     return _clasificador_llm is not None and os.environ.get("AYUDAS_CLASIFICADOR_LLM", "").strip() in {"1", "true"}
 
 
-def aceptar_respuesta_llm(respuesta: Mapping[str, Any] | None, texto: str) -> tuple[Destinatario, list[str], str] | None:
+def aceptar_respuesta_llm(
+    respuesta: Mapping[str, Any] | None, texto: str
+) -> tuple[Destinatario, list[str], str] | None:
     """The deterministic gate: a known label and a quote that exists verbatim in ``texto``."""
     if not respuesta:
         return None
@@ -623,7 +670,9 @@ def analizar(item: ItemSumario, xml: str | bytes, hoy: date) -> Convocatoria:
     """Classify one candidate from its XML; the rules first, the LLM (if enabled) only when undecided."""
     doc = leer_documento(xml)
     titulo = doc.titulo or item.titulo
-    beneficiarios = _seccion(doc, "beneficiari", "requisitos de las personas", "destinatari", "requisitos de los solicitantes")
+    beneficiarios = _seccion(
+        doc, "beneficiari", "requisitos de las personas", "destinatari", "requisitos de los solicitantes"
+    )
     objeto = _seccion(doc, "objeto", "finalidad", max_chars=600)
     cuantia = _seccion(doc, "cuantia", "importe", "dotacion", "credito", max_chars=600)
     destinatario, senales = clasificar_destinatario(titulo, beneficiarios)
@@ -761,13 +810,14 @@ def encaje(conv: Convocatoria, h: Hogar, perfil: Mapping[str, Any]) -> Encaje:
     dudas = [motivo for _, ok, motivo in resultados if ok is None]
     if comunidad is None:
         dudas.append(f"limitada a {', '.join(conv.ambito)} y no consta tu comunidad autónoma")
-    if conv.destinatario == "personas" and positivos and comunidad is True:
-        # Requirements are often alternatives (pensioner OR unemployed over 60): one supported theme and none
-        # contradicted is enough to propose it; the themes the profile cannot judge are listed to be checked.
+    bloqueantes = [tema for tema, ok, _ in resultados if ok is None and tema not in TEMAS_SECUNDARIOS]
+    if conv.destinatario == "personas" and positivos and not bloqueantes and comunidad is True:
+        # A secondary theme the profile cannot judge (unemployment, energy) is usually an alternative route
+        # (pensioner OR unemployed over 60): it is listed to be checked but does not block the proposal.
         return Encaje(
             nivel="encaja",
             motivos=positivos,
-            requisitos_no_comprobados=no_comprobados + [f"Sin comprobar: {d}." for d in dudas],
+            requisitos_no_comprobados=no_comprobados,
         )
     motivos = positivos + dudas or ["Dirigida a personas físicas, sin un requisito que el perfil permita comprobar."]
     return Encaje(nivel="posible", motivos=motivos, requisitos_no_comprobados=no_comprobados)

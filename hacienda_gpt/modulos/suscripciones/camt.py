@@ -21,7 +21,7 @@ import re
 import xml.etree.ElementTree as ET
 
 from hacienda_gpt.modulos.suscripciones.lectura import enmascarar_cuenta
-from hacienda_gpt.modulos.suscripciones.modelos import ErrorImportacion, Extracto, Medio, Movimiento
+from hacienda_gpt.modulos.suscripciones.modelos import Extracto, ImportacionError, Medio, Movimiento
 
 _Elemento = ET.Element
 
@@ -61,7 +61,7 @@ def _fecha(el: _Elemento | None) -> date | None:
     try:
         return date.fromisoformat(valor[:10])
     except ValueError as exc:
-        raise ErrorImportacion(f"camt: fecha ilegible «{valor}».") from exc
+        raise ImportacionError(f"camt: fecha ilegible «{valor}».") from exc
 
 
 def _importe(el: _Elemento | None) -> tuple[Decimal, str] | None:
@@ -70,7 +70,7 @@ def _importe(el: _Elemento | None) -> tuple[Decimal, str] | None:
     try:
         return Decimal(el.text.strip()), el.get("Ccy", "EUR")
     except InvalidOperation as exc:
-        raise ErrorImportacion(f"camt: importe ilegible «{el.text.strip()}».") from exc
+        raise ImportacionError(f"camt: importe ilegible «{el.text.strip()}».") from exc
 
 
 def _medio(entrada: _Elemento, mandato: str | None) -> Medio:
@@ -98,14 +98,14 @@ def _parte(tx: _Elemento | None, rol: str) -> str | None:
 
 def leer_camt(texto: str) -> Extracto:
     if re.search(r"<!DOCTYPE|<!ENTITY", texto[:10000], re.I):
-        raise ErrorImportacion("El XML declara un DOCTYPE o entidades; por seguridad no se procesa.")
+        raise ImportacionError("El XML declara un DOCTYPE o entidades; por seguridad no se procesa.")
     try:
         raiz = ET.fromstring(re.sub(r"^\s*<\?xml[^>]*\?>", "", texto.lstrip("﻿")))
     except ET.ParseError as exc:
-        raise ErrorImportacion(f"camt: el XML no está bien formado ({exc}).") from exc
+        raise ImportacionError(f"camt: el XML no está bien formado ({exc}).") from exc
     mensaje = next(iter(raiz), None)
     if mensaje is None or _local(mensaje.tag) not in {"BkToCstmrStmt", "BkToCstmrAcctRpt", "BkToCstmrDbtCdtNtfctn"}:
-        raise ErrorImportacion("El XML no es un extracto camt.053/052/054 (falta BkToCstmrStmt).")
+        raise ImportacionError("El XML no es un extracto camt.053/052/054 (falta BkToCstmrStmt).")
     informes = [h for h in mensaje if _local(h.tag) in {"Stmt", "Rpt", "Ntfctn"}]
     movimientos: list[Movimiento] = []
     avisos: list[str] = []
@@ -121,10 +121,10 @@ def leer_camt(texto: str) -> Extracto:
             leido = _importe(_hijo(entrada, "Amt"))
             indicador = _texto(entrada, "CdtDbtInd")
             if leido is None or indicador not in {"CRDT", "DBIT"}:
-                raise ErrorImportacion("camt: hay un apunte sin importe (Amt) o sin indicador CRDT/DBIT.")
+                raise ImportacionError("camt: hay un apunte sin importe (Amt) o sin indicador CRDT/DBIT.")
             fecha = _fecha(_hijo(entrada, "BookgDt")) or _fecha(_hijo(entrada, "ValDt"))
             if fecha is None:
-                raise ErrorImportacion("camt: hay un apunte sin fecha (BookgDt/ValDt).")
+                raise ImportacionError("camt: hay un apunte sin fecha (BookgDt/ValDt).")
             fecha_valor = _fecha(_hijo(entrada, "ValDt"))
             signo = -1 if indicador == "DBIT" else 1
             rol = "Cdtr" if indicador == "DBIT" else "Dbtr"
@@ -135,7 +135,9 @@ def leer_camt(texto: str) -> Extracto:
                 for tx in transacciones
                 if _hijo(tx, "AmtDtls", "TxAmt", "Amt") is not None or _hijo(tx, "Amt") is not None
             ]
-            partes = con_importe if len(con_importe) > 1 else [transacciones[0] if transacciones else None]
+            partes: list[_Elemento | None] = (
+                list(con_importe) if len(con_importe) > 1 else [transacciones[0] if transacciones else None]
+            )
             for tx in partes:
                 importe, divisa = leido
                 if len(partes) > 1:
@@ -159,7 +161,7 @@ def leer_camt(texto: str) -> Extracto:
                     )
                 )
     if not informes:
-        raise ErrorImportacion("camt: el mensaje no contiene ningún extracto (Stmt).")
+        raise ImportacionError("camt: el mensaje no contiene ningún extracto (Stmt).")
     if pendientes:
         avisos.append(f"Se han omitido {pendientes} apuntes no contabilizados (estado distinto de BOOK).")
     return Extracto(

@@ -20,7 +20,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Literal
 
-from hacienda_gpt.modulos.hipoteca.calculo import euros, sumar_meses
+from hacienda_gpt.modulos.hipoteca.calculo import euros, fmt_pct, sumar_meses
 from hacienda_gpt.modulos.hipoteca.modelo import Prestamo
 from hacienda_gpt.modulos.hipoteca.normativa import Normativa
 
@@ -95,7 +95,7 @@ def _con_pactada(limite: Decimal, pactada: Decimal | None, res: Comision) -> Com
     else:
         res.porcentaje = min(limite, pactada)
         if pactada < limite:
-            res.fundamento.append(f"Tu escritura fija {pactada * 100:.2f} %, por debajo del máximo legal.")
+            res.fundamento.append(f"Tu escritura fija {fmt_pct(pactada * 100)}, por debajo del máximo legal.")
     return res
 
 
@@ -119,7 +119,7 @@ def _regimen(
         if anos < g.anos:
             res.fundamento.append(
                 f"Cambio de variable a fijo en los {g.anos} primeros años: como máximo el "
-                f"{g.limite * 100:.2f} % del capital amortizado ({g.cita_corta()})."
+                f"{fmt_pct(g.limite * 100)} del capital amortizado ({g.cita_corta()})."
             )
             return _con_pactada(g.limite, pactada, res)
         res.fundamento.append(
@@ -130,27 +130,27 @@ def _regimen(
 
     if p.fecha_firma >= ley5.entrada_en_vigor:
         if tramo == "variable":
-            g = n.comision_variable
-            res.citas.append(g.fuente.boe_id)
+            gv = n.comision_variable
+            res.citas.append(gv.fuente.boe_id)
             if _suspendida(n, fecha):
                 return _suspension(n, res)
-            if anos < g.opcion_b_anos:
-                limite = g.opcion_b_limite
+            if anos < gv.opcion_b_anos:
+                limite = gv.opcion_b_limite
                 texto = (
-                    f"Tramo variable, {g.opcion_b_anos} primeros años: el contrato puede fijar hasta el "
-                    f"{g.opcion_b_limite * 100:.2f} % (opción b) o hasta el {g.opcion_a_limite * 100:.2f} % "
-                    f"(opción a, cinco años), nunca ambas ({g.cita_corta()})."
+                    f"Tramo variable, {gv.opcion_b_anos} primeros años: el contrato puede fijar hasta el "
+                    f"{fmt_pct(gv.opcion_b_limite * 100)} (opción b) o hasta el {fmt_pct(gv.opcion_a_limite * 100)} "
+                    f"(opción a, cinco años), nunca ambas ({gv.cita_corta()})."
                 )
-            elif anos < g.opcion_a_anos:
-                limite = g.opcion_a_limite
+            elif anos < gv.opcion_a_anos:
+                limite = gv.opcion_a_limite
                 texto = (
-                    f"Tramo variable, entre el año {g.opcion_b_anos} y el {g.opcion_a_anos}: solo cabe comisión si "
-                    f"el contrato eligió la opción a), como máximo el {g.opcion_a_limite * 100:.2f} % ({g.cita_corta()})."
+                    f"Tramo variable, entre el año {gv.opcion_b_anos} y el {gv.opcion_a_anos}: solo cabe comisión si "
+                    f"el contrato eligió la opción a), como máximo el {fmt_pct(gv.opcion_a_limite * 100)} ({gv.cita_corta()})."
                 )
             else:
                 res.fundamento.append(
-                    f"Tramo variable pasados {g.opcion_a_anos} años desde la firma: la ley no permite comisión "
-                    f"({g.cita_corta()})."
+                    f"Tramo variable pasados {gv.opcion_a_anos} años desde la firma: la ley no permite comisión "
+                    f"({gv.cita_corta()})."
                 )
                 res.es_maximo = False
                 return res
@@ -161,10 +161,10 @@ def _regimen(
         inicio_fijo = p.fecha_firma  # the fixed tranche of a mixed loan starts at signing too
         if _anos_desde(inicio_fijo, fecha) < g7.anos_iniciales:
             limite = g7.limite_inicial
-            texto = f"Tramo fijo, {g7.anos_iniciales} primeros años: como máximo el {limite * 100:.2f} %"
+            texto = f"Tramo fijo, {g7.anos_iniciales} primeros años: como máximo el {fmt_pct(limite * 100)}"
         else:
             limite = g7.limite_posterior
-            texto = f"Tramo fijo, después de {g7.anos_iniciales} años: como máximo el {limite * 100:.2f} %"
+            texto = f"Tramo fijo, después de {g7.anos_iniciales} años: como máximo el {fmt_pct(limite * 100)}"
         res.fundamento.append(f"{texto} del capital amortizado ({g7.cita_corta()}).")
         return _con_pactada(limite, pactada, res)
 
@@ -177,7 +177,7 @@ def _regimen(
             limite = l41.desistimiento_limite_posterior
         res.fundamento.append(
             f"Préstamo firmado antes de la Ley 5/2019: compensación por desistimiento de como máximo el "
-            f"{limite * 100:.2f} % ({l41.cita_corta()}, art. 8)."
+            f"{fmt_pct(limite * 100)} (art. 8 Ley 41/2007, {l41.fuente.boe_id})."
         )
         if not p.vivienda_habitual:
             res.fundamento.append(
@@ -188,7 +188,7 @@ def _regimen(
         if periodo is not None and periodo <= l41.riesgo_tipo_revision_max_meses:
             res.fundamento.append(
                 f"Sin compensación por riesgo de tipo de interés: el periodo de revisión es de {periodo} meses "
-                f"({l41.cita_corta()}, art. 9.1)."
+                f"(art. 9.1 Ley 41/2007, {l41.fuente.boe_id})."
             )
         elif p.compensacion_riesgo_tipo is not None:
             res.porcentaje += p.compensacion_riesgo_tipo / 100
@@ -209,7 +209,7 @@ def _regimen(
     if tramo == "variable":
         limite = l2.limite_subrogacion_variable if operacion == "subrogacion" else l2.limite_no_subrogatoria_variable
         res.fundamento.append(
-            f"Préstamo variable anterior a la Ley 41/2007: como máximo el {limite * 100:.2f} % "
+            f"Préstamo variable anterior a la Ley 41/2007: como máximo el {fmt_pct(limite * 100)} "
             f"({l2.cita_corta()})."
         )
         return _con_pactada(limite, pactada, res)

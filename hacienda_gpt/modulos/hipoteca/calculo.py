@@ -197,22 +197,22 @@ def tipo_revisado(p: Prestamo, valor_indice: Decimal) -> tuple[Decimal, str]:
     assert p.diferencial is not None
     bonif = p.reduccion_bonificaciones()
     tipo = valor_indice + p.diferencial - bonif
-    pasos = [f"{valor_indice} (índice) + {p.diferencial} (diferencial)"]
+    pasos = [f"{fmt_pct(valor_indice)} (índice) + {fmt_pct(p.diferencial)} (diferencial)"]
     if bonif:
-        pasos.append(f"− {bonif} (bonificaciones)")
+        pasos.append(f"− {fmt_pct(bonif)} (bonificaciones)")
     if p.redondeo_tipo_multiplo:
         tipo = (tipo / p.redondeo_tipo_multiplo).quantize(Decimal(1), rounding=ROUND_HALF_UP) * p.redondeo_tipo_multiplo
-        pasos.append(f"redondeado al múltiplo de {p.redondeo_tipo_multiplo}")
+        pasos.append(f"redondeado al múltiplo de {fmt_pct(p.redondeo_tipo_multiplo)}")
     if p.tipo_minimo is not None and tipo < p.tipo_minimo:
         tipo = p.tipo_minimo
-        pasos.append(f"suelo del contrato {p.tipo_minimo}")
+        pasos.append(f"con el suelo del contrato ({fmt_pct(p.tipo_minimo)})")
     if p.tipo_maximo is not None and tipo > p.tipo_maximo:
         tipo = p.tipo_maximo
-        pasos.append(f"techo del contrato {p.tipo_maximo}")
+        pasos.append(f"con el techo del contrato ({fmt_pct(p.tipo_maximo)})")
     if tipo < 0:
         tipo = ZERO
-        pasos.append("el interés no puede ser negativo")
-    return tipo, " ".join(pasos) + f" = {tipo} %"
+        pasos.append("sin bajar de cero (el interés no puede ser negativo)")
+    return tipo, " ".join(pasos) + f" = {fmt_pct(tipo)}"
 
 
 def cambios_de_tipo(p: Prestamo, serie: SerieIndices, supuestos: Supuestos) -> tuple[list[CambioTipo], list[str]]:

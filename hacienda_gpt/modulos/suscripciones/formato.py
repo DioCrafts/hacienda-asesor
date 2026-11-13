@@ -11,7 +11,7 @@ def euros(valor: Decimal) -> str:
     redondeado = valor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     signo = "-" if redondeado < 0 else ""
     entero, decimales = f"{abs(redondeado):.2f}".split(".")
-    grupos = []
+    grupos: list[str] = []
     while len(entero) > 3:
         grupos.insert(0, entero[-3:])
         entero = entero[:-3]

@@ -48,6 +48,10 @@ def describir(modulo_nombre: str, descripcion_herramienta: str, argumentos: Mapp
     return f"{modulo_nombre} — {que}. Datos: {datos}."
 
 
+# ``list`` is also a method of the store below, so the builtin needs another name inside the class.
+_Filas = list[dict[str, Any]]
+
+
 class AccionStore:
     """SQLite store of pending actions. The table is created on first use."""
 
@@ -161,7 +165,7 @@ class AccionStore:
                 borradas += 1
         return borradas
 
-    def exportar(self, case_id: str) -> list[dict[str, Any]]:
+    def exportar(self, case_id: str) -> _Filas:
         return [json.loads(a.model_dump_json()) for a in self.list(case_id)]
 
 

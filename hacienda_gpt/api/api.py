@@ -103,7 +103,6 @@ from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
 from hacienda_gpt.decision.turn_service import process_turn
 from hacienda_gpt.llm.grounding import AnswerEnvelope
 from hacienda_gpt.modulos.acciones import AccionPendiente, AccionStore
-from hacienda_gpt.modulos.contrato import Modulo
 from hacienda_gpt.modulos.perfil import TIPO_DE_HECHO, HechoInvalidoError, hecho_de_modulo, normalizar_valor
 from hacienda_gpt.modulos.preferencias import modulos_activos_para_caso
 from hacienda_gpt.ops.consumo import PresupuestoAgotadoError, contexto_consumo, medir
@@ -1160,6 +1159,7 @@ app.include_router(
         get_case_store=get_case_store,
         get_notification_store=get_notification_store,
         get_accion_store=get_accion_store,
+        get_document_provider=get_document_provider,
     )
 )
 app.include_router(autonomos_router.router)

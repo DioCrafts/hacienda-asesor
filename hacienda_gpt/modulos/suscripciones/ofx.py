@@ -14,7 +14,7 @@ import html
 import re
 
 from hacienda_gpt.modulos.suscripciones.lectura import enmascarar_cuenta, leer_importe
-from hacienda_gpt.modulos.suscripciones.modelos import ErrorImportacion, Extracto, Medio, Movimiento
+from hacienda_gpt.modulos.suscripciones.modelos import Extracto, ImportacionError, Medio, Movimiento
 
 _MEDIO_POR_TIPO: dict[str, Medio] = {
     "DIRECTDEBIT": "adeudo",
@@ -60,16 +60,16 @@ def _etiqueta(bloque: str, nombre: str) -> str | None:
 def _fecha_ofx(texto: str) -> date:
     m = re.match(r"(\d{4})(\d{2})(\d{2})", texto)
     if not m:
-        raise ErrorImportacion(f"OFX: fecha ilegible «{texto}».")
+        raise ImportacionError(f"OFX: fecha ilegible «{texto}».")
     try:
         return date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
     except ValueError as exc:
-        raise ErrorImportacion(f"OFX: fecha ilegible «{texto}».") from exc
+        raise ImportacionError(f"OFX: fecha ilegible «{texto}».") from exc
 
 
 def leer_ofx(texto: str, formato: str = "ofx") -> Extracto:
     if not es_ofx(texto):
-        raise ErrorImportacion("El fichero no parece OFX/QFX (no tiene cabecera OFXHEADER ni elemento <OFX>).")
+        raise ImportacionError("El fichero no parece OFX/QFX (no tiene cabecera OFXHEADER ni elemento <OFX>).")
     divisa = (_etiqueta(texto, "CURDEF") or "EUR").upper()
     cuenta = _etiqueta(texto, "ACCTID")
     crudos = []
@@ -78,13 +78,15 @@ def leer_ofx(texto: str, formato: str = "ofx") -> Extracto:
         fecha = _etiqueta(bloque, "DTPOSTED") or _etiqueta(bloque, "DTUSER")
         importe = _etiqueta(bloque, "TRNAMT")
         if not fecha or not importe:
-            raise ErrorImportacion("OFX: hay un movimiento sin fecha (DTPOSTED) o sin importe (TRNAMT).")
+            raise ImportacionError("OFX: hay un movimiento sin fecha (DTPOSTED) o sin importe (TRNAMT).")
         decimal = "," if re.search(r",\d{1,2}$", importe) else "."
         nombre = _etiqueta(bloque, "NAME") or _etiqueta(bloque, "PAYEE")
         memo = _etiqueta(bloque, "MEMO")
-        crudos.append((tipo, _fecha_ofx(fecha), leer_importe(importe, decimal), nombre, memo, _etiqueta(bloque, "FITID")))
+        crudos.append(
+            (tipo, _fecha_ofx(fecha), leer_importe(importe, decimal), nombre, memo, _etiqueta(bloque, "FITID"))
+        )
     if not crudos:
-        raise ErrorImportacion("OFX: el fichero no contiene movimientos (<STMTTRN>).")
+        raise ImportacionError("OFX: el fichero no contiene movimientos (<STMTTRN>).")
     avisos: list[str] = []
     # A bank that writes every amount unsigned: fall back on the transaction type, and say so.
     sin_signo = all(importe >= 0 for _, _, importe, *_ in crudos) and any(t in _TIPOS_CARGO for t, *_ in crudos)

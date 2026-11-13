@@ -8,6 +8,15 @@
 * ``GET /acciones?case_id=…`` — the actions the specialists prepared for a case.
 * ``POST /acciones/{id}/confirmar`` / ``/rechazar`` — only the owner of the case decides; an action runs at
   most once, and only while its module is still on.
+* ``POST /modulos/{clave}/herramientas/{nombre}`` — the user runs one of an active module's tools from the UI
+  (e.g. saving a purchase); a tool that acts outside the app still only becomes a pending action.
+* ``POST /modulos/{clave}/documento`` — a module that reads documents (optional ``leer_documento`` hook, see
+  below) PROPOSES data from an upload; nothing is stored. Same consent as the tax document reader.
+
+Optional hooks a module object may expose beyond the contract (proposed for the next contract version):
+``leer_documento(provider, *, filename, data)`` returning ``{"campos": [{"campo", "valor", "evidencia"…}],
+"avisos": […], "descartados": […]}`` (a pydantic model is accepted), and ``herramienta_de_documento``, the
+tool the confirmed fields are passed to as ``{campo: valor}``.
 
 Built by :func:`build_router` with the stores passed in (see ``api.py``), like the auth router.
 The module deliberately has no ``from __future__ import annotations`` (FastAPI resolves the local aliases).
@@ -21,17 +30,19 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
+from hacienda_gpt.agent.providers.base import LLMProvider, ProviderError
 from hacienda_gpt.api.security import require_api_key
-from hacienda_gpt.auth.deps import CaseAccess, get_case_access, require_session
+from hacienda_gpt.auth.deps import CONSENT_DOCUMENTS_DETAIL, CaseAccess, get_case_access, require_session
 from hacienda_gpt.decision.state_store_sqlite import SQLiteCaseStateStore
-from hacienda_gpt.modulos.acciones import AccionPendiente, AccionStore
-from hacienda_gpt.modulos.contrato import ContextoModulo, ResultadoHerramienta
+from hacienda_gpt.modulos.acciones import AccionPendiente, AccionStore, describir
+from hacienda_gpt.modulos.contrato import ContextoModulo, Modulo, ResultadoHerramienta
 from hacienda_gpt.modulos.perfil import HechoInvalidoError, perfil_de, registrar_hechos_de_modulo
 from hacienda_gpt.modulos.preferencias import EstadoModulo, estado_para_usuario, modulos_activos_para_caso
 from hacienda_gpt.modulos.registro import FISCAL, registro
 from hacienda_gpt.proactive.bandeja import kind_de
 from hacienda_gpt.proactive.jobs import hoy_en_espana
 from hacienda_gpt.proactive.store import NotificationStore
+from hacienda_gpt.tax.documentos import DocumentoNoLegibleError, decode_upload
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +88,9 @@ class ModuloInfo(BaseModel):
     hechos: list[HechoInfo] = Field(default_factory=list)
     herramientas: list[HerramientaInfo] = Field(default_factory=list)
     fuentes: list[FuenteInfo] = Field(default_factory=list)
+    # The module reads uploaded documents (optional ``leer_documento`` hook) and where the fields go.
+    lee_documentos: bool = False
+    herramienta_de_documento: str | None = None
 
 
 class ModulosResponse(BaseModel):
@@ -93,6 +107,48 @@ class ModuloUpdate(BaseModel):
     activo: bool
     # Only when switching off: also erase the module's facts from every case of the user.
     borrar_datos: bool = False
+
+
+class EjecucionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str = Field(min_length=1)
+    argumentos: dict[str, Any] = Field(default_factory=dict)
+
+
+class ResultadoInfo(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contenido: str
+    resumen: str
+    es_error: bool
+    citas: list[str] = Field(default_factory=list)
+
+
+class EjecucionResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # None when the tool acts outside the app: it became a pending action instead.
+    resultado: ResultadoInfo | None = None
+    accion: AccionPendiente | None = None
+    # True when the tool wrote facts to the case.
+    case_updated: bool = False
+
+
+class DocumentoModuloRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str = Field(min_length=1)
+    filename: str = Field(min_length=1, max_length=200)
+    content_base64: str = Field(min_length=1)
+
+
+class DocumentoModuloResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    modulo: str
+    herramienta_destino: str | None
+    propuesta: dict[str, Any]
 
 
 class AccionesResponse(BaseModel):
@@ -123,7 +179,16 @@ def _info(estado: EstadoModulo) -> ModuloInfo:
         fuentes=[
             FuenteInfo(identificador=f.identificador, descripcion=f.descripcion, url=f.url) for f in modulo.fuentes
         ],
+        lee_documentos=callable(getattr(modulo, "leer_documento", None)),
+        herramienta_de_documento=_herramienta_de_documento(modulo),
     )
+
+
+def _herramienta_de_documento(modulo: Modulo) -> str | None:
+    nombre = getattr(modulo, "herramienta_de_documento", None)
+    if not isinstance(nombre, str) or nombre not in {h.spec.name for h in modulo.herramientas}:
+        return None
+    return nombre
 
 
 def build_router(
@@ -131,6 +196,7 @@ def build_router(
     get_case_store: Callable[[], SQLiteCaseStateStore],
     get_notification_store: Callable[[], NotificationStore],
     get_accion_store: Callable[..., AccionStore],
+    get_document_provider: Callable[..., LLMProvider] | None = None,
 ) -> APIRouter:
     router = APIRouter()
     case_store_dep = Annotated[SQLiteCaseStateStore, Depends(get_case_store)]
@@ -298,6 +364,139 @@ def build_router(
             },
         )
         return rechazada
+
+    def _modulo_activo(clave: str, case_id: str, access: CaseAccess, cases: SQLiteCaseStateStore) -> Modulo:
+        access.check(case_id)
+        if cases.get_case(case_id) is None:
+            raise HTTPException(status_code=404, detail="case not found")
+        modulo = {m.clave: m for m in modulos_activos_para_caso(case_id, access.store)}.get(clave)
+        if modulo is None:
+            raise HTTPException(status_code=409, detail="Ese módulo no está activado para este expediente.")
+        return modulo
+
+    @router.post(
+        "/modulos/{clave}/herramientas/{nombre}",
+        response_model=EjecucionResponse,
+        dependencies=[Depends(require_api_key)],
+    )
+    def post_herramienta(
+        clave: str,
+        nombre: str,
+        payload: EjecucionRequest,
+        cases: case_store_dep,
+        acciones: accion_store_dep,
+        access: access_dep,
+    ) -> EjecucionResponse:
+        """The user runs a module tool from the UI. Its facts are written (validated); acting tools only queue."""
+        modulo = _modulo_activo(clave, payload.case_id, access, cases)
+        herramienta = next((h for h in modulo.herramientas if h.spec.name == nombre), None)
+        if herramienta is None or clave == FISCAL:
+            raise HTTPException(status_code=404, detail="Ese módulo no tiene esa herramienta.")
+        if herramienta.efecto == "actua":
+            accion = acciones.add(
+                AccionPendiente(
+                    case_id=payload.case_id,
+                    modulo=clave,
+                    herramienta=nombre,
+                    argumentos=payload.argumentos,
+                    resumen=describir(modulo.nombre, herramienta.spec.description, payload.argumentos),
+                )
+            )
+            return EjecucionResponse(accion=accion)
+        case = cases.get_case(payload.case_id)
+        assert case is not None
+        escrito: dict[str, Any] = {"case": case, "cambiado": False}
+
+        def registrar(valores: Any) -> None:
+            escrito["case"] = registrar_hechos_de_modulo(escrito["case"], modulo, valores, fuente="user_edit")
+            escrito["cambiado"] = True
+
+        contexto = ContextoModulo(
+            perfil=perfil_de(case), hoy=hoy_en_espana(), case_id=case.case_id, registrar=registrar
+        )
+        try:
+            resultado = herramienta.ejecutar(dict(payload.argumentos), contexto)
+            if not isinstance(resultado, ResultadoHerramienta):
+                raise TypeError("la herramienta no devolvió un ResultadoHerramienta")
+        except HechoInvalidoError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except Exception as exc:
+            logger.exception("module tool %s failed", nombre)
+            raise HTTPException(status_code=500, detail=f"La herramienta falló: {type(exc).__name__}.") from exc
+        guardado = bool(escrito["cambiado"]) and not resultado.es_error
+        if guardado:
+            cases.save_case(escrito["case"])
+        cases.append_audit_event(
+            payload.case_id,
+            {
+                "event_type": "module_tool_run_by_user",
+                "modulo": clave,
+                "herramienta": nombre,
+                "argumentos": payload.argumentos,
+                "es_error": resultado.es_error,
+            },
+        )
+        return EjecucionResponse(
+            resultado=ResultadoInfo(
+                contenido=resultado.contenido,
+                resumen=resultado.resumen,
+                es_error=resultado.es_error,
+                citas=list(resultado.citas),
+            ),
+            case_updated=guardado,
+        )
+
+    def _sin_lector() -> LLMProvider:
+        raise HTTPException(status_code=503, detail="El lector de documentos no está disponible.")
+
+    @router.post(
+        "/modulos/{clave}/documento", response_model=DocumentoModuloResponse, dependencies=[Depends(require_api_key)]
+    )
+    def post_documento(
+        clave: str,
+        payload: DocumentoModuloRequest,
+        cases: case_store_dep,
+        access: access_dep,
+        provider: Annotated[LLMProvider, Depends(get_document_provider or _sin_lector)],
+    ) -> DocumentoModuloResponse:
+        """A module reads an uploaded document and PROPOSES data; nothing is stored, the file is not kept."""
+        modulo = _modulo_activo(clave, payload.case_id, access, cases)
+        if access.user is not None and access.store is not None:
+            if not access.store.has_consent(access.user.id, "envio_documentos_a_proveedor_llm"):
+                raise HTTPException(status_code=403, detail=CONSENT_DOCUMENTS_DETAIL)
+        lector = getattr(modulo, "leer_documento", None)
+        if not callable(lector):
+            raise HTTPException(status_code=404, detail="Este módulo no lee documentos.")
+        from hacienda_gpt.ops.consumo import PresupuestoAgotadoError, contexto_consumo
+
+        try:
+            data = decode_upload(payload.content_base64)
+            with contexto_consumo(user_id=access.user.id if access.user else None, case_id=payload.case_id):
+                propuesta = lector(provider, filename=payload.filename, data=data)
+        except DocumentoNoLegibleError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except PresupuestoAgotadoError as exc:
+            raise HTTPException(status_code=429, detail=str(exc)) from exc
+        except ProviderError as exc:
+            raise HTTPException(status_code=503, detail=f"No se pudo leer el documento: {exc}") from exc
+        if isinstance(propuesta, BaseModel):
+            datos: dict[str, Any] = propuesta.model_dump(mode="json")
+        elif isinstance(propuesta, dict):
+            datos = propuesta
+        else:
+            raise HTTPException(status_code=500, detail="El módulo devolvió una propuesta no válida.")
+        cases.append_audit_event(
+            payload.case_id,
+            {
+                "event_type": "module_document_read",
+                "modulo": clave,
+                "filename": payload.filename,
+                "proposed_fields": [c.get("campo") for c in datos.get("campos", []) if isinstance(c, dict)],
+            },
+        )
+        return DocumentoModuloResponse(
+            modulo=clave, herramienta_destino=_herramienta_de_documento(modulo), propuesta=datos
+        )
 
     return router
 

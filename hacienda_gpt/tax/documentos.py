@@ -286,11 +286,16 @@ def tipo_de_imagen(data: bytes) -> str | None:
     return None
 
 
-def _normalize(text: str) -> str:
-    """Case-, accent- and whitespace-insensitive form for passage matching."""
+def normalizar_pasaje(text: str) -> str:
+    """Case-, accent- and whitespace-insensitive form for passage matching (public: modules reading
+    documents check their literal evidence the same way)."""
     decomposed = unicodedata.normalize("NFKD", text)
     stripped = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
     return re.sub(r"\s+", "", stripped).lower()
+
+
+# Kept for existing callers.
+_normalize = normalizar_pasaje
 
 
 def _hechos_validos(raw: dict[str, Any], haystack: str) -> tuple[dict[str, HechoPropuesto], list[str]]:

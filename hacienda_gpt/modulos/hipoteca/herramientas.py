@@ -31,8 +31,8 @@ from hacienda_gpt.modulos.hipoteca.calculo import (
     sumar_meses,
     tipo_revisado,
 )
-from hacienda_gpt.modulos.hipoteca.comisiones import Comision, comision_maxima, tramo_en
-from hacienda_gpt.modulos.hipoteca.indices import INDICES, BOE_DOC_URL, Dato, SerieIndices, cargar_serie
+from hacienda_gpt.modulos.hipoteca.comisiones import Comision, Operacion, comision_maxima, tramo_en
+from hacienda_gpt.modulos.hipoteca.indices import BOE_DOC_URL, INDICES, Dato, SerieIndices, cargar_serie
 from hacienda_gpt.modulos.hipoteca.modelo import AmortizacionRealizada, Prestamo
 from hacienda_gpt.modulos.hipoteca.normativa import Normativa, cargar_normativa
 
@@ -125,12 +125,6 @@ def _describe(p: Prestamo) -> str:
     )
 
 
-def _dato_texto(d: Dato | None) -> str:
-    if d is None:
-        return "sin dato publicado"
-    return d.cita
-
-
 def _ejecutar(
     funcion: Callable[[Mapping[str, Any], ContextoModulo], ResultadoHerramienta],
 ) -> Callable[[Mapping[str, Any], ContextoModulo], ResultadoHerramienta]:
@@ -148,6 +142,17 @@ def _ejecutar(
 
     envoltura.__name__ = funcion.__name__
     return envoltura
+
+
+def _describe_oferta(p: Prestamo) -> str:
+    plazo = f"{fmt(p.capital_inicial)} € a {p.plazo_meses} meses"
+    if p.tipo == "fijo":
+        return f"{plazo} a tipo fijo del {fmt_pct(p.tipo_inicial)}."
+    variable = f"{INDICES.get(p.indice or '', p.indice)} + {fmt_pct(p.diferencial or ZERO)}"
+    return (
+        f"{plazo}, {fmt_pct(p.tipo_inicial)} los {p.meses_tipo_inicial} primeros meses y después {variable} "
+        f"revisable cada {p.revision_meses} meses."
+    )
 
 
 # --- hipoteca_cuadro ------------------------------------------------------------------------------
@@ -181,7 +186,11 @@ def hipoteca_cuadro(args: Mapping[str, Any], contexto: ContextoModulo) -> Result
     lineas.append(
         f"- Cuotas vencidas: {pagadas} de {len(cuadro.filas)}. Capital pendiente: "
         f"{fmt(cuadro.capital_pendiente(fecha))} €"
-        + (f" (tras la cuota del {pagada.fecha:%d/%m/%Y}; sin los intereses devengados desde entonces)." if pagada else ".")
+        + (
+            f" (tras la cuota del {pagada.fecha:%d/%m/%Y}; sin los intereses devengados desde entonces)."
+            if pagada
+            else "."
+        )
     )
     origen = {
         "contrato": "tipo inicial del contrato",
@@ -307,10 +316,13 @@ def hipoteca_revision(args: Mapping[str, Any], contexto: ContextoModulo) -> Resu
     futuras = [r for r in fechas_revision(p) if r > e.hoy]
     if fecha is None:
         if not futuras:
-            return ResultadoHerramienta(contenido="No quedan revisiones de tipo en tu préstamo.", resumen="Sin revisiones")
+            return ResultadoHerramienta(
+                contenido="No quedan revisiones de tipo en tu préstamo.", resumen="Sin revisiones"
+            )
         fecha = futuras[0]
     desplazamientos = [
-        _decimal(x, "desplazamientos_pp") or ZERO for x in (args.get("desplazamientos_pp") or ["-1", "-0.5", "0.5", "1"])
+        _decimal(x, "desplazamientos_pp") or ZERO
+        for x in (args.get("desplazamientos_pp") or ["-1", "-0.5", "0.5", "1"])
     ]
     est = estimar_revision(e, fecha, desplazamientos=desplazamientos)
     dato: Dato = est["dato"]
@@ -336,12 +348,17 @@ def hipoteca_revision(args: Mapping[str, Any], contexto: ContextoModulo) -> Resu
                 f"- índice {fmt_pct(valor)} ({'+' if d >= 0 else ''}{fmt(d)} puntos): tipo {fmt_pct(tipo)}, cuota "
                 f"{fmt(cuota)} € ({'+' if cuota >= est['cuota_antes'] else ''}{fmt(cuota - est['cuota_antes'])} €)."
             )
-    ultimos = sorted(e.serie.datos.get(p.indice or "", {}).values(), key=lambda d: d.mes)[-6:]
+    publicados = [d for d in e.serie.datos.get(p.indice or "", {}).values() if d.publicado <= e.hoy]
+    ultimos = sorted(publicados, key=lambda d: d.mes)[-6:]
     if ultimos:
         lineas += ["", "Últimos valores publicados del índice:"] + [f"- {d.cita}" for d in ultimos]
     if p.revisiones_conocidas:
         lineas.append("Las revisiones que ya te comunicó el banco se usan tal cual (revisiones_conocidas).")
-    lineas += ["", f"Fuente de los índices: resoluciones del Banco de España en el BOE ({e.normativa.indices_oficiales.cita_corta()}).", REDONDEO]
+    lineas += [
+        "",
+        f"Fuente de los índices: resoluciones del Banco de España en el BOE ({e.normativa.indices_oficiales.cita_corta()}).",
+        REDONDEO,
+    ]
     citas = {e.url(dato.boe_id), e.normativa.url(e.normativa.indices_oficiales.fuente.boe_id)}
     return ResultadoHerramienta(
         contenido="\n".join(lineas),
@@ -415,11 +432,17 @@ def hipoteca_amortizar(args: Mapping[str, Any], contexto: ContextoModulo) -> Res
         f"- Última cuota: {plazo.fecha_fin:%d/%m/%Y} en vez de {base.fecha_fin:%d/%m/%Y} "
         f"({len(base.filas) - len(plazo.filas)} cuotas menos)."
     )
-    lineas.append(f"- Intereses que te ahorras: {fmt(ahorro_plazo)} €; neto de comisión: {fmt(ahorro_plazo - comision.importe)} €.")
+    lineas.append(
+        f"- Intereses que te ahorras: {fmt(ahorro_plazo)} €; neto de comisión: {fmt(ahorro_plazo - comision.importe)} €."
+    )
     lineas += ["", "B) Reducir cuota (mismo plazo):"]
     if sig_base and sig_cuota:
-        lineas.append(f"- Cuota: de {fmt(sig_base.cuota)} € a {fmt(sig_cuota.cuota)} € ({fmt(sig_cuota.cuota - sig_base.cuota)} € al mes).")
-    lineas.append(f"- Intereses que te ahorras: {fmt(ahorro_cuota)} €; neto de comisión: {fmt(ahorro_cuota - comision.importe)} €.")
+        lineas.append(
+            f"- Cuota: de {fmt(sig_base.cuota)} € a {fmt(sig_cuota.cuota)} € ({fmt(sig_cuota.cuota - sig_base.cuota)} € al mes)."
+        )
+    lineas.append(
+        f"- Intereses que te ahorras: {fmt(ahorro_cuota)} €; neto de comisión: {fmt(ahorro_cuota - comision.importe)} €."
+    )
     lineas.append(
         "- Reducir plazo ahorra más intereses; reducir cuota da más margen mensual. Con el mismo dinero, la diferencia "
         f"de intereses entre ambas es de {fmt(ahorro_plazo - ahorro_cuota)} €."
@@ -482,7 +505,16 @@ def hipoteca_amortizar(args: Mapping[str, Any], contexto: ContextoModulo) -> Res
 
 # --- hipoteca_cambiar_banco -----------------------------------------------------------------------
 
-_GASTOS = ("tasacion", "notaria", "registro", "gestoria", "comision_apertura", "comision_novacion", "impuestos", "otros")
+_GASTOS = {
+    "tasacion": "Tasación",
+    "notaria": "Notaría",
+    "registro": "Registro",
+    "gestoria": "Gestoría",
+    "comision_apertura": "Comisión de apertura",
+    "comision_novacion": "Comisión de novación",
+    "impuestos": "Impuestos",
+    "otros": "Otros gastos",
+}
 
 
 def _oferta(args: Mapping[str, Any], e: _Entorno, fecha: date, capital: Decimal, restantes_meses: int) -> Prestamo:
@@ -526,7 +558,8 @@ def hipoteca_cambiar_banco(args: Mapping[str, Any], contexto: ContextoModulo) ->
     if modalidad not in ("subrogacion", "novacion", "cancelacion_y_nueva"):
         raise DatosHipotecaError("modalidad debe ser subrogacion, novacion o cancelacion_y_nueva.")
     base = e.cuadro()
-    fecha = _fecha(args.get("fecha"), "fecha") or (base.proxima(e.hoy).fecha if base.proxima(e.hoy) else e.hoy)
+    siguiente = base.proxima(e.hoy)
+    fecha = _fecha(args.get("fecha"), "fecha") or (siguiente.fecha if siguiente else e.hoy)
     capital = base.capital_pendiente(fecha)
     if capital <= 0:
         raise DatosHipotecaError("No queda capital pendiente en esa fecha.")
@@ -565,11 +598,13 @@ def hipoteca_cambiar_banco(args: Mapping[str, Any], contexto: ContextoModulo) ->
             notas.append(
                 f"Ampliar el plazo en una novación: la comisión de modificación no puede superar el "
                 f"{fmt_pct(n.ley_2_1994.limite_novacion_ampliacion_plazo * 100)} del capital pendiente, {fmt(tope)} € "
-                f"({n.ley_2_1994.cita_corta()}, art. 10)"
+                f"(art. 10 Ley 2/1994, {n.ley_2_1994.fuente.boe_id})"
                 + (f"; la que indicas ({fmt(cobrada)} €) lo supera." if cobrada > tope else ".")
             )
     else:
-        operacion = "cambio_a_fijo" if a_fijo else ("subrogacion" if modalidad == "subrogacion" else "amortizacion")
+        operacion: Operacion = (
+            "cambio_a_fijo" if a_fijo else ("subrogacion" if modalidad == "subrogacion" else "amortizacion")
+        )
         comision = comision_maxima(p, n, fecha, capital, operacion)
     costes_iniciales = comision.importe + sum(gastos.values(), ZERO)
 
@@ -601,18 +636,18 @@ def hipoteca_cambiar_banco(args: Mapping[str, Any], contexto: ContextoModulo) ->
         }[modalidad]
     )
     lineas.append(f"Fecha supuesta: {fecha:%d/%m/%Y}; capital pendiente: {fmt(capital)} €.")
-    lineas.append(f"Oferta: {_describe(nueva).replace('Hipoteca', 'préstamo', 1)}")
+    lineas.append(f"Oferta: {_describe_oferta(nueva)}")
     lineas += ["", "Costes de cambiar:"]
     lineas.append(f"- Comisión al banco actual: {fmt(comision.importe)} €.")
     lineas += _comision_texto(comision)
     for k, v in gastos.items():
-        lineas.append(f"- {k.replace('_', ' ').capitalize()}: {fmt(v)} €.")
+        lineas.append(f"- {_GASTOS[k]}: {fmt(v)} €.")
     lineas.append(f"- Total costes iniciales: {fmt(costes_iniciales)} €.")
     lineas += ["", "Comparación:"]
-    lineas.append(f"- Cuota: actual {fmt(cuota_actual)} €, nueva {fmt(cuota_nueva)} € ({fmt(cuota_nueva - cuota_actual)} €).")
     lineas.append(
-        f"- Productos vinculados al año: actual {fmt(vinc_actual)} €, nueva {fmt(vinc_nueva)} €."
+        f"- Cuota: actual {fmt(cuota_actual)} €, nueva {fmt(cuota_nueva)} € ({fmt(cuota_nueva - cuota_actual)} €)."
     )
+    lineas.append(f"- Productos vinculados al año: actual {fmt(vinc_actual)} €, nueva {fmt(vinc_nueva)} €.")
     lineas.append(
         f"- Lo que pagarías desde hoy hasta el final (cuotas, vinculaciones y costes): actual {fmt(total_actual)} €, "
         f"nueva {fmt(total_nuevo)} €. Diferencia: {fmt(total_actual - total_nuevo)} € "
@@ -639,21 +674,20 @@ def hipoteca_cambiar_banco(args: Mapping[str, Any], contexto: ContextoModulo) ->
         "",
         "Lo que dice la ley:",
         f"- Subrogación: el nuevo banco te da una oferta vinculante y un documento de gastos con la comisión máxima; el "
-        f"banco actual puede igualarla (enervar) formalizando una novación en quince días naturales ({l2.cita_corta()}, art. 2).",
+        f"banco actual puede igualarla (enervar) formalizando una novación en quince días naturales (art. 2 Ley 2/1994, "
+        f"{l2.fuente.boe_id}).",
         f"- Gastos: la tasación corresponde al prestatario; notaría de la escritura de préstamo, registro y gestoría, al "
         f"prestamista ({n.gastos.cita_corta()}; la Ley 2/1994 lo aplica al documento de gastos de la subrogación).",
         f"- La escritura de subrogación y la de novación (tipo o plazo) están exentas de AJD en su modalidad gradual, y "
         f"notaría y registro se calculan con aranceles reducidos (registro con una reducción del "
-        f"{fmt_pct(l2.reduccion_arancel_registral * 100)}) ({l2.cita_corta()}, arts. 7, 8 y 9).",
+        f"{fmt_pct(l2.reduccion_arancel_registral * 100)}) (arts. 7, 8 y 9 Ley 2/1994, {l2.fuente.boe_id}).",
     ]
     if a_fijo:
         lineas.append(
             f"- Pasar de variable a fijo (o a un primer periodo fijo de al menos {n.cambio_a_fijo.periodo_fijo_minimo_anos} "
             f"años) tiene el tope de comisión del art. 23.6 Ley 5/2019, aplicable a cualquier préstamo."
         )
-    lineas.append(
-        "- Los costes los introduces tú desde la oferta (FEIN); no se han calculado aranceles concretos."
-    )
+    lineas.append("- Los costes los introduces tú desde la oferta (FEIN); no se han calculado aranceles concretos.")
     lineas.append(REDONDEO)
     citas = sorted({n.url(b) for b in [*comision.citas, l2.fuente.boe_id, n.gastos.fuente.boe_id]})
     return ResultadoHerramienta(
@@ -682,8 +716,16 @@ HERRAMIENTAS: tuple[HerramientaModulo, ...] = (
                 "additionalProperties": False,
                 "properties": {
                     "fecha": {**_FECHA, "description": "Fecha a la que calcular (por defecto, hoy)."},
-                    "ejercicio": {"type": "integer", "description": "Año del que sumar lo pagado (por defecto, el de la fecha)."},
-                    "cuotas": {"type": "integer", "minimum": 1, "maximum": 120, "description": "Cuántas cuotas futuras listar."},
+                    "ejercicio": {
+                        "type": "integer",
+                        "description": "Año del que sumar lo pagado (por defecto, el de la fecha).",
+                    },
+                    "cuotas": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 120,
+                        "description": "Cuántas cuotas futuras listar.",
+                    },
                 },
             },
         ),
@@ -762,7 +804,11 @@ HERRAMIENTAS: tuple[HerramientaModulo, ...] = (
                             "indice": {"type": "string", "enum": list(INDICES)},
                             "meses_tipo_inicial": {"type": "integer", "minimum": 1},
                             "revision_meses": {"type": "integer", "minimum": 1},
-                            "plazo_meses": {"type": "integer", "minimum": 1, "description": "Por defecto, el que te queda."},
+                            "plazo_meses": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "description": "Por defecto, el que te queda.",
+                            },
                         },
                     },
                     "gastos": {

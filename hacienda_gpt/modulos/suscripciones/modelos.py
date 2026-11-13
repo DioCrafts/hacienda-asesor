@@ -73,7 +73,7 @@ CARGOS_POR_ANO: dict[str, int] = {
 }
 
 
-class ErrorImportacion(ValueError):
+class ImportacionError(ValueError):
     """The statement cannot be read; the message is Spanish and tells the user what to do."""
 
 

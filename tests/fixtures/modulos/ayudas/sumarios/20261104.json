@@ -1,0 +1,202 @@
+{
+ "status": {
+  "code": "200",
+  "text": "ok"
+ },
+ "data": {
+  "sumario": {
+   "metadatos": {
+    "publicacion": "BOE",
+    "fecha_publicacion": "20261104"
+   },
+   "diario": [
+    {
+     "numero": "274",
+     "sumario_diario": {
+      "identificador": "BOE-S-2026-274",
+      "url_pdf": {
+       "szBytes": "454030",
+       "szKBytes": "443",
+       "texto": "https://www.boe.es/boe/dias/2026/11/04/pdfs/BOE-S-2026-274.pdf"
+      }
+     },
+     "seccion": [
+      {
+       "codigo": "1",
+       "nombre": "I. Disposiciones generales",
+       "departamento": [
+        {
+         "codigo": "7723",
+         "nombre": "JEFATURA DEL ESTADO",
+         "epigrafe": [
+          {
+           "nombre": "Medidas urgentes",
+           "item": {
+            "identificador": "BOE-A-2026-23104",
+            "control": "2026/17242",
+            "titulo": "Real Decreto-ley 32/2026, de 3 de noviembre, de ayudas a las víctimas del accidente ferroviario de Urda (Toledo) y por el que se garantiza la accesibilidad equitativa a bienes y servicios en situaciones de emergencia.",
+            "url_pdf": {
+             "szBytes": "323577",
+             "szKBytes": "316",
+             "pagina_inicial": "147689",
+             "pagina_final": "147709",
+             "texto": "https://www.boe.es/boe/dias/2026/11/04/pdfs/BOE-A-2026-23104.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23104",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23104"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9590",
+         "nombre": "MINISTERIO DE EDUCACIÓN, FORMACIÓN PROFESIONAL Y DEPORTES",
+         "epigrafe": [
+          {
+           "nombre": "Organización",
+           "item": {
+            "identificador": "BOE-A-2026-23105",
+            "control": "2026/17074",
+            "titulo": "Orden EFD/1158/2026, de 28 de octubre, por la que se regula la organización y funcionamiento de la inspección educativa en el ámbito de gestión del Ministerio de Educación, Formación Profesional y Deportes.",
+            "url_pdf": {
+             "szBytes": "290744",
+             "szKBytes": "284",
+             "pagina_inicial": "147710",
+             "pagina_final": "147725",
+             "texto": "https://www.boe.es/boe/dias/2026/11/04/pdfs/BOE-A-2026-23105.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23105",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23105"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "codigo": "3",
+       "nombre": "III. Otras disposiciones",
+       "departamento": [
+        {
+         "codigo": "1410",
+         "nombre": "TRIBUNAL CONSTITUCIONAL",
+         "epigrafe": [
+          {
+           "nombre": "Contratación administrativa",
+           "item": {
+            "identificador": "BOE-A-2026-23155",
+            "control": "2026/16810",
+            "titulo": "Resolución de 23 de octubre de 2026, de la Presidencia del Tribunal Constitucional, por la que se determina la composición de la Mesa de Contratación.",
+            "url_pdf": {
+             "szBytes": "191392",
+             "szKBytes": "187",
+             "pagina_inicial": "148046",
+             "pagina_final": "148046",
+             "texto": "https://www.boe.es/boe/dias/2026/11/04/pdfs/BOE-A-2026-23155.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23155",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23155"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "5140",
+         "nombre": "MINISTERIO DE HACIENDA",
+         "epigrafe": [
+          {
+           "nombre": "Números de identificación fiscal",
+           "item": {
+            "identificador": "BOE-A-2026-23156",
+            "control": "2026/17008",
+            "titulo": "Resolución de 27 de octubre de 2026, del Departamento de Gestión Tributaria de la Agencia Estatal de Administración Tributaria, por la que se publica la rehabilitación de números de identificación fiscal.",
+            "url_pdf": {
+             "szBytes": "207060",
+             "szKBytes": "202",
+             "pagina_inicial": "148047",
+             "pagina_final": "148048",
+             "texto": "https://www.boe.es/boe/dias/2026/11/04/pdfs/BOE-A-2026-23156.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23156",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23156"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "7320",
+         "nombre": "MINISTERIO DEL INTERIOR",
+         "epigrafe": [
+          {
+           "nombre": "Servicios mínimos",
+           "item": {
+            "identificador": "BOE-A-2026-23157",
+            "control": "2026/17239",
+            "titulo": "Resolución de 30 de octubre de 2026, de la Secretaría de Estado de Seguridad, por la que se determina el porcentaje del personal de seguridad privada adscrito a los servicios esenciales, durante el desarrollo de la huelga general de ámbito supraautonómica convocada para el día 11 de noviembre de 2026.",
+            "url_pdf": {
+             "szBytes": "228479",
+             "szKBytes": "223",
+             "pagina_inicial": "148049",
+             "pagina_final": "148055",
+             "texto": "https://www.boe.es/boe/dias/2026/11/04/pdfs/BOE-A-2026-23157.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23157",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23157"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9586",
+         "nombre": "MINISTERIO DE TRANSPORTES Y MOVILIDAD SOSTENIBLE",
+         "epigrafe": [
+          {
+           "nombre": "Puertos",
+           "item": {
+            "identificador": "BOE-A-2026-23158",
+            "control": "2026/16942",
+            "titulo": "Resolución de 25 de septiembre de 2026, de la Autoridad Portuaria de Vigo, por la que se publica la Ordenanza portuaria por la que se establece la regulación de los usos y actividades desarrolladas en las instalaciones pesqueras.",
+            "url_pdf": {
+             "szBytes": "1903928",
+             "szKBytes": "1859",
+             "pagina_inicial": "148056",
+             "pagina_final": "148110",
+             "texto": "https://www.boe.es/boe/dias/2026/11/04/pdfs/BOE-A-2026-23158.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23158",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23158"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9588",
+         "nombre": "MINISTERIO DE DERECHOS SOCIALES, CONSUMO Y AGENDA 2030",
+         "epigrafe": [
+          {
+           "nombre": "Programas de termalismo social",
+           "item": {
+            "identificador": "BOE-A-2026-23163",
+            "control": "2026/17213",
+            "titulo": "Resolución de 30 de octubre de 2026, del Instituto de Mayores y Servicios Sociales, por la que se convocan plazas para participar en el Programa de Termalismo.",
+            "url_pdf": {
+             "szBytes": "1038441",
+             "szKBytes": "1014",
+             "pagina_inicial": "148122",
+             "pagina_final": "148142",
+             "texto": "https://www.boe.es/boe/dias/2026/11/04/pdfs/BOE-A-2026-23163.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23163",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23163"
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

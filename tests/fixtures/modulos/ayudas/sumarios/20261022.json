@@ -1,0 +1,213 @@
+{
+ "status": {
+  "code": "200",
+  "text": "ok"
+ },
+ "data": {
+  "sumario": {
+   "metadatos": {
+    "publicacion": "BOE",
+    "fecha_publicacion": "20261022"
+   },
+   "diario": [
+    {
+     "numero": "262",
+     "sumario_diario": {
+      "identificador": "BOE-S-2026-262",
+      "url_pdf": {
+       "szBytes": "456207",
+       "szKBytes": "446",
+       "texto": "https://www.boe.es/boe/dias/2026/10/22/pdfs/BOE-S-2026-262.pdf"
+      }
+     },
+     "seccion": [
+      {
+       "codigo": "1",
+       "nombre": "I. Disposiciones generales",
+       "departamento": [
+        {
+         "codigo": "9562",
+         "nombre": "MINISTERIO DE ASUNTOS EXTERIORES, UNIÓN EUROPEA Y COOPERACIÓN",
+         "epigrafe": [
+          {
+           "nombre": "Acuerdos internacionales administrativos",
+           "item": {
+            "identificador": "BOE-A-2026-21944",
+            "control": "2026/16261",
+            "titulo": "Acuerdo internacional administrativo entre la Organización Internacional del Trabajo, a través del Equipo de apoyo técnico sobre trabajo decente y Oficina de país de la Oficina Internacional del Trabajo (OIT) para los Países Andinos (DWT/CO-Lima), y el Principado de Asturias (Reino de España), hecho en Lima y Oviedo el 16 y 23 de septiembre de 2026.",
+            "url_pdf": {
+             "szBytes": "720061",
+             "szKBytes": "703",
+             "pagina_inicial": "140731",
+             "pagina_final": "140746",
+             "texto": "https://www.boe.es/boe/dias/2026/10/22/pdfs/BOE-A-2026-21944.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-21944",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-21944"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9586",
+         "nombre": "MINISTERIO DE TRANSPORTES Y MOVILIDAD SOSTENIBLE",
+         "epigrafe": [
+          {
+           "nombre": "Subvenciones",
+           "item": {
+            "identificador": "BOE-A-2026-21947",
+            "control": "2026/16469",
+            "titulo": "Real Decreto 848/2026, de 21 de octubre, por el que se regula la concesión directa de subvenciones para la promoción del acceso a las profesiones marítimas y del patrimonio cultural marítimo.",
+            "url_pdf": {
+             "szBytes": "264758",
+             "szKBytes": "259",
+             "pagina_inicial": "140767",
+             "pagina_final": "140778",
+             "texto": "https://www.boe.es/boe/dias/2026/10/22/pdfs/BOE-A-2026-21947.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-21947",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-21947"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "3120",
+         "nombre": "MINISTERIO DE AGRICULTURA, PESCA Y ALIMENTACIÓN",
+         "epigrafe": [
+          {
+           "nombre": "Ayudas",
+           "item": {
+            "identificador": "BOE-A-2026-21948",
+            "control": "2026/16470",
+            "titulo": "Real Decreto 849/2026, de 21 de octubre, por el que se regula la concesión directa de ayudas para apoyar a titulares de pólizas contratadas en el marco del sistema de seguros agrarios combinados por los daños producidos sobre la actividad agraria por los incendios acaecidos en 2026.",
+            "url_pdf": {
+             "szBytes": "276437",
+             "szKBytes": "270",
+             "pagina_inicial": "140779",
+             "pagina_final": "140790",
+             "texto": "https://www.boe.es/boe/dias/2026/10/22/pdfs/BOE-A-2026-21948.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-21948",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-21948"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9575",
+         "nombre": "MINISTERIO PARA LA TRANSICIÓN ECOLÓGICA Y EL RETO DEMOGRÁFICO",
+         "epigrafe": [
+          {
+           "nombre": "Sector petrolero",
+           "item": {
+            "identificador": "BOE-A-2026-21949",
+            "control": "2026/16374",
+            "titulo": "Orden TED/1100/2026, de 20 de octubre, por la que se acuerda una segunda liberación de existencias mínimas de seguridad de productos petrolíferos de los sujetos obligados, en el marco de la acción coordinada de la Agencia Internacional de la Energía de 11 de marzo de 2026.",
+            "url_pdf": {
+             "szBytes": "206054",
+             "szKBytes": "201",
+             "pagina_inicial": "140791",
+             "pagina_final": "140793",
+             "texto": "https://www.boe.es/boe/dias/2026/10/22/pdfs/BOE-A-2026-21949.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-21949",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-21949"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9587",
+         "nombre": "MINISTERIO DE VIVIENDA Y AGENDA URBANA",
+         "epigrafe": [
+          {
+           "nombre": "Subvenciones",
+           "item": {
+            "identificador": "BOE-A-2026-21950",
+            "control": "2026/16471",
+            "titulo": "Real Decreto 850/2026, de 21 de octubre, por el que se regula la concesión directa de subvenciones en materia de alojamientos universitarios durante el ejercicio presupuestario 2026.",
+            "url_pdf": {
+             "szBytes": "268291",
+             "szKBytes": "262",
+             "pagina_inicial": "140794",
+             "pagina_final": "140806",
+             "texto": "https://www.boe.es/boe/dias/2026/10/22/pdfs/BOE-A-2026-21950.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-21950",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-21950"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9589",
+         "nombre": "MINISTERIO DE ECONOMÍA, COMERCIO Y EMPRESA",
+         "epigrafe": [
+          {
+           "nombre": "Organización",
+           "item": {
+            "identificador": "BOE-A-2026-21952",
+            "control": "2026/16375",
+            "titulo": "Orden ECM/1101/2026, de 16 de octubre, por la que se crea y regula el Consejo Nacional para la Prevención del Blanqueo de Capitales, la Financiación del Terrorismo y la Financiación de la Proliferación de Armas de Destrucción Masiva.",
+            "url_pdf": {
+             "szBytes": "228120",
+             "szKBytes": "223",
+             "pagina_inicial": "140823",
+             "pagina_final": "140828",
+             "texto": "https://www.boe.es/boe/dias/2026/10/22/pdfs/BOE-A-2026-21952.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-21952",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-21952"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "codigo": "5B",
+       "nombre": "V. Anuncios. - B. Otros anuncios oficiales",
+       "departamento": [
+        {
+         "codigo": "9586",
+         "nombre": "MINISTERIO DE TRANSPORTES Y MOVILIDAD SOSTENIBLE",
+         "item": {
+          "identificador": "BOE-B-2026-34368",
+          "titulo": "Extracto de la Resolución, de 5 de octubre de 2026, de la Subsecretaría de Transportes y Movilidad, por la que se hace pública la convocatoria de becas para la formación en el Instituto Geográfico Nacional.",
+          "url_pdf": {
+           "szBytes": "209966",
+           "szKBytes": "205",
+           "pagina_inicial": "55910",
+           "pagina_final": "55911",
+           "texto": "https://www.boe.es/boe/dias/2026/10/22/pdfs/BOE-B-2026-34368.pdf"
+          },
+          "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-B-2026-34368",
+          "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-B-2026-34368"
+         }
+        },
+        {
+         "codigo": "9590",
+         "nombre": "MINISTERIO DE EDUCACIÓN, FORMACIÓN PROFESIONAL Y DEPORTES",
+         "item": {
+          "identificador": "BOE-B-2026-34369",
+          "titulo": "Extracto de la Secretaría General de Formación Profesional de 15 de octubre de 2026 por la que se realiza la convocatoria de los Premios Extraordinarios de Formación Profesional de Grado Medio y Grado Superior para las ciudades autónomas de Ceuta y Melilla y la Consejería de Educación de la Embajada de España en Marruecos, correspondientes al año 2025.",
+          "url_pdf": {
+           "szBytes": "210197",
+           "szKBytes": "205",
+           "pagina_inicial": "55912",
+           "pagina_final": "55913",
+           "texto": "https://www.boe.es/boe/dias/2026/10/22/pdfs/BOE-B-2026-34369.pdf"
+          },
+          "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-B-2026-34369",
+          "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-B-2026-34369"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

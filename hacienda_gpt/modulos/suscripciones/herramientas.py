@@ -10,6 +10,7 @@ from typing import Any
 from hacienda_gpt.agent.providers.base import ToolSpec
 from hacienda_gpt.modulos.contrato import ContextoModulo, HerramientaModulo, ResultadoHerramienta
 from hacienda_gpt.modulos.suscripciones import almacen
+from hacienda_gpt.modulos.suscripciones.derechos import DerechosConsumidor, cargar
 from hacienda_gpt.modulos.suscripciones.deteccion import (
     ServicioDetectado,
     analizar,
@@ -18,7 +19,6 @@ from hacienda_gpt.modulos.suscripciones.deteccion import (
     posible_olvido,
     sumar_meses,
 )
-from hacienda_gpt.modulos.suscripciones.derechos import DerechosConsumidor, cargar
 from hacienda_gpt.modulos.suscripciones.formato import (
     MEDIO_TEXTO,
     PERIODICIDAD_TEXTO,
@@ -32,7 +32,7 @@ from hacienda_gpt.modulos.suscripciones.modelos import (
     CARGOS_POR_ANO,
     CATEGORIAS,
     ETIQUETAS_CATEGORIA,
-    ErrorImportacion,
+    ImportacionError,
     ServicioGuardado,
 )
 from hacienda_gpt.modulos.suscripciones.tablas import configuracion_bancos
@@ -88,7 +88,7 @@ SPEC_ANALIZAR = ToolSpec(
                 "type": "object",
                 "additionalProperties": {"type": "string"},
                 "propertyNames": {"enum": _CAMPOS_MAPEO},
-                "description": "Para CSV/XLSX: campo -> nombre exacto de la columna, p. ej. {\"importe\": \"Importe\"}.",
+                "description": 'Para CSV/XLSX: campo -> nombre exacto de la columna, p. ej. {"importe": "Importe"}.',
             },
             "importes_positivos_son": {
                 "type": "string",
@@ -111,7 +111,7 @@ def _linea_servicio(detectado: ServicioDetectado, hoy: date) -> list[str]:
         f"• {s.etiqueta} — {importe} {PERIODICIDAD_TEXTO[s.periodicidad]} ({MEDIO_TEXTO[s.medio]}); "
         f"{s.num_cargos} cargo(s) del {fecha(s.primera_fecha)} al {fecha(s.ultima_fecha)}"
         + (f"; próximo previsto el {fecha(s.proxima_fecha)}" if s.proxima_fecha else "")
-        + f"; gasto anual {euros(coste_anual(s))}; confianza {nivel_confianza(s.confianza)} ({s.confianza}). "
+        + f"; gasto anual {euros(coste_anual(s))}; confianza {nivel_confianza(s.confianza)} ({str(s.confianza).replace('.', ',')}). "
         f"Categoría: {ETIQUETAS_CATEGORIA[s.categoria]}"
         + (" (sugerida por el etiquetador automático)" if s.categoria_origen == "llm" else "")
         + f". [id {s.id}]"
@@ -138,11 +138,15 @@ def _linea_servicio(detectado: ServicioDetectado, hoy: date) -> list[str]:
     return lineas
 
 
+def _recortar(texto: str, maximo: int = 150) -> str:
+    return texto if len(texto) <= maximo else texto[:maximo].rsplit(" ", 1)[0] + "…"
+
+
 def _que_puedes_hacer(detectados: list[ServicioDetectado], datos: DerechosConsumidor, hoy: date) -> list[str]:
     lineas = [
         "Qué puedes hacer:",
         "- Darte de baja en la misma forma en que contrataste, sin penalizaciones desproporcionadas (art. 62.3 "
-        f"TRLGDCU: «{datos.derecho('baja_tracto_sucesivo').evidencia[1].cita[:150]}…»). La herramienta "
+        f"TRLGDCU: «{_recortar(datos.derecho('baja_tracto_sucesivo').evidencia[1].cita)}»). La herramienta "
         "suscripciones_preparar_baja redacta la carta o el correo con su fundamento legal.",
     ]
     if any(d.cambios and d.cambios[-1].nuevo > d.cambios[-1].anterior for d in detectados):
@@ -176,7 +180,7 @@ def ejecutar_analizar(argumentos: Mapping[str, Any], contexto: ContextoModulo) -
             mapeo_columnas=argumentos.get("mapeo_columnas"),
             importes_positivos_son=argumentos.get("importes_positivos_son"),
         )
-    except ErrorImportacion as exc:
+    except ImportacionError as exc:
         return _error(f"No se ha podido leer el extracto: {exc}")
     del datos_fichero  # the raw statement is not kept beyond this call
     analisis = analizar(extracto)
@@ -195,7 +199,9 @@ def ejecutar_analizar(argumentos: Mapping[str, Any], contexto: ContextoModulo) -
     ]
     if extracto.columnas:
         cabecera.append(
-            "Columnas usadas: " + ", ".join(f"{campo} = «{columna}»" for campo, columna in extracto.columnas.items()) + "."
+            "Columnas usadas: "
+            + ", ".join(f"{campo} = «{columna}»" for campo, columna in extracto.columnas.items())
+            + "."
         )
     cabecera.extend(f"Aviso de lectura: {a}" for a in extracto.avisos)
 
@@ -476,7 +482,11 @@ def ejecutar_preparar_baja(argumentos: Mapping[str, Any], contexto: ContextoModu
             f"ejerzo mi derecho de desistimiento del contrato del servicio «{etiqueta}», celebrado a distancia el "
             f"{fecha(inicio)}, y solicito el reembolso de las cantidades abonadas"
         )
-        fundamentos += [_cita(datos, "desistimiento", 0), _cita(datos, "desistimiento", 1), _cita(datos, "desistimiento", 2)]
+        fundamentos += [
+            _cita(datos, "desistimiento", 0),
+            _cita(datos, "desistimiento", 1),
+            _cita(datos, "desistimiento", 2),
+        ]
         plazos.append(
             f"Plazo de desistimiento: {plazo} días naturales desde el {fecha(inicio)}: hasta el {fecha(limite)}"
             + ("" if fecha_contratacion else " (fecha tomada del primer cargo del extracto: confírmala)")
@@ -529,7 +539,10 @@ def ejecutar_preparar_baja(argumentos: Mapping[str, Any], contexto: ContextoModu
                 f"no acepto la modificación de las condiciones (subida de precio) del servicio «{etiqueta}» y ejerzo mi "
                 "derecho a rescindir el contrato sin coste alguno"
             )
-            fundamentos += [_cita(datos, "telecom_cambio_condiciones", 0), _cita(datos, "telecom_cambio_condiciones", 1)]
+            fundamentos += [
+                _cita(datos, "telecom_cambio_condiciones", 0),
+                _cita(datos, "telecom_cambio_condiciones", 1),
+            ]
             plazos.append(f"Debes rescindir en el plazo de {meses} mes desde la comunicación del cambio.")
             claves_citadas.append("telecom_cambio_condiciones")
         fundamentos.append(_cita(datos, "telecom_duracion_y_baja", 1))
@@ -563,7 +576,11 @@ def ejecutar_preparar_baja(argumentos: Mapping[str, Any], contexto: ContextoModu
         fundamentos += [_cita(datos, "devolucion_adeudos", 0), _cita(datos, "devolucion_adeudos", 1)]
         plazos.append(
             f"Si el cargo fue un recibo domiciliado, puedes pedir a tu banco su devolución durante {semanas} semanas"
-            + (f" desde el cargo (para el último, del {fecha(cargo)}, hasta el {fecha(cargo + timedelta(weeks=semanas))})" if cargo else " desde el cargo")
+            + (
+                f" desde el cargo (para el último, del {fecha(cargo)}, hasta el {fecha(cargo + timedelta(weeks=semanas))})"
+                if cargo
+                else " desde el cargo"
+            )
             + ". Devolver el recibo no da de baja el contrato."
         )
         claves_citadas.append("devolucion_adeudos")
@@ -574,7 +591,10 @@ def ejecutar_preparar_baja(argumentos: Mapping[str, Any], contexto: ContextoModu
     fundamentos.append(_cita(datos, "atencion_clientela_ley_10_2025", 2))
 
     ley10 = datos.derecho("atencion_clientela_ley_10_2025")
-    adaptacion = sumar_meses(date.fromisoformat(ley10.fuente.en_vigor_desde), datos.entero("atencion_clientela_ley_10_2025", "meses_adaptacion"))
+    adaptacion = sumar_meses(
+        date.fromisoformat(ley10.fuente.en_vigor_desde),
+        datos.entero("atencion_clientela_ley_10_2025", "meses_adaptacion"),
+    )
     dias_resolucion = datos.entero("atencion_clientela_ley_10_2025", "plazo_resolucion_dias_habiles")
     plazos.append(
         f"Respuesta: la empresa debe darte una clave o justificante de tu solicitud; si está en el ámbito de la Ley "
@@ -653,15 +673,15 @@ def ejecutar_preparar_baja(argumentos: Mapping[str, Any], contexto: ContextoModu
     )
 
 
-def _envolver(funcion: Callable[[Mapping[str, Any], ContextoModulo], ResultadoHerramienta]) -> Callable[
-    [Mapping[str, Any], ContextoModulo], ResultadoHerramienta
-]:
+def _envolver(
+    funcion: Callable[[Mapping[str, Any], ContextoModulo], ResultadoHerramienta],
+) -> Callable[[Mapping[str, Any], ContextoModulo], ResultadoHerramienta]:
     """No exception ever reaches the agent: unexpected errors become a Spanish error result."""
 
     def ejecutar(argumentos: Mapping[str, Any], contexto: ContextoModulo) -> ResultadoHerramienta:
         try:
             return funcion(argumentos or {}, contexto)
-        except ErrorImportacion as exc:
+        except ImportacionError as exc:
             return _error(str(exc))
         except Exception as exc:  # noqa: BLE001
             return _error(f"Error interno del módulo de suscripciones ({type(exc).__name__}). No se ha guardado nada.")

@@ -53,10 +53,21 @@ def env(tmp_path, monkeypatch) -> Iterator[Env]:
     monkeypatch.delenv("HACIENDA_API_KEY", raising=False)
     db_path = str(tmp_path / "state.sqlite3")
     llamadas = Llamadas()
-    instalar(
-        agua(llamadas, avisos_fijos=[aviso("factura", titulo="Factura del agua")]),
-        seguros(llamadas),
-    )
+    modulo_agua = agua(llamadas, avisos_fijos=[aviso("factura", titulo="Factura del agua")])
+
+    def anota(argumentos, contexto) -> str:
+        contexto.registrar({"agua_personas": argumentos.get("x", 1)})
+        return "Anotado."
+
+    modulo_agua.herramientas = (*modulo_agua.herramientas, llamadas.herramienta("agua_anotar", contenido=anota))
+
+    def leer_documento(provider, *, filename: str, data: bytes) -> dict:
+        llamadas.registro.append(("leer_documento", {"filename": filename, "data": data.decode()}, None))
+        return {"campos": [{"campo": "x", "valor": "3", "evidencia": "personas: 3"}], "avisos": []}
+
+    modulo_agua.leer_documento = leer_documento  # type: ignore[attr-defined]
+    modulo_agua.herramienta_de_documento = "agua_anotar"  # type: ignore[attr-defined]
+    instalar(modulo_agua, seguros(llamadas))
     environment = Env(
         client=TestClient(app),
         db_path=db_path,
@@ -295,3 +306,43 @@ def test_notifications_of_old_kinds_still_read(env: Env) -> None:
     )
     body = env.client.get(f"/cases/{case_id}/notifications", headers=ana).json()
     assert [n["kind"] for n in body["notifications"]] == ["plazo"]
+
+
+def test_the_user_runs_a_module_tool_and_reads_a_document(env: Env) -> None:
+    import base64
+
+    from hacienda_gpt.api.api import get_document_provider
+
+    ana, luis = env.register("ana@example.com"), env.register("luis@example.com")
+    case_id = env.new_case(ana)
+    run = lambda nombre, args, headers=ana: env.client.post(  # noqa: E731
+        f"/modulos/agua/herramientas/{nombre}", json={"case_id": case_id, "argumentos": args}, headers=headers
+    )
+    assert run("agua_anotar", {"x": 3}).status_code == 409  # module off
+    env.client.put("/me/modulos/agua", json={"activo": True}, headers=ana)
+    assert run("agua_anotar", {"x": 3}, luis).status_code == 404  # not their case
+    done = run("agua_anotar", {"x": 3})
+    assert done.status_code == 200 and done.json()["case_updated"] is True
+    facts = {f["name"]: f["value"] for f in env.client.get(f"/cases/{case_id}", headers=ana).json()["facts"]}
+    assert facts["agua_personas"] == 3.0
+    # From the UI an acting tool still only becomes a pending action.
+    queued = run("agua_cambiar_tarifa", {"x": 1}).json()
+    assert queued["resultado"] is None and queued["accion"]["estado"] == "pendiente"
+    assert "agua_cambiar_tarifa" not in env.llamadas.nombres()
+    assert run("calcular_irpf", {}).status_code == 404
+
+    modulos = _modulos(env, ana)
+    assert modulos["agua"]["lee_documentos"] and modulos["agua"]["herramienta_de_documento"] == "agua_anotar"
+    upload = {"case_id": case_id, "filename": "f.txt", "content_base64": base64.b64encode(b"personas: 3").decode()}
+    app.dependency_overrides[get_document_provider] = lambda: object()
+    try:
+        refused = env.client.post("/modulos/agua/documento", json=upload, headers=ana)
+        assert refused.status_code == 403  # no consent to send documents to the model provider
+        env.client.put("/me/consents", json={"envio_documentos_a_proveedor_llm": True}, headers=ana)
+        read = env.client.post("/modulos/agua/documento", json=upload, headers=ana)
+        assert read.status_code == 200
+        assert read.json()["herramienta_destino"] == "agua_anotar"
+        assert read.json()["propuesta"]["campos"][0]["valor"] == "3"
+        assert env.client.post("/modulos/seguros/documento", json=upload, headers=ana).status_code == 409
+    finally:
+        app.dependency_overrides.pop(get_document_provider, None)

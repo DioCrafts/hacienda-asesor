@@ -105,7 +105,7 @@
  "reembolso_anticipado": {
   "preaviso_maximo_meses": "1",
   "fuente": {
-   "referencia": "art. 23.1 a 23.4 Ley 5/2019",
+   "referencia": "art. 23 Ley 5/2019",
    "boe_id": "BOE-A-2019-3814",
    "en_vigor_desde": "2019-06-16",
    "verificado": true
@@ -189,7 +189,7 @@
   "limite": "0.0005",
   "periodo_fijo_minimo_anos": "3",
   "fuente": {
-   "referencia": "art. 23.6 Ley 5/2019 (redacción del RDL 8/2023, BOE-A-2023-26452)",
+   "referencia": "art. 23.6 Ley 5/2019, redacción del RDL 8/2023",
    "boe_id": "BOE-A-2019-3814",
    "en_vigor_desde": "2023-12-29",
    "verificado": true,
@@ -240,7 +240,7 @@
   "desistimiento_limite_posterior": "0.0025",
   "riesgo_tipo_revision_max_meses": "12",
   "fuente": {
-   "referencia": "arts. 7, 8 y 9 Ley 41/2007",
+   "referencia": "Ley 41/2007",
    "boe_id": "BOE-A-2007-21086",
    "en_vigor_desde": "2007-12-09",
    "verificado": true,
@@ -285,7 +285,7 @@
   "limite_novacion_ampliacion_plazo": "0.001",
   "reduccion_arancel_registral": "0.90",
   "fuente": {
-   "referencia": "arts. 3, 7, 8, 9 y 10 y disposición adicional primera Ley 2/1994",
+   "referencia": "Ley 2/1994",
    "boe_id": "BOE-A-1994-7556",
    "en_vigor_desde": "1994-04-04",
    "verificado": true,

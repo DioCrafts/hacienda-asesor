@@ -114,11 +114,7 @@ def _ya(id_: str, h: Hogar) -> Evaluacion | None:
 
 
 def _estimado(h: Hogar, *, ingresos: bool = True, base: bool = False) -> bool:
-    return (
-        h.composicion_estimada
-        or (ingresos and h.ingresos_estimados)
-        or (base and h.base_imponible_estimada)
-    )
+    return h.composicion_estimada or (ingresos and h.ingresos_estimados) or (base and h.base_imponible_estimada)
 
 
 # --- Ingreso mínimo vital and complemento de ayuda para la infancia -----------
@@ -380,7 +376,11 @@ def _tramos_capi(p: PrestacionesParams, h: Hogar) -> str:
             partes.append(f"de 3 a 5 años: {eur(capi.cuantia_ley_3_a_6)}/mes según la ley")
         else:
             partes.append(f"de 6 a 17 años: {eur(capi.cuantia_ley_6_a_18)}/mes según la ley")
-    return "Tramos del art. 13.2.e) (edad a 1 de enero; importes del texto de la ley, no de 2026): " + "; ".join(partes) + "."
+    return (
+        "Tramos del art. 13.2.e) (edad a 1 de enero; importes del texto de la ley, no de 2026): "
+        + "; ".join(partes)
+        + "."
+    )
 
 
 # --- Asignación por hijo con discapacidad -------------------------------------
@@ -408,7 +408,10 @@ def evaluar_hijo_discapacidad(p: PrestacionesParams, h: Hogar) -> Evaluacion:
         if hijo.edad is None or grado <= 0:
             continue
         if hijo.edad < edad_limite and grado >= g.grado_menor:
-            importe, texto = g.importe_menor, f"menor de {edad_limite} años con discapacidad de al menos {pct(g.grado_menor)}"
+            importe, texto = (
+                g.importe_menor,
+                f"menor de {edad_limite} años con discapacidad de al menos {pct(g.grado_menor)}",
+            )
         elif hijo.edad >= edad_limite and grado >= g.grado_asistencia and hijo.necesita_asistencia:
             importe = g.importe_mayor_75
             texto = f"mayor de {edad_limite} años con al menos {pct(g.grado_asistencia)} y ayuda de otra persona"
@@ -478,7 +481,9 @@ def evaluar_nacimiento(p: PrestacionesParams, h: Hogar, grado_progenitor: int | 
         if hijo.fecha_nacimiento is not None and _sumar_anios(hijo.fecha_nacimiento, anios) >= h.hoy
     ]
     if not recientes:
-        sin_fecha = [hijo for hijo in h.hijos if hijo.fecha_nacimiento is None and hijo.edad is not None and hijo.edad < anios]
+        sin_fecha = [
+            hijo for hijo in h.hijos if hijo.fecha_nacimiento is None and hijo.edad is not None and hijo.edad < anios
+        ]
         if sin_fecha:
             return Evaluacion(
                 estado="faltan_datos",
@@ -563,9 +568,12 @@ def evaluar_nacimiento(p: PrestacionesParams, h: Hogar, grado_progenitor: int | 
     if h.familia_monoparental:
         no_comprobados.append("Que seas el sustentador único de la familia (art. 357.2).")
     return Evaluacion(
-        estado="probable" if _estimado(h) or any(
-            hijo.fecha_nacimiento and hijo.fecha_nacimiento.year != p.ejercicio for hijo in recientes
-        ) else "cumple",
+        estado=(
+            "probable"
+            if h.ingresos_estimados
+            or any(hijo.fecha_nacimiento and hijo.fecha_nacimiento.year != p.ejercicio for hijo in recientes)
+            else "cumple"
+        ),
         motivo=f"Nacimiento en una {supuestos[0]} con ingresos dentro del límite: {eur(por_hijo)} por hijo.",
         importe_anual=total,
         lineas=lineas,
@@ -625,7 +633,9 @@ def evaluar_bono_social_electrico(p: PrestacionesParams, h: Hogar) -> Evaluacion
     if h.pvpc is None:
         no_comprobados.append("Tener el contrato en el PVPC con una comercializadora de referencia (art. 3.1).")
     elif h.pvpc is False:
-        no_comprobados.append("Tendrías que pasar tu contrato al PVPC con una comercializadora de referencia (art. 3.1).")
+        no_comprobados.append(
+            "Tendrías que pasar tu contrato al PVPC con una comercializadora de referencia (art. 3.1)."
+        )
     lineas: list[Linea] = []
     rutas: list[tuple[str, bool]] = []  # (route, severe)
     if h.familia_numerosa:
@@ -636,7 +646,9 @@ def evaluar_bono_social_electrico(p: PrestacionesParams, h: Hogar) -> Evaluacion
     if h.pensionistas_cuantia_minima:
         severo = h.base_imponible is not None and h.base_imponible <= anual * b.severo_pensionista
         rutas.append(("pensionistas con la cuantía mínima (art. 3.2.c)", severo))
-        no_comprobados.append(f"Que los pensionistas no tengan otros ingresos de más de {eur(b.otros_ingresos_pensionista)} al año.")
+        no_comprobados.append(
+            f"Que los pensionistas no tengan otros ingresos de más de {eur(b.otros_ingresos_pensionista)} al año."
+        )
     renta_faltan: list[str] = []
     if h.adultos is None or h.menores is None:
         renta_faltan.append("ayudas_adultos_hogar y ayudas_menores_hogar")
@@ -650,7 +662,11 @@ def evaluar_bono_social_electrico(p: PrestacionesParams, h: Hogar) -> Evaluacion
             mult += b.incremento_circunstancias
         umbral = (mult * anual).quantize(CENT)
         lineas = [
-            Linea(concepto=f"IPREM anual de 14 pagas ({eur(iprem.mensual)} × 14)", importe=anual, referencia="DA 90.ª Ley 31/2022"),
+            Linea(
+                concepto=f"IPREM anual de 14 pagas ({eur(iprem.mensual)} × 14)",
+                importe=anual,
+                referencia="DA 90.ª Ley 31/2022",
+            ),
             Linea(
                 concepto=f"Multiplicador {str(mult).replace('.', ',')}: {h.adultos} adulto(s), {h.menores} menor(es)"
                 + (f", más 1 por {circ[0]}" if circ else ""),
@@ -658,7 +674,8 @@ def evaluar_bono_social_electrico(p: PrestacionesParams, h: Hogar) -> Evaluacion
                 referencia="art. 3.2.a) y 3.3 RD 897/2017",
             ),
             Linea(
-                concepto="Base imponible general y del ahorro del hogar" + (" (estimada)" if h.base_imponible_estimada else ""),
+                concepto="Base imponible general y del ahorro del hogar"
+                + (" (estimada)" if h.base_imponible_estimada else ""),
                 importe=h.base_imponible,
                 referencia="art. 4.1 Orden ETU/943/2017",
             ),
@@ -688,9 +705,15 @@ def evaluar_bono_social_electrico(p: PrestacionesParams, h: Hogar) -> Evaluacion
     estimado = _estimado(h, ingresos=False, base=True) and not por_dato_declarado
     return Evaluacion(
         estado="probable" if estimado or h.pvpc is not True else "cumple",
-        motivo=f"Consumidor {'vulnerable severo' if severo else 'vulnerable'} por " + "; ".join(r for r, _ in rutas) + ".",
+        motivo=f"Consumidor {'vulnerable severo' if severo else 'vulnerable'} por "
+        + "; ".join(r for r, _ in rutas)
+        + ".",
         importe_texto=f"Descuento del {pct(descuento)} sobre el PVPC"
-        + (f" hasta el {fecha(b.descuentos_hasta)} (después, {pct(b.descuento_severo_general if severo else b.descuento_vulnerable_general)})" if vigentes else "")
+        + (
+            f" hasta el {fecha(b.descuentos_hasta)} (después, {pct(b.descuento_severo_general if severo else b.descuento_vulnerable_general)})"
+            if vigentes
+            else ""
+        )
         + ", con un límite anual de energía.",
         lineas=lineas,
         requisitos_comprobados=["Vía: " + "; ".join(r for r, _ in rutas) + "."],
@@ -717,14 +740,12 @@ def evaluar_bono_social_termico(p: PrestacionesParams, h: Hogar, electrico: Eval
         return Evaluacion(
             estado="automatica",
             motivo=f"Si mantienes el bono social eléctrico a {fecha(fin_anio)}, recibirás el térmico de {h.hoy.year + 1} sin pedirlo.",
-            importe_anual=t.ayuda_minima,
             **comunes,
         )
     if electrico.estado in ("cumple", "probable"):
         return Evaluacion(
             estado="probable",
             motivo=f"Si consigues el bono social eléctrico antes del {fecha(fin_anio)}, cobrarás también el térmico de {h.hoy.year + 1}.",
-            importe_anual=t.ayuda_minima,
             plazo=f"Ten concedido el bono social eléctrico a {fecha(fin_anio)}.",
             vence=fin_anio,
             requisitos_no_comprobados=["Los mismos que el bono social eléctrico."],
@@ -761,8 +782,14 @@ def evaluar_titulo_monoparental(p: PrestacionesParams, h: Hogar) -> Evaluacion:
             motivo="No consta que seas la única persona progenitora con hijos menores a cargo.",
             **comunes,
         )
-    especial = len([x for x in h.hijos if x.edad is not None and x.edad < int(t.edad_hijos)]) >= 2 or bool(h.discapacidad_33)
-    categoria = "especial (dos o más hijos o discapacidad)" if especial else "general (o especial si los ingresos por miembro no superan el 150 % del IPREM)"
+    especial = len([x for x in h.hijos if x.edad is not None and x.edad < int(t.edad_hijos)]) >= 2 or bool(
+        h.discapacidad_33
+    )
+    categoria = (
+        "especial (dos o más hijos o discapacidad)"
+        if especial
+        else "general (o especial si los ingresos por miembro no superan el 150 % del IPREM)"
+    )
     return Evaluacion(
         estado="proximamente" if h.hoy < desde else "probable",
         motivo=f"Título estatal de familia monoparental, categoría {categoria}; se podrá pedir desde el {fecha(desde)}.",

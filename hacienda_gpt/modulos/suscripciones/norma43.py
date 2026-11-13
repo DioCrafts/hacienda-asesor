@@ -28,7 +28,7 @@ from datetime import date
 from decimal import Decimal
 
 from hacienda_gpt.modulos.suscripciones.lectura import enmascarar_cuenta
-from hacienda_gpt.modulos.suscripciones.modelos import ErrorImportacion, Extracto, Medio, Movimiento
+from hacienda_gpt.modulos.suscripciones.modelos import Extracto, ImportacionError, Medio, Movimiento
 
 LONGITUD = 80
 
@@ -77,18 +77,18 @@ def _fecha(texto: str, linea: int) -> date:
         ano, mes, dia = int(texto[0:2]), int(texto[2:4]), int(texto[4:6])
         return date(2000 + ano if ano < 80 else 1900 + ano, mes, dia)
     except ValueError as exc:
-        raise ErrorImportacion(f"Norma 43: fecha ilegible «{texto}» en el registro {linea}.") from exc
+        raise ImportacionError(f"Norma 43: fecha ilegible «{texto}» en el registro {linea}.") from exc
 
 
 def _importe(texto: str, linea: int) -> Decimal:
     if not texto.isdigit():
-        raise ErrorImportacion(f"Norma 43: importe ilegible «{texto}» en el registro {linea}.")
-    return Decimal(int(texto)) / 100
+        raise ImportacionError(f"Norma 43: importe ilegible «{texto}» en el registro {linea}.")
+    return Decimal(int(texto)).scaleb(-2)
 
 
 def _numero(texto: str, linea: int) -> int:
     if not texto.strip().isdigit():
-        raise ErrorImportacion(f"Norma 43: número ilegible «{texto}» en el registro {linea}.")
+        raise ImportacionError(f"Norma 43: número ilegible «{texto}» en el registro {linea}.")
     return int(texto)
 
 
@@ -136,7 +136,7 @@ def leer_norma43(texto: str) -> Extracto:
         if not bruta.strip():
             continue
         if len(bruta.rstrip()) > LONGITUD:
-            raise ErrorImportacion(f"Norma 43: el registro {numero} tiene más de 80 caracteres.")
+            raise ImportacionError(f"Norma 43: el registro {numero} tiene más de 80 caracteres.")
         linea = bruta.ljust(LONGITUD)
         codigo = linea[:2]
         registros += 1
@@ -151,10 +151,10 @@ def leer_norma43(texto: str) -> Extracto:
             apunte = None
         elif codigo == "22":
             if actual is None or actual.cerrada:
-                raise ErrorImportacion(f"Norma 43: movimiento fuera de una cuenta en el registro {numero}.")
+                raise ImportacionError(f"Norma 43: movimiento fuera de una cuenta en el registro {numero}.")
             clave = _campo(linea, 28, 28)
             if clave not in {"1", "2"}:
-                raise ErrorImportacion(f"Norma 43: clave debe/haber «{clave}» no válida en el registro {numero}.")
+                raise ImportacionError(f"Norma 43: clave debe/haber «{clave}» no válida en el registro {numero}.")
             apunte = _Apunte(
                 fecha=_fecha(_campo(linea, 11, 16), numero),
                 fecha_valor=_fecha(_campo(linea, 17, 22), numero),
@@ -166,7 +166,7 @@ def leer_norma43(texto: str) -> Extracto:
             actual.apuntes.append(apunte)
         elif codigo == "23":
             if apunte is None:
-                raise ErrorImportacion(f"Norma 43: concepto complementario sin movimiento en el registro {numero}.")
+                raise ImportacionError(f"Norma 43: concepto complementario sin movimiento en el registro {numero}.")
             apunte.conceptos.extend(
                 parte for parte in (_campo(linea, 5, 42).strip(), _campo(linea, 43, 80).strip()) if parte
             )
@@ -174,7 +174,7 @@ def leer_norma43(texto: str) -> Extracto:
             avisos.append(f"Registro {numero}: movimiento en otra divisa; se usa el importe en la divisa de la cuenta.")
         elif codigo == "33":
             if actual is None:
-                raise ErrorImportacion(f"Norma 43: registro final de cuenta sin cabecera (registro {numero}).")
+                raise ImportacionError(f"Norma 43: registro final de cuenta sin cabecera (registro {numero}).")
             _comprobar_totales(actual, linea, numero)
             actual.cerrada = True
             apunte = None
@@ -183,11 +183,11 @@ def leer_norma43(texto: str) -> Extracto:
             registros -= 1  # the count does not include the end-of-file record itself
             break
         else:
-            raise ErrorImportacion(f"Norma 43: tipo de registro «{codigo}» desconocido en el registro {numero}.")
+            raise ImportacionError(f"Norma 43: tipo de registro «{codigo}» desconocido en el registro {numero}.")
     if not cuentas:
-        raise ErrorImportacion("Norma 43: el fichero no tiene ninguna cuenta (registro 11).")
+        raise ImportacionError("Norma 43: el fichero no tiene ninguna cuenta (registro 11).")
     if any(not cuenta.cerrada for cuenta in cuentas):
-        raise ErrorImportacion("Norma 43: falta el registro final de cuenta (33); el fichero parece incompleto.")
+        raise ImportacionError("Norma 43: falta el registro final de cuenta (33); el fichero parece incompleto.")
     if fin_declarado is None:
         avisos.append("Falta el registro de fin de fichero (88).")
     elif fin_declarado not in {registros, registros + 1}:
@@ -231,14 +231,12 @@ def _comprobar_totales(cuenta: _Cuenta, linea: str, numero: int) -> None:
     if (len(debe), sum(debe, Decimal(0))) != (n_debe, total_debe):
         problemas.append(f"cargos: {len(debe)} por {sum(debe, Decimal(0))} € frente a {n_debe} por {total_debe} €")
     if (len(haber), sum(haber, Decimal(0))) != (n_haber, total_haber):
-        problemas.append(
-            f"abonos: {len(haber)} por {sum(haber, Decimal(0))} € frente a {n_haber} por {total_haber} €"
-        )
+        problemas.append(f"abonos: {len(haber)} por {sum(haber, Decimal(0))} € frente a {n_haber} por {total_haber} €")
     calculado = cuenta.saldo_inicial + sum(haber, Decimal(0)) - sum(debe, Decimal(0))
     if calculado != saldo_final:
         problemas.append(f"saldo final calculado {calculado} € frente a {saldo_final} € declarado")
     if problemas:
-        raise ErrorImportacion(
+        raise ImportacionError(
             "Norma 43: los totales de control del registro 33 no cuadran con los movimientos leídos ("
             + "; ".join(problemas)
             + "). El fichero está incompleto o no sigue el Cuaderno 43."

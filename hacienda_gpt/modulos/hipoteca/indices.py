@@ -404,7 +404,12 @@ def construir_serie(
             documentos[res.boe_id]["titulo"] = res.titulo
         for v in res.valores:
             anterior = series.setdefault(v.indice, {}).get(v.mes)
-            nuevo = {"valor": str(v.valor), "literal": v.literal, "boe_id": res.boe_id, "publicado": res.publicado.isoformat()}
+            nuevo = {
+                "valor": str(v.valor),
+                "literal": v.literal,
+                "boe_id": res.boe_id,
+                "publicado": res.publicado.isoformat(),
+            }
             if v.nota:
                 nuevo["nota"] = v.nota
             if anterior and anterior["valor"] != nuevo["valor"]:

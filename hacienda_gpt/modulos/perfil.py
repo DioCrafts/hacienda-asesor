@@ -109,7 +109,8 @@ def normalizar_valor(hecho: HechoModulo, crudo: Any) -> str | float | bool:
         raise HechoInvalidoError(f"«{hecho.etiqueta}»: la validación del módulo devolvió un valor de otro tipo.")
     if isinstance(valor, str) and not valor.strip():
         raise HechoInvalidoError(f"«{hecho.etiqueta}» no puede quedar vacío.")
-    return valor
+    resultado: str | float | bool = valor
+    return resultado
 
 
 def _validar(hecho: HechoModulo, valor: Any) -> Any:

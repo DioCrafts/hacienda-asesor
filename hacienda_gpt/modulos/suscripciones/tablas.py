@@ -32,7 +32,7 @@ from hacienda_gpt.modulos.suscripciones.lectura import (
     separador_decimal,
     sin_acentos,
 )
-from hacienda_gpt.modulos.suscripciones.modelos import ErrorImportacion, Extracto, Movimiento
+from hacienda_gpt.modulos.suscripciones.modelos import Extracto, ImportacionError, Movimiento
 
 DATA = Path(__file__).parent / "data" / "bancos.json"
 Celda = str | Decimal | date | None
@@ -88,10 +88,10 @@ _FORMATOS_FECHA = set(range(14, 23)) | {45, 46, 47}
 def _leer_zip(zona: zipfile.ZipFile, nombre: str) -> bytes:
     info = zona.getinfo(nombre)
     if info.file_size > _MAX_XML:
-        raise ErrorImportacion("El XLSX es demasiado grande una vez descomprimido.")
+        raise ImportacionError("El XLSX es demasiado grande una vez descomprimido.")
     datos = zona.read(info)
     if re.search(rb"<!DOCTYPE|<!ENTITY", datos[:4096]):
-        raise ErrorImportacion("El XLSX contiene declaraciones DOCTYPE; por seguridad no se procesa.")
+        raise ImportacionError("El XLSX contiene declaraciones DOCTYPE; por seguridad no se procesa.")
     return datos
 
 
@@ -107,13 +107,13 @@ def filas_xlsx(datos: bytes) -> list[list[Celda]]:
     try:
         zona = zipfile.ZipFile(io.BytesIO(datos))
     except zipfile.BadZipFile as exc:
-        raise ErrorImportacion("El fichero XLSX está dañado (no es un ZIP válido).") from exc
+        raise ImportacionError("El fichero XLSX está dañado (no es un ZIP válido).") from exc
     with zona:
         nombres = set(zona.namelist())
         libro = ET.fromstring(_leer_zip(zona, "xl/workbook.xml"))
         hoja = libro.find("m:sheets/m:sheet", _NS)
         if hoja is None:
-            raise ErrorImportacion("El XLSX no tiene hojas.")
+            raise ImportacionError("El XLSX no tiene hojas.")
         destino = "xl/worksheets/sheet1.xml"
         if "xl/_rels/workbook.xml.rels" in nombres:
             relaciones = ET.fromstring(_leer_zip(zona, "xl/_rels/workbook.xml.rels"))
@@ -138,7 +138,7 @@ def filas_xlsx(datos: bytes) -> list[list[Celda]]:
                 if formato in _FORMATOS_FECHA or (formato in propios and re.search(r"[dy]", codigo)):
                     estilos_fecha.add(indice)
         if destino not in nombres:
-            raise ErrorImportacion("El XLSX no contiene la hoja indicada en el libro.")
+            raise ImportacionError("El XLSX no contiene la hoja indicada en el libro.")
         filas: list[list[Celda]] = []
         for fila in ET.fromstring(_leer_zip(zona, destino)).iter(f"{{{_NS['m']}}}row"):
             valores: list[Celda] = []
@@ -194,10 +194,10 @@ def _mapear(
                 encontrados.setdefault(campo, []).append(indice)
     for campo, cabecera_usuario in (mapeo or {}).items():
         if campo not in alias:
-            raise ErrorImportacion(f"Campo desconocido en mapeo_columnas: «{campo}».")
+            raise ImportacionError(f"Campo desconocido en mapeo_columnas: «{campo}».")
         buscada = normalizar_cabecera(cabecera_usuario)
         if buscada not in normal:
-            raise ErrorImportacion(f"La columna «{cabecera_usuario}» indicada para {campo} no está en la cabecera.")
+            raise ImportacionError(f"La columna «{cabecera_usuario}» indicada para {campo} no está en la cabecera.")
         for otros in encontrados.values():
             if normal.index(buscada) in otros:
                 otros.remove(normal.index(buscada))
@@ -232,11 +232,13 @@ def tabla_a_extracto(
     if mapeo_columnas:
         buscadas = {normalizar_cabecera(v) for v in mapeo_columnas.values()}
         candidatas = [
-            (i, 100) for i, fila in enumerate(filas[:_FILAS_CABECERA]) if buscadas <= {normalizar_cabecera(c) for c in fila}
+            (i, 100)
+            for i, fila in enumerate(filas[:_FILAS_CABECERA])
+            if buscadas <= {normalizar_cabecera(c) for c in fila}
         ] or candidatas
     indice, puntos = max(candidatas, key=lambda par: (par[1], -par[0]), default=(0, 0))
     if puntos == 0:
-        raise ErrorImportacion(
+        raise ImportacionError(
             "No se ha encontrado la fila de cabecera (hacen falta columnas de fecha, concepto e importe o "
             "cargo/abono). Indica los nombres de las columnas en mapeo_columnas, p. ej. "
             '{"fecha": "F. Operación", "concepto": "Concepto", "importe": "Importe"}.'
@@ -244,17 +246,18 @@ def tabla_a_extracto(
     cabecera = filas[indice]
     columnas, detalle, ambiguos = _mapear(cabecera, mapeo_columnas)
     if ambiguos:
-        lista = "; ".join(f"{campo}: " + ", ".join(f"«{cabecera[c]}»" for c in cols) for campo, cols in ambiguos.items())
-        raise ErrorImportacion(
-            f"Hay columnas ambiguas ({lista}). Indica cuál usar con mapeo_columnas, p. ej. "
-            '{"importe": "Importe"}.'
+        lista = "; ".join(
+            f"{campo}: " + ", ".join(f"«{cabecera[c]}»" for c in cols) for campo, cols in ambiguos.items()
+        )
+        raise ImportacionError(
+            f"Hay columnas ambiguas ({lista}). Indica cuál usar con mapeo_columnas, p. ej. " '{"importe": "Importe"}.'
         )
     if "fecha" not in columnas:
         if "fecha_valor" not in columnas:
-            raise ErrorImportacion("No se ha encontrado la columna de fecha; indícala en mapeo_columnas.")
+            raise ImportacionError("No se ha encontrado la columna de fecha; indícala en mapeo_columnas.")
         columnas["fecha"] = columnas.pop("fecha_valor")
     if "concepto" not in columnas or not {"importe", "cargo", "abono"} & set(columnas):
-        raise ErrorImportacion("Faltan las columnas de concepto o de importe; indícalas en mapeo_columnas.")
+        raise ImportacionError("Faltan las columnas de concepto o de importe; indícalas en mapeo_columnas.")
     avisos: list[str] = []
     datos = [fila for fila in filas[indice + 1 :] if any(c not in (None, "") for c in fila)]
 
@@ -275,7 +278,7 @@ def tabla_a_extracto(
         if isinstance(valor, Decimal):
             return valor
         if isinstance(valor, date):
-            raise ErrorImportacion(f"La columna de {campo} contiene fechas: revisa el mapeo de columnas.")
+            raise ImportacionError(f"La columna de {campo} contiene fechas: revisa el mapeo de columnas.")
         return leer_importe(valor, decimales[campo])
 
     crudos: list[tuple[date, Decimal, str, str | None, date | None]] = []
@@ -304,15 +307,21 @@ def tabla_a_extracto(
         concepto = str(celda(fila, "concepto") or "").strip()
         extra = " ".join(str(fila[c]).strip() for c in detalle if c < len(fila) and fila[c] not in (None, ""))
         crudos.append(
-            (fecha, importe, concepto or extra or "Movimiento", extra or None, leer_fecha(celda(fila, "fecha_valor"), orden))
+            (
+                fecha,
+                importe,
+                concepto or extra or "Movimiento",
+                extra or None,
+                leer_fecha(celda(fila, "fecha_valor"), orden),
+            )
         )
     if not crudos:
-        raise ErrorImportacion("La tabla no contiene movimientos con fecha e importe legibles.")
+        raise ImportacionError("La tabla no contiene movimientos con fecha e importe legibles.")
     if omitidas:
         avisos.append(f"Se han ignorado {omitidas} filas sin fecha o importe legibles (totales, pies de página…).")
     if "importe" in columnas and "signo" not in columnas and all(imp >= 0 for _, imp, *_ in crudos):
         if importes_positivos_son not in {"cargos", "abonos"}:
-            raise ErrorImportacion(
+            raise ImportacionError(
                 "Todos los importes son positivos y no hay columna de signo: no se puede distinguir cargos de abonos. "
                 "Indica importes_positivos_son = 'cargos' o 'abonos'."
             )

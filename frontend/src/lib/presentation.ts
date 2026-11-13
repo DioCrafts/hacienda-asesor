@@ -523,13 +523,23 @@ export function activityRows(events: ProgressEvent[]): ActivityRow[] {
         rows.push({ kind: "team", text: "Las fuentes discrepan: pido una segunda investigación al equipo" });
       } else if (event.stage === "critic" && event.status === "start") {
         rows.push({ kind: "team", text: "Revisión adversarial del borrador, como lo haría un inspector" });
+      } else if (event.stage === "specialist" && event.status === "done") {
+        const last = [...rows].reverse().find((r) => r.kind === "team" && r.outcome === undefined && r.text.startsWith("Consulta al especialista"));
+        if (last) last.outcome = "informe recibido";
       } else if (event.stage === "critic" && event.status === "done") {
         const last = rows[rows.length - 1];
         const target = last && last.kind === "team" && last.outcome === undefined ? last : rows.find((r) => r.kind === "team" && r.text.startsWith("Revisión adversarial") && r.outcome === undefined);
         if (target) target.outcome = event.objections ? "con objeciones: reescribo la respuesta" : "sin objeciones";
       }
     } else if (event.type === "tool_call") {
-      if (event.tool === "buscar_fuentes") {
+      if (event.tool.startsWith("consultar_") && !["consultar_expediente", "consultar_vigencia"].includes(event.tool)) {
+        const area = event.tool.slice("consultar_".length).replace(/_/g, " ");
+        const pregunta = typeof event.arguments.pregunta === "string" ? event.arguments.pregunta : undefined;
+        rows.push({ kind: "team", text: `Consulta al especialista en ${area}`, detail: pregunta });
+      } else if (event.agent?.startsWith("especialista_")) {
+        const area = event.agent.slice("especialista_".length).replace(/_/g, " ");
+        rows.push({ kind: "calc", text: event.tool === "leer_expediente" ? `Especialista en ${area}: repasa tus datos` : `Especialista en ${area}: ${event.tool.replace(/_/g, " ")}` });
+      } else if (event.tool === "buscar_fuentes") {
         const query = typeof event.arguments.consulta === "string" ? event.arguments.consulta : "…";
         const who = event.agent ? TEAM_MEMBER[event.agent] : undefined;
         const filters = searchDetail(event.arguments);
@@ -596,10 +606,12 @@ export function statusLine(events: ProgressEvent[]): string {
   if (last.type === "team") {
     if (last.stage === "planning") return "Valorando si la consulta necesita al equipo…";
     if (last.stage === "critic") return last.status === "start" ? "Un revisor busca fallos en el borrador…" : "Leyendo la revisión…";
+    if (last.stage === "specialist") return last.status === "start" ? "Consultando al especialista…" : "Leyendo el informe del especialista…";
     return "El equipo está investigando…";
   }
   if (last.type === "thinking") return last.step === 1 ? "Analizando tu consulta…" : "Leyendo lo encontrado y decidiendo el siguiente paso…";
   if (last.type === "tool_call") {
+    if (last.agent?.startsWith("especialista_")) return "El especialista está calculando…";
     if (last.agent) return `${TEAM_MEMBER[last.agent] ?? "El equipo"}: buscando…`;
     return last.tool === "buscar_fuentes" ? "Buscando en la normativa…" : "Trabajando con tus datos…";
   }
