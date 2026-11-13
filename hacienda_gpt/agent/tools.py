@@ -33,17 +33,19 @@ from hacienda_gpt.tax.calendario import aviso_festivos, proximos_vencimientos
 from hacienda_gpt.tax.conjunta import comparar_tributacion
 from hacienda_gpt.tax.irpf import IRPFInput, IRPFResult
 from hacienda_gpt.tax.iva import Modelo303Input, calcular_modelo_303
-from hacienda_gpt.tax.optimizador import PlanOptimo, optimizar_desde_hechos
+from hacienda_gpt.tax.optimizador import PlanOptimo, detalle_a_texto, optimizar_desde_hechos, resumen_conyuge
 from hacienda_gpt.tax.pagos_fraccionados import Modelo130Input, calcular_modelo_130
 from hacienda_gpt.tax.params import EjercicioNoDisponibleError, EtapaEducativa, ejercicios_disponibles, load_params
 from hacienda_gpt.tax.patrimonio import PatrimonioInput, calcular_patrimonio
 from hacienda_gpt.tax.patrimonio_params import ejercicios_patrimonio_disponibles
 from hacienda_gpt.tax.profile import (
-    DESCENDIENTES,
+    CAMPOS_CONYUGE,
+    DATOS_CONYUGE,
+    DETALLE_FACT_TYPES,
     RECUENTOS_DEL_DETALLE,
     DatosInvalidosError,
     build_input_con_actividad,
-    descendientes_a_texto,
+    normalizar_datos_conyuge,
 )
 from hacienda_gpt.tax.simulador import simular
 from hacienda_gpt.tax.sociedades import (
@@ -139,7 +141,16 @@ RECORD_FACTS_TOOL = ToolSpec(
         "parto_multiple, meses_guarderia y gastos {campo: euros}; por ejemplo "
         '[{"fecha_nacimiento": "2024-03-10", "etapa_educativa": "infantil_primer_ciclo", "gastos": '
         '{"gastos_guarderia": 1800}}]. Envía siempre la lista completa (sustituye a la anterior); con ella no '
-        "registres num_descendientes ni los demás recuentos de hijos."
+        "registres num_descendientes ni los demás recuentos de hijos. `datos_conyuge` (las cifras propias del "
+        "cónyuge, que usan optimizar_impuestos y comparar_declaracion_conjunta) se guarda como texto JSON de un objeto "
+        f"con alguno de estos campos: {', '.join(CAMPOS_CONYUGE)}; por ejemplo "
+        '{"rendimiento_trabajo_bruto": 12000, "retenciones": 900, "edad": 41}. `preferencias_optimizacion` (lo que '
+        "el usuario ha dicho que puede y quiere hacer antes de fin de año, nunca supuestos tuyos) se guarda como texto "
+        "JSON de un objeto con los mismos campos de restricciones que optimizar_impuestos (aportacion_maxima_pensiones, "
+        "aportacion_maxima_pensiones_conyuge, acepta_iliquidez, donativo_previsto, presupuesto_donativos, "
+        "donativo_recurrente_importe_anterior, perdidas_latentes, ganancias_latentes) y tributacion_prevista "
+        "('individual' | 'conjunta_biparental': cómo pensaban declarar). De estos dos, envía siempre el objeto "
+        "completo: sustituye al anterior."
     ),
     input_schema={
         "type": "object",
@@ -350,7 +361,9 @@ JOINT_TOOL = ToolSpec(
         "Compara, para un matrimonio, presentar dos declaraciones individuales o una conjunta, calculando las tres con "
         "la calculadora determinista, y dice cuál sale más barata y por cuánto. Úsala cuando el usuario esté casado y "
         "pregunte cómo le conviene declarar, o cuando uno de los cónyuges tenga pocos ingresos. `conyuge_a` parte de "
-        "los datos del expediente (el usuario); `conyuge_b` son los datos del otro cónyuge. Los hijos se toman como "
+        "los datos del expediente (el usuario); `conyuge_b` son los datos del otro cónyuge. Si el expediente guarda "
+        "las cifras del cónyuge (`datos_conyuge`), se usan como base de `conyuge_b`: puedes omitirlo, y lo que pases "
+        "sustituye campo a campo (null quita un campo). Los hijos se toman como "
         f"comunes. Importes anuales en euros. Campos admitidos en ambos: {_INPUT_FIELDS_DOC}. Devuelve fragmentos "
         "citables [F#] y los supuestos que ha hecho: trasládalos al usuario."
     ),
@@ -367,11 +380,11 @@ JOINT_TOOL = ToolSpec(
                 "type": "object",
                 "description": (
                     "Cifras del otro cónyuge (salario, cotizaciones, retenciones…). No repitas aquí los gastos de "
-                    "los hijos que ya estén repartidos en `descendientes` de conyuge_a."
+                    "los hijos que ya estén repartidos en `descendientes` de conyuge_a. Obligatorio si el expediente "
+                    "no guarda sus cifras; un cónyuge sin ingresos se indica con importes a 0."
                 ),
             },
         },
-        "required": ["conyuge_b"],
     },
 )
 
@@ -776,8 +789,10 @@ OPTIMIZE_TOOL = ToolSpec(
         "como fragmentos citables [F#]. Úsala para «¿cómo pago menos?», «¿qué me conviene hacer antes de fin de "
         "año?» o «¿conjunta o individual?». Después del 31 de diciembre solo quedan las opciones de la declaración. "
         "Parte del expediente; `datos` añade o corrige cifras del usuario y `conyuge` son las del otro cónyuge (sin "
-        "ellas no se compara la conjunta). Las restricciones son las que diga el usuario: no las inventes; si no las "
-        "ha dicho, omítelas y traslada los supuestos del resultado. "
+        "ellas no se compara la conjunta). Si el expediente guarda las cifras del cónyuge (`datos_conyuge`, se usan "
+        "si el usuario está casado) o sus preferencias (`preferencias_optimizacion`), son el punto de partida: lo que "
+        "pases sustituye campo a campo y el resultado dice qué se ha tomado del expediente. Las restricciones son las "
+        "que diga el usuario: no las inventes; si no las ha dicho, omítelas y traslada los supuestos del resultado. "
         f"Campos admitidos en `datos` y `conyuge`: {_INPUT_FIELDS_DOC}."
     ),
     input_schema={
@@ -992,6 +1007,28 @@ def _render_plan(plan: PlanOptimo) -> str:
     lines.append(f"Búsqueda {plan.busqueda.metodo}: {plan.busqueda.nota}")
     lines.append("Citas: " + "; ".join(plan.citas))
     return "\n".join(lines)
+
+
+def _cifras_del_conyuge(guardado: Any, pedido: dict[str, Any] | None) -> tuple[dict[str, Any] | None, list[str]]:
+    """The other spouse's figures for the joint comparison: the ones the case keeps (``datos_conyuge``) under
+    the ones the agent passes, field by field (a null removes one). Returns them (None when there are none)
+    and, when stored figures were used, the sentence that says which."""
+    if guardado is None:
+        return (None if pedido is None else {k: v for k, v in pedido.items() if v is not None}), []
+    try:
+        base = normalizar_datos_conyuge(guardado)
+    except DatosInvalidosError as exc:
+        raise DatosInvalidosError(f"{exc} (son las guardadas en el expediente)") from exc
+    cifras = dict(base)
+    for campo, valor in (pedido or {}).items():
+        if valor is None:
+            cifras.pop(campo, None)
+        else:
+            cifras[campo] = valor
+    usados = [campo for campo in base if pedido is None or campo not in pedido]
+    if not usados:
+        return cifras, []
+    return cifras, [f"Cónyuge B: cifras guardadas en el expediente — {resumen_conyuge(base, usados)}."]
 
 
 class Toolbox:
@@ -1279,15 +1316,20 @@ class Toolbox:
         )
 
     def _joint(self, arguments: dict[str, Any]) -> ToolOutcome:
-        otro = arguments.get("conyuge_b")
-        if not isinstance(otro, dict):
-            return _error(
-                "Falta 'conyuge_b' (objeto con los datos del otro cónyuge; puede ir vacío si no tiene ingresos)."
-            )
+        pedido = arguments.get("conyuge_b")
+        if pedido is not None and not isinstance(pedido, dict):
+            return _error("'conyuge_b' debe ser un objeto {campo: valor} con las cifras del otro cónyuge.")
+        guardado_usado: list[str] = []
         try:
             year, facts, datos = self._scenario_base(
                 {"ejercicio": arguments.get("ejercicio"), "datos": arguments.get("conyuge_a")}
             )
+            otro, guardado_usado = _cifras_del_conyuge(facts.get(DATOS_CONYUGE), pedido)
+            if otro is None:
+                return _error(
+                    "Falta 'conyuge_b' (objeto con los datos del otro cónyuge; si no tiene ingresos, su salario a 0): "
+                    "el expediente no guarda sus cifras."
+                )
             a, actividad_a = build_input_con_actividad(ejercicio=year, facts=facts, datos=datos)
             b, actividad_b = build_input_con_actividad(
                 ejercicio=year, datos={"comunidad_autonoma": a.comunidad_autonoma, **otro}
@@ -1306,6 +1348,7 @@ class Toolbox:
             return _error(str(exc))
         # Where each spouse's activity income came from (computed from the breakdown or given).
         supuestos = [
+            *guardado_usado,
             *comparacion.avisos,
             *(
                 f"Cónyuge {letra}: {actividad.aviso}"
@@ -1616,10 +1659,11 @@ class Toolbox:
             if not isinstance(name, str) or expected is None:
                 rejected.append(f"{name!r}: nombre de hecho desconocido")
                 continue
-            if name == DESCENDIENTES:
-                # Structured fact: checked child by child and stored as canonical JSON text.
+            if name in DETALLE_FACT_TYPES:
+                # Structured fact (children's detail, spouse's figures, optimiser's preferences): validated and
+                # stored as canonical JSON text.
                 try:
-                    value = descendientes_a_texto(value)
+                    value = detalle_a_texto(name, value)
                 except DatosInvalidosError as exc:
                     rejected.append(f"{name}: {exc}")
                     continue

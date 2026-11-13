@@ -11,7 +11,7 @@ from decimal import Decimal, InvalidOperation
 import json
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from hacienda_gpt.tax.actividad import ActividadInput, ResultadoActividad, calcular_rendimiento_actividad
 from hacienda_gpt.tax.autonomos_params import load_autonomos_params
@@ -150,8 +150,21 @@ PROFILE_FACT_TYPES: dict[str, str] = {
 # the conversational extractor nor to the document reader: free text would not parse. It is
 # written by the simulator and by the agent, both through :func:`descendientes_a_texto`.
 DESCENDIENTES = "descendientes"
-DETALLE_FACT_TYPES: dict[str, str] = {DESCENDIENTES: "string"}
+# Two more facts of the same kind, written by the optimiser screen and by the agent:
+# ``datos_conyuge`` — the spouse's own figures (a JSON object, :class:`DatosConyuge`) — and
+# ``preferencias_optimizacion`` — what the user can and will do before 31 December (a JSON object,
+# ``hacienda_gpt.tax.optimizador.PreferenciasOptimizacion``). Every structured fact is checked and
+# canonicalised by ``hacienda_gpt.tax.optimizador.detalle_a_texto`` before it is stored.
+DATOS_CONYUGE = "datos_conyuge"
+PREFERENCIAS_OPTIMIZACION = "preferencias_optimizacion"
+DETALLE_FACT_TYPES: dict[str, str] = {
+    DESCENDIENTES: "string",
+    DATOS_CONYUGE: "string",
+    PREFERENCIAS_OPTIMIZACION: "string",
+}
 MAX_DESCENDIENTES = 20
+# Longest JSON text accepted for the spouse's figures and for the optimiser's preferences.
+MAX_TEXTO_DETALLE = 20000
 # Counts the calculator derives from the detail (IRPFInput fills them when they are zero and
 # rejects a different figure): with the detail they are never asked for again.
 RECUENTOS_DEL_DETALLE: tuple[str, ...] = (
@@ -276,6 +289,9 @@ _MENSAJES_VALIDACION: dict[str, str] = {
     "dict_type": "debe ser un objeto {{campo: valor}}",
     "model_type": "debe ser un objeto {{campo: valor}}",
     "too_long": "admite como máximo {max_length} elementos",
+    "finite_number": "debe ser un número finito",
+    "string_too_long": "admite como máximo {max_length} caracteres",
+    "string_pattern_mismatch": "tiene un formato no válido",
 }
 
 
@@ -356,6 +372,107 @@ def normalizar_descendientes(valor: Any) -> list[dict[str, Any]]:
 def descendientes_a_texto(valor: Any) -> str:
     """Canonical JSON text of the children's detail, as the ``descendientes`` fact stores it."""
     return json.dumps(normalizar_descendientes(valor), ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+
+
+def importes_canonicos(valor: Any) -> Any:
+    """Every Decimal as its shortest exact text ("1500", "120.5"), so one amount has one stored text
+    whatever form it came in (1500, 1500.0, "1500.00"). Lists and dicts are walked."""
+    if isinstance(valor, Decimal):
+        return "0" if valor == 0 else format(valor.normalize(), "f")
+    if isinstance(valor, dict):
+        return {clave: importes_canonicos(v) for clave, v in valor.items()}
+    if isinstance(valor, list):
+        return [importes_canonicos(v) for v in valor]
+    return valor
+
+
+def objeto_json(valor: Any, que: str, ejemplo: str) -> dict[str, Any]:
+    """A ``{campo: valor}`` object from the JSON text kept in the fact store, or as it came (tool
+    arguments, request bodies). ``que`` names it in the Spanish error; ``ejemplo`` shows the shape."""
+    if isinstance(valor, str):
+        if len(valor) > MAX_TEXTO_DETALLE:
+            raise DatosInvalidosError(
+                f"{que}: el texto es demasiado largo (como máximo {MAX_TEXTO_DETALLE} caracteres)."
+            )
+        try:
+            valor = json.loads(valor) if valor.strip() else None
+        except (json.JSONDecodeError, RecursionError) as exc:
+            raise DatosInvalidosError(
+                f"{que}: el texto no se puede leer; debe ser un objeto JSON {{campo: valor}}, por ejemplo {ejemplo}."
+            ) from exc
+    if not isinstance(valor, dict):
+        raise DatosInvalidosError(f"{que}: debe ser un objeto {{campo: valor}}, por ejemplo {ejemplo}.")
+    return valor
+
+
+# Amounts beyond this are refused when stored (the calculator itself has no upper bound): a sanity cap.
+_IMPORTE_MAXIMO = Decimal("1000000000")
+
+
+class DatosConyuge(BaseModel):
+    """The spouse's own figures kept in the case (``datos_conyuge``).
+
+    The calculator's fields for ONE person that the optimiser and the joint comparison take for the
+    other spouse (income, what was withheld, contributions, age, disability), with the bounds of
+    :class:`IRPFInput` plus a sanity cap. What is shared with the user is left out on purpose: the
+    region, the children (common, in the user's ``descendientes``) and the filing mode (a choice,
+    kept in the optimiser's preferences). Absent = not known; a stated zero is a figure and is kept.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    rendimiento_trabajo_bruto: Decimal | None = Field(default=None, ge=0, le=_IMPORTE_MAXIMO)
+    cotizaciones_seguridad_social: Decimal | None = Field(default=None, ge=0, le=_IMPORTE_MAXIMO)
+    otros_gastos_deducibles_trabajo: Decimal | None = Field(default=None, ge=0, le=_IMPORTE_MAXIMO)
+    retenciones: Decimal | None = Field(default=None, ge=0, le=_IMPORTE_MAXIMO)
+    rendimiento_actividad_neto: Decimal | None = Field(default=None, ge=-_IMPORTE_MAXIMO, le=_IMPORTE_MAXIMO)
+    rendimiento_alquiler_neto: Decimal | None = Field(default=None, ge=-_IMPORTE_MAXIMO, le=_IMPORTE_MAXIMO)
+    rendimiento_capital_mobiliario: Decimal | None = Field(default=None, ge=-_IMPORTE_MAXIMO, le=_IMPORTE_MAXIMO)
+    ganancias_patrimoniales: Decimal | None = Field(default=None, ge=-_IMPORTE_MAXIMO, le=_IMPORTE_MAXIMO)
+    rendimientos_negativos_pendientes: Decimal | None = Field(default=None, ge=0, le=_IMPORTE_MAXIMO)
+    perdidas_patrimoniales_pendientes: Decimal | None = Field(default=None, ge=0, le=_IMPORTE_MAXIMO)
+    aportacion_plan_pensiones: Decimal | None = Field(default=None, ge=0, le=_IMPORTE_MAXIMO)
+    contribucion_empresa_plan_pensiones: Decimal | None = Field(default=None, ge=0, le=_IMPORTE_MAXIMO)
+    donativos: Decimal | None = Field(default=None, ge=0, le=_IMPORTE_MAXIMO)
+    edad: int | None = Field(default=None, ge=0, le=130)
+    grado_discapacidad: int | None = Field(default=None, ge=0, le=100)
+    necesita_asistencia: bool | None = None
+
+
+CAMPOS_CONYUGE: tuple[str, ...] = tuple(DatosConyuge.model_fields)
+
+
+def normalizar_datos_conyuge(valor: Any) -> dict[str, Any]:
+    """The spouse's figures as a JSON-ready dict with one canonical text per amount.
+
+    Accepts the JSON text kept in the fact store or an object. Raises :class:`DatosInvalidosError`
+    with a sentence in Spanish: unknown fields, values out of range, or an empty object (a spouse
+    with no figure at all would be taken as one without income).
+    """
+    datos = objeto_json(
+        valor, "Cifras de tu cónyuge («datos_conyuge»)", '{"rendimiento_trabajo_bruto": 12000, "edad": 41}'
+    )
+    try:
+        modelo = DatosConyuge.model_validate(datos)
+    except ValidationError as exc:
+        pista = (
+            f" Campos admitidos: {', '.join(CAMPOS_CONYUGE)}."
+            if any(e["type"] == "extra_forbidden" for e in exc.errors())
+            else ""
+        )
+        raise DatosInvalidosError(f"Cifras de tu cónyuge: {_problemas(exc)}.{pista}") from exc
+    limpio: dict[str, Any] = importes_canonicos(modelo.model_dump(exclude_none=True))
+    if not limpio:
+        raise DatosInvalidosError(
+            "Las cifras de tu cónyuge están vacías: indica al menos una (su salario, aunque sea 0) o quita el dato "
+            "del expediente."
+        )
+    return limpio
+
+
+def datos_conyuge_a_texto(valor: Any) -> str:
+    """Canonical JSON text of the spouse's figures, as the ``datos_conyuge`` fact stores it."""
+    return json.dumps(normalizar_datos_conyuge(valor), ensure_ascii=False, separators=(",", ":"), sort_keys=True)
 
 
 def _decimal(valor: Any) -> Decimal | None:

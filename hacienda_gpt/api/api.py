@@ -107,9 +107,9 @@ from hacienda_gpt.proactive.store import Notification, NotificationStore
 from hacienda_gpt.settings import API_RATE_LIMIT_PER_MIN, DECISION_STATE_DB_PATH
 from hacienda_gpt.tax.calendario import Vencimiento, aviso_festivos, proximos_vencimientos
 from hacienda_gpt.tax.documentos import AnalisisDocumento, DocumentoNoLegibleError, analizar_documento, decode_upload
-from hacienda_gpt.tax.optimizador import PlanOptimo, Restricciones, optimizar_desde_hechos
+from hacienda_gpt.tax.optimizador import PlanOptimo, Restricciones, detalle_a_texto, optimizar_desde_hechos
 from hacienda_gpt.tax.params import EjercicioNoDisponibleError, ejercicios_disponibles
-from hacienda_gpt.tax.profile import DatosInvalidosError, descendientes_a_texto
+from hacienda_gpt.tax.profile import DETALLE_FACT_TYPES, DatosInvalidosError
 from hacienda_gpt.tax.simulador import Simulacion, simular
 
 app = FastAPI(title="HaciendaGPT Decision API", version="1.0.0")
@@ -661,10 +661,11 @@ def put_case_fact(
         raise HTTPException(
             status_code=422, detail=f"El valor no es válido para este dato (se espera {expected.value})."
         )
-    if fact_name == "descendientes":
-        # The children's detail is JSON text: stored only when it parses, in its canonical form.
+    if fact_name in DETALLE_FACT_TYPES:
+        # The structured facts (the children's detail, the spouse's figures, the optimiser's
+        # preferences) are JSON text: stored only when they validate, in their canonical form.
         try:
-            value = descendientes_a_texto(value)
+            value = detalle_a_texto(fact_name, value)
         except DatosInvalidosError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
     tax_period: str | None = None
@@ -763,7 +764,10 @@ class OptimizeRequest(BaseModel):
     ejercicio: int | None = None
     datos: dict = Field(default_factory=dict)
     # The spouse's figures, {field: value} with the calculator's names. Without them joint filing is not compared.
+    # With a case, the figures it keeps (``datos_conyuge``) are the default of a married user: these replace them
+    # field by field (null removes one), and an explicit ``"conyuge": null`` leaves the spouse out of this run.
     conyuge: dict | None = None
+    # With a case, its stored preferences (``preferencias_optimizacion``) fill every field not sent here.
     restricciones: Restricciones = Field(default_factory=Restricciones)
     # The day the plan is made for (default: today in Spain). After 31 December of the fiscal year only the
     # filing choices remain.
@@ -799,6 +803,7 @@ def post_optimize(
             datos=payload.datos,
             conyuge=payload.conyuge,
             restricciones=payload.restricciones,
+            sin_conyuge="conyuge" in payload.model_fields_set and payload.conyuge is None,
         )
     except (DatosInvalidosError, EjercicioNoDisponibleError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

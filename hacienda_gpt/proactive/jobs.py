@@ -197,9 +197,12 @@ def plan_fin_de_ejercicio(case: CaseState, *, hoy: date, store: NotificationStor
     Acts only from 1 October to 31 December and only for a case whose fiscal
     year is the current one. The plan is the optimiser's best COMBINATION of
     levers (:mod:`hacienda_gpt.tax.optimizador`), with each lever's marginal
-    contribution: standalone savings are never added up. It is rewritten when
-    the profile changes (the key carries a hash of the facts) and replaces the
-    previous one.
+    contribution: standalone savings are never added up. What the case keeps for
+    the optimiser — the spouse's figures (``datos_conyuge``, for a married user)
+    and the preferences (``preferencias_optimizacion``: cash for pension plans,
+    illiquidity, the donation, latent positions) — is used as stated, and the
+    plan's assumptions say so. It is rewritten when the profile changes (the key
+    carries a hash of the facts, those two included) and replaces the previous one.
     """
     ejercicio = parse_fiscal_year(case.tax_period)
     if ejercicio != hoy.year or not date(hoy.year, 10, 1) <= hoy <= date(hoy.year, 12, 31):
@@ -268,9 +271,10 @@ def plan_fin_de_ejercicio(case: CaseState, *, hoy: date, store: NotificationStor
         estimacion = f"a devolver {_eur(plan.base.resultado_total)}"
     else:
         estimacion = "ni a pagar ni a devolver (0,00 €)"
+    datos_de_hoy = "vuestros datos de hoy (los dos cónyuges)" if plan.con_conyuge else "tus datos de hoy"
     sections = [
         plazo,
-        f"**Resultado estimado con tus datos de hoy:** {estimacion} "
+        f"**Resultado estimado con {datos_de_hoy}:** {estimacion} "
         f"(cuota líquida estimada: {_eur(plan.base.cuota_liquida_total)}).",
     ]
     if simulacion.datos_no_aportados:
@@ -283,8 +287,14 @@ def plan_fin_de_ejercicio(case: CaseState, *, hoy: date, store: NotificationStor
     if plan.palancas:
         optimo = plan.optimo.resultado_total
         destino = f"a pagar {_eur(optimo)}" if optimo > 0 else f"a devolver {_eur(optimo)}" if optimo < 0 else "0,00 €"
+        if not plan.con_conyuge:
+            quedaria = "tu declaración quedaría"
+        elif plan.optimo.tributacion == "conjunta_biparental":
+            quedaria = "vuestra declaración conjunta quedaría"
+        else:
+            quedaria = "vuestras dos declaraciones quedarían, sumadas,"
         block = [
-            f"**Qué puedes hacer antes de fin de año** — haciendo todo a la vez, tu declaración quedaría {destino}: "
+            f"**Qué puedes hacer antes de fin de año** — haciendo todo a la vez, {quedaria} {destino}: "
             f"{_eur(total)} menos."
         ]
         block += [_palanca(i, p) for i, p in enumerate(plan.palancas, start=1)]

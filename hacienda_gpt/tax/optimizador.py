@@ -45,6 +45,8 @@ from dataclasses import dataclass, field, replace
 from datetime import date
 from decimal import ROUND_CEILING, ROUND_FLOOR, Decimal
 import itertools
+import json
+import re
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
@@ -60,11 +62,21 @@ from hacienda_gpt.tax.params import (
 )
 from hacienda_gpt.tax.profile import (
     ACTIVIDAD_FACT_FIELDS,
+    CAMPOS_CONYUGE,
     CORE_FIELDS,
+    DATOS_CONYUGE,
+    DESCENDIENTES,
+    DETALLE_FACT_TYPES,
+    PREFERENCIAS_OPTIMIZACION,
     RECUENTOS_DEL_DETALLE,
     DatosInvalidosError,
     _problemas,
     build_input_con_actividad,
+    datos_conyuge_a_texto,
+    descendientes_a_texto,
+    importes_canonicos,
+    normalizar_datos_conyuge,
+    objeto_json,
 )
 
 ZERO = Decimal(0)
@@ -235,6 +247,8 @@ class _Modelo(BaseModel):
 class PosicionLatente(_Modelo):
     """A latent loss (or gain) the user could realise by selling before 31 December."""
 
+    # Identifier the screen gives each row, kept with the stored preferences; the optimiser ignores it.
+    id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.:-]{1,64}$")
     descripcion: str = Field(default="", max_length=200)
     # Positive figure: the loss (or gain) the sale would realise.
     importe: Decimal = Field(gt=0, le=Decimal("1000000000"))
@@ -273,6 +287,29 @@ class Restricciones(_Modelo):
     @property
     def tope_donativos(self) -> Decimal:
         return self.donativo_previsto if self.presupuesto_donativos is None else self.presupuesto_donativos
+
+
+TributacionPrevista = Literal["individual", "conjunta_biparental"]
+
+
+class PreferenciasOptimizacion(Restricciones):
+    """The constraints as the case keeps them (fact ``preferencias_optimizacion``).
+
+    The user's own statements, so the optimiser screen, the agent and the year-end plan start from
+    them. The date of the plan is never kept (it is always «today» unless a run says otherwise), nor
+    anything the optimiser derives.
+    """
+
+    # How the couple planned to file: the starting point the plan is compared with. Only used with the
+    # spouse's figures; a run that sends ``datos.tributacion`` overrides it.
+    tributacion_prevista: TributacionPrevista | None = None
+
+    @model_validator(mode="after")
+    def _identificadores_unicos(self) -> PreferenciasOptimizacion:
+        ids = [p.id for p in (*self.perdidas_latentes, *self.ganancias_latentes) if p.id is not None]
+        if len(ids) != len(set(ids)):
+            raise ValueError("dos inversiones tienen el mismo identificador («id»)")
+        return self
 
 
 # --------------------------------------------------------------------------- #
@@ -2226,13 +2263,15 @@ def optimizar(
     params: IRPFParams | None = None,
     max_evaluaciones: int = MAX_EVALUACIONES,
     avisos_previos: Iterable[str] = (),
+    supuestos_previos: Iterable[str] = (),
 ) -> PlanOptimo:
     """The best combination of the household's levers for the year of ``contribuyente``.
 
     ``conyuge`` makes it a married couple (both returns, or one joint return). ``conocidos`` are
     the input fields the user actually gave (a stated zero is not a missing figure). ``fecha``
     decides what is still possible: until 31 December every lever, afterwards only the filing
-    choices. Raises :class:`DatosInvalidosError` when the figures cannot be combined.
+    choices. ``avisos_previos`` and ``supuestos_previos`` go first among the plan's warnings and
+    assumptions. Raises :class:`DatosInvalidosError` when the figures cannot be combined.
     """
     if conyuge is not None and conyuge.ejercicio != contribuyente.ejercicio:
         raise DatosInvalidosError("Los datos de los dos cónyuges deben ser del mismo ejercicio.")
@@ -2241,7 +2280,7 @@ def optimizar(
             restricciones = Restricciones.model_validate(restricciones)
         except ValidationError as exc:
             raise DatosInvalidosError(f"Restricciones no válidas: {_problemas(exc)}.") from exc
-    return _Optimizador(
+    optimizador = _Optimizador(
         contribuyente,
         conyuge,
         conocidos=frozenset(conocidos),
@@ -2252,7 +2291,9 @@ def optimizar(
         params=params or load_params(contribuyente.ejercicio),
         max_evaluaciones=max_evaluaciones,
         avisos_previos=list(avisos_previos),
-    ).ejecutar()
+    )
+    optimizador.supuestos[:0] = list(supuestos_previos)
+    return optimizador.ejecutar()
 
 
 def conocidos_de(facts: dict[str, Any], datos: dict[str, Any], inp: IRPFInput) -> set[str]:
@@ -2269,6 +2310,186 @@ def conocidos_de(facts: dict[str, Any], datos: dict[str, Any], inp: IRPFInput) -
     return conocidos
 
 
+# --------------------------------------------------------------------------- #
+# What the case keeps for the optimiser: the spouse's figures and the preferences
+# --------------------------------------------------------------------------- #
+
+_LISTAS_DE_POSICIONES = ("perdidas_latentes", "ganancias_latentes")
+
+
+def normalizar_preferencias(valor: Any) -> dict[str, Any]:
+    """The optimiser's preferences as a JSON-ready dict: only what the user stated (defaults left out),
+    one canonical text per amount. Accepts the JSON text of the fact store or an object; raises
+    :class:`DatosInvalidosError` with a sentence in Spanish."""
+    datos = objeto_json(
+        valor,
+        "Preferencias del optimizador («preferencias_optimizacion»)",
+        '{"aportacion_maxima_pensiones": 1500, "acepta_iliquidez": true}',
+    )
+    try:
+        modelo = PreferenciasOptimizacion.model_validate(datos)
+    except ValidationError as exc:
+        problemas = re.sub(
+            r"\b(perdidas|ganancias)_latentes\.(\d+)\.?",
+            lambda m: f"{'pérdida' if m.group(1) == 'perdidas' else 'ganancia'} latente {int(m.group(2)) + 1}, ",
+            _problemas(exc),
+        ).replace(", :", ":")
+        pista = (
+            f" Campos admitidos: {', '.join(PreferenciasOptimizacion.model_fields)}."
+            if any(e["type"] == "extra_forbidden" and len(e["loc"]) == 1 for e in exc.errors())
+            else ""
+        )
+        raise DatosInvalidosError(f"Preferencias del optimizador: {problemas}.{pista}") from exc
+    limpio: dict[str, Any] = importes_canonicos(modelo.model_dump(exclude_defaults=True))
+    return limpio
+
+
+def preferencias_a_texto(valor: Any) -> str:
+    """Canonical JSON text of the preferences, as the ``preferencias_optimizacion`` fact stores it."""
+    return json.dumps(normalizar_preferencias(valor), ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+
+
+# The canonical text of every structured fact of the case (each validates its value first).
+DETALLE_A_TEXTO: dict[str, Callable[[Any], str]] = {
+    DESCENDIENTES: descendientes_a_texto,
+    DATOS_CONYUGE: datos_conyuge_a_texto,
+    PREFERENCIAS_OPTIMIZACION: preferencias_a_texto,
+}
+assert set(DETALLE_A_TEXTO) == set(DETALLE_FACT_TYPES)
+
+
+def detalle_a_texto(nombre: str, valor: Any) -> str:
+    """Validate a structured fact (``DETALLE_FACT_TYPES``) and return the canonical JSON text to store.
+
+    Raises :class:`DatosInvalidosError` with a Spanish sentence; ``KeyError`` for any other name.
+    """
+    return DETALLE_A_TEXTO[nombre](valor)
+
+
+_ETIQUETAS_CONYUGE: dict[str, str] = {
+    "rendimiento_trabajo_bruto": "salario bruto",
+    "cotizaciones_seguridad_social": "cotizaciones a la Seguridad Social",
+    "otros_gastos_deducibles_trabajo": "otros gastos deducibles del trabajo",
+    "retenciones": "IRPF ya retenido",
+    "rendimiento_actividad_neto": "beneficio neto de su actividad",
+    "rendimiento_alquiler_neto": "rendimiento neto de alquileres",
+    "rendimiento_capital_mobiliario": "intereses y dividendos",
+    "ganancias_patrimoniales": "ganancias por ventas del año",
+    "rendimientos_negativos_pendientes": "rendimientos negativos de años anteriores",
+    "perdidas_patrimoniales_pendientes": "pérdidas de años anteriores sin compensar",
+    "aportacion_plan_pensiones": "ya aportado a su plan de pensiones",
+    "contribucion_empresa_plan_pensiones": "aportación de su empresa a su plan",
+    "donativos": "ya donado",
+    "edad": "edad",
+    "grado_discapacidad": "grado de discapacidad",
+    "necesita_asistencia": "necesita ayuda de terceras personas o tiene movilidad reducida",
+}
+assert set(_ETIQUETAS_CONYUGE) == set(CAMPOS_CONYUGE)
+
+
+def resumen_conyuge(datos: dict[str, Any], campos: Iterable[str] | None = None) -> str:
+    """The stored spouse's figures in words («salario bruto 12.000,00 €; edad 41 años»), in a fixed order."""
+    elegidos = set(datos if campos is None else campos)
+    partes: list[str] = []
+    for campo in CAMPOS_CONYUGE:
+        if campo not in elegidos or campo not in datos:
+            continue
+        valor = datos[campo]
+        etiqueta = _ETIQUETAS_CONYUGE[campo]
+        if campo == "necesita_asistencia":
+            partes.append(etiqueta if valor else f"no {etiqueta}")
+        elif campo == "edad":
+            partes.append(f"edad {valor} años")
+        elif campo == "grado_discapacidad":
+            partes.append(f"grado de discapacidad {valor} %")
+        else:
+            partes.append(f"{etiqueta} {_eur(Decimal(str(valor)))}")
+    return "; ".join(partes)
+
+
+def resumen_preferencias(
+    prefs: dict[str, Any], *, con_conyuge: bool = True, campos: Iterable[str] | None = None
+) -> list[str]:
+    """The stored preferences in words, one phrase per stated preference, in a fixed order.
+
+    The spouse's preferences (their pension cash, how the couple planned to file) are left out
+    when the plan has no spouse.
+    """
+    elegidos = set(prefs if campos is None else campos)
+    partes: list[str] = []
+    for campo in PreferenciasOptimizacion.model_fields:
+        if campo not in elegidos or campo not in prefs:
+            continue
+        valor = prefs[campo]
+        if campo == "aportacion_maxima_pensiones":
+            importe = Decimal(str(valor))
+            partes.append(
+                f"puedes aportar hasta {_eur(importe)} más a tu plan de pensiones"
+                if importe > 0
+                else "no puedes aportar más a tu plan de pensiones"
+            )
+        elif campo == "aportacion_maxima_pensiones_conyuge" and con_conyuge:
+            importe = Decimal(str(valor))
+            partes.append(
+                f"tu cónyuge puede aportar hasta {_eur(importe)} más a su plan"
+                if importe > 0
+                else "tu cónyuge no puede aportar más a su plan"
+            )
+        elif campo == "acepta_iliquidez":
+            partes.append(
+                "aceptas que el dinero quede inmovilizado hasta la jubilación"
+                if valor
+                else "no quieres inmovilizar dinero hasta la jubilación"
+            )
+        elif campo == "donativo_previsto":
+            partes.append(f"vas a donar {_eur(Decimal(str(valor)))} de todos modos")
+        elif campo == "presupuesto_donativos":
+            partes.append(f"donarías como mucho {_eur(Decimal(str(valor)))} en total")
+        elif campo == "donativo_recurrente_importe_anterior":
+            partes.append(
+                f"el año pasado donaste {_eur(Decimal(str(valor)))} a una entidad a la que ya donabas el anterior"
+            )
+        elif campo in _LISTAS_DE_POSICIONES:
+            posiciones = [p for p in valor if con_conyuge or p.get("titular", "contribuyente") != "conyuge"]
+            if not posiciones:
+                continue
+            clase = "pérdidas" if campo == "perdidas_latentes" else "ganancias"
+            detalle = ", ".join(
+                f"{p.get('descripcion') or 'sin descripción'} ({_eur(Decimal(str(p['importe'])))}"
+                + (", de tu cónyuge" if p.get("titular") == "conyuge" else "")
+                + ")"
+                for p in posiciones
+            )
+            partes.append(f"inversiones con {clase} latentes: {detalle}")
+        elif campo == "tributacion_prevista" and con_conyuge:
+            partes.append(
+                "pensabais presentar una declaración conjunta"
+                if valor == "conjunta_biparental"
+                else "pensabais presentar cada uno su declaración"
+            )
+    return partes
+
+
+def _guardado(
+    facts: dict[str, Any], nombre: str, normalizar: Callable[[Any], dict[str, Any]], que: str, avisos: list[str]
+) -> dict[str, Any] | None:
+    """A structured fact of the case read back, or None. One that no longer validates (it was checked
+    when stored, so only a change of rules can cause it) is left out and the plan says so."""
+    if facts.get(nombre) is None:
+        return None
+    try:
+        return normalizar(facts[nombre])
+    except DatosInvalidosError as exc:
+        avisos.append(
+            f"{que} guardadas en tu expediente no se han podido usar ({exc}) Vuelve a guardarlas desde el optimizador."
+        )
+        return None
+
+
+def _es_casado(estado_civil: Any) -> bool:
+    return isinstance(estado_civil, str) and estado_civil.strip().lower().startswith("casad")
+
+
 def optimizar_desde_hechos(
     *,
     ejercicio: int,
@@ -2277,22 +2498,111 @@ def optimizar_desde_hechos(
     datos: dict[str, Any] | None = None,
     conyuge: dict[str, Any] | None = None,
     restricciones: Restricciones | dict[str, Any] | None = None,
+    sin_conyuge: bool = False,
 ) -> PlanOptimo:
     """:func:`optimizar` from the case facts (plus explicit ``datos``) and, optionally, the spouse's figures.
 
-    Raises ``DatosInvalidosError`` or ``EjercicioNoDisponibleError`` on bad input, like the simulator.
+    What the case keeps for the optimiser is the default of what a run does not say:
+
+    * ``datos_conyuge`` (the spouse's figures) when the user is married — the effective
+      ``estado_civil`` starts with «casad» — or the run brings figures of a spouse. ``conyuge``
+      replaces them field by field and a ``None`` value removes one; ``sin_conyuge`` leaves them
+      out (a plan without the spouse).
+    * ``preferencias_optimizacion`` (the constraints): each field of ``restricciones`` the run sets
+      replaces the stored one (a :class:`Restricciones` instance counts the fields it was given,
+      ``model_fields_set``; a dict, its keys). The stored ``tributacion_prevista`` is the starting
+      filing mode of a couple unless ``datos`` gives ``tributacion``.
+
+    The plan's ``supuestos`` say what was taken from the case. Raises ``DatosInvalidosError`` or
+    ``EjercicioNoDisponibleError`` on bad input, like the simulator.
     """
+    if (datos is not None and not isinstance(datos, dict)) or (conyuge is not None and not isinstance(conyuge, dict)):
+        raise DatosInvalidosError("'datos' y 'conyuge' deben ser objetos {campo: valor}.")
     facts = dict(facts or {})
     datos = dict(datos or {})
-    if not isinstance(datos, dict) or (conyuge is not None and not isinstance(conyuge, dict)):
-        raise DatosInvalidosError("'datos' y 'conyuge' deben ser objetos {campo: valor}.")
     estado_civil = datos.pop("estado_civil", None) or facts.get("estado_civil")
+    avisos: list[str] = []
+    supuestos: list[str] = []
+    conyuge_guardado = _guardado(facts, DATOS_CONYUGE, normalizar_datos_conyuge, "Las cifras de tu cónyuge", avisos)
+    preferencias = _guardado(
+        facts, PREFERENCIAS_OPTIMIZACION, normalizar_preferencias, "Las preferencias del optimizador", avisos
+    )
+
+    # The spouse: the stored figures under the run's own.
+    datos_conyuge: dict[str, Any] | None = None
+    if not sin_conyuge:
+        aplica = _es_casado(estado_civil) or conyuge is not None
+        base = conyuge_guardado if conyuge_guardado is not None and aplica else None
+        if conyuge is not None:
+            datos_conyuge = dict(base or {})
+            for campo, valor in conyuge.items():
+                if valor is None:
+                    datos_conyuge.pop(campo, None)
+                else:
+                    datos_conyuge[campo] = valor
+        elif base is not None:
+            datos_conyuge = dict(base)
+        usados = [campo for campo in (base or {}) if conyuge is None or campo not in conyuge]
+        if base is not None and usados:
+            supuestos.append(
+                "Se han usado las cifras de tu cónyuge guardadas en tu expediente"
+                + (" (las demás son las de esta consulta)" if conyuge else "")
+                + f": {resumen_conyuge(base, usados)}."
+            )
+        if conyuge_guardado is not None and base is None and conyuge is None:
+            supuestos.append(
+                "Tu expediente guarda cifras de tu cónyuge, pero "
+                + (f"tu estado civil es «{estado_civil}»" if estado_civil else "no consta tu estado civil")
+                + ": no se han usado. Si estás casado o casada, indícalo para comparar la declaración conjunta."
+            )
+
+    # The constraints: the stored preferences under the run's own, field by field.
+    if isinstance(restricciones, Restricciones):
+        pedidas = restricciones.model_dump(include=set(restricciones.model_fields_set))
+    else:
+        pedidas = dict(restricciones or {})
+    guardadas = dict(preferencias or {})
+    tributacion_prevista = guardadas.pop("tributacion_prevista", None)
+    usadas = [campo for campo in guardadas if campo not in pedidas]
+    efectivas = {**guardadas, **pedidas}
+    if datos_conyuge is not None and tributacion_prevista is not None and "tributacion" not in datos:
+        datos["tributacion"] = tributacion_prevista
+        usadas.append("tributacion_prevista")
+    resumen = resumen_preferencias(
+        {**guardadas, "tributacion_prevista": tributacion_prevista},
+        con_conyuge=datos_conyuge is not None,
+        campos=usadas,
+    )
+    if resumen:
+        supuestos.append("Se han usado tus preferencias guardadas en el expediente: " + "; ".join(resumen) + ".")
+    if datos_conyuge is None:
+        # Stored positions of the spouse mean nothing without the spouse's figures (the optimiser would refuse them).
+        quitadas = False
+        for clave in _LISTAS_DE_POSICIONES:
+            if clave in usadas:
+                propias = [p for p in efectivas[clave] if p.get("titular", "contribuyente") != "conyuge"]
+                quitadas = quitadas or len(propias) < len(efectivas[clave])
+                efectivas[clave] = propias
+        if quitadas:
+            supuestos.append(
+                "Tus preferencias guardadas incluyen inversiones de tu cónyuge: sin sus cifras no se han tenido en "
+                "cuenta."
+            )
+    try:
+        efectivas_validas = Restricciones.model_validate(efectivas)
+    except ValidationError as exc:
+        raise DatosInvalidosError(
+            f"Restricciones no válidas: {_problemas(exc)}."
+            + (" Se han combinado con las preferencias guardadas en tu expediente." if usadas else "")
+        ) from exc
+
     contribuyente, actividad = build_input_con_actividad(ejercicio=ejercicio, facts=facts, datos=datos)
-    avisos = [actividad.aviso] if actividad is not None else []
+    if actividad is not None:
+        avisos.append(actividad.aviso)
     otro: IRPFInput | None = None
     conocidos_conyuge: set[str] = set()
-    if conyuge is not None:
-        datos_conyuge = {k: v for k, v in conyuge.items() if k != "estado_civil"}
+    if datos_conyuge is not None:
+        datos_conyuge = {k: v for k, v in datos_conyuge.items() if k != "estado_civil"}
         otro, actividad_b = build_input_con_actividad(
             ejercicio=ejercicio, datos={"comunidad_autonoma": contribuyente.comunidad_autonoma, **datos_conyuge}
         )
@@ -2305,7 +2615,8 @@ def optimizar_desde_hechos(
         conyuge=otro,
         conocidos=conocidos_de(facts, datos, contribuyente),
         conocidos_conyuge=conocidos_conyuge,
-        restricciones=restricciones,
+        restricciones=efectivas_validas,
         estado_civil=str(estado_civil) if estado_civil is not None else None,
         avisos_previos=avisos,
+        supuestos_previos=supuestos,
     )
