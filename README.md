@@ -345,6 +345,89 @@ curl -X POST "http://127.0.0.1:8000/cases/$CASE/turn" \
 
 ---
 
+## 🏠 Asistente central y módulos
+
+El asesor fiscal es ahora el **asistente central** de la administración del hogar. La parte de impuestos
+es el primer módulo (`fiscal`) y no ha cambiado: mismas herramientas, mismas respuestas, mismos avisos y
+la misma API. Los demás ámbitos (luz, caducidades y garantías, ayudas públicas, suscripciones,
+hipoteca…) se enchufan como **módulos** que cumplen un único contrato,
+[`hacienda_gpt/modulos/contrato.py`](hacienda_gpt/modulos/contrato.py).
+
+### Arquitectura
+
+```
+                       ┌──────────── asistente central (agent/agent.py) ─────────────┐
+ pregunta ──► /agent ──►│ herramientas fiscales (calcular_irpf, buscar_fuentes…)      │──► respuesta
+                       │ consultar_luz / consultar_hipoteca / …  (una por módulo)     │    citada [F#]
+                       └──────┬───────────────────────────────────────────────────────┘    y verificada
+                              │ especialista (sub-agente acotado, agent/especialistas.py)
+                              ▼
+                 solo las herramientas del módulo + leer_expediente
+                 instrucciones del módulo; cada resultado = fragmento citable [F#]
+```
+
+- **Registro** (`modulos/registro.py`): descubre con `pkgutil` cada paquete `hacienda_gpt.modulos.<clave>`
+  que expone `MODULO`, lo valida contra el contrato (claves únicas, hechos con prefijo `<clave>_` salvo los
+  compartidos del núcleo, herramientas únicas con prefijo `<clave>_` salvo las fiscales de siempre, efectos
+  válidos…) y deja fuera, con un error en el log, el módulo que falle al importar o incumpla una regla: un
+  módulo roto nunca tumba la aplicación. `MODULOS_DESACTIVADOS` apaga módulos para todos (`fiscal` no se
+  puede apagar). `python -m hacienda_gpt.cli.proactive modulos` lista lo cargado y lo rechazado.
+- **Perfil del hogar** (`modulos/perfil.py`): los hechos del expediente son el perfil que comparten todos
+  los módulos. Los hechos de un módulo (`HechoModulo`) entran en el vocabulario en tiempo de ejecución:
+  `PUT /cases/{id}/facts/{nombre}` los valida con su `validar` y guarda los `json` como texto JSON canónico
+  (como `descendientes`). No se ofrecen al extractor de hechos del chat.
+- **Especialistas** (`agent/especialistas.py`): por cada módulo activado (salvo `fiscal`) el asistente
+  recibe `consultar_<clave>`, que lanza un sub-agente con las herramientas de ese módulo y `leer_expediente`
+  (datos compartidos y los suyos, nunca los de otro módulo). Reutiliza el bucle de los investigadores del
+  equipo (`team.run_subagent`), mide el consumo con el propósito `especialista:<clave>` contra el mismo
+  presupuesto de la pregunta, y registra cada resultado en el libro de evidencias como fragmento citable,
+  que el verificador comprueba como cualquier otro. Sin módulos activados el asistente es exactamente el de
+  antes (mismo *prompt*, mismas herramientas).
+- **Bandeja única** (`proactive/bandeja.py`): `run-daily` ejecuta los avisos fiscales como siempre y
+  después `avisos` de cada módulo activado para el dueño de cada caso (tipo `modulo:<clave>`, clave
+  `modulo:<clave>:<aviso>`, idempotente, `sustituye_prefijo` respetado; un módulo que falla no para a los
+  demás). `run-weekly` escribe un **resumen semanal** por caso con lo que vence, los importes de los avisos y
+  las acciones por decidir, ordenado por urgencia, sin sumar nunca cifras de módulos distintos.
+- **Mantenimiento**: las fuentes BOE de los módulos (`FuenteModulo`) entran en la vigilancia de
+  `boe-novedades` y en `params-check` (apartado `modulos`), como las leyes de la calculadora.
+
+### Garantías
+
+- Ninguna cifra la calcula el modelo: sale de una herramienta determinista y llega citada.
+- El asistente no suma ni compara como una sola cuenta cifras de módulos distintos si ningún módulo ha
+  calculado esa combinación (regla del *prompt* y del resumen semanal).
+- Una herramienta `efecto="actua"` nunca se ejecuta al llamarla: queda como **acción pendiente**
+  (`GET /acciones?case_id=…`) y solo corre tras `POST /acciones/{id}/confirmar` del dueño del caso, una sola
+  vez y solo si el módulo sigue activado. Las `prepara` devuelven borradores marcados como tales.
+- Consentimiento por módulo: `fiscal` siempre activo; el resto **desactivado hasta que el usuario lo
+  activa** (privacidad por defecto, art. 25.2 RGPD). `GET /modulos`, `PUT /me/modulos/{clave}`
+  (`{"activo": false, "borrar_datos": true}` borra además sus datos). Sin cuentas manda
+  `MODULOS_ACTIVOS_POR_DEFECTO`.
+- Los datos de los módulos se exportan y se borran con la cuenta como cualquier hecho; al borrar un hecho
+  se anonimiza en la auditoría y se quitan los avisos del módulo.
+
+### Cómo escribir un módulo
+
+1. Crea el paquete `hacienda_gpt/modulos/<clave>/` con un `__init__.py` que exponga `MODULO` (puedes
+   heredar de `ModuloBase`). La clave debe coincidir con el nombre del paquete.
+2. Declara sus hechos (`HechoModulo`, prefijo `<clave>_`, `validar` que lance `ValueError` en español,
+   `sensible=True` para datos personales delicados), sus herramientas (`HerramientaModulo`, nombre
+   `<clave>_…`, `efecto` correcto) y sus fuentes (`FuenteModulo`, con el id del BOE cuando lo haya).
+3. Herramientas deterministas que devuelven `ResultadoHerramienta` con cifras, fuentes y advertencias; los
+   errores como `es_error=True`, nunca como excepción. `avisos` idempotente (claves estables).
+4. Pruebas en `tests/modulos/<clave>/`. No hace falta tocar el núcleo: el registro lo encuentra solo.
+
+Ganchos opcionales que el núcleo ya entiende (propuestos para la próxima versión del contrato):
+`leer_documento(provider, *, filename, data)` (propone datos de un documento subido:
+`POST /modulos/{clave}/documento`) y `herramienta_de_documento` (a qué herramienta van esos datos).
+`POST /modulos/{clave}/herramientas/{nombre}` ejecuta una herramienta desde la interfaz.
+
+En la web, el panel **Módulos** lista los módulos, permite activarlos, editar sus datos con un formulario
+construido a partir de sus `HechoModulo` (los `json` en un área de texto con los errores de validación a la
+vista) y confirmar o rechazar las acciones pendientes; los avisos se agrupan por módulo.
+
+---
+
 ## 🤖 Agente con herramientas (`/agent`)
 
 `/agent` es el asesor agéntico: en lugar de la cadena fija de `/qa`

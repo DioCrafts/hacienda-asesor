@@ -49,6 +49,8 @@ Todo lo persistente está en **un único fichero SQLite** (`DECISION_STATE_DB_PA
 | `audit_events` | Rastro de cada expediente: **el texto de cada pregunta del usuario**, los hechos editados, las herramientas usadas, las afirmaciones verificadas, el nombre de los documentos analizados | Contiene, por tanto, datos personales en texto libre. |
 | `notifications` | Avisos generados para cada expediente (plazos, plan de fin de año, cambios normativos), con importes estimados | |
 | `notification_deliveries` | Qué aviso se envió por qué canal y cuándo | Solo existe si se ha usado la entrega fuera de la aplicación. |
+| `user_module_choices` | Qué módulos del hogar ha activado o desactivado cada usuario, y cuándo | Solo se añaden filas (el historial es el registro de la elección). Se borra con la cuenta. |
+| `acciones_pendientes` | Acciones que un especialista preparó y que esperan confirmación (módulo, herramienta, datos, estado, resultado) | Se borran con el expediente. |
 
 ### Lo que guarda el optimizador fiscal
 
@@ -150,6 +152,33 @@ servidores) lo fijan sus condiciones y el contrato que el operador tenga con él
 - **Vigilancia de tareas** (`HEALTHCHECK_URL`): solo indica si una tarea programada ha terminado
   bien; no lleva datos personales.
 
+## Módulos del hogar
+
+Además de los impuestos, el asistente puede llevar otros ámbitos del hogar (luz, caducidades, ayudas,
+suscripciones, hipoteca…), cada uno en un **módulo**. Lo que cambia para la privacidad:
+
+- **Desactivados por defecto.** Salvo el fiscal (el servicio para el que se abre la cuenta), ningún
+  módulo trata datos hasta que el usuario lo activa en «Módulos» (privacidad desde el diseño y por defecto,
+  art. 25 RGPD). La elección queda registrada con fecha (`user_module_choices`). Con `AUTH_MODE=off` decide
+  el operador (`MODULOS_ACTIVOS_POR_DEFECTO`).
+- **Datos de cada módulo.** Son hechos del expediente, con el nombre prefijado por el módulo
+  (`luz_potencia_p1_kw`…). Se exportan con `GET /me/export` (entre los hechos de cada expediente, junto con
+  los avisos del módulo, sus acciones pendientes en `pending_actions` y el historial `module_choices`) y se
+  borran con la cuenta. Quitar uno con la papelera lo anonimiza en la auditoría como cualquier hecho y
+  quita los avisos de su módulo. Los que el módulo marca como sensibles (`sensible=True`) aparecen señalados
+  en el formulario.
+- **Desactivar un módulo** detiene en el acto su especialista y sus avisos, borra sus avisos y rechaza sus
+  acciones pendientes. Sus datos se conservan salvo que el usuario elija «Desactivar y borrar sus datos»
+  (`PUT /me/modulos/{clave}` con `borrar_datos`), que los quita de todos sus expedientes y de la auditoría.
+- **Qué ve el proveedor del modelo.** Cuando el asistente consulta a un especialista, a ese especialista
+  solo se le muestran los datos compartidos (comunidad, familia, ingresos…) y los de su propio módulo, nunca
+  los de otro módulo. Los cálculos de los módulos son deterministas y locales; los avisos diarios y el
+  resumen semanal no usan ningún modelo.
+- **Leer documentos con un módulo** (por ejemplo, un tique para las garantías) exige el mismo
+  consentimiento `envio_documentos_a_proveedor_llm` que el lector fiscal; el documento no se guarda.
+- **Acciones fuera de la aplicación.** Ninguna se ejecuta sin que el dueño del caso la confirme; la
+  confirmación y su resultado quedan en la auditoría.
+
 ## Consentimientos
 
 Se registran como hechos fechados (tipo, concedido o retirado, instante, versión del texto):
@@ -201,8 +230,9 @@ terceros (proveedor del modelo, correo ya enviado).
 ## Eliminar mi cuenta
 
 `DELETE /me` con la contraseña (en la web: «Privacidad y datos» → «Eliminar mi cuenta») borra, por
-este orden, los avisos y registros de entrega de cada expediente, cada expediente con su rastro de
-auditoría y, al final, la cuenta con sus sesiones, consentimientos y relaciones de propiedad. Es
+este orden, los avisos y registros de entrega de cada expediente, sus acciones pendientes, cada expediente
+con su rastro de auditoría (y con él los datos de los módulos) y, al final, la cuenta con sus sesiones,
+consentimientos, elecciones de módulos y relaciones de propiedad. Es
 irreversible. Si el proceso falla a medias, la cuenta sigue existiendo y basta repetirlo.
 
 Quitar un solo dato del expediente (la papelera de «Tu expediente», `DELETE /cases/{id}/facts/{nombre}`,

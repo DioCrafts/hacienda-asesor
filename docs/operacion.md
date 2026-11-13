@@ -44,8 +44,12 @@ SHELL=/bin/bash
 # y el piloto lo lee él mismo. Ver el apartado 5.
 55 6 * * *  cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.ops run params-autopilot -- uv run python -m hacienda_gpt.cli.proactive params-autopilot --no-detect >> logs/proactive.log 2>&1
 
-# Recordatorios de plazos y plan de fin de ejercicio.
+# Recordatorios de plazos, plan de fin de ejercicio y avisos de los módulos del hogar activados.
 0 7 * * *   cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.ops run run-daily -- uv run python -m hacienda_gpt.cli.proactive run-daily >> logs/proactive.log 2>&1
+
+# Resumen semanal de cada caso (lo que vence, importes, acciones por decidir), los lunes.
+# Para que doctor lo vigile: «ops doctor --max-horas run-weekly=192».
+30 7 * * 1  cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.ops run run-weekly -- uv run python -m hacienda_gpt.cli.proactive run-weekly >> logs/proactive.log 2>&1
 
 # Entrega de los avisos generados arriba. Se registra sola con el nombre «deliver»;
 # envuélvela con «ops run deliver --» solo si quieres además su ping al healthcheck
@@ -848,3 +852,32 @@ uv run python -m hacienda_gpt.cli.consumo resumen --dias 7
 totales de hoy y de los últimos 30 días, en conjunto y por propósito, junto con los límites
 configurados y la fecha de la tabla de precios. Son cifras de todo el servicio, pensadas para
 quien lo opera.
+
+
+## 6. Módulos del hogar
+
+Los módulos (`hacienda_gpt/modulos/<clave>/`) se descubren al arrancar; no hay que registrarlos.
+
+- `uv run python -m hacienda_gpt.cli.proactive modulos` lista los módulos cargados, sus hechos,
+  herramientas (con su efecto) y fuentes, y **los que se han dejado fuera y por qué** (un módulo que no se
+  importa o incumple el contrato se registra en el log con nivel ERROR y la aplicación sigue sin él).
+- `MODULOS_DESACTIVADOS=luz,ayudas` apaga módulos para todos los usuarios sin tocar su código (el fiscal
+  no se puede apagar).
+- `MODULOS_ACTIVOS_POR_DEFECTO` (por defecto `fiscal`): los módulos activos para quien no ha elegido y, con
+  `AUTH_MODE=off`, para todos los casos. `todos` los activa todos. Con cuentas, cada usuario decide en
+  «Módulos» y su elección se guarda en `user_module_choices`.
+- `ESPECIALISTA_MAX_STEPS` (4): pasos de modelo de cada especialista. Su consumo se registra con el
+  propósito `especialista:<clave>` y cuenta en `LLM_MAX_CALLS_PER_QUESTION`.
+- `run-daily` añade al resumen `modulos` (avisos creados por módulo) y `errores_modulos` solo cuando algún
+  caso tiene activado un módulo además del fiscal. Un módulo que falla cuenta en `errores_modulos` y no
+  para a los demás ni a los avisos fiscales.
+- `run-weekly` escribe un resumen por caso y semana ISO (`resumen_semanal:AAAA-Wnn`); repetirlo no
+  duplica. Lo entrega `ops deliver` como cualquier aviso, con el mismo consentimiento.
+- `params-check` comprueba también las normas del BOE de las que leen los módulos (apartado `modulos` del
+  informe). El contrato aún no dice cuándo leyó cada módulo su norma, así que la primera fecha vista queda
+  como referencia en `MODULOS_FUENTES_STATE_PATH`; cuando se haya releído la norma y actualizado el módulo,
+  `params-check --marcar-modulos-revisados` mueve la referencia. `--fail-on-stale` falla también por ellas.
+  `boe-novedades` vigila esas normas como las de la calculadora. Las fuentes que no son del BOE se listan en
+  `fuera_del_boe`: su formato lo vigila el adaptador de cada módulo.
+- Acciones pendientes (`acciones_pendientes`, mismo fichero SQLite): las crea un especialista cuando llama a
+  una herramienta `actua`; solo se ejecutan con `POST /acciones/{id}/confirmar` del dueño del caso.

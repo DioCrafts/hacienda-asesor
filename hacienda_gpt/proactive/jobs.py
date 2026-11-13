@@ -100,6 +100,17 @@ def _tiene_ingresos(facts: dict[str, Any]) -> bool:
     return False
 
 
+def _hechos_de_modulos() -> frozenset[str]:
+    """Names of the facts the household modules own (empty if the registry cannot be loaded)."""
+    try:
+        from hacienda_gpt.modulos.registro import registro
+
+        return frozenset(registro().hechos())
+    except Exception:
+        logger.exception("Could not load the household modules' facts")
+        return frozenset()
+
+
 def _facts_hash(facts: dict[str, Any]) -> str:
     canonical = json.dumps(facts, sort_keys=True, default=str, ensure_ascii=False)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:12]
@@ -348,7 +359,8 @@ def plan_fin_de_ejercicio(case: CaseState, *, hoy: date, store: NotificationStor
         if reference and reference not in sources:
             sources.append(reference)
 
-    key = prefix + _facts_hash(facts)
+    # Household-module facts do not change the tax plan: they must not make it be rewritten.
+    key = prefix + _facts_hash({name: value for name, value in facts.items() if name not in _hechos_de_modulos()})
     added = store.add(
         Notification(
             case_id=case.case_id,

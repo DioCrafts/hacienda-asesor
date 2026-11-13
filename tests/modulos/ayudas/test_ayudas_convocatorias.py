@@ -26,7 +26,6 @@ from hacienda_gpt.modulos.ayudas.convocatorias import (
 from hacienda_gpt.modulos.ayudas.hogar import hogar_del_perfil
 from hacienda_gpt.modulos.ayudas.revision import actualizar_convocatorias, enriquecer_con_bdns
 from hacienda_gpt.proactive.novedades import ItemSumario
-
 from .conftest import FIXTURES
 
 HOY = date(2026, 11, 13)
@@ -113,7 +112,9 @@ def test_calls_for_companies_and_bodies_are_never_proposed() -> None:
     edge = _conv("20261111", "BOE-B-2026-36910")
     assert [(p.tipo, p.fin) for p in edge.plazos] == [("dias_habiles", date(2026, 11, 16))]  # "tercer día hábil"
     centros = _conv("20261113", "BOE-B-2026-37127")
-    assert [(p.tipo, p.fin) for p in centros.plazos] == [("dias_habiles", date(2026, 12, 4))]  # "Quince días (15) hábiles"
+    assert [(p.tipo, p.fin) for p in centros.plazos] == [
+        ("dias_habiles", date(2026, 12, 4))
+    ]  # "Quince días (15) hábiles"
     for conv in (mineria, edge, centros):
         assert _encaje(conv, {"edad": 40, "es_autonomo": True, "comunidad_autonoma": "Madrid"}) == "no"
 
@@ -164,8 +165,16 @@ def test_deadline_arithmetic() -> None:
 
 def test_llm_answer_gate() -> None:
     texto = "Primero. Beneficiarios. Podrán ser beneficiarias las personas físicas residentes en España."
-    buena = {"destinatario": "personas", "temas": ["estudios", "inventado"], "cita": "las personas físicas residentes en España"}
-    assert aceptar_respuesta_llm(buena, texto) == ("personas", ["estudios"], "las personas físicas residentes en España")
+    buena = {
+        "destinatario": "personas",
+        "temas": ["estudios", "inventado"],
+        "cita": "las personas físicas residentes en España",
+    }
+    assert aceptar_respuesta_llm(buena, texto) == (
+        "personas",
+        ["estudios"],
+        "las personas físicas residentes en España",
+    )
     assert aceptar_respuesta_llm({**buena, "cita": "las familias numerosas de toda España"}, texto) is None
     assert aceptar_respuesta_llm({**buena, "destinatario": "todos"}, texto) is None
     assert aceptar_respuesta_llm(None, texto) is None
@@ -178,7 +187,9 @@ def test_llm_classifier_only_behind_the_flag_and_only_when_undecided(monkeypatch
         "<p>Quinto. Plazo de presentación de solicitudes.</p><p>Diez días hábiles desde el día siguiente a la "
         "publicación de este extracto.</p></texto></documento>"
     )
-    item = ItemSumario(boe_id="BOE-B-2026-1", fecha=HOY, seccion="5B", departamento="X", titulo="Extracto ... convocan ayudas")
+    item = ItemSumario(
+        boe_id="BOE-B-2026-1", fecha=HOY, seccion="5B", departamento="X", titulo="Extracto ... convocan ayudas"
+    )
     llamadas: list[str] = []
 
     def falso(titulo: str, texto: str) -> dict[str, Any]:
@@ -192,7 +203,9 @@ def test_llm_classifier_only_behind_the_flag_and_only_when_undecided(monkeypatch
         conv = analizar(item, xml, HOY)
         assert conv.destinatario == "personas" and conv.clasificador == "llm" and llamadas
         assert conv.plazos[0].fin == date(2026, 11, 27)
-        convocatorias.registrar_clasificador_llm(lambda t, x: {"destinatario": "personas", "cita": "texto que no está en la convocatoria"})
+        convocatorias.registrar_clasificador_llm(
+            lambda t, x: {"destinatario": "personas", "cita": "texto que no está en la convocatoria"}
+        )
         assert analizar(item, xml, HOY).destinatario == "desconocido"
     finally:
         convocatorias.registrar_clasificador_llm(None)
@@ -205,7 +218,9 @@ def test_bdns_documented_format() -> None:
     datos = bdns.leer(json.loads((FIXTURES / "bdns" / "convocatoria_936148.json").read_text(encoding="utf-8")))
     assert datos is not None and datos.codigo == "936148"
     assert datos.fecha_fin == date(2026, 11, 19) and datos.abierto is True and datos.para_personas
-    pagina = bdns.leer(json.loads((FIXTURES / "bdns" / "convocatoria_lista_sin_beneficiarios.json").read_text(encoding="utf-8")))
+    pagina = bdns.leer(
+        json.loads((FIXTURES / "bdns" / "convocatoria_lista_sin_beneficiarios.json").read_text(encoding="utf-8"))
+    )
     assert pagina is not None and pagina.fecha_fin is None and pagina.fecha_inicio == date(2026, 1, 10)
     assert pagina.texto_fin == "Hasta agotar el crédito" and not pagina.solo_entidades
     assert bdns.leer({}) is None and bdns.leer({"content": []}) is None

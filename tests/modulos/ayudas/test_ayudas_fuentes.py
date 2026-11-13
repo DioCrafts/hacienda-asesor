@@ -20,7 +20,6 @@ from hacienda_gpt.modulos.ayudas.parametros import (
     load_prestaciones,
     textos_de_directorio,
 )
-
 from .conftest import FIXTURES
 
 EXTRACTOS = FIXTURES / "boe"

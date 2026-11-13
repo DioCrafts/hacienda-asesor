@@ -181,3 +181,12 @@ def test_run_weekly_cli(tmp_path, monkeypatch) -> None:
         "resumen_semanal": 1,
         "errors": 0,
     }
+
+
+def test_a_module_fact_does_not_rewrite_the_year_end_plan(store) -> None:
+    from hacienda_gpt.proactive.jobs import plan_fin_de_ejercicio
+
+    instalar(agua(Llamadas()))
+    assert plan_fin_de_ejercicio(make_case("c1", **SALARIED), hoy=date(2026, 11, 12), store=store) == 1
+    con_agua = make_case("c1", agua_personas=4, **SALARIED)
+    assert plan_fin_de_ejercicio(con_agua, hoy=date(2026, 11, 12), store=store) == 0

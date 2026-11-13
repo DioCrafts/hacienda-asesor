@@ -365,7 +365,22 @@ def evaluar_capi(p: PrestacionesParams, h: Hogar) -> Evaluacion:
 
 def _tramos_capi(p: PrestacionesParams, h: Hogar) -> str:
     capi = p.capi
-    edades = [hijo.edad for hijo in h.hijos if hijo.edad is not None and hijo.edad < 18]
+    enero = date(h.hoy.year, 1, 1)
+    edades: list[int] = []
+    for hijo in h.hijos:
+        if hijo.fecha_nacimiento is not None:
+            if hijo.fecha_nacimiento <= enero:
+                edad = (
+                    enero.year
+                    - hijo.fecha_nacimiento.year
+                    - ((enero.month, enero.day) < (hijo.fecha_nacimiento.month, hijo.fecha_nacimiento.day))
+                )
+                edades.append(edad)
+            else:
+                edades.append(0)  # born this year: under three in any case
+        elif hijo.edad is not None:
+            edades.append(hijo.edad)
+    edades = [e for e in edades if e < 18]
     if not edades:
         return ""
     partes = []

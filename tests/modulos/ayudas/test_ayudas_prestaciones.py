@@ -84,7 +84,9 @@ def test_imv_age_and_missing_data() -> None:
 
 
 def test_imv_with_income_estimated_from_the_fiscal_profile_is_only_probable() -> None:
-    e = _imv({"edad": 40, "estado_civil": "soltero", "rendimiento_trabajo_bruto": 6000, "cotizaciones_seguridad_social": 381})
+    e = _imv(
+        {"edad": 40, "estado_civil": "soltero", "rendimiento_trabajo_bruto": 6000, "cotizaciones_seguridad_social": 381}
+    )
     assert e.estado == "probable"
     assert e.importe_mensual == D("733.60") - (D(5619) / 12).quantize(D("0.01"))
 
@@ -141,7 +143,9 @@ def test_child_disability_allowance(hijo: dict[str, Any], importe: D | None) -> 
 
 
 def test_child_disability_counted_but_without_detail() -> None:
-    e = evaluar_hijo_discapacidad(P, hogar_del_perfil({"num_descendientes": 1, "num_descendientes_discapacidad": 1}, HOY))
+    e = evaluar_hijo_discapacidad(
+        P, hogar_del_perfil({"num_descendientes": 1, "num_descendientes_discapacidad": 1}, HOY)
+    )
     assert e.estado == "faltan_datos"
 
 
@@ -192,7 +196,13 @@ def test_birth_of_an_earlier_year_is_only_probable() -> None:
 
 
 def _bono(base: D, hoy: date = HOY, **extra: Any) -> Evaluacion:
-    perfil = {"ayudas_adultos_hogar": 1, "ayudas_menores_hogar": 0, "ayudas_base_imponible_hogar": base, "ayudas_contrato_pvpc": True, **extra}
+    perfil = {
+        "ayudas_adultos_hogar": 1,
+        "ayudas_menores_hogar": 0,
+        "ayudas_base_imponible_hogar": base,
+        "ayudas_contrato_pvpc": True,
+        **extra,
+    }
     return evaluar_bono_social_electrico(P, hogar_del_perfil(perfil, hoy))
 
 
@@ -226,7 +236,15 @@ def test_electricity_social_bonus_large_family_and_pvpc() -> None:
 
 
 def test_thermal_social_bonus_follows_the_electric_one() -> None:
-    h = hogar_del_perfil({"ayudas_adultos_hogar": 1, "ayudas_menores_hogar": 0, "ayudas_base_imponible_hogar": 9000, "ayudas_contrato_pvpc": True}, HOY)
+    h = hogar_del_perfil(
+        {
+            "ayudas_adultos_hogar": 1,
+            "ayudas_menores_hogar": 0,
+            "ayudas_base_imponible_hogar": 9000,
+            "ayudas_contrato_pvpc": True,
+        },
+        HOY,
+    )
     termico = evaluar_bono_social_termico(P, h, evaluar_bono_social_electrico(P, h))
     assert termico.estado == "probable" and termico.vence == date(2026, 12, 31)
     h2 = hogar_del_perfil({"ayudas_ya_solicitadas": ["bono_social_electrico"]}, HOY)
