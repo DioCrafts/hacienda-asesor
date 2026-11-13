@@ -1,0 +1,51 @@
+name: formatos
+
+# Daily probe of the external formats the app depends on: reads one fresh
+# payload of each BOE format (daily summary, a disposition's XML, a consolidated
+# law's metadata and page) with the app's own parsers and checks their declared
+# invariants. It also checks the fiscal calendar (tax/data/calendario.json): that
+# the data is coherent for this year and the next, and that the BOE articles
+# that set its deadlines still say what the spec quotes. A RED run means "a
+# format is no longer understood", "a deadline's law moved" or "the BOE could not
+# be read": the JSON printed by the step says which canary failed.
+#
+# Deterministic: no LLM, no secrets; needs network access to www.boe.es only
+# (never to the CENDOJ, the AEAT or the DGT: those are watched where the
+# crawlers run). The agentic diagnosis (`ops formatos diagnose`) runs where the
+# app is deployed, because it needs the known-good samples kept there.
+
+on:
+  schedule:
+    - cron: "43 6 * * 1-5" # weekdays at 06:43 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      FORMAT_STATE_PATH: ./formatos-out/_formatos_state.json
+      FORMAT_DIR: ./formatos-out/formatos
+      JOBS_STATE_PATH: ./formatos-out/_jobs_state.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync
+      - name: Are the BOE formats and the calendar's laws still understood?
+        shell: bash # explicit, so `pipefail` is on and the exit code survives `tee`
+        run: |
+          uv run python -m hacienda_gpt.cli.ops formatos probe --fail-on-problem | tee formatos-probe.json
+      - name: Keep the samples of a failed probe
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formatos-muestras
+          path: |
+            formatos-probe.json
+            formatos-out/
+          if-no-files-found: ignore

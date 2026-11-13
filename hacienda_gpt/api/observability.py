@@ -83,7 +83,7 @@ async def observability_middleware(request: Request, call_next) -> Response:
     start = time.perf_counter()
     status = 500
     try:
-        response = await call_next(request)
+        response: Response = await call_next(request)
         status = response.status_code
         response.headers["X-Request-ID"] = request_id
         return response

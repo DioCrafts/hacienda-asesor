@@ -29,10 +29,10 @@ max-tokens bumps the pipeline fingerprint and forces a clean re-ingest.
 
 from __future__ import annotations
 
-import logging
-import threading
 from collections.abc import Sequence
+import logging
 from pathlib import Path
+import threading
 from typing import Any
 
 from langchain_core.documents import Document
@@ -62,10 +62,10 @@ Frase de contexto (sólo conceptos presentes en el fragmento):"""
 
 
 _INSTANCE_LOCK = threading.Lock()
-_INSTANCE: "MLXContextualizer | None" = None
+_INSTANCE: MLXContextualizer | None = None
 
 
-def get_contextualizer(model_path: str, max_tokens: int = 80) -> "MLXContextualizer":
+def get_contextualizer(model_path: str, max_tokens: int = 80) -> MLXContextualizer:
     """Return the process-level singleton contextualizer.
 
     Lazy-loaded behind a lock so a burst of concurrent first-time requests
@@ -193,7 +193,7 @@ def _clean_output(raw: str) -> str:
     # "Contexto:" — strip duplication.
     for prefix in ("Contexto:", "contexto:", "[Contexto]", "[CONTEXTO]"):
         if text.startswith(prefix):
-            text = text[len(prefix):].strip()
+            text = text[len(prefix) :].strip()
     # First line only — extra paragraphs would defeat the point.
     text = text.split("\n", 1)[0].strip()
     return text

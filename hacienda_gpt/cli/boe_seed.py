@@ -24,6 +24,8 @@ import urllib.request
 
 import click
 
+from hacienda_gpt.ops import formatos
+
 logger = logging.getLogger(__name__)
 
 
@@ -66,6 +68,8 @@ def fetch_document(boe_id: str, target_path: Path, retries: int = 2, backoff_s: 
                 body = response.read()
                 target_path.parent.mkdir(parents=True, exist_ok=True)
                 target_path.write_bytes(body)
+                # Format watch (never raises): whatever arrives is saved; is it the norm that was asked for?
+                formatos.observar("boe_seed", body, contexto=boe_id)
                 return len(body)
         except (HTTPError, URLError, TimeoutError) as exc:
             last_exc = exc

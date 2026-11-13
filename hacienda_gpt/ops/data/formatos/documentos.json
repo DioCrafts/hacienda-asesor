@@ -1,0 +1,9 @@
+{
+  "fuente": "documentos",
+  "version": 1,
+  "descripcion": "Vocabulario adicional del lector de documentos del usuario. Vacío: el prompt es el de siempre.",
+  "origen": "incorporada",
+  "reglas": {
+    "vocabulario": []
+  }
+}

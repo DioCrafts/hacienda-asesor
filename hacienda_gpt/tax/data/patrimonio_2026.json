@@ -1,0 +1,1827 @@
+{
+  "ejercicio": 2026,
+  "devengo": "2026-12-31",
+  "fuentes_principales": {
+    "BOE-A-1991-14392": {
+      "norma": "Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio (texto consolidado)",
+      "boe_id": "BOE-A-1991-14392",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1991-14392",
+      "consolidado_a": "2023-12-28",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "a98f5535022b83aed528dec13fdfe48d5d6496f52c6f3baab360bf0d76659fd4"
+    },
+    "BOE-A-2022-22684": {
+      "norma": "Ley 38/2022, de 27 de diciembre, que crea el Impuesto Temporal de Solidaridad de las Grandes Fortunas (texto consolidado)",
+      "boe_id": "BOE-A-2022-22684",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2022-22684",
+      "consolidado_a": "2024-12-21",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "10148d3c31011cf582cb0468486d535c33664cd5bb96bf6451a675ed045ea625"
+    },
+    "BOE-A-2023-26452": {
+      "norma": "Real Decreto-ley 8/2023, de 27 de diciembre (texto consolidado)",
+      "boe_id": "BOE-A-2023-26452",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2023-26452",
+      "consolidado_a": "2026-10-07",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "0141d3d35197f70d57ba8daff6e0488660cc257962ba24cb56aef5271ee41f7e"
+    },
+    "BOE-A-2021-17915": {
+      "norma": "Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía (texto consolidado)",
+      "boe_id": "BOE-A-2021-17915",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2021-17915",
+      "consolidado_a": "2025-12-31",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "9f2dd5e37f2dfb8b4110af9c16284954542124e281ac407271239304c34a6051"
+    },
+    "BOA-d-2005-90006": {
+      "norma": "Decreto Legislativo 1/2005, de 26 de septiembre, texto refundido de tributos cedidos de Aragón (texto consolidado)",
+      "boe_id": "BOA-d-2005-90006",
+      "url": "https://www.boe.es/buscar/act.php?id=BOA-d-2005-90006",
+      "consolidado_a": "2025-07-07",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "1a34350a2d0b298f5d60b2c01cab46348a45f35a243ae25439267ea2ce3dec08"
+    },
+    "BOE-A-2015-945": {
+      "norma": "Decreto Legislativo 2/2014, de 22 de octubre, texto refundido de tributos cedidos del Principado de Asturias (texto consolidado)",
+      "boe_id": "BOE-A-2015-945",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2015-945",
+      "consolidado_a": "2025-12-31",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "c3a56bbe8bba2d95313709053a3e74bb7bd14d45ac92aea306d44ffb36ad3c12"
+    },
+    "BOE-A-2014-6925": {
+      "norma": "Decreto Legislativo 1/2014, de 6 de junio, texto refundido de tributos cedidos de las Illes Balears (texto consolidado)",
+      "boe_id": "BOE-A-2014-6925",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2014-6925",
+      "consolidado_a": "2026-06-13",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "f7555ca17427061a8d96042fe9f1fbbabfd39852e82156f726df0e341e6d3471"
+    },
+    "BOC-j-2009-90008": {
+      "norma": "Decreto Legislativo 1/2009, de 21 de abril, texto refundido de tributos cedidos de Canarias (texto consolidado)",
+      "boe_id": "BOC-j-2009-90008",
+      "url": "https://www.boe.es/buscar/act.php?id=BOC-j-2009-90008",
+      "consolidado_a": "2025-12-29",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "d1eba864267f1857b40a6d7a5200bc8dfa2ab8ec0e26901b4f4bc65d328fe76b"
+    },
+    "BOCT-c-2008-90028": {
+      "norma": "Decreto Legislativo 62/2008, de 19 de junio, texto refundido de tributos cedidos de Cantabria (texto consolidado)",
+      "boe_id": "BOCT-c-2008-90028",
+      "url": "https://www.boe.es/buscar/act.php?id=BOCT-c-2008-90028",
+      "consolidado_a": "2026-04-30",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "bf3f09f54ad60628a3351b6057eed69f2130aff2414ede603e5090dfc55270dc"
+    },
+    "BOE-A-2014-1368": {
+      "norma": "Ley 8/2013, de 21 de noviembre, de Medidas Tributarias de Castilla-La Mancha (texto consolidado)",
+      "boe_id": "BOE-A-2014-1368",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2014-1368",
+      "consolidado_a": "2026-03-30",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "3cbc5576ea915cafbf4888b42ae0ffba680e36ad5e0b8fa2df1c07627c54488b"
+    },
+    "BOCL-h-2013-90254": {
+      "norma": "Decreto Legislativo 1/2013, de 12 de septiembre, texto refundido de tributos propios y cedidos de Castilla y León (texto consolidado)",
+      "boe_id": "BOCL-h-2013-90254",
+      "url": "https://www.boe.es/buscar/act.php?id=BOCL-h-2013-90254",
+      "consolidado_a": "2024-05-14",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "e3698619d8c3fd0770e455c24036d3eb0b8518b4212761262caf98987b598b3e"
+    },
+    "BOE-A-2024-6951": {
+      "norma": "Decreto Legislativo 1/2024, de 12 de marzo, libro sexto del Código tributario de Cataluña (texto consolidado)",
+      "boe_id": "BOE-A-2024-6951",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-6951",
+      "consolidado_a": "2026-05-22",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "bc994c0eac637ca386b63d8d3cdcf26be2a0dbcc54f5d92572749a071f52508a"
+    },
+    "BOE-A-1998-8202": {
+      "norma": "Ley 13/1997, de 23 de diciembre, del tramo autonómico del IRPF y restantes tributos cedidos de la Comunitat Valenciana (texto consolidado)",
+      "boe_id": "BOE-A-1998-8202",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1998-8202",
+      "consolidado_a": "2026-08-10",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "b145c2001fe4d41acd29083b8470cab0f7772dd04da54fd4aadf14d31d4fed60"
+    },
+    "BOE-A-2018-8159": {
+      "norma": "Decreto Legislativo 1/2018, de 10 de abril, texto refundido de tributos cedidos de Extremadura (texto consolidado)",
+      "boe_id": "BOE-A-2018-8159",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2018-8159",
+      "consolidado_a": "2026-08-04",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "057c0fd51bf421e69a98a79546e22167e431b093a80a052893c5a41d7da43e47"
+    },
+    "BOE-A-2011-18161": {
+      "norma": "Decreto Legislativo 1/2011, de 28 de julio, texto refundido de tributos cedidos de Galicia (texto consolidado)",
+      "boe_id": "BOE-A-2011-18161",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2011-18161",
+      "consolidado_a": "2026-03-27",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "83a2faccfcf16b8ce42233737fc1524ee5760dbefd967376c822dbad4c72a6ea"
+    },
+    "BOE-A-2017-13750": {
+      "norma": "Ley 10/2017, de 27 de octubre, de impuestos propios y tributos cedidos de La Rioja (texto consolidado)",
+      "boe_id": "BOE-A-2017-13750",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2017-13750",
+      "consolidado_a": "2026-10-29",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "d5b5280e824c45cc2cae5f40871fadffde3d7191e06794d8b7198989450e4f81"
+    },
+    "BOCM-m-2010-90068": {
+      "norma": "Decreto Legislativo 1/2010, de 21 de octubre, texto refundido de tributos cedidos de la Comunidad de Madrid (texto consolidado)",
+      "boe_id": "BOCM-m-2010-90068",
+      "url": "https://www.boe.es/buscar/act.php?id=BOCM-m-2010-90068",
+      "consolidado_a": "2026-07-10",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "443a0a38ce07ae8a09119dc4249848281c9f38d7cf985ce8e23360a24a90cb7a"
+    },
+    "BOE-A-2011-10542": {
+      "norma": "Decreto Legislativo 1/2010, de 5 de noviembre, texto refundido de tributos cedidos de la Región de Murcia (texto consolidado)",
+      "boe_id": "BOE-A-2011-10542",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2011-10542",
+      "consolidado_a": "2025-07-24",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "92b48f796bc03b8df6648e4f2591cc477922f42c03f8d19b1fe2135f6149d27b"
+    }
+  },
+  "no_modelado": [
+    "Reglas de valoración de cada bien (arts. 10 a 24 de la Ley 19/1991): la calculadora toma los valores que indica el usuario.",
+    "Exenciones del art. 4 distintas de la vivienda habitual (ajuar doméstico, derechos consolidados de planes de pensiones, obras de arte, etc.): no deben incluirse en los importes; la exención de empresa familiar (art. 4.Ocho) se toma como importe declarado por el usuario.",
+    "Obligación real de contribuir, no residentes y régimen de impatriados (art. 5).",
+    "Deducción por impuestos satisfechos en el extranjero (art. 32) y bonificación de Ceuta y Melilla (art. 33).",
+    "Límite conjunto con tributación conjunta en el IRPF (art. 31.Dos): acumulación y prorrateo entre los miembros de la unidad familiar.",
+    "Ajustes del art. 31.Uno.a) sobre la base y la cuota del IRPF (ganancias a más de un año, dividendos de sociedades patrimoniales): el usuario debe aportar las cifras ya ajustadas.",
+    "Navarra y País Vasco (régimen foral)."
+  ],
+  "aplicable_2025": true,
+  "estado": {
+    "vivienda_habitual": {
+      "limite_exento": "300000",
+      "fuente": {
+        "referencia": "art. 4.Nueve Ley 19/1991",
+        "en_vigor_desde": "2011-09-18",
+        "verificado": true,
+        "nota": "Vivienda habitual según el art. 68.1.3.º LIRPF; las deudas de su adquisición solo se deducen en la parte proporcional no exenta (art. 25.Tres)."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-1991-14392",
+          "articulo": "art. 4.Nueve Ley 19/1991",
+          "cita": "Nueve. La vivienda habitual del contribuyente, según se define en el artículo 68.1.3.º de la Ley 35/2006, de 28 de noviembre, del Impuesto sobre la Renta de las Personas Físicas y de modificación parcial de las leyes de los Impuestos sobre Sociedades, sobre la Renta de no Residentes y sobre el Patrimonio, hasta un importe máximo de 300.000 euros.",
+          "cifras": {
+            "limite_exento": "300.000 euros"
+          }
+        },
+        {
+          "boe_id": "BOE-A-1991-14392",
+          "articulo": "art. 25.Tres Ley 19/1991",
+          "cita": "Tres. En ningún caso serán objeto de deducción las deudas contraídas para la adquisición de bienes o derechos exentos. Cuando la exención sea parcial, será deducible, en su caso, la parte proporcional de las deudas.",
+          "cifras": {}
+        }
+      ]
+    },
+    "minimo_exento": {
+      "importe": "700000",
+      "discapacidad": [],
+      "fuente": {
+        "referencia": "art. 28 Ley 19/1991",
+        "en_vigor_desde": "2011-09-18",
+        "verificado": true,
+        "nota": "Se aplica si la comunidad autónoma no ha regulado el mínimo exento."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-1991-14392",
+          "articulo": "art. 28 Ley 19/1991",
+          "cita": "Uno. En el supuesto de obligación personal, la base imponible se reducirá, en concepto de mínimo exento, en el importe que haya sido aprobado por la Comunidad Autónoma. Dos. Si la Comunidad Autónoma no hubiese regulado el mínimo exento a que se refiere el apartado anterior, la base imponible se reducirá en 700.000 euros.",
+          "cifras": {
+            "importe": "700.000 euros"
+          }
+        }
+      ]
+    },
+    "escala": {
+      "tramos": [
+        {
+          "hasta": "167129.45",
+          "tipo": "0.002",
+          "cuota_hasta_inicio": "0"
+        },
+        {
+          "hasta": "334252.88",
+          "tipo": "0.003",
+          "cuota_hasta_inicio": "334.26"
+        },
+        {
+          "hasta": "668499.75",
+          "tipo": "0.005",
+          "cuota_hasta_inicio": "835.63"
+        },
+        {
+          "hasta": "1336999.51",
+          "tipo": "0.009",
+          "cuota_hasta_inicio": "2506.86"
+        },
+        {
+          "hasta": "2673999.01",
+          "tipo": "0.013",
+          "cuota_hasta_inicio": "8523.36"
+        },
+        {
+          "hasta": "5347998.03",
+          "tipo": "0.017",
+          "cuota_hasta_inicio": "25904.35"
+        },
+        {
+          "hasta": "10695996.06",
+          "tipo": "0.021",
+          "cuota_hasta_inicio": "71362.33"
+        },
+        {
+          "hasta": null,
+          "tipo": "0.035",
+          "cuota_hasta_inicio": "183670.29"
+        }
+      ],
+      "fuente": {
+        "referencia": "art. 30 Ley 19/1991",
+        "en_vigor_desde": "2021-01-01",
+        "verificado": true,
+        "nota": "Se aplica si la comunidad autónoma no ha aprobado escala propia."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-1991-14392",
+          "articulo": "art. 30.2 Ley 19/1991",
+          "cita": "2. Si la Comunidad Autónoma no hubiese aprobado la escala a que se refiere el apartado anterior, la base liquidable del Impuesto será gravada a los tipos de la siguiente escala: Base liquidable – Hasta euros Cuota – Euros Resto Base liquidable – Hasta euros Tipo aplicable – Porcentaje 0,00 167.129,45 334.252,88 668.499,75 1.336.999,51 2.673.999,01 5.347.998,03 10.695.996,06 0,00 334,26 835,63 2.506,86 8.523,36 25.904,35 71.362,33 183.670,29 167.129,45 167.123,43 334.246,87 668.499,76 1.336.999,50 2.673.999,02 5.347.998,03 En adelante 0,2 0,3 0,5 0,9 1,3 1,7 2,1 3,5",
+          "cifras": {
+            "tramos.0.hasta": "167.129,45",
+            "tramos.0.tipo": "0,2",
+            "tramos.0.cuota_hasta_inicio": "0,00",
+            "tramos.1.hasta": "334.252,88",
+            "tramos.1.tipo": "0,3",
+            "tramos.1.cuota_hasta_inicio": "334,26",
+            "tramos.2.hasta": "668.499,75",
+            "tramos.2.tipo": "0,5",
+            "tramos.2.cuota_hasta_inicio": "835,63",
+            "tramos.3.hasta": "1.336.999,51",
+            "tramos.3.tipo": "0,9",
+            "tramos.3.cuota_hasta_inicio": "2.506,86",
+            "tramos.4.hasta": "2.673.999,01",
+            "tramos.4.tipo": "1,3",
+            "tramos.4.cuota_hasta_inicio": "8.523,36",
+            "tramos.5.hasta": "5.347.998,03",
+            "tramos.5.tipo": "1,7",
+            "tramos.5.cuota_hasta_inicio": "25.904,35",
+            "tramos.6.hasta": "10.695.996,06",
+            "tramos.6.tipo": "2,1",
+            "tramos.6.cuota_hasta_inicio": "71.362,33",
+            "tramos.7.tipo": "3,5",
+            "tramos.7.cuota_hasta_inicio": "183.670,29"
+          }
+        }
+      ]
+    },
+    "limite_conjunto": {
+      "porcentaje_base_irpf": "0.6",
+      "reduccion_maxima": "0.8",
+      "fuente": {
+        "referencia": "art. 31 Ley 19/1991",
+        "en_vigor_desde": "2007-01-01",
+        "verificado": true,
+        "nota": "La letra b) excluye «la parte del Impuesto sobre el Patrimonio que corresponda» a los elementos improductivos sin fijar el método: se prorratea la cuota por valor neto de esos elementos / base imponible, que son los datos que piden los modelos 714 y 718 (Orden HAC/277/2026 y Orden HFP/587/2023). La reducción es la menor entre el exceso y el 80 % de la cuota íntegra (casillas 38 y 39 del modelo 714)."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-1991-14392",
+          "articulo": "art. 31.Uno Ley 19/1991",
+          "cita": "Uno. La cuota íntegra de este Impuesto conjuntamente con las cuotas del Impuesto sobre la Renta de las Personas Físicas, no podrá exceder, para los sujetos pasivos sometidos al impuesto por obligación personal, del 60 por 100 de la suma de las bases imponibles de este último. A estos efectos: a) No se tendrá en cuenta la parte de la base imponible del ahorro derivada de ganancias y pérdidas patrimoniales que corresponda al saldo positivo de las obtenidas por las transmisiones de elementos patrimoniales adquiridos o de mejoras realizadas en los mismos con más de un año de antelación a la fecha de transmisión, ni la parte de las cuotas íntegras del Impuesto sobre la Renta de las Personas Físicas correspondientes a dicha parte de la base imponible del ahorro. Se sumará a la base imponible del ahorro el importe de los dividendos y participaciones en beneficios a los que se refiere la letra a) del apartado 6 de la disposición transitoria vigésima segunda del texto refundido de la Ley del Impuesto sobre Sociedades aprobado por el Real Decreto Legislativo 4/2004, de 5 de marzo. b) No se tendrá en cuenta la parte del Impuesto sobre el Patrimonio que corresponda a elementos patrimoniales que, por su naturaleza o destino, no sean susceptibles de producir los rendimientos gravados por la Ley del Impuesto sobre la Renta de las Personas Físicas. c) En el supuesto de que la suma de ambas cuotas supere el límite anterior, se reducirá la cuota del Impuesto sobre el Patrimonio hasta alcanzar el límite indicado, sin que la reducción pueda exceder del 80 por 100.",
+          "cifras": {
+            "porcentaje_base_irpf": "60 por 100",
+            "reduccion_maxima": "80 por 100"
+          }
+        }
+      ]
+    },
+    "obligacion_declarar": {
+      "umbral_bienes_derechos": "2000000",
+      "fuente": {
+        "referencia": "art. 37 Ley 19/1991",
+        "en_vigor_desde": "2021-01-01",
+        "verificado": true
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-1991-14392",
+          "articulo": "art. 37 Ley 19/1991",
+          "cita": "Están obligados a presentar declaración los sujetos pasivos cuya cuota tributaria, determinada de acuerdo con las normas reguladoras del Impuesto y una vez aplicadas las deducciones o bonificaciones que procedieren, resulte a ingresar, o cuando, no dándose esta circunstancia, el valor de sus bienes o derechos, determinado de acuerdo con las normas reguladoras del impuesto, resulte superior a 2.000.000 euros.",
+          "cifras": {
+            "umbral_bienes_derechos": "2.000.000 euros"
+          }
+        }
+      ]
+    }
+  },
+  "itsgf": {
+    "vigencia": {
+      "vigente": true,
+      "fuente": {
+        "referencia": "art. 3.Veintiocho Ley 38/2022 y disposición adicional 5.ª.2 Real Decreto-ley 8/2023",
+        "en_vigor_desde": "2023-12-29",
+        "verificado": true,
+        "nota": "Prorrogado sin fecha: se aplica mientras no se revise la tributación patrimonial en la reforma de la financiación autonómica. El texto consolidado no recoge esa revisión a la fecha de consulta."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2023-26452",
+          "articulo": "disposición adicional 5.ª.2 Real Decreto-ley 8/2023",
+          "cita": "2. Se prorroga la aplicación del Impuesto temporal de solidaridad de las grandes fortunas aprobado por la Ley 38/2022, de 27 de diciembre, en tanto no se produzca la revisión de la tributación patrimonial en el contexto de la reforma del sistema de financiación autonómica.",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2022-22684",
+          "articulo": "art. 3.Veintiocho Ley 38/2022",
+          "cita": "Veintiocho. Vigencia. Este impuesto será aplicable en los dos primeros ejercicios en los que se devengue a partir de la fecha de su entrada en vigor.",
+          "cifras": {}
+        }
+      ]
+    },
+    "hecho_imponible": {
+      "umbral_patrimonio_neto": "3000000",
+      "fuente": {
+        "referencia": "art. 3.Tres Ley 38/2022",
+        "en_vigor_desde": "2022-12-29",
+        "verificado": true
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2022-22684",
+          "articulo": "art. 3.Tres Ley 38/2022",
+          "cita": "Tres. Hecho imponible. Constituirá el hecho imponible del impuesto la titularidad por el sujeto pasivo en el momento del devengo de un patrimonio neto superior a 3.000.000 de euros.",
+          "cifras": {
+            "umbral_patrimonio_neto": "3.000.000 de euros"
+          }
+        }
+      ]
+    },
+    "minimo_exento": {
+      "importe": "700000",
+      "discapacidad": [],
+      "fuente": {
+        "referencia": "art. 3.Nueve Ley 38/2022",
+        "en_vigor_desde": "2022-12-29",
+        "verificado": true,
+        "nota": "Redacción del art. 17 del Real Decreto-ley 8/2023, con efectos desde la entrada en vigor de la Ley 38/2022: se aplica a todos los sujetos pasivos."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2022-22684",
+          "articulo": "art. 3.Nueve Ley 38/2022",
+          "cita": "Nueve. Base liquidable. La base imponible se reducirá, en concepto de mínimo exento, en 700.000 euros.",
+          "cifras": {
+            "importe": "700.000 euros"
+          }
+        }
+      ]
+    },
+    "escala": {
+      "tramos": [
+        {
+          "hasta": "3000000",
+          "tipo": "0",
+          "cuota_hasta_inicio": "0"
+        },
+        {
+          "hasta": "5347998.03",
+          "tipo": "0.017",
+          "cuota_hasta_inicio": "0"
+        },
+        {
+          "hasta": "10695996.06",
+          "tipo": "0.021",
+          "cuota_hasta_inicio": "39915.97"
+        },
+        {
+          "hasta": null,
+          "tipo": "0.035",
+          "cuota_hasta_inicio": "152223.93"
+        }
+      ],
+      "fuente": {
+        "referencia": "art. 3.Once Ley 38/2022",
+        "en_vigor_desde": "2022-12-29",
+        "verificado": true
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2022-22684",
+          "articulo": "art. 3.Once Ley 38/2022",
+          "cita": "Once. Cuota íntegra. La base liquidable del impuesto será gravada a los tipos de la siguiente escala: Base liquidable – Hasta euros Cuota – Euros Resto Base liquidable – Hasta euros Tipo aplicable – Porcentaje 0,00 0,00 3.000.000,00 0,00 3.000.000,00 0,00 2.347.998,03 1,7 5.347.998,03 39.915,97 5.347.998,03 2,1 10.695.996,06 152.223,93 En adelante 3,5",
+          "cifras": {
+            "tramos.0.hasta": "3.000.000,00",
+            "tramos.0.tipo": "0,00",
+            "tramos.0.cuota_hasta_inicio": "0,00",
+            "tramos.1.hasta": "5.347.998,03",
+            "tramos.1.tipo": "1,7",
+            "tramos.1.cuota_hasta_inicio": "0,00",
+            "tramos.2.hasta": "10.695.996,06",
+            "tramos.2.tipo": "2,1",
+            "tramos.2.cuota_hasta_inicio": "39.915,97",
+            "tramos.3.tipo": "3,5",
+            "tramos.3.cuota_hasta_inicio": "152.223,93"
+          }
+        }
+      ]
+    },
+    "limite_conjunto": {
+      "porcentaje_base_irpf": "0.6",
+      "reduccion_maxima": "0.8",
+      "fuente": {
+        "referencia": "art. 3.Doce Ley 38/2022",
+        "en_vigor_desde": "2022-12-29",
+        "verificado": true,
+        "nota": "La ley dice «las cuotas del IRPF y del Impuesto sobre el Patrimonio» sin precisar cuál de las de Patrimonio. El modelo 718 (anexo de la Orden HFP/587/2023, sustituido por la Orden HAC/652/2026, BOE-A-2026-14011) suma en su casilla 152 la «Cuota íntegra del Impuesto sobre el Patrimonio (casilla [40] de la declaración del Impuesto sobre el Patrimonio)», es decir, la total cuota íntegra ya reducida por el límite del art. 31 y por entero, más la parte de la cuota del ITSGF susceptible de limitación (casilla 153). Se sigue el modelo."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2022-22684",
+          "articulo": "art. 3.Doce Ley 38/2022",
+          "cita": "Doce. Límite de la cuota íntegra. 1. La cuota íntegra de este impuesto, conjuntamente con las cuotas del Impuesto sobre la Renta de las Personas Físicas y del Impuesto sobre el Patrimonio, no podrá exceder, para los sujetos pasivos sometidos al impuesto por obligación personal, del 60 por 100 de la suma de las bases imponibles del primero. A estos efectos, resultarán aplicables las reglas sobre el límite de la cuota íntegra del Impuesto sobre el Patrimonio, establecidas en la Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio, si bien, en el supuesto de que la suma de las cuotas de los tres impuestos supere el límite anterior, se reducirá la cuota de este impuesto hasta alcanzar el límite indicado, sin que la reducción pueda exceder del 80 por 100.",
+          "cifras": {
+            "porcentaje_base_irpf": "60 por 100",
+            "reduccion_maxima": "80 por 100"
+          }
+        }
+      ]
+    },
+    "deduccion_patrimonio": {
+      "fuente": {
+        "referencia": "art. 3.Quince Ley 38/2022",
+        "en_vigor_desde": "2022-12-29",
+        "verificado": true,
+        "nota": "El modelo 718 (casilla 205) toma como cuota efectivamente satisfecha la casilla 55 del modelo 714: la cuota a ingresar de Patrimonio, después de las bonificaciones autonómicas."
+      },
+      "evidencia": [
+        {
+          "boe_id": "BOE-A-2022-22684",
+          "articulo": "art. 3.Quince Ley 38/2022",
+          "cita": "Quince. Cuota a ingresar del Impuesto sobre el Patrimonio. De la cuota resultante de la aplicación de los apartados anteriores el sujeto pasivo podrá deducir la cuota del Impuesto sobre el Patrimonio del ejercicio efectivamente satisfecha.",
+          "cifras": {}
+        },
+        {
+          "boe_id": "BOE-A-2022-22684",
+          "articulo": "art. 3.Diecinueve Ley 38/2022",
+          "cita": "Diecinueve. Personas obligadas a presentar declaración. Están obligados a presentar declaración los sujetos pasivos cuya cuota tributaria, determinada de acuerdo con las normas reguladoras del impuesto y una vez aplicadas las deducciones o bonificaciones que procedieren, resulte a ingresar.",
+          "cifras": {}
+        }
+      ]
+    }
+  },
+  "comunidades": {
+    "andalucia": {
+      "nombre": "Andalucía",
+      "alias": [
+        "andalucia",
+        "junta de andalucia",
+        "comunidad autonoma de andalucia"
+      ],
+      "boe_id": "BOE-A-2021-17915",
+      "regula": true,
+      "minimo_exento": {
+        "importe": null,
+        "discapacidad": [
+          {
+            "grado_desde": "0.33",
+            "importe": "1250000"
+          },
+          {
+            "grado_desde": "0.65",
+            "importe": "1500000"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 24 Ley 5/2021 de Andalucía",
+          "en_vigor_desde": "2022-01-01",
+          "verificado": true,
+          "nota": "Solo regula el mínimo de los contribuyentes con discapacidad; el general es el estatal."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2021-17915",
+            "articulo": "art. 24 Ley 5/2021 de Andalucía",
+            "cita": "Cuando el contribuyente tenga la consideración de persona con discapacidad, el mínimo exento en el impuesto sobre el patrimonio se fija en: a) 1.250.000 euros, si el grado de discapacidad fuera igual o superior al 33% e inferior al 65%. b) 1.500.000 euros, si el grado de discapacidad fuera igual o superior al 65%.",
+            "cifras": {
+              "discapacidad.0.grado_desde": "33%",
+              "discapacidad.0.importe": "1.250.000 euros",
+              "discapacidad.1.grado_desde": "65%",
+              "discapacidad.1.importe": "1.500.000 euros"
+            }
+          }
+        ]
+      },
+      "escala": null,
+      "bonificacion": {
+        "porcentaje": null,
+        "regimen_itsgf": "diferencia",
+        "umbral_base_itsgf": null,
+        "minimo_descontado": null,
+        "fuente": {
+          "referencia": "disposición transitoria 5.ª Ley 5/2021 de Andalucía",
+          "en_vigor_desde": "2024-12-31",
+          "verificado": true,
+          "nota": "Sustituye, mientras esté vigente el ITSGF, a la bonificación general del 100 % del art. 25 bis."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2021-17915",
+            "articulo": "disposición transitoria 5.ª Ley 5/2021 de Andalucía",
+            "cita": "Mientras esté vigente el impuesto temporal de solidaridad de las grandes fortunas, creado por la Ley 38/2022, de 27 de diciembre, para el establecimiento de gravámenes temporales energético y de entidades de crédito y establecimientos financieros de crédito y por la que se crea el impuesto temporal de solidaridad de las grandes fortunas, y se modifican determinadas normas tributarias, el régimen aplicable al impuesto sobre el patrimonio queda modificado en los siguientes aspectos: 1. Queda sin efecto la escala de gravamen establecida en el artículo 25 de esta ley. 2. No será aplicable la bonificación general establecida en el artículo 25 bis de esta ley. En su lugar, el contribuyente podrá aplicar en la cuota resultante del impuesto sobre el patrimonio una bonificación determinada por la diferencia, si la hubiere, entre la total cuota íntegra del propio impuesto, una vez aplicado el límite conjunto establecido en el artículo 31 de la Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio, y, en su caso, la total cuota íntegra que correspondería al impuesto temporal de solidaridad de las grandes fortunas, una vez aplicado el límite conjunto establecido en el artículo 3. Doce de la Ley 38/2022, de 27 de diciembre.",
+            "cifras": {}
+          },
+          {
+            "boe_id": "BOE-A-2021-17915",
+            "articulo": "art. 25 bis Ley 5/2021 de Andalucía",
+            "cita": "Con posterioridad a las deducciones y bonificaciones reguladas por la normativa del Estado se aplicará, sobre la cuota resultante, una bonificación autonómica del 100% de dicha cuota si esta es positiva.",
+            "cifras": {}
+          }
+        ]
+      },
+      "no_modelado": [],
+      "notas": [
+        "Andalucía: mientras esté vigente el ITSGF queda sin efecto la escala propia del art. 25 (disposición transitoria 5.ª.1), por lo que se aplica la escala estatal del art. 30 de la Ley 19/1991."
+      ],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    },
+    "aragon": {
+      "nombre": "Aragón",
+      "alias": [
+        "aragon",
+        "comunidad autonoma de aragon"
+      ],
+      "boe_id": "BOA-d-2005-90006",
+      "regula": true,
+      "minimo_exento": {
+        "importe": "700000",
+        "discapacidad": [],
+        "fuente": {
+          "referencia": "art. 150-2 texto refundido de Aragón",
+          "en_vigor_desde": "2024-01-01",
+          "verificado": true,
+          "nota": "Redacción de la Ley 17/2023, con efectos desde el 1 de enero de 2023."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOA-d-2005-90006",
+            "articulo": "art. 150-2 texto refundido de Aragón",
+            "cita": "En el supuesto de obligación personal por el Impuesto sobre el Patrimonio, la base imponible se reducirá, en concepto de mínimo exento, en 700.000 euros.",
+            "cifras": {
+              "importe": "700.000 euros"
+            }
+          }
+        ]
+      },
+      "escala": null,
+      "bonificacion": null,
+      "no_modelado": [
+        "art. 150-1: Bonificación de los patrimonios especialmente protegidos de contribuyentes con discapacidad"
+      ],
+      "notas": [],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    },
+    "asturias": {
+      "nombre": "Principado de Asturias",
+      "alias": [
+        "asturias",
+        "principado de asturias"
+      ],
+      "boe_id": "BOE-A-2015-945",
+      "regula": true,
+      "minimo_exento": null,
+      "escala": {
+        "tramos": [
+          {
+            "hasta": "167129.45",
+            "tipo": "0.0022",
+            "cuota_hasta_inicio": null
+          },
+          {
+            "hasta": "334252.88",
+            "tipo": "0.0033",
+            "cuota_hasta_inicio": "367.68"
+          },
+          {
+            "hasta": "668499.75",
+            "tipo": "0.0056",
+            "cuota_hasta_inicio": "919.19"
+          },
+          {
+            "hasta": "1336999.51",
+            "tipo": "0.0102",
+            "cuota_hasta_inicio": "2790.97"
+          },
+          {
+            "hasta": "2673999.01",
+            "tipo": "0.0148",
+            "cuota_hasta_inicio": "9609.67"
+          },
+          {
+            "hasta": "5347998.03",
+            "tipo": "0.0197",
+            "cuota_hasta_inicio": "29397.26"
+          },
+          {
+            "hasta": "10695996.06",
+            "tipo": "0.0248",
+            "cuota_hasta_inicio": "82075.05"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.03",
+            "cuota_hasta_inicio": "214705.4"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 15 texto refundido de Asturias",
+          "en_vigor_desde": "2014-10-30",
+          "verificado": true,
+          "nota": "La primera fila de la tabla no imprime la cuota acumulada (cero)."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2015-945",
+            "articulo": "art. 15 texto refundido de Asturias",
+            "cita": "La cuota íntegra del impuesto regulada en el artículo 30 de la Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio, se obtendrá aplicando a la base liquidable los tipos que se indican en la siguiente escala: Base liquidable – Hasta euros Cuota íntegra – Euros Resto base liquidable – Hasta euros Tipo aplicable – Porcentaje 0,00 167.129,45 0,22 167.129,45 367,68 167.123,43 0,33 334.252,88 919,19 334.246,87 0,56 668.499,75 2.790,97 668.499,76 1,02 1.336.999,51 9.609,67 1.336.999,50 1,48 2.673.999,01 29.397,26 2.673.999,02 1,97 5.347.998,03 82.075,05 5.347.998,03 2,48 10.695.996,06 214.705,40 en adelante 3,00",
+            "cifras": {
+              "tramos.0.hasta": "167.129,45",
+              "tramos.0.tipo": "0,22",
+              "tramos.1.hasta": "334.252,88",
+              "tramos.1.tipo": "0,33",
+              "tramos.1.cuota_hasta_inicio": "367,68",
+              "tramos.2.hasta": "668.499,75",
+              "tramos.2.tipo": "0,56",
+              "tramos.2.cuota_hasta_inicio": "919,19",
+              "tramos.3.hasta": "1.336.999,51",
+              "tramos.3.tipo": "1,02",
+              "tramos.3.cuota_hasta_inicio": "2.790,97",
+              "tramos.4.hasta": "2.673.999,01",
+              "tramos.4.tipo": "1,48",
+              "tramos.4.cuota_hasta_inicio": "9.609,67",
+              "tramos.5.hasta": "5.347.998,03",
+              "tramos.5.tipo": "1,97",
+              "tramos.5.cuota_hasta_inicio": "29.397,26",
+              "tramos.6.hasta": "10.695.996,06",
+              "tramos.6.tipo": "2,48",
+              "tramos.6.cuota_hasta_inicio": "82.075,05",
+              "tramos.7.tipo": "3,00",
+              "tramos.7.cuota_hasta_inicio": "214.705,40"
+            }
+          }
+        ]
+      },
+      "bonificacion": null,
+      "no_modelado": [
+        "art. 16: Bonificación de los patrimonios especialmente protegidos de contribuyentes con discapacidad"
+      ],
+      "notas": [],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    },
+    "baleares": {
+      "nombre": "Illes Balears",
+      "alias": [
+        "baleares",
+        "illes balears",
+        "islas baleares"
+      ],
+      "boe_id": "BOE-A-2014-6925",
+      "regula": true,
+      "minimo_exento": {
+        "importe": "3000000",
+        "discapacidad": [],
+        "fuente": {
+          "referencia": "art. 8 texto refundido de las Illes Balears",
+          "en_vigor_desde": "2024-01-01",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2014-6925",
+            "articulo": "art. 8 texto refundido de las Illes Balears",
+            "cita": "La base imponible de los sujetos pasivos por obligación personal de contribuir que residen habitualmente en las Illes Balears se reducirá, en concepto de mínimo exento, en el importe de 3.000.000 de euros.",
+            "cifras": {
+              "importe": "3.000.000 de euros"
+            }
+          }
+        ]
+      },
+      "escala": {
+        "tramos": [
+          {
+            "hasta": "170472.04",
+            "tipo": "0.0028",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "340937.04",
+            "tipo": "0.0041",
+            "cuota_hasta_inicio": "477.32"
+          },
+          {
+            "hasta": "681869.75",
+            "tipo": "0.0069",
+            "cuota_hasta_inicio": "1176.23"
+          },
+          {
+            "hasta": "1336739.51",
+            "tipo": "0.0124",
+            "cuota_hasta_inicio": "3528.67"
+          },
+          {
+            "hasta": "2727479",
+            "tipo": "0.0179",
+            "cuota_hasta_inicio": "11649.06"
+          },
+          {
+            "hasta": "5454958",
+            "tipo": "0.0235",
+            "cuota_hasta_inicio": "36543.3"
+          },
+          {
+            "hasta": "10909915.99",
+            "tipo": "0.029",
+            "cuota_hasta_inicio": "100639.06"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.0345",
+            "cuota_hasta_inicio": "258832.84"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 9 texto refundido de las Illes Balears",
+          "en_vigor_desde": "2015-12-31",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2014-6925",
+            "articulo": "art. 9 texto refundido de las Illes Balears",
+            "cita": "La base liquidable del impuesto se grava de acuerdo con la escala siguiente: Base liquidable desde (euros) Cuota íntegra (euros) Resto de base liquidable hasta (euros) Tipo aplicable (%) 0 0 170.472,04 0,28 170.472,04 477,32 170.465 0,41 340.937,04 1.176,23 340.932,71 0,69 681.869,75 3.528,67 654.869,76 1,24 1.336.739,51 11.649,06 1.390.739,49 1,79 2.727.479 36.543,30 2.727.479 2,35 5.454.958 100.639,06 5.454.957,99 2,90 10.909.915,99 258.832,84 En adelante 3,45",
+            "cifras": {
+              "tramos.0.hasta": "170.472,04",
+              "tramos.0.tipo": "0,28",
+              "tramos.0.cuota_hasta_inicio": "0",
+              "tramos.1.hasta": "340.937,04",
+              "tramos.1.tipo": "0,41",
+              "tramos.1.cuota_hasta_inicio": "477,32",
+              "tramos.2.hasta": "681.869,75",
+              "tramos.2.tipo": "0,69",
+              "tramos.2.cuota_hasta_inicio": "1.176,23",
+              "tramos.3.hasta": "1.336.739,51",
+              "tramos.3.tipo": "1,24",
+              "tramos.3.cuota_hasta_inicio": "3.528,67",
+              "tramos.4.hasta": "2.727.479",
+              "tramos.4.tipo": "1,79",
+              "tramos.4.cuota_hasta_inicio": "11.649,06",
+              "tramos.5.hasta": "5.454.958",
+              "tramos.5.tipo": "2,35",
+              "tramos.5.cuota_hasta_inicio": "36.543,30",
+              "tramos.6.hasta": "10.909.915,99",
+              "tramos.6.tipo": "2,90",
+              "tramos.6.cuota_hasta_inicio": "100.639,06",
+              "tramos.7.tipo": "3,45",
+              "tramos.7.cuota_hasta_inicio": "258.832,84"
+            }
+          }
+        ]
+      },
+      "bonificacion": null,
+      "no_modelado": [
+        "art. 9 bis: Bonificación para los bienes de consumo cultural"
+      ],
+      "notas": [],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    },
+    "canarias": {
+      "nombre": "Canarias",
+      "alias": [
+        "canarias",
+        "islas canarias",
+        "comunidad autonoma de canarias"
+      ],
+      "boe_id": "BOC-j-2009-90008",
+      "regula": true,
+      "minimo_exento": {
+        "importe": "700000",
+        "discapacidad": [],
+        "fuente": {
+          "referencia": "art. 29 texto refundido de Canarias",
+          "en_vigor_desde": "2014-11-11",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOC-j-2009-90008",
+            "articulo": "art. 29 texto refundido de Canarias",
+            "cita": "En el supuesto de obligación personal, la base liquidable del Impuesto sobre Patrimonio se reducirá, en concepto de mínimo exento, en 700.000 euros.",
+            "cifras": {
+              "importe": "700.000 euros"
+            }
+          }
+        ]
+      },
+      "escala": null,
+      "bonificacion": null,
+      "no_modelado": [
+        "art. 29 bis: Exención de los patrimonios especialmente protegidos de los contribuyentes con discapacidad"
+      ],
+      "notas": [],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    },
+    "cantabria": {
+      "nombre": "Cantabria",
+      "alias": [
+        "cantabria",
+        "comunidad autonoma de cantabria"
+      ],
+      "boe_id": "BOCT-c-2008-90028",
+      "regula": true,
+      "minimo_exento": {
+        "importe": "700000",
+        "discapacidad": [],
+        "fuente": {
+          "referencia": "art. 3 texto refundido de Cantabria",
+          "en_vigor_desde": "2017-03-01",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOCT-c-2008-90028",
+            "articulo": "art. 3 texto refundido de Cantabria",
+            "cita": "De acuerdo con lo previsto en el artículo 47.1.a de la Ley 22/2009, de 18 de diciembre, por la que se regula el sistema de financiación de las Comunidades Autónomas de régimen común y ciudades con Estatuto de Autonomía y se modifican determinadas normas tributarias, el mínimo exento en el Impuesto sobre el Patrimonio se fija con carácter general en 700.000 euros.",
+            "cifras": {
+              "importe": "700.000 euros"
+            }
+          }
+        ]
+      },
+      "escala": {
+        "tramos": [
+          {
+            "hasta": "167129.45",
+            "tipo": "0.0024",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "334252.88",
+            "tipo": "0.0036",
+            "cuota_hasta_inicio": "401.11"
+          },
+          {
+            "hasta": "668499.75",
+            "tipo": "0.0061",
+            "cuota_hasta_inicio": "1002.75"
+          },
+          {
+            "hasta": "1336999.51",
+            "tipo": "0.0109",
+            "cuota_hasta_inicio": "3041.66"
+          },
+          {
+            "hasta": "2673999.01",
+            "tipo": "0.0157",
+            "cuota_hasta_inicio": "10328.31"
+          },
+          {
+            "hasta": "5347998.03",
+            "tipo": "0.0206",
+            "cuota_hasta_inicio": "31319.2"
+          },
+          {
+            "hasta": "10695996.06",
+            "tipo": "0.0254",
+            "cuota_hasta_inicio": "86403.58"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.0303",
+            "cuota_hasta_inicio": "222242.73"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 4 texto refundido de Cantabria",
+          "en_vigor_desde": "2017-12-30",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOCT-c-2008-90028",
+            "articulo": "art. 4 texto refundido de Cantabria",
+            "cita": "De acuerdo con lo previsto en el artículo 47.1.b) de la Ley 22/2009, de 18 de diciembre, por la que se regula el sistema de financiación de las Comunidades Autónomas de régimen común y Ciudades con Estatuto de Autonomía y se modifican determinadas normas tributarias, la base liquidable del Impuesto será gravada conforme a la siguiente escala: Base liquidable (Hasta euros) Cuota íntegra (Euros) Resto Base liquidable (Hasta euros) Tipo aplicable (Por ciento) 0 0 167.129,45 0,24 167.129,45 401,11 167.123,43 0,36 334.252,88 1.002,75 334.246,87 0,61 668.499,75 3.041,66 668.499,76 1,09 1.336.999,51 10.328,31 1.336.999,50 1,57 2.673.999,01 31.319,20 2.673.999,02 2,06 5.347.998,03 86.403,58 5.347.998,03 2,54 10.695.996,06 222.242,73 En adelante. 3,03",
+            "cifras": {
+              "tramos.0.hasta": "167.129,45",
+              "tramos.0.tipo": "0,24",
+              "tramos.0.cuota_hasta_inicio": "0",
+              "tramos.1.hasta": "334.252,88",
+              "tramos.1.tipo": "0,36",
+              "tramos.1.cuota_hasta_inicio": "401,11",
+              "tramos.2.hasta": "668.499,75",
+              "tramos.2.tipo": "0,61",
+              "tramos.2.cuota_hasta_inicio": "1.002,75",
+              "tramos.3.hasta": "1.336.999,51",
+              "tramos.3.tipo": "1,09",
+              "tramos.3.cuota_hasta_inicio": "3.041,66",
+              "tramos.4.hasta": "2.673.999,01",
+              "tramos.4.tipo": "1,57",
+              "tramos.4.cuota_hasta_inicio": "10.328,31",
+              "tramos.5.hasta": "5.347.998,03",
+              "tramos.5.tipo": "2,06",
+              "tramos.5.cuota_hasta_inicio": "31.319,20",
+              "tramos.6.hasta": "10.695.996,06",
+              "tramos.6.tipo": "2,54",
+              "tramos.6.cuota_hasta_inicio": "86.403,58",
+              "tramos.7.tipo": "3,03",
+              "tramos.7.cuota_hasta_inicio": "222.242,73"
+            }
+          }
+        ]
+      },
+      "bonificacion": {
+        "porcentaje": "1",
+        "regimen_itsgf": "diferencia",
+        "umbral_base_itsgf": "3000000",
+        "minimo_descontado": "700000",
+        "fuente": {
+          "referencia": "art. 4 bis y disposición adicional 3.ª texto refundido de Cantabria",
+          "en_vigor_desde": "2024-12-30",
+          "verificado": true,
+          "nota": "La bonificación del 100 % no se aplica si el patrimonio neto, descontado el mínimo de 700.000 euros, supera 3.000.000 de euros; en ese caso se aplica la bonificación por diferencia con el ITSGF."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOCT-c-2008-90028",
+            "articulo": "art. 4 bis texto refundido de Cantabria",
+            "cita": "Con posterioridad a las deducciones y bonificaciones reguladas por la normativa del Estado se aplicará, sobre la cuota resultante, una bonificación autonómica del 100 por 100 de dicha cuota.",
+            "cifras": {
+              "porcentaje": "100 por 100"
+            }
+          },
+          {
+            "boe_id": "BOCT-c-2008-90028",
+            "articulo": "disposición adicional 3.ª texto refundido de Cantabria",
+            "cita": "La bonificación prevista en el artículo 4 bis no será de aplicación cuando el patrimonio neto del sujeto pasivo sea superior a 3.000.000 de euros una vez descontado el mínimo exento de 700.000 euros, mientras esté vigente el Impuesto Temporal de Solidaridad de Grandes Fortunas. En su lugar, el contribuyente podrá aplicar una bonificación autonómica determinada por la diferencia, si la hubiere, entre la total cuota íntegra del propio impuesto, una vez aplicado el límite conjunto establecido en el artículo 31 de la Ley 19/1991, de 6 de junio, y la total cuota íntegra correspondiente al Impuesto Temporal de Solidaridad de las Grandes Fortunas, una vez aplicado el límite conjunto establecido en el artículo 3. Doce de la Ley 38/2022, de 27 de diciembre.",
+            "cifras": {
+              "umbral_base_itsgf": "3.000.000 de euros",
+              "minimo_descontado": "700.000 euros"
+            }
+          }
+        ]
+      },
+      "no_modelado": [],
+      "notas": [],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    },
+    "castilla_la_mancha": {
+      "nombre": "Castilla-La Mancha",
+      "alias": [
+        "castilla la mancha",
+        "castilla-la mancha",
+        "clm"
+      ],
+      "boe_id": "BOE-A-2014-1368",
+      "regula": false,
+      "minimo_exento": null,
+      "escala": null,
+      "bonificacion": null,
+      "no_modelado": [],
+      "notas": [],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    },
+    "castilla_y_leon": {
+      "nombre": "Castilla y León",
+      "alias": [
+        "castilla y leon",
+        "cyl"
+      ],
+      "boe_id": "BOCL-h-2013-90254",
+      "regula": true,
+      "minimo_exento": null,
+      "escala": null,
+      "bonificacion": null,
+      "no_modelado": [
+        "art. 11: Exención de los patrimonios especialmente protegidos de contribuyentes con discapacidad"
+      ],
+      "notas": [
+        "Castilla y León solo regula una exención (art. 11): el mínimo exento y la escala son los estatales y no hay bonificación general."
+      ],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    },
+    "cataluna": {
+      "nombre": "Cataluña",
+      "alias": [
+        "cataluna",
+        "catalunya",
+        "generalitat de catalunya"
+      ],
+      "boe_id": "BOE-A-2024-6951",
+      "regula": true,
+      "minimo_exento": {
+        "importe": "500000",
+        "discapacidad": [],
+        "fuente": {
+          "referencia": "art. 621-1 libro sexto del Código tributario de Cataluña",
+          "en_vigor_desde": "2024-03-15",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2024-6951",
+            "articulo": "art. 621-1 libro sexto del Código tributario de Cataluña",
+            "cita": "El importe del mínimo exento se fija en 500.000 euros.",
+            "cifras": {
+              "importe": "500.000 euros"
+            }
+          }
+        ]
+      },
+      "escala": {
+        "tramos": [
+          {
+            "hasta": "167129.45",
+            "tipo": "0.0021",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "334252.88",
+            "tipo": "0.00315",
+            "cuota_hasta_inicio": "350.97"
+          },
+          {
+            "hasta": "668499.75",
+            "tipo": "0.00525",
+            "cuota_hasta_inicio": "877.41"
+          },
+          {
+            "hasta": "1336999.75",
+            "tipo": "0.00945",
+            "cuota_hasta_inicio": "2632.21"
+          },
+          {
+            "hasta": "2673999.01",
+            "tipo": "0.01365",
+            "cuota_hasta_inicio": "8949.54"
+          },
+          {
+            "hasta": "5347998.03",
+            "tipo": "0.01785",
+            "cuota_hasta_inicio": "27199.58"
+          },
+          {
+            "hasta": "10695996.06",
+            "tipo": "0.02205",
+            "cuota_hasta_inicio": "74930.46"
+          },
+          {
+            "hasta": "20000000",
+            "tipo": "0.0275",
+            "cuota_hasta_inicio": "192853.82"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.0348",
+            "cuota_hasta_inicio": "448713.93"
+          }
+        ],
+        "fuente": {
+          "referencia": "disposición transitoria 1.ª libro sexto del Código tributario de Cataluña",
+          "en_vigor_desde": "2024-11-29",
+          "verificado": true,
+          "nota": "Tarifa aplicable mientras se mantenga vigente el ITSGF; sustituye a la del art. 621-2 (tipo máximo del 2,750 %)."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2024-6951",
+            "articulo": "disposición transitoria 1.ª libro sexto del Código tributario de Cataluña",
+            "cita": "La siguiente tarifa del impuesto sobre el patrimonio es aplicable mientras se mantenga vigente el impuesto temporal de solidaridad de las grandes fortunas. Base liquidable Hasta (euros) Cuota (euros) Resto de base liquidable Hasta (euros) Tipo aplicable (%) 0,00 0,00 167.129,45 0,210 167.129,45 350,97 167.123,43 0,315 334.252,88 877,41 334.246,87 0,525 668.499,75 2.632,21 668.500,00 0,945 1.336.999,75 8.949,54 1.336.999,26 1,365 2.673.999,01 27.199,58 2.673.999,02 1,785 5.347.998,03 74.930,46 5.347.998,03 2,205 10.695.996,06 192.853,82 9.304.003,94 2,750 20.000.000,00 448.713,93 en adelante 3,480",
+            "cifras": {
+              "tramos.0.hasta": "167.129,45",
+              "tramos.0.tipo": "0,210",
+              "tramos.0.cuota_hasta_inicio": "0,00",
+              "tramos.1.hasta": "334.252,88",
+              "tramos.1.tipo": "0,315",
+              "tramos.1.cuota_hasta_inicio": "350,97",
+              "tramos.2.hasta": "668.499,75",
+              "tramos.2.tipo": "0,525",
+              "tramos.2.cuota_hasta_inicio": "877,41",
+              "tramos.3.hasta": "1.336.999,75",
+              "tramos.3.tipo": "0,945",
+              "tramos.3.cuota_hasta_inicio": "2.632,21",
+              "tramos.4.hasta": "2.673.999,01",
+              "tramos.4.tipo": "1,365",
+              "tramos.4.cuota_hasta_inicio": "8.949,54",
+              "tramos.5.hasta": "5.347.998,03",
+              "tramos.5.tipo": "1,785",
+              "tramos.5.cuota_hasta_inicio": "27.199,58",
+              "tramos.6.hasta": "10.695.996,06",
+              "tramos.6.tipo": "2,205",
+              "tramos.6.cuota_hasta_inicio": "74.930,46",
+              "tramos.7.hasta": "20.000.000,00",
+              "tramos.7.tipo": "2,750",
+              "tramos.7.cuota_hasta_inicio": "192.853,82",
+              "tramos.8.tipo": "3,480",
+              "tramos.8.cuota_hasta_inicio": "448.713,93"
+            }
+          }
+        ]
+      },
+      "bonificacion": null,
+      "no_modelado": [
+        "art. 622-1: Bonificación de los patrimonios especialmente protegidos de contribuyentes con discapacidad",
+        "art. 622-2: Bonificación de las propiedades forestales"
+      ],
+      "notas": [
+        "Cataluña: la Ley 11/2026, de 9 de julio (DOGC núm. 9706, de 13-07-2026), que el texto consolidado del BOE aún no integra, no afecta al Impuesto sobre el Patrimonio: leído su art. 37, la disposición transitoria 7.ª que añade al libro sexto es una bonificación de actos jurídicos documentados y no modifica los arts. 621-1, 621-2, 622-1, 622-2 ni la disposición transitoria 1.ª."
+      ],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    },
+    "comunidad_valenciana": {
+      "nombre": "Comunitat Valenciana",
+      "alias": [
+        "comunidad valenciana",
+        "comunitat valenciana",
+        "valencia",
+        "generalitat valenciana"
+      ],
+      "boe_id": "BOE-A-1998-8202",
+      "regula": true,
+      "minimo_exento": {
+        "importe": "2000000",
+        "discapacidad": [],
+        "fuente": {
+          "referencia": "art. 8 Ley 13/1997 de la Comunitat Valenciana",
+          "en_vigor_desde": "2026-08-11",
+          "verificado": true,
+          "nota": "Redacción del art. 19 de la Ley 5/2026, de 31 de julio, en vigor el 11 de agosto de 2026."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-1998-8202",
+            "articulo": "art. 8 Ley 13/1997 de la Comunitat Valenciana",
+            "cita": "La base imponible de los sujetos pasivos por obligación personal del impuesto que residan habitualmente en la Comunitat Valenciana se reduce, en concepto de mínimo exento, en 2.000.000 euros.",
+            "cifras": {
+              "importe": "2.000.000 euros"
+            }
+          }
+        ]
+      },
+      "escala": {
+        "tramos": [
+          {
+            "hasta": "167129.45",
+            "tipo": "0.0025",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "334252.88",
+            "tipo": "0.0037",
+            "cuota_hasta_inicio": "417.82"
+          },
+          {
+            "hasta": "668499.75",
+            "tipo": "0.0062",
+            "cuota_hasta_inicio": "1036.18"
+          },
+          {
+            "hasta": "1336999.51",
+            "tipo": "0.0112",
+            "cuota_hasta_inicio": "3108.51"
+          },
+          {
+            "hasta": "2673999.01",
+            "tipo": "0.0162",
+            "cuota_hasta_inicio": "10595.71"
+          },
+          {
+            "hasta": "5347998.03",
+            "tipo": "0.0212",
+            "cuota_hasta_inicio": "32255.1"
+          },
+          {
+            "hasta": "10695996.06",
+            "tipo": "0.0262",
+            "cuota_hasta_inicio": "88943.88"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.035",
+            "cuota_hasta_inicio": "229061.43"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 9 Ley 13/1997 de la Comunitat Valenciana",
+          "en_vigor_desde": "2021-01-01",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-1998-8202",
+            "articulo": "art. 9 Ley 13/1997 de la Comunitat Valenciana",
+            "cita": "La base liquidable resultante de la aplicación de lo dispuesto en el artículo anterior se graba a los tipos de la escala siguiente: Base liquidable hasta euros Cuota euros Resto base liquidable hasta euros Tipo aplicable porcentaje 0,00 0 167.129,45 0,25 167.129,45 417,82 167.123,43 0,37 334.252,88 1.036,18 334.246,87 0,62 668.499,75 3.108,51 668.499,76 1,12 1.336.999,51 10.595,71 1.336.999,50 1,62 2.673.999,01 32.255,10 2.673.999,02 2,12 5.347.998,03 88.943,88 5.347.998,03 2,62 10.695.996,06 229.061,43 En adelante 3,5",
+            "cifras": {
+              "tramos.0.hasta": "167.129,45",
+              "tramos.0.tipo": "0,25",
+              "tramos.0.cuota_hasta_inicio": "0",
+              "tramos.1.hasta": "334.252,88",
+              "tramos.1.tipo": "0,37",
+              "tramos.1.cuota_hasta_inicio": "417,82",
+              "tramos.2.hasta": "668.499,75",
+              "tramos.2.tipo": "0,62",
+              "tramos.2.cuota_hasta_inicio": "1.036,18",
+              "tramos.3.hasta": "1.336.999,51",
+              "tramos.3.tipo": "1,12",
+              "tramos.3.cuota_hasta_inicio": "3.108,51",
+              "tramos.4.hasta": "2.673.999,01",
+              "tramos.4.tipo": "1,62",
+              "tramos.4.cuota_hasta_inicio": "10.595,71",
+              "tramos.5.hasta": "5.347.998,03",
+              "tramos.5.tipo": "2,12",
+              "tramos.5.cuota_hasta_inicio": "32.255,10",
+              "tramos.6.hasta": "10.695.996,06",
+              "tramos.6.tipo": "2,62",
+              "tramos.6.cuota_hasta_inicio": "88.943,88",
+              "tramos.7.tipo": "3,5",
+              "tramos.7.cuota_hasta_inicio": "229.061,43"
+            }
+          }
+        ]
+      },
+      "bonificacion": null,
+      "no_modelado": [
+        "art. 9 bis: Deducciones (acciones, participaciones y préstamos a Empresas Emergentes de la Comunitat Valenciana)"
+      ],
+      "notas": [],
+      "aplicable_2025": false,
+      "diferencias_2025": [
+        "El mínimo exento del devengo de 31-12-2025 era de 1.000.000 euros (art. 8 en la redacción de la Ley 5/2025, de 30 de mayo, leída en la versión del texto consolidado de 29/12/2025); los 2.000.000 euros rigen desde el 11-08-2026. La escala del art. 9 es la misma."
+      ]
+    },
+    "extremadura": {
+      "nombre": "Extremadura",
+      "alias": [
+        "extremadura",
+        "junta de extremadura"
+      ],
+      "boe_id": "BOE-A-2018-8159",
+      "regula": true,
+      "minimo_exento": {
+        "importe": "500000",
+        "discapacidad": [
+          {
+            "grado_desde": "0.33",
+            "importe": "600000"
+          },
+          {
+            "grado_desde": "0.5",
+            "importe": "700000"
+          },
+          {
+            "grado_desde": "0.65",
+            "importe": "800000"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 14 texto refundido de Extremadura",
+          "en_vigor_desde": "2024-01-01",
+          "verificado": true,
+          "nota": "El mínimo por discapacidad exige tener reconocido el grado, una incapacidad permanente, incapacitación judicial o curatela representativa (art. 14.3)."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2018-8159",
+            "articulo": "art. 14 texto refundido de Extremadura",
+            "cita": "1. En el supuesto de obligación personal, con carácter general, la base imponible se reducirá, en concepto de mínimo exento, en el importe de 500.000 euros. 2. No obstante, para los contribuyentes que tengan la consideración legal de personas con discapacidad, ese mínimo exento será el siguiente: a) 600.000 euros, si el grado de discapacidad fuera igual o superior al 33 % e inferior al 50 %. b) 700.000 euros, si el grado de discapacidad fuera igual o superior al 50 % e inferior al 65 %. c) 800.000 euros, si el grado de discapacidad fuera igual o superior al 65 %.",
+            "cifras": {
+              "importe": "500.000 euros",
+              "discapacidad.0.grado_desde": "33 %",
+              "discapacidad.0.importe": "600.000 euros",
+              "discapacidad.1.grado_desde": "50 %",
+              "discapacidad.1.importe": "700.000 euros",
+              "discapacidad.2.grado_desde": "65 %",
+              "discapacidad.2.importe": "800.000 euros"
+            }
+          }
+        ]
+      },
+      "escala": {
+        "tramos": [
+          {
+            "hasta": "167129.45",
+            "tipo": "0.003",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "334252.88",
+            "tipo": "0.0045",
+            "cuota_hasta_inicio": "501.39"
+          },
+          {
+            "hasta": "668499.75",
+            "tipo": "0.0075",
+            "cuota_hasta_inicio": "1253.44"
+          },
+          {
+            "hasta": "1336999.01",
+            "tipo": "0.0135",
+            "cuota_hasta_inicio": "3760.3"
+          },
+          {
+            "hasta": "2673999.01",
+            "tipo": "0.0195",
+            "cuota_hasta_inicio": "12785.04"
+          },
+          {
+            "hasta": "5347998.03",
+            "tipo": "0.0255",
+            "cuota_hasta_inicio": "38856.53"
+          },
+          {
+            "hasta": "10695996.06",
+            "tipo": "0.0315",
+            "cuota_hasta_inicio": "107043.51"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.0375",
+            "cuota_hasta_inicio": "275505.45"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 15 texto refundido de Extremadura",
+          "en_vigor_desde": "2018-05-24",
+          "verificado": true,
+          "nota": "La tabla imprime «1.336.999,01» como inicio del quinto tramo (la suma de la fila anterior da 1.336.999,51); se guarda lo impreso."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2018-8159",
+            "articulo": "art. 15 texto refundido de Extremadura",
+            "cita": "La cuota íntegra del impuesto regulada en el artículo 30 de la Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio, se obtendrá aplicando a la base liquidable los tipos que se indican en la siguiente escala: Base liquidable – Hasta euros Cuota íntegra – Euros Resto base liquidable – Hasta euros Tipo aplicable – Porcentaje 0,00 0 167.129,45 0,30 167.129,45 501,39 167.123,43 0,45 334.252,88 1.253,44 334.246,87 0,75 668.499,75 3.760,30 668.499,76 1,35 1.336.999,01 12.785,04 1.336.999,50 1,95 2.673.999,01 38.856,53 2.673.999,02 2,55 5.347.998,03 107.043,51 5.347.998,03 3,15 10.695.996,06 275.505,45 En adelante. 3,75",
+            "cifras": {
+              "tramos.0.hasta": "167.129,45",
+              "tramos.0.tipo": "0,30",
+              "tramos.0.cuota_hasta_inicio": "0",
+              "tramos.1.hasta": "334.252,88",
+              "tramos.1.tipo": "0,45",
+              "tramos.1.cuota_hasta_inicio": "501,39",
+              "tramos.2.hasta": "668.499,75",
+              "tramos.2.tipo": "0,75",
+              "tramos.2.cuota_hasta_inicio": "1.253,44",
+              "tramos.3.hasta": "1.336.999,01",
+              "tramos.3.tipo": "1,35",
+              "tramos.3.cuota_hasta_inicio": "3.760,30",
+              "tramos.4.hasta": "2.673.999,01",
+              "tramos.4.tipo": "1,95",
+              "tramos.4.cuota_hasta_inicio": "12.785,04",
+              "tramos.5.hasta": "5.347.998,03",
+              "tramos.5.tipo": "2,55",
+              "tramos.5.cuota_hasta_inicio": "38.856,53",
+              "tramos.6.hasta": "10.695.996,06",
+              "tramos.6.tipo": "3,15",
+              "tramos.6.cuota_hasta_inicio": "107.043,51",
+              "tramos.7.tipo": "3,75",
+              "tramos.7.cuota_hasta_inicio": "275.505,45"
+            }
+          }
+        ]
+      },
+      "bonificacion": {
+        "porcentaje": "1",
+        "regimen_itsgf": "ninguno",
+        "umbral_base_itsgf": null,
+        "minimo_descontado": null,
+        "fuente": {
+          "referencia": "art. 15 bis texto refundido de Extremadura",
+          "en_vigor_desde": "2023-01-01",
+          "verificado": true,
+          "nota": "El texto refundido no condiciona esta bonificación a la vigencia del ITSGF ni menciona ese impuesto en ningún artículo o disposición."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2018-8159",
+            "articulo": "art. 15 bis texto refundido de Extremadura",
+            "cita": "Con posterioridad a las deducciones y bonificaciones reguladas por la normativa del Estado se aplicará, sobre la cuota resultante, una bonificación autonómica del 100 por 100 de dicha cuota si esta es positiva.",
+            "cifras": {
+              "porcentaje": "100 por 100"
+            }
+          }
+        ]
+      },
+      "no_modelado": [],
+      "notas": [
+        "Extremadura: su bonificación general del 100 % (art. 15 bis) no está ligada al ITSGF; el texto refundido no menciona ese impuesto. Quien tenga cuota de ITSGF la paga íntegra al Estado, sin Patrimonio que deducir.",
+        "Extremadura: la escala del art. 15 imprime «1.336.999,01» como inicio del quinto tramo, cuando las filas contiguas suman 1.336.999,51 (así desde la publicación original de 2018). Se aplica lo impreso; la diferencia en la cuota íntegra no llega a un céntimo y no cambia lo que se paga."
+      ],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    },
+    "galicia": {
+      "nombre": "Galicia",
+      "alias": [
+        "galicia",
+        "xunta de galicia"
+      ],
+      "boe_id": "BOE-A-2011-18161",
+      "regula": true,
+      "minimo_exento": {
+        "importe": "700000",
+        "discapacidad": [],
+        "fuente": {
+          "referencia": "art. 13 texto refundido de Galicia",
+          "en_vigor_desde": "2011-12-31",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2011-18161",
+            "articulo": "art. 13 texto refundido de Galicia",
+            "cita": "El mínimo exento en el impuesto sobre el patrimonio se establece en 700.000 euros.",
+            "cifras": {
+              "importe": "700.000 euros"
+            }
+          }
+        ]
+      },
+      "escala": {
+        "tramos": [
+          {
+            "hasta": "167129.45",
+            "tipo": "0.002",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "334252.88",
+            "tipo": "0.003",
+            "cuota_hasta_inicio": "334.26"
+          },
+          {
+            "hasta": "668499.75",
+            "tipo": "0.005",
+            "cuota_hasta_inicio": "835.63"
+          },
+          {
+            "hasta": "1336999.51",
+            "tipo": "0.009",
+            "cuota_hasta_inicio": "2506.86"
+          },
+          {
+            "hasta": "2673999.01",
+            "tipo": "0.013",
+            "cuota_hasta_inicio": "8523.36"
+          },
+          {
+            "hasta": "5347998.03",
+            "tipo": "0.017",
+            "cuota_hasta_inicio": "25904.35"
+          },
+          {
+            "hasta": "10695996.06",
+            "tipo": "0.021",
+            "cuota_hasta_inicio": "71362.33"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.035",
+            "cuota_hasta_inicio": "183670.29"
+          }
+        ],
+        "fuente": {
+          "referencia": "disposición transitoria 3.ª.Uno texto refundido de Galicia",
+          "en_vigor_desde": "2023-01-01",
+          "verificado": true,
+          "nota": "Escala aplicable mientras resulte de aplicación el ITSGF; suspende la del art. 13 bis (tipo máximo del 2,50 %)."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2011-18161",
+            "articulo": "disposición transitoria 3.ª.Uno texto refundido de Galicia",
+            "cita": "Uno. La base liquidable del impuesto se gravará a los tipos de la siguiente escala: Tarifa Base liquidable Hasta euros Cuota íntegra Euros Resto de base liquidable Hasta euros Tipo aplicable Porcentaje 0,00 0,00 167.129,45 0,20 167.129,45 334,26 167.123,43 0,30 334.252,88 835,63 334.246,87 0,50 668.499,75 2.506,86 668.499,76 0,90 1.336.999,51 8.523,36 1.336.999,50 1,30 2.673.999,01 25.904,35 2.673.999,02 1,70 5.347.998,03 71.362,33 5.347.998,03 2,10 10.695.996,06 183.670,29 En adelante 3,50",
+            "cifras": {
+              "tramos.0.hasta": "167.129,45",
+              "tramos.0.tipo": "0,20",
+              "tramos.0.cuota_hasta_inicio": "0,00",
+              "tramos.1.hasta": "334.252,88",
+              "tramos.1.tipo": "0,30",
+              "tramos.1.cuota_hasta_inicio": "334,26",
+              "tramos.2.hasta": "668.499,75",
+              "tramos.2.tipo": "0,50",
+              "tramos.2.cuota_hasta_inicio": "835,63",
+              "tramos.3.hasta": "1.336.999,51",
+              "tramos.3.tipo": "0,90",
+              "tramos.3.cuota_hasta_inicio": "2.506,86",
+              "tramos.4.hasta": "2.673.999,01",
+              "tramos.4.tipo": "1,30",
+              "tramos.4.cuota_hasta_inicio": "8.523,36",
+              "tramos.5.hasta": "5.347.998,03",
+              "tramos.5.tipo": "1,70",
+              "tramos.5.cuota_hasta_inicio": "25.904,35",
+              "tramos.6.hasta": "10.695.996,06",
+              "tramos.6.tipo": "2,10",
+              "tramos.6.cuota_hasta_inicio": "71.362,33",
+              "tramos.7.tipo": "3,50",
+              "tramos.7.cuota_hasta_inicio": "183.670,29"
+            }
+          }
+        ]
+      },
+      "bonificacion": {
+        "porcentaje": "0.5",
+        "regimen_itsgf": "porcentaje_menos_itsgf",
+        "umbral_base_itsgf": null,
+        "minimo_descontado": null,
+        "fuente": {
+          "referencia": "disposición transitoria 3.ª.Dos texto refundido de Galicia",
+          "en_vigor_desde": "2023-01-01",
+          "verificado": true,
+          "nota": "La bonificación del 50 % se reduce en el importe a pagar por el ITSGF del mismo ejercicio. La norma no dice con qué cuota de Patrimonio se calcula ese importe (que a su vez depende de la bonificación): se toma el ITSGF que resultaría con la bonificación íntegra. La lectura alternativa (importe simultáneo) da el mismo total entre los dos impuestos y solo cambia su reparto."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2011-18161",
+            "articulo": "disposición transitoria 3.ª.Dos texto refundido de Galicia",
+            "cita": "Dos. Sobre la cuota íntegra del impuesto se aplicará una bonificación del 50 % de su importe. Esta deducción se reducirá en el importe a pagar que derive de la aplicación de la normativa del impuesto temporal de solidaridad de las grandes fortunas para el mismo ejercicio, sin que el resultado pueda ser negativo.",
+            "cifras": {
+              "porcentaje": "50 %"
+            }
+          },
+          {
+            "boe_id": "BOE-A-2011-18161",
+            "articulo": "disposición transitoria 3.ª texto refundido de Galicia",
+            "cita": "Mientras resulte de aplicación el impuesto temporal de solidaridad de las grandes fortunas, creado por el artículo 3 de la Ley 38/2022, de 27 de diciembre, para el establecimiento de gravámenes temporales energético y de entidades de crédito y establecimientos financieros de crédito y por la que se crea el impuesto temporal de solidaridad de las grandes fortunas, y se modifican determinadas normas tributarias, queda suspendida la vigencia de los artículos 13 bis y 13 quater, relativos al impuesto sobre el patrimonio, siendo aplicable en su lugar durante dicho período el siguiente régimen:",
+            "cifras": {}
+          }
+        ]
+      },
+      "no_modelado": [
+        "art. 13 ter.Uno: Deducción por creación de nuevas empresas o ampliación de la actividad de empresas de reciente creación",
+        "art. 13 ter.Dos: Deducción por inversiones en empresas agrarias",
+        "art. 13 ter.Tres: Deducción por la afectación de terrenos rústicos a una explotación agraria y arrendamiento rústico",
+        "art. 13 ter.Cuatro: Deducción por la afectación a actividades económicas de inmuebles en centros históricos",
+        "art. 13 ter.Cinco: Deducción por la participación en los fondos propios de entidades que exploten bienes inmuebles en centros históricos",
+        "art. 13 ter.Seis: Deducción por incorporación de bienes y derechos a los instrumentos de movilización o recuperación de las tierras agrarias de Galicia",
+        "disposición transitoria 3.ª.Dos, segundo párrafo: reducción de las demás deducciones autonómicas cuando el ITSGF agota la bonificación del 50 %"
+      ],
+      "notas": [],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    },
+    "la_rioja": {
+      "nombre": "La Rioja",
+      "alias": [
+        "la rioja",
+        "rioja",
+        "comunidad autonoma de la rioja"
+      ],
+      "boe_id": "BOE-A-2017-13750",
+      "regula": true,
+      "minimo_exento": {
+        "importe": "700000",
+        "discapacidad": [],
+        "fuente": {
+          "referencia": "art. 33 Ley 10/2017 de La Rioja",
+          "en_vigor_desde": "2025-01-01",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2017-13750",
+            "articulo": "art. 33 Ley 10/2017 de La Rioja",
+            "cita": "De acuerdo con lo dispuesto en el artículo 28 de la Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio, el mínimo exento en dicho impuesto queda establecido en 700.000 euros.",
+            "cifras": {
+              "importe": "700.000 euros"
+            }
+          }
+        ]
+      },
+      "escala": null,
+      "bonificacion": {
+        "porcentaje": null,
+        "regimen_itsgf": "diferencia",
+        "umbral_base_itsgf": null,
+        "minimo_descontado": null,
+        "fuente": {
+          "referencia": "disposición adicional 4.ª Ley 10/2017 de La Rioja",
+          "en_vigor_desde": "2025-01-01",
+          "verificado": true,
+          "nota": "Sustituye, mientras esté vigente el ITSGF, a la bonificación general del 100 % del art. 33 bis."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2017-13750",
+            "articulo": "disposición adicional 4.ª Ley 10/2017 de La Rioja",
+            "cita": "Mientras esté vigente el impuesto temporal de solidaridad de las grandes fortunas, no será aplicable la bonificación general del impuesto sobre el patrimonio establecida en el artículo 33 bis de esta ley. En su lugar, el contribuyente podrá aplicar una bonificación autonómica determinada por la diferencia, si la hubiere, entre la total cuota íntegra del propio impuesto, una vez aplicado el límite conjunto establecido en el artículo 31 de la Ley 19/1991, de 6 de junio, y la total cuota íntegra correspondiente al impuesto temporal de solidaridad de las grandes fortunas, una vez aplicado el límite conjunto establecido en el artículo 3.Doce de la Ley 38/2022, de 27 de diciembre.",
+            "cifras": {}
+          },
+          {
+            "boe_id": "BOE-A-2017-13750",
+            "articulo": "art. 33 bis Ley 10/2017 de La Rioja",
+            "cita": "Con posterioridad a las deducciones y bonificaciones reguladas por la normativa del Estado, se aplicará, sobre la cuota resultante, una bonificación autonómica del 100 % de dicha cuota si esta es positiva. No se aplicará esta bonificación si la cuota resultante fuese nula.",
+            "cifras": {}
+          }
+        ]
+      },
+      "no_modelado": [],
+      "notas": [],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    },
+    "madrid": {
+      "nombre": "Comunidad de Madrid",
+      "alias": [
+        "madrid",
+        "comunidad de madrid"
+      ],
+      "boe_id": "BOCM-m-2010-90068",
+      "regula": true,
+      "minimo_exento": {
+        "importe": "700000",
+        "discapacidad": [],
+        "fuente": {
+          "referencia": "art. 19 texto refundido de la Comunidad de Madrid",
+          "en_vigor_desde": "2012-01-01",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOCM-m-2010-90068",
+            "articulo": "art. 19 texto refundido de la Comunidad de Madrid",
+            "cita": "De acuerdo con lo dispuesto en el artículo 28 de la Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio, el mínimo exento en el Impuesto sobre el Patrimonio se fija en 700.000 euros.",
+            "cifras": {
+              "importe": "700.000 euros"
+            }
+          }
+        ]
+      },
+      "escala": null,
+      "bonificacion": {
+        "porcentaje": null,
+        "regimen_itsgf": "diferencia",
+        "umbral_base_itsgf": null,
+        "minimo_descontado": null,
+        "fuente": {
+          "referencia": "disposición transitoria 7.ª texto refundido de la Comunidad de Madrid",
+          "en_vigor_desde": "2023-01-01",
+          "verificado": true,
+          "nota": "Sustituye, mientras esté vigente el ITSGF, a la bonificación general del 100 % del art. 20."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOCM-m-2010-90068",
+            "articulo": "disposición transitoria 7.ª texto refundido de la Comunidad de Madrid",
+            "cita": "Mientras esté vigente el Impuesto Temporal de Solidaridad de las Grandes Fortunas no será aplicable la bonificación general del impuesto sobre el patrimonio establecida en el artículo 20 de este Texto Refundido. En su lugar, el contribuyente podrá aplicar una bonificación autonómica determinada por la diferencia, si la hubiere, entre la total cuota íntegra del propio impuesto, una vez aplicado el límite conjunto establecido en el artículo 31 de la Ley 19/1991, de 6 de junio, y la total cuota íntegra correspondiente al Impuesto Temporal de Solidaridad de las Grandes Fortunas, una vez aplicado el límite conjunto establecido en el artículo 3. Doce de la Ley 38/2022, de 27 de diciembre.",
+            "cifras": {}
+          },
+          {
+            "boe_id": "BOCM-m-2010-90068",
+            "articulo": "art. 20 texto refundido de la Comunidad de Madrid",
+            "cita": "Con posterioridad a las deducciones y bonificaciones reguladas por la normativa del Estado se aplicará, sobre la cuota resultante, una bonificación autonómica del 100 por 100 de dicha cuota si esta es positiva. No se aplicará esta bonificación si la cuota resultante fuese nula.",
+            "cifras": {}
+          }
+        ]
+      },
+      "no_modelado": [],
+      "notas": [],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    },
+    "murcia": {
+      "nombre": "Región de Murcia",
+      "alias": [
+        "murcia",
+        "region de murcia"
+      ],
+      "boe_id": "BOE-A-2011-10542",
+      "regula": true,
+      "minimo_exento": null,
+      "escala": {
+        "tramos": [
+          {
+            "hasta": "167129.45",
+            "tipo": "0.002",
+            "cuota_hasta_inicio": "0"
+          },
+          {
+            "hasta": "334252.88",
+            "tipo": "0.003",
+            "cuota_hasta_inicio": "334.26"
+          },
+          {
+            "hasta": "668499.75",
+            "tipo": "0.005",
+            "cuota_hasta_inicio": "835.63"
+          },
+          {
+            "hasta": "1336999.51",
+            "tipo": "0.009",
+            "cuota_hasta_inicio": "2506.86"
+          },
+          {
+            "hasta": "2673999.01",
+            "tipo": "0.013",
+            "cuota_hasta_inicio": "8523.36"
+          },
+          {
+            "hasta": "5347998.03",
+            "tipo": "0.017",
+            "cuota_hasta_inicio": "25904.35"
+          },
+          {
+            "hasta": "10695996.06",
+            "tipo": "0.021",
+            "cuota_hasta_inicio": "71362.33"
+          },
+          {
+            "hasta": null,
+            "tipo": "0.035",
+            "cuota_hasta_inicio": "183670.29"
+          }
+        ],
+        "fuente": {
+          "referencia": "art. 13 texto refundido de la Región de Murcia",
+          "en_vigor_desde": "2025-01-01",
+          "verificado": true
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2011-10542",
+            "articulo": "art. 13 texto refundido de la Región de Murcia",
+            "cita": "Con efectos desde el 1 de enero de 2025, la cuota íntegra del impuesto regulada en el artículo 30 de la Ley 19/1991, de 6 de junio, del Impuesto sobre el Patrimonio, se obtendrá aplicando a la base liquidable los tipos que se indican en la siguiente escala: Base liquidable – Hasta euros Cuota – Euros Resto base liquidable – Hasta euros Tipo aplicable – Porcentaje 0,00 0,00 167.129,45 0,2 167.129,45 334,26 167.123,43 0,3 334.252,88 835,63 334.246,87 0,5 668.499,75 2.506,86 668.499,76 0,9 1.336.999,51 8.523,36 1.336.999,50 1,3 2.673.999,01 25.904,35 2.673.999,02 1,7 5.347.998,03 71.362,33 5.347.998,03 2,1 10.695.996,06 183.670,29 En adelante 3,5",
+            "cifras": {
+              "tramos.0.hasta": "167.129,45",
+              "tramos.0.tipo": "0,2",
+              "tramos.0.cuota_hasta_inicio": "0,00",
+              "tramos.1.hasta": "334.252,88",
+              "tramos.1.tipo": "0,3",
+              "tramos.1.cuota_hasta_inicio": "334,26",
+              "tramos.2.hasta": "668.499,75",
+              "tramos.2.tipo": "0,5",
+              "tramos.2.cuota_hasta_inicio": "835,63",
+              "tramos.3.hasta": "1.336.999,51",
+              "tramos.3.tipo": "0,9",
+              "tramos.3.cuota_hasta_inicio": "2.506,86",
+              "tramos.4.hasta": "2.673.999,01",
+              "tramos.4.tipo": "1,3",
+              "tramos.4.cuota_hasta_inicio": "8.523,36",
+              "tramos.5.hasta": "5.347.998,03",
+              "tramos.5.tipo": "1,7",
+              "tramos.5.cuota_hasta_inicio": "25.904,35",
+              "tramos.6.hasta": "10.695.996,06",
+              "tramos.6.tipo": "2,1",
+              "tramos.6.cuota_hasta_inicio": "71.362,33",
+              "tramos.7.tipo": "3,5",
+              "tramos.7.cuota_hasta_inicio": "183.670,29"
+            }
+          }
+        ]
+      },
+      "bonificacion": {
+        "porcentaje": null,
+        "regimen_itsgf": "diferencia",
+        "umbral_base_itsgf": null,
+        "minimo_descontado": null,
+        "fuente": {
+          "referencia": "disposición transitoria 2.ª texto refundido de la Región de Murcia",
+          "en_vigor_desde": "2025-07-25",
+          "verificado": true,
+          "nota": "Murcia no tiene un artículo de bonificación general del 100 %: la bonificación resulta solo de esta disposición transitoria, que al no haber cuota de ITSGF alcanza toda la cuota de Patrimonio."
+        },
+        "evidencia": [
+          {
+            "boe_id": "BOE-A-2011-10542",
+            "articulo": "disposición transitoria 2.ª texto refundido de la Región de Murcia",
+            "cita": "Mientras esté vigente el Impuesto Temporal de Solidaridad de las Grandes Fortunas, el contribuyente podrá aplicar una bonificación autonómica determinada por la diferencia, si la hubiere, entre la total cuota íntegra del impuesto sobre el patrimonio, una vez aplicado el límite conjunto establecido en el artículo 31 de la Ley 19/1991, de 6 de junio, y la total cuota íntegra correspondiente al Impuesto Temporal de Solidaridad de las Grandes Fortunas, una vez aplicado el límite conjunto establecido en el artículo 3.doce de la Ley 38/2022, de 27 de diciembre.",
+            "cifras": {}
+          }
+        ]
+      },
+      "no_modelado": [
+        "art. 13 bis: Deducción por aportaciones a proyectos de excepcional interés público regional"
+      ],
+      "notas": [
+        "Región de Murcia: el mínimo exento de 3.700.000 euros de la disposición adicional 8.ª solo rigió para los devengos de 31-12-2023 y 31-12-2024; desde 2025 se aplica el estatal."
+      ],
+      "aplicable_2025": true,
+      "diferencias_2025": []
+    }
+  }
+}

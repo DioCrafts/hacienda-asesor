@@ -117,6 +117,10 @@ class ObligationCandidate(BaseModel):
     trigger_facts: list[str] = Field(default_factory=list)
     blocking_missing_facts: list[str] = Field(default_factory=list)
     evidence_refs: list[EvidenceRef] = Field(default_factory=list)
+    # Filing deadline as declared by the rule that generated the obligation;
+    # None when the rule declares none (never a guessed date).
+    due_date: date | None = None
+    due_date_note: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 

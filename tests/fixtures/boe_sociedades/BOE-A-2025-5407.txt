@@ -1,0 +1,137 @@
+# Extracto literal de la Orden HAC/262/2025, de 12 de marzo (BOE-A-2025-5407, BOE núm. 67 de 19-3-2025), descargada el 2026-11-12.
+# Un párrafo del preámbulo (https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-5407) y las dos páginas del anexo I (modelo 202) tal como las da `pdftotext -layout` sobre el PDF oficial, con los espacios colapsados; generado, no editar a mano.
+
+Se incluye una nueva redacción para los apartados 1 y 2 del artículo 29 de la Ley 27/2024, de 27 de noviembre, que regulan los tipos de gravamen aplicables y que resultan aplicables a los periodos impositivos que se inicien a partir del 1 de enero de 2025. No obstante, debe tenerse en cuenta que estos porcentajes se ven alterados por lo previsto en la disposición transitoria cuadragésima cuarta de la Ley 27/2014, de 27 de noviembre. La posibilidad de que existan varios tipos impositivos aplicables implica cambios en los modelos modificados en esta orden.
+
+Núm. 67 Miércoles 19 de marzo de 2025 Sec. I. Pág. 36464
+ANEXO I
+FORMATO ELECTRÓNICO
+(PARTE 1)
+Agencia Tributaria Pago fraccionado Modelo
+Impuesto sobre Sociedades
+MINISTERIO
+DE HACIENDA
+Teléfonos: 91 554 87 70 / 901 33 55 33
+https://sede.agenciatributaria.gob.es
+Impuesto sobre la Renta de no Residentes (establecimientos permanentes y
+entidades en régimen de atribución de rentas constituidas en el extranjero con presencia en territorio español)
+202
+Espacio reservado para el número de justificante
+Identificación (1) Devengo (2)
+NIF Apellidos y nombre o Razón social Ejercicio .................................................
+Período(*) ................................................................
+Contribuyente sometido a normativa de Territorio Foral de Navarra (*) Consigne "1P" (abril), "2P" (octubre y anual foral de Navarra), "3P" (diciembre)
+o 0A (anual foral de Guipúzcoa, Vizcaya y Álava), según corresponda.
+Contribuyente sometido a normativa de Territorio Foral de Guipúzcoa
+Contribuyente sometido a normativa de Territorio Foral de Vizcaya CNAE actividad principal .......
+Contribuyente sometido a normativa de Territorio Foral de Álava Fecha inicio período impositivo ...
+Datos adicionales (3)
+Entidad que aplica el régimen de la Ley 49/2002, de 23 de diciembre
+Entidad que aplica el régimen de la Ley 11/2009, de 26 de octubre
+Entidad de capital-riesgo que aplica el régimen fiscal especial del art. 50 LIS
+Entidad que aplica el régimen de las entidades navieras en función del tonelaje
+Entidad que cumpla los requisitos para la aplicación de los incentivos de empresa de reducida dimensión (art. 101 LIS) y aplique el tipo de gravamen
+específico previsto para estas entidades
+Importe neto de la cifra de negocios de los doce meses anteriores a la fecha de inicio del período impositivo es superior a 6.000.000 euros
+Cooperativa fiscalmente protegida
+Marque esta casilla si concurre ALGUNA de las siguientes circunstancias:
+- Entidad que aplica la Reserva para inversiones en Canarias o tenga derecho a la bonificación del art. 26 Ley 19/1994
+- Entidad que aplica el régimen ZEC
+- Entidad que aplica la bonificación de Ceuta y Melilla art. 33 LIS
+- Entidad con resultados positivos por operaciones de aumento de capital o fondos propios por compensación de créditos que no se integran
+en la base imponible por aplicación del art. 17.2 LIS
+- Entidad parcialmente exenta que aplica el régimen fiscal especial Cap. XIV Tít. VII LIS
+- Entidad que aplica la bonificación del art. 34 LIS
+Entidad con importe neto de la cifra de negocios del periodo impositivo inmediato anterior inferior a 1 millón de euros
+Otras entidades con posibilidad de aplicar más de un tipo impositivo
+Tipo de gravamen del Impuesto sobre Sociedades del ejercicio en curso
+Importe neto de la cifra de negocios en los doce meses anteriores a la fecha de inicio del período impositivo:
+- Igual o superior a 10 millones de euros e inferior a 20 millones de euros
+- Igual o superior a 20 millones de euros e inferior a 60 millones de euros
+- Igual o superior a 60 millones de euros
+Liquidación (4)
+Liquidación modalidad artículo 40.2 LIS
+Liquidación modalidad artículo 40.3 LIS
+A) Cálculo del pago fraccionado: modalidad artículo 40.2 LIS
+Base del pago fraccionado............................................................................................................................................. 01
+Resultado de la declaración anterior (exclusivamente si ésta es complementaria) .............................................................. 02
+A ingresar .................................................................................................................................................................... 03
+B) Cálculo del pago fraccionado: modalidad artículo 40.3 LIS
+Resultado contable (después del IS e IC) ........................................................................................................................ 04
+Correcciones al resultado contable: Aumentos Disminuciones
+Corrección por Impuesto sobre Sociedades (IS) ................................................ 05 06
+Corrección por Impuesto Complementario (IC) ................................................... 67
+Reversión del 30% del importe de los gastos de amortiz. contable (art. 7 Ley 16/2012) .................................... 37
+Resto correcciones al resultado contable, excepto comp. BI negativa ej. ant. . .... 07 08
+TOTAL ............................................................................ 38 39
+Verificable en https://www.boe.es
+Base imponible previa .................................................................................................................................................... 13
+Remanente reserva de capitalización no aplicada por insuficiencia de base ...................................................................... 44
+Compensación de bases imponibles negativas de períodos anteriores .............................................................................. 14
+cve: BOE-A-2025-5407
+Reserva de nivelación (art. 105 LIS) (sólo entidades que cumplan los requisitos para Aumentos Disminuciones
+la aplicación de los incentivos de empresa de reducida dimensión (art. 101 LIS) y apliquen
+el tipo de gravamen específico previsto para estas entidades) ....................................... 45 46
+BOLETÍN OFICIAL DEL ESTADO
+Núm. 67 Miércoles 19 de marzo de 2025 Sec. I. Pág. 36465
+Modelo
+NIF Apellidos y nombre o razón social
+202 Página 2
+Liquidación (4) (continuación)
+B.1) Caso general (entidades con porcentaje único)
+Base del pago fraccionado........................................................................................................................................ 16
+Porcentaje ...................................................................................................................................................................................... 17
+Dotaciones del art. 11.12 LIS (DA 7ª Ley 20/1990) (sólo cooperativas) ....................................................................... 47
+Compensación de cuotas negativas de períodos anteriores (sólo cooperativas) ............................................................ 40
+Reserva de nivelación (art. 105 LIS) convertido en cuotas (sólo entidades que
+cumplan los requisitos para la aplicación de los incentivos de empresa de reducida dimensión
+Aumentos Disminuciones
+(art. 101 LIS) y apliquen el tipo de gravamen específico previsto para estas entidades) ........... 48 49
+Resultado previo (clave ([16] x [17]) + [47] - [40] + [48] - [49]) .................................................................................... 18
+B.2) Casos específicos (entidades con más de un porcentaje)
+Base del pago fraccionado ...... 19 Importe del pago fraccionado
+Base a tipo 1 ........... 20 Porcentaje ......... 21 22
+Base a tipo 2 ........... 23 Porcentaje ......... 24 25
+Base a tipo 3 ........... 61 Porcentaje ......... 62 63
+Base a tipo 4 ........... 64 Porcentaje ......... 65 66
+Dotaciones del art. 11.12 LIS (DA 7ª Ley 20/1990) (sólo cooperativas) ...................................................................... 50
+Compensación de cuotas negativas de períodos anteriores (sólo cooperativas) ........................................................... 42
+Reserva de nivelación (art. 105 LIS) (sólo entidades que cumplan los requisitos Aumentos Disminuciones
+para la aplicación de los incentivos de empresa de reducida dimensión (art. 101 LIS)
+y apliquen el tipo de gravamen específico previsto para estas entidades) ..................... 51 52
+Resultado previo (claves [22] + [25] + [63] + [66] + [50] - [42] + [51] - [52]) ....................................................................... 26
+Bonificaciones correspondientes al período computado (total) ........................................................................................... 27
+Retenciones e ingresos a cuenta practicados sobre ingresos período computado (total)...................................................... 28
+Volumen de operaciones en Territorio Común ( % ) ................................................................................................................................... 29
+Pagos fraccionados anteriores correspondiente al período computado en Territorio Común (total)........................................ 30
+Resultado de la declaración anterior (exclusivamente si ésta es complementaria) ................................................................ 31
+Resultado ...................................................................................................................................................................... 32
+Mínimo a ingresar (sólo para empresas con CN igual o superior a 10 millones de euros) ..................................................... 33
+Cantidad a ingresar (mayor de claves [32] y [33]) ............................................................................................. 34
+Información adicional (5)
+Comunicación de datos adicionales a la declaración ........................... Número de referencia de sociedades (NRS)
+Importe excluido por operaciones de quita o espera ........................................................................................................
+Parte integrada en la base imponible por operaciones de quita o espera(*) .........................................................................
+Parte integrada en la base imponible a nivel de cuota por operaciones de quita o espera (sólo cooperativas)(*) ....................
+Rentas de reversión de deterioros que se integran en la base imponible(*) .........................................................................
+Importe correspondiente a la reserva para inversiones en Canarias(*) ................................................................................
+Importe correspondiente a la bonificación prevista en el art. 26 de la Ley 19/1994(*) .........................................................
+Importe no computable por aplicación del régimen fiscal de la ZEC(*).................................................................................
+Importe de la minoración correspondiente a las rentas que tengan derecho a la bonificación prevista en el art. 33 LIS(*) .......
+Importe excluido por operaciones de aumento de capital o fondos propios por compensación de créditos que no se
+integren en la base imponible por aplicación del art. 17.2 LIS(*).........................................................................................
+Importe renta exenta de las entidades que aplican el régimen fiscal especial del Capítulo XIV del Título VII LIS ......................
+Importe de la bonificación prevista en el art. 34 LIS(*) .......................................................................................................
+(*) Se cumplimentarán estas casillas a efectos del cálculo del importe mínimo a ingresar
+Complementaria (6)
+Si esta autoliquidación es COMPLEMENTARIA de otra autoliquidación anterior correspondiente al mismo concepto, ejercicio y período indíquelo
+seleccionando esta casilla .....................................................................................................................................................................................
+En este caso, indique a continuación el número de justificante de la liquidación anterior .......................................................
+Negativa (7)
+Verificable en https://www.boe.es
+Declaración negativa
+Ingreso (8)
+cve: BOE-A-2025-5407
+Ingreso efectuado a favor del Tesoro Público: cuenta restringida de colaboración en la recaudación de la Agencia Estatal de Administración Tributaria
+de autoliquidaciones especiales.
+Forma de pago:

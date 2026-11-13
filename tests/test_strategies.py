@@ -15,8 +15,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 from langchain_core.documents import Document
+import pytest
 
 from hacienda_gpt.processor.strategies import (
     install_default_strategies,
@@ -26,7 +26,6 @@ from hacienda_gpt.processor.strategies import (
     select_strategy,
 )
 from hacienda_gpt.processor.strategies.base import IngestStrategy
-
 
 # --------------------------------------------------------------------------- #
 # Test doubles
@@ -134,9 +133,7 @@ def _minimal_boe_html(n_rows: int) -> str:
     ``<div class="bloque">``. Used by the splitter tests below — we DO
     NOT want to load the 43 MB real file here, just enough structure
     for the splitter to exercise its paths."""
-    rows = "".join(
-        f"<tr><td>row {i}</td><td>value {i}</td></tr>" for i in range(n_rows)
-    )
+    rows = "".join(f"<tr><td>row {i}</td><td>value {i}</td></tr>" for i in range(n_rows))
     return f"""<!DOCTYPE html>
 <html lang="es">
 <head><title>BOE-A-2099-99999 Test consolidado</title></head>
@@ -202,9 +199,7 @@ def test_split_block_tables_keeps_thead_on_each_fragment() -> None:
         <tbody>{rows}</tbody>
       </table>
     </div>
-    """.format(
-        rows="".join(f"<tr><td>{i}</td><td>{i*2}</td></tr>" for i in range(1500))
-    )
+    """.format(rows="".join(f"<tr><td>{i}</td><td>{i*2}</td></tr>" for i in range(1500)))
 
     fragments = _split_block_tables(block)
 

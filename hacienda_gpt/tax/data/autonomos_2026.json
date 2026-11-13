@@ -1,0 +1,540 @@
+{
+  "ejercicio": 2026,
+  "fuentes_principales": {
+    "BOE-A-2006-20764": {
+      "norma": "Ley 35/2006, de 28 de noviembre, del IRPF (texto consolidado)",
+      "boe_id": "BOE-A-2006-20764",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764",
+      "consolidado_a": "2026-11-11",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "ed7d16a5fe93fd70e70e30f39f5c1a6b3987c5a158342f255267379a67cb9e63"
+    },
+    "BOE-A-2007-6820": {
+      "norma": "Reglamento del IRPF, Real Decreto 439/2007, de 30 de marzo (texto consolidado)",
+      "boe_id": "BOE-A-2007-6820",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2007-6820",
+      "consolidado_a": "2026-10-07",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "e1d12adfbd9866ae6e485797ebd7c4081ce36efbd11c8b4c119cc38b4a33e33a"
+    },
+    "BOE-A-1992-28740": {
+      "norma": "Ley 37/1992, de 28 de diciembre, del Impuesto sobre el Valor Añadido (texto consolidado)",
+      "boe_id": "BOE-A-1992-28740",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1992-28740",
+      "consolidado_a": "2026-10-07",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "68dd0b2efd580f785665fbda1183b9cfae423bf565164a1f95367aeef778e230"
+    }
+  },
+  "no_modelado": [
+    "Estimación objetiva (módulos) y estimación directa normal; la reducción del rendimiento de módulos para Ceuta de la disposición adicional 64.ª.2 LIRPF.",
+    "Deducción por vivienda del art. 110.3.d) RIRPF en el pago fraccionado: el reglamento no fija su orden respecto de la minoración de la letra c) ni cómo juega en el cálculo acumulado.",
+    "Pagos fraccionados de actividades agrícolas, ganaderas, forestales o pesqueras y de estimación objetiva (art. 110.1.b y c RIRPF) y sus retenciones (art. 95.4 a 95.6 RIRPF).",
+    "La deducción en la cuota del art. 68.4 LIRPF por rentas obtenidas en Ceuta o Melilla: es de la cuota del IRPF, no de estos cálculos.",
+    "IVA: prorrata, regímenes especiales (recargo de equivalencia, simplificado, criterio de caja, agricultura), operaciones intracomunitarias, importaciones, inversión del sujeto pasivo y tipo del 0 %."
+  ],
+  "estimacion_directa_simplificada": {
+    "limite_cifra_negocios": "600000",
+    "fuente": {
+      "referencia": "art. 30.1 LIRPF y art. 28.1.b) RIRPF",
+      "en_vigor_desde": "2018-01-01",
+      "verificado": true,
+      "nota": "Se refiere al importe neto de la cifra de negocios del conjunto de actividades en el año inmediato anterior."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 30.1 LIRPF",
+        "cita": "La modalidad simplificada se aplicará para determinadas actividades económicas cuyo importe neto de cifra de negocios, para el conjunto de actividades desarrolladas por el contribuyente, no supere los 600.000 euros en el año inmediato anterior, salvo que renuncie a su aplicación, en los términos que reglamentariamente se establezcan.",
+        "cifras": {
+          "limite_cifra_negocios": "600.000 euros"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 28.1.b) RIRPF",
+        "cita": "no supere los 600.000 euros anuales en el año inmediato anterior.",
+        "cifras": {
+          "limite_cifra_negocios": "600.000 euros"
+        }
+      }
+    ]
+  },
+  "gastos_dificil_justificacion": {
+    "porcentaje": "0.05",
+    "limite_anual": "2000",
+    "avisos": [],
+    "fuente": {
+      "referencia": "art. 30.2.ª RIRPF y art. 30.2.4.ª LIRPF",
+      "en_vigor_desde": "2015-07-12",
+      "verificado": true,
+      "nota": "Redacción del RD 633/2015, aplicable a los períodos iniciados desde el 1-1-2015. El 7 % de la disposición adicional 56.ª LIRPF fue solo para 2023. El límite de 2.000 euros es anual: ni el art. 30 RIRPF ni el art. 110 RIRPF lo prorratean por trimestres, así que en el pago fraccionado se aplica entero al rendimiento acumulado desde el 1 de enero."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 30.2.ª RIRPF",
+        "cita": "2.ª El conjunto de las provisiones deducibles y los gastos de difícil justificación se cuantificará aplicando el porcentaje del 5 por ciento sobre el rendimiento neto, excluido este concepto, sin que la cuantía resultante pueda superar 2.000 euros anuales. No obstante, no resultará de aplicación dicho porcentaje de deducción cuando el contribuyente opte por la aplicación de la reducción prevista en el artículo 26.1 de este Reglamento.",
+        "cifras": {
+          "porcentaje": "5 por ciento",
+          "limite_anual": "2.000 euros"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 30.2.4.ª LIRPF",
+        "cita": "La cuantía que con arreglo a dichas reglas especiales se determine para el conjunto de provisiones deducibles y gastos de difícil justificación no podrá ser superior a 2.000 euros anuales.",
+        "cifras": {
+          "limite_anual": "2.000 euros"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 110.1.a) RIRPF (el pago fraccionado toma el rendimiento neto acumulado del año)",
+        "cita": "el 20 por ciento del rendimiento neto correspondiente al período de tiempo transcurrido desde el primer día del año hasta el último día del trimestre a que se refiere el pago fraccionado."
+      }
+    ]
+  },
+  "gastos_dificil_justificacion_ceuta": {
+    "porcentaje": "0.10",
+    "pagos_fraccionados_desde_trimestre": 4,
+    "fuente": {
+      "referencia": "disposición adicional 64.ª LIRPF",
+      "en_vigor_desde": "2026-09-03",
+      "verificado": true,
+      "condicionada_a": "BOE-A-2026-18429",
+      "nota": "Añadida por el art. 2 del Real Decreto-ley 22/2026 (BOE-A-2026-18429), en vigor desde el 3-9-2026. Solo cambia el porcentaje: el límite de 2.000 euros del art. 30.2.4.ª LIRPF sigue aplicándose. Su apartado 3 limita el efecto en los pagos fraccionados a los de plazo de presentación iniciado «transcurrido un mes» desde esa entrada en vigor, es decir, desde el 3-10-2026: el plazo del tercer trimestre empieza el 1 de octubre (art. 111.1 RIRPF) y queda fuera; solo entra el cuarto trimestre de 2026. Solo Ceuta, no Melilla."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "disposición adicional 64.ª.1 LIRPF",
+        "cita": "correspondiente a las actividades económicas desarrolladas en Ceuta a cuyos rendimientos les resulte de aplicación la deducción prevista en el apartado 4 del artículo 68 de esta ley, será, durante el período impositivo 2026, del 10 por ciento.",
+        "cifras": {
+          "porcentaje": "10 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "disposición adicional 64.ª.3 LIRPF",
+        "cita": "3. Estas reducciones se tendrán en cuenta para cuantificar el rendimiento neto a efectos de los pagos fraccionados correspondientes a 2026 cuyo plazo de presentación se inicie transcurrido un mes desde la entrada en vigor de Real Decreto-ley 22/2026, de 1 de septiembre, por el que se aprueban medidas urgentes de carácter social y económico de apoyo a la ciudad de Ceuta."
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "disposición adicional 64.ª LIRPF (nota de vigencia del texto consolidado)",
+        "cita": "Texto añadido, publicado el 02/09/2026, en vigor a partir del 03/09/2026."
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 111.1 RIRPF (plazos de presentación)",
+        "cita": "a) Los tres primeros trimestres, entre el día 1 y el 20 de los meses de abril, julio y octubre. b) Cuarto trimestre, entre el día 1 y el 30 del mes de enero."
+      }
+    ]
+  },
+  "reduccion_irregulares": {
+    "porcentaje": "0.30",
+    "limite_base": "300000",
+    "fuente": {
+      "referencia": "art. 32.1 LIRPF y art. 25 RIRPF",
+      "en_vigor_desde": "2015-01-01",
+      "verificado": true,
+      "nota": "Qué rendimientos son «notoriamente irregulares» lo fija, con lista cerrada, el art. 25 RIRPF. El cálculo no lo valora: reduce el importe que declare el contribuyente."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 32.1 LIRPF",
+        "cita": "1. Los rendimientos netos con un período de generación superior a dos años, así como aquéllos que se califiquen reglamentariamente como obtenidos de forma notoriamente irregular en el tiempo, se reducirán en un 30 por ciento, cuando, en ambos casos, se imputen en un único período impositivo. La cuantía del rendimiento neto a que se refiere este apartado sobre la que se aplicará la citada reducción no podrá superar el importe de 300.000 euros anuales.",
+        "cifras": {
+          "porcentaje": "30 por ciento",
+          "limite_base": "300.000 euros"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 32.1 LIRPF, tercer párrafo (exclusión)",
+        "cita": "No resultará de aplicación esta reducción a aquellos rendimientos que, aun cuando individualmente pudieran derivar de actuaciones desarrolladas a lo largo de un período que cumpliera los requisitos anteriormente indicados, procedan del ejercicio de una actividad económica que de forma regular o habitual obtenga este tipo de rendimientos."
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 25 RIRPF",
+        "cita": "se consideran rendimientos de actividades económicas obtenidos de forma notoriamente irregular en el tiempo, exclusivamente, los siguientes, cuando se imputen en único período impositivo: a) Subvenciones de capital para la adquisición de elementos del inmovilizado no amortizables. b) Indemnizaciones y ayudas por cese de actividades económicas. c) Premios literarios, artísticos o científicos que no gocen de exención en este Impuesto."
+      }
+    ]
+  },
+  "reduccion_dependientes": {
+    "importe_general": "2000",
+    "umbral_superior": "19747.5",
+    "umbral_inferior": "14047.5",
+    "importe_adicional_maximo": "6498",
+    "pendiente": "1.14",
+    "max_otras_rentas": "6500",
+    "discapacidad": "3500",
+    "discapacidad_ampliada": "7750",
+    "max_gastos_sobre_ingresos": "0.30",
+    "min_ingresos_con_retencion": "0.70",
+    "max_prestaciones_trabajo": "4000",
+    "fuente": {
+      "referencia": "art. 32.2.1.º y 2.º LIRPF y art. 26 RIRPF",
+      "en_vigor_desde": "2023-01-01",
+      "verificado": true,
+      "nota": "Cifras de la letra a) según la Ley 31/2022. El art. 20 LIRPF (reducción del trabajo) se ha modificado después y este apartado no: los umbrales de una y otra reducción ya no coinciden."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 32.2.1.º LIRPF, primer párrafo",
+        "cita": "2. 1.º Cuando se cumplan los requisitos previstos en el número 2.º de este apartado, los contribuyentes podrán reducir el rendimiento neto de las actividades económicas en 2.000 euros.",
+        "cifras": {
+          "importe_general": "2.000 euros"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 32.2.1.º a) LIRPF",
+        "cita": "a) Cuando los rendimientos netos de actividades económicas sean inferiores a 19.747,5 euros, siempre que no tengan rentas, excluidas las exentas, distintas de las de actividades económicas superiores a 6.500 euros: a) Contribuyentes con rendimientos netos de actividades económicas iguales o inferiores a 14.047,5 euros: 6.498 euros anuales. b) Contribuyentes con rendimientos netos de actividades económicas comprendidos entre 14.047,5 y 19.747,5 euros: 6.498 euros menos el resultado de multiplicar por 1,14 la diferencia entre el rendimiento de actividades económicas y 14.047,5 euros anuales.",
+        "cifras": {
+          "umbral_superior": "19.747,5 euros",
+          "umbral_inferior": "14.047,5 euros",
+          "importe_adicional_maximo": "6.498 euros",
+          "pendiente": "1,14",
+          "max_otras_rentas": "6.500 euros"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 32.2.1.º b) LIRPF",
+        "cita": "b) Cuando se trate de personas con discapacidad que obtengan rendimientos netos derivados del ejercicio efectivo de estas actividades económicas, 3.500 euros anuales. Dicha reducción será de 7.750 euros anuales, para las personas con discapacidad que ejerzan de forma efectiva estas actividades económicas y acrediten necesitar ayuda de terceras personas o movilidad reducida, o un grado de discapacidad igual o superior al 65 por ciento.",
+        "cifras": {
+          "discapacidad": "3.500 euros",
+          "discapacidad_ampliada": "7.750 euros",
+          "grado_discapacidad_ampliada": "65 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 32.2.2.º c) LIRPF",
+        "cita": "c) El conjunto de gastos deducibles correspondientes a todas sus actividades económicas no puede exceder del 30 por ciento de sus rendimientos íntegros declarados.",
+        "cifras": {
+          "max_gastos_sobre_ingresos": "30 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 32.2.2.º e) y f) LIRPF",
+        "cita": "e) Que no perciban rendimientos del trabajo en el período impositivo. No obstante, no se entenderá que se incumple este requisito cuando se perciban durante el período impositivo prestaciones por desempleo o cualesquiera de las prestaciones previstas en la letra a) del artículo 17.2 de esta Ley, siempre que su importe no sea superior a 4.000 euros anuales. f) Que al menos el 70 por ciento de los ingresos del período impositivo estén sujetos a retención o ingreso a cuenta.",
+        "cifras": {
+          "max_prestaciones_trabajo": "4.000 euros",
+          "min_ingresos_con_retencion": "70 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 32.2.2.º a) LIRPF (incompatibilidad con los gastos de difícil justificación)",
+        "cita": "No obstante, si se determina con arreglo a la modalidad simplificada del método de estimación directa, la reducción será incompatible con lo previsto en la regla 4.ª del artículo 30.2 de esta Ley."
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 32.2.4.º LIRPF",
+        "cita": "4.º Como consecuencia de la aplicación de las reducciones previstas en este apartado, el saldo resultante no podrá ser negativo."
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 60.3 LIRPF",
+        "cita": "3. A los efectos de este Impuesto, tendrán la consideración de personas con discapacidad los contribuyentes que acrediten, en las condiciones que reglamentariamente se establezcan, un grado de discapacidad igual o superior al 33 por ciento.",
+        "cifras": {
+          "grado_discapacidad": "33 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 26.2 RIRPF (tributación conjunta)",
+        "cita": "En este caso, la cuantía de la reducción a computar en la declaración conjunta será única, sin que su importe pueda ser superior al rendimiento neto de las actividades económicas de los miembros de la unidad familiar que cumplan individualmente los citados requisitos, y se calculará, al igual que la reducción prevista en el artículo 32.2.3.º de la Ley del Impuesto, teniendo en cuenta las rentas de la unidad familiar."
+      }
+    ],
+    "grado_discapacidad": "0.33",
+    "grado_discapacidad_ampliada": "0.65"
+  },
+  "reduccion_rentas_bajas": {
+    "limite_rentas": "12000",
+    "umbral_inferior": "8000",
+    "importe_maximo": "1620",
+    "pendiente": "0.405",
+    "limite_conjunto_reduccion_trabajo": "3700",
+    "fuente": {
+      "referencia": "art. 32.2.3.º LIRPF",
+      "en_vigor_desde": "2015-01-01",
+      "verificado": true,
+      "nota": "Ni la Ley ni el Reglamento definen cómo se computan las «rentas no exentas» (la expresión solo aparece, sin definición, en los arts. 20, 32.2, 58, 59 y 61 LIRPF). El cálculo suma el rendimiento neto de la actividad antes de las reducciones del art. 32 y las demás rentas que indique el contribuyente; el puente con el perfil toma las demás rentas por su importe neto."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 32.2.3.º LIRPF",
+        "cita": "3.º Cuando no se cumplan los requisitos previstos en el número 2.º de este apartado, los contribuyentes con rentas no exentas inferiores a 12.000 euros, incluidas las de la propia actividad económica, podrán reducir el rendimiento neto de las actividades económicas en las siguientes cuantías: a) Cuando la suma de las citadas rentas sea igual o inferior a 8.000 euros anuales: 1.620 euros anuales. b) Cuando la suma de las citadas rentas esté comprendida entre 8.000,01 y 12.000 euros anuales: 1.620 euros menos el resultado de multiplicar por 0,405 la diferencia entre las citadas rentas y 8.000 euros anuales. La reducción prevista en este número 3.º conjuntamente con la reducción prevista en el artículo 20 de esta Ley no podrá exceder de 3.700 euros.",
+        "cifras": {
+          "limite_rentas": "12.000 euros",
+          "umbral_inferior": "8.000 euros",
+          "importe_maximo": "1.620 euros",
+          "pendiente": "0,405",
+          "limite_conjunto_reduccion_trabajo": "3.700 euros"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 20 LIRPF (la reducción con la que comparte el límite conjunto)",
+        "cita": "Los contribuyentes con rendimientos netos del trabajo inferiores a 19.747,5 euros siempre que no tengan rentas, excluidas las exentas, distintas de las del trabajo superiores a 6.500 euros, minorarán el rendimiento neto del trabajo en las siguientes cuantías:"
+      }
+    ]
+  },
+  "reduccion_inicio_actividad": {
+    "porcentaje": "0.20",
+    "limite_base": "100000",
+    "max_ingresos_antiguo_pagador": "0.50",
+    "fuente": {
+      "referencia": "art. 32.3 LIRPF",
+      "en_vigor_desde": "2013-01-01",
+      "verificado": true,
+      "nota": "Se aplica en el primer período impositivo con rendimiento neto positivo y en el siguiente, sobre el rendimiento ya minorado por las reducciones de los apartados 1 y 2. Los requisitos (inicio, período, antiguo pagador) los declara el contribuyente."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 32.3 LIRPF, primer párrafo",
+        "cita": "3. Los contribuyentes que inicien el ejercicio de una actividad económica y determinen el rendimiento neto de la misma con arreglo al método de estimación directa, podrán reducir en un 20 por ciento el rendimiento neto positivo declarado con arreglo a dicho método, minorado en su caso por las reducciones previstas en los apartados 1 y 2 anteriores, en el primer período impositivo en que el mismo sea positivo y en el período impositivo siguiente.",
+        "cifras": {
+          "porcentaje": "20 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 32.3 LIRPF, párrafos cuarto y quinto",
+        "cita": "La cuantía de los rendimientos netos a que se refiere este apartado sobre la que se aplicará la citada reducción no podrá superar el importe de 100.000 euros anuales. No resultará de aplicación la reducción prevista en este apartado en el período impositivo en el que más del 50 por ciento de los ingresos del mismo procedan de una persona o entidad de la que el contribuyente hubiera obtenido rendimientos del trabajo en el año anterior a la fecha de inicio de la actividad.",
+        "cifras": {
+          "limite_base": "100.000 euros",
+          "max_ingresos_antiguo_pagador": "50 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 32.3 LIRPF, segundo párrafo (qué es iniciar una actividad)",
+        "cita": "A efectos de lo dispuesto en el párrafo anterior se entenderá que se inicia una actividad económica cuando no se hubiera ejercido actividad económica alguna en el año anterior a la fecha de inicio de la misma, sin tener en consideración aquellas actividades en cuyo ejercicio se hubiera cesado sin haber llegado a obtener rendimientos netos positivos desde su inicio."
+      }
+    ]
+  },
+  "pago_fraccionado": {
+    "porcentaje": "0.20",
+    "exencion_porcentaje_retenido": "0.70",
+    "minoracion_limite": "12000",
+    "minoracion_tramos": [
+      {
+        "hasta": "9000",
+        "importe": "100"
+      },
+      {
+        "hasta": "10000",
+        "importe": "75"
+      },
+      {
+        "hasta": "11000",
+        "importe": "50"
+      },
+      {
+        "hasta": "12000",
+        "importe": "25"
+      }
+    ],
+    "fuente": {
+      "referencia": "arts. 109 a 111 RIRPF",
+      "en_vigor_desde": "2018-12-23",
+      "verificado": true,
+      "nota": "La letra c) del art. 110.3 (minoración de 100 a 25 euros por trimestre) sigue en el texto consolidado, con la redacción del RD 1003/2014. La minoración se concede cuando los rendimientos netos del ejercicio anterior son «igual o inferior a 12.000 euros» y su primer tramo es «Igual o inferior a 9.000»: un rendimiento nulo o negativo entra en ese tramo por su tenor literal; el reglamento no regula el caso de no haber ejercido la actividad el año anterior."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 110.1.a) RIRPF",
+        "cita": "a) Por las actividades que estuvieran en el método de estimación directa, en cualquiera de sus modalidades, el 20 por ciento del rendimiento neto correspondiente al período de tiempo transcurrido desde el primer día del año hasta el último día del trimestre a que se refiere el pago fraccionado. De la cantidad resultante por aplicación de lo dispuesto en esta letra se deducirán los pagos fraccionados que, en relación con estas actividades, habría correspondido ingresar en los trimestres anteriores del mismo año si no se hubiera aplicado lo dispuesto en la letra c) del apartado 3 de este artículo.",
+        "cifras": {
+          "porcentaje": "20 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 110.3.a) RIRPF",
+        "cita": "a) Las retenciones practicadas y los ingresos a cuenta efectuados correspondientes al período de tiempo transcurrido desde el primer día del año hasta el último día del trimestre al que se refiere el pago fraccionado, cuando se trate de: 1.º Actividades profesionales que determinen su rendimiento neto por el método de estimación directa, en cualquiera de sus modalidades."
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 110.3.c) RIRPF",
+        "cita": "c) Cuando la cuantía de los rendimientos netos de actividades económicas del ejercicio anterior sea igual o inferior a 12.000 euros, el importe que resulte del siguiente cuadro: Cuantía de los rendimientos netos del ejercicio anterior – Euros Importe de la minoración – Euros Igual o inferior a 9.000 100 Entre 9.000,01 y 10.000 75 Entre 10.000,01 y 11.000 50 Entre 11.000,01 y 12.000 25 Cuando el importe de la minoración prevista en esta letra sea superior a la cantidad resultante por aplicación de lo dispuesto en los apartados anteriores y en las letras a) y b) de este apartado, la diferencia podrá deducirse en cualquiera de los siguientes pagos fraccionados correspondientes al mismo período impositivo cuyo importe positivo lo permita y hasta el límite máximo de dicho importe.",
+        "cifras": {
+          "minoracion_limite": "12.000 euros",
+          "minoracion_tramos.0.hasta": "9.000",
+          "minoracion_tramos.0.importe": "100",
+          "minoracion_tramos.1.hasta": "10.000",
+          "minoracion_tramos.1.importe": "75",
+          "minoracion_tramos.2.hasta": "11.000",
+          "minoracion_tramos.2.importe": "50",
+          "minoracion_tramos.3.hasta": "12.000",
+          "minoracion_tramos.3.importe": "25"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 109.2 y 5 RIRPF",
+        "cita": "2. Los contribuyentes que desarrollen actividades profesionales no estarán obligados a efectuar pago fraccionado en relación con las mismas si, en el año natural anterior, al menos el 70 por ciento de los ingresos de la actividad fueron objeto de retención o ingreso a cuenta.",
+        "cifras": {
+          "exencion_porcentaje_retenido": "70 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 109.5 RIRPF",
+        "cita": "5. A efectos de lo dispuesto en los apartados 2, 3 y 4 anteriores, en caso de inicio de la actividad se tendrá en cuenta el porcentaje de ingresos que hayan sido objeto de retención o ingreso a cuenta durante el período a que se refiere el pago fraccionado."
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 111.1 RIRPF",
+        "cita": "Cuando de la aplicación de lo dispuesto en el artículo anterior no resultasen cantidades a ingresar, los contribuyentes presentarán una declaración negativa."
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 110.2 RIRPF",
+        "cita": "2. Los porcentajes señalados en el apartado anterior se reducirán en un 60 por ciento para las actividades económicas que tengan derecho a la deducción en la cuota prevista en el artículo 68.4 de la Ley del Impuesto.",
+        "cifras": {
+          "reduccion_ceuta_melilla": "60 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 101.11 LIRPF",
+        "cita": "Estos porcentajes se reducirán en un 60 por ciento para las actividades económicas que tengan derecho a la deducción en la cuota prevista en el artículo 68.4 de esta Ley.",
+        "cifras": {
+          "reduccion_ceuta_melilla": "60 por ciento"
+        }
+      }
+    ],
+    "reduccion_ceuta_melilla": "0.60"
+  },
+  "retencion_profesionales": {
+    "general": "0.15",
+    "inicio_actividad": "0.07",
+    "fuente": {
+      "referencia": "art. 101.5.a) LIRPF y art. 95.1 RIRPF",
+      "en_vigor_desde": "2023-01-26",
+      "verificado": true,
+      "nota": "El 7 % de inicio se aplica en el período de inicio y en los dos siguientes, previa comunicación al pagador, si no se ejerció actividad profesional en el año anterior al inicio. El 7 % de la letra d) (ciertos grupos del IAE y artistas con ingresos bajos) exige comunicación al pagador; qué grupos son no se comprueba."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 95.1 RIRPF",
+        "cita": "1. Cuando los rendimientos sean contraprestación de una actividad profesional, se aplicará el tipo de retención del 15 por ciento sobre los ingresos íntegros satisfechos. No obstante lo dispuesto en el párrafo anterior, en el caso de contribuyentes que inicien el ejercicio de actividades profesionales, el tipo de retención será del 7 por ciento en el período impositivo de inicio de actividades y en los dos siguientes, siempre y cuando no hubieran ejercido actividad profesional alguna en el año anterior a la fecha de inicio de las actividades",
+        "cifras": {
+          "general": "15 por ciento",
+          "inicio_actividad": "7 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 101.5.a) LIRPF",
+        "cita": "a) El 15 por ciento, en el caso de los rendimientos de actividades profesionales establecidos en vía reglamentaria. No obstante, se aplicará el porcentaje del 7 por ciento sobre los rendimientos de actividades profesionales que se establezcan reglamentariamente.",
+        "cifras": {
+          "general": "15 por ciento",
+          "inicio_actividad": "7 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 95.1 RIRPF, cuarto párrafo, letras a) a c)",
+        "cita": "El tipo de retención será del 7 por ciento en el caso de rendimientos satisfechos a: a) Recaudadores municipales. b) Mediadores de seguros que utilicen los servicios de auxiliares externos. c) Delegados comerciales de la Sociedad Estatal Loterías y Apuestas del Estado.",
+        "cifras": {
+          "otros_supuestos": "7 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 95.1 RIRPF, letra d)",
+        "cita": "siempre que, en cualquiera de los supuestos previstos en esta letra, el volumen de rendimientos íntegros del conjunto de tales actividades correspondiente al ejercicio inmediato anterior sea inferior a 15.000 euros y represente más del 75 por ciento de la suma de los rendimientos íntegros de actividades económicas y del trabajo obtenidos por el contribuyente en dicho ejercicio.",
+        "cifras": {
+          "supuesto_d_limite_ingresos": "15.000 euros",
+          "supuesto_d_min_proporcion": "75 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "art. 95.1 RIRPF, último párrafo",
+        "cita": "Estos porcentajes se reducirán en un 60 por ciento cuando los rendimientos tengan derecho a la deducción en la cuota prevista en el artículo 68.4 de la Ley del Impuesto.",
+        "cifras": {
+          "reduccion_ceuta_melilla": "60 por ciento"
+        }
+      }
+    ],
+    "otros_supuestos": "0.07",
+    "supuesto_d_limite_ingresos": "15000",
+    "supuesto_d_min_proporcion": "0.75",
+    "reduccion_ceuta_melilla": "0.60"
+  },
+  "iva": {
+    "tipo_general": "0.21",
+    "tipo_reducido": "0.10",
+    "tipo_superreducido": "0.04",
+    "anos_compensacion": "4",
+    "fuente": {
+      "referencia": "arts. 90, 91 y 99 LIVA",
+      "en_vigor_desde": "2012-09-01",
+      "verificado": true,
+      "nota": "Tipos vigentes desde el 1-9-2012 (RDL 20/2012). Qué bienes y servicios van a cada tipo lo fija el art. 91, que cambia a menudo (última modificación: RDL 29/2026, con efectos de 1-12-2026 para algunos apartados); se aplica el tipo vigente en el devengo (art. 90.dos)."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-1992-28740",
+        "articulo": "art. 90.uno LIVA",
+        "cita": "Uno. El Impuesto se exigirá al tipo del 21 por ciento, salvo lo dispuesto en el artículo siguiente.",
+        "cifras": {
+          "tipo_general": "21 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-1992-28740",
+        "articulo": "art. 91.uno LIVA",
+        "cita": "Uno. Se aplicará el tipo del 10 por ciento a las operaciones siguientes:",
+        "cifras": {
+          "tipo_reducido": "10 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-1992-28740",
+        "articulo": "art. 91.dos LIVA",
+        "cita": "Dos. Se aplicará el tipo del 4 por ciento a las operaciones siguientes:",
+        "cifras": {
+          "tipo_superreducido": "4 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-1992-28740",
+        "articulo": "art. 99.uno LIVA",
+        "cita": "Uno. En las declaraciones-liquidaciones correspondientes a cada uno de los períodos de liquidación, los sujetos pasivos podrán deducir globalmente el montante total de las cuotas deducibles soportadas en dicho período del importe total de las cuotas del Impuesto sobre el Valor Añadido devengadas durante el mismo período de liquidación en el territorio de aplicación del Impuesto como consecuencia de las entregas de bienes, adquisiciones intracomunitarias de bienes o prestaciones de servicios por ellos realizadas."
+      },
+      {
+        "boe_id": "BOE-A-1992-28740",
+        "articulo": "art. 99.cinco LIVA",
+        "cita": "Cinco. Cuando la cuantía de las deducciones procedentes supere el importe de las cuotas devengadas en el mismo periodo de liquidación, el exceso podrá ser compensado en las declaraciones-liquidaciones posteriores, siempre que no hubiesen transcurrido cuatro años contados a partir de la presentación de la declaración-liquidación en que se origine dicho exceso.",
+        "cifras": {
+          "anos_compensacion": "cuatro años"
+        }
+      },
+      {
+        "boe_id": "BOE-A-1992-28740",
+        "articulo": "art. 115.uno LIVA",
+        "cita": "Uno. Los sujetos pasivos que no hayan podido hacer efectivas las deducciones originadas en un período de liquidación por el procedimiento previsto en el artículo 99 de esta Ley, por exceder la cuantía de las mismas de la de las cuotas devengadas, tendrán derecho a solicitar la devolución del saldo a su favor existente a 31 de diciembre de cada año en la autoliquidación correspondiente al último período de liquidación de dicho año."
+      },
+      {
+        "boe_id": "BOE-A-1992-28740",
+        "articulo": "art. 3.dos.1.º LIVA (el IVA no se aplica en Canarias, Ceuta ni Melilla)",
+        "cita": "a) En la República Federal de Alemania, la Isla de Helgoland y el territorio de Büsingen; en el Reino de España, Ceuta y Melilla y en la República Italiana, Livigno, en cuanto territorios no comprendidos en la Unión Aduanera. b) En el Reino de España, Canarias;"
+      }
+    ]
+  }
+}

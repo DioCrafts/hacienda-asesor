@@ -29,9 +29,7 @@ def test_load_sidecar_per_directory_metadata(tmp_path: Path) -> None:
     ccaa_dir.mkdir()
     pdf = ccaa_dir / "boja.pdf"
     pdf.write_bytes(b"%PDF-1.4")
-    (ccaa_dir / "metadata.json").write_text(
-        json.dumps({"jurisdiction_scope": "autonomico:AN"}), encoding="utf-8"
-    )
+    (ccaa_dir / "metadata.json").write_text(json.dumps({"jurisdiction_scope": "autonomico:AN"}), encoding="utf-8")
     assert _load_sidecar(str(pdf)) == {"jurisdiction_scope": "autonomico:AN"}
 
 
@@ -66,13 +64,13 @@ def test_merge_sidecar_protects_reserved_and_skips_empty() -> None:
     _merge_sidecar(
         meta,
         {
-            "title": "Sidecar Title",          # reserved -> not overwritten
+            "title": "Sidecar Title",  # reserved -> not overwritten
             "source_url": "https://boe.es/x",  # reserved -> not overwritten
-            "source_authority": "TS",          # merged
+            "source_authority": "TS",  # merged
             "covered_tributos": ["IRPF", "IVA"],  # merged (list)
-            "vinculante": False,               # merged (False is meaningful)
-            "concepto": "",                    # empty -> skipped
-            "ponente": None,                   # None -> skipped
+            "vinculante": False,  # merged (False is meaningful)
+            "concepto": "",  # empty -> skipped
+            "ponente": None,  # None -> skipped
         },
     )
     assert meta["title"] == "Docling Title"
@@ -93,9 +91,7 @@ def test_process_one_file_merges_sidecar(tmp_path: Path) -> None:
     doc_path = tmp_path / "criterio_10.html"
     doc_path.write_text("contenido", encoding="utf-8")
     (tmp_path / "criterio_10.json").write_text(
-        json.dumps(
-            {"source_authority": "TEAC", "is_tributario": True, "covered_tributos": ["IVA"]}
-        ),
+        json.dumps({"source_authority": "TEAC", "is_tributario": True, "covered_tributos": ["IVA"]}),
         encoding="utf-8",
     )
 

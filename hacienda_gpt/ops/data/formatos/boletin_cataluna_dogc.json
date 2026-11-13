@@ -1,0 +1,12 @@
+{
+  "fuente": "boletin_cataluna_dogc",
+  "version": 1,
+  "descripcion": "Listado de resultados del buscador: Diari Oficial de la Generalitat de Catalunya (HTML). Selectores históricos del rastreador.",
+  "origen": "incorporada",
+  "reglas": {
+    "item_xpath": "//div[contains(@class, 'resultat-cerca') or contains(@class, 'result')]",
+    "title_xpath": ".//h3//text() | .//a//text()",
+    "date_xpath": ".//span[contains(@class, 'data')]//text() | .//time/@datetime",
+    "link_xpath": ".//a/@href"
+  }
+}

@@ -114,10 +114,7 @@ def test_load_chunks_maps_loader_output(monkeypatch, tmp_path: Path) -> None:
 
     def fake_parse_paths(paths):
         raw = _FakeLoader().load()
-        return [
-            Document(page_content=c.page_content, metadata=dl.docling_chunk_metadata(c))
-            for c in raw
-        ]
+        return [Document(page_content=c.page_content, metadata=dl.docling_chunk_metadata(c)) for c in raw]
 
     monkeypatch.setattr(dl, "_docling_parse_paths", fake_parse_paths)
     monkeypatch.setattr(dl, "_init_worker", lambda max_tokens: None)

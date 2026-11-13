@@ -61,7 +61,7 @@ class Planner:
         actions: list[PlannedAction] = []
 
         for obligation in obligations:
-            urgency = self._urgency_score(obligation.tax_period)
+            urgency = self._urgency_score(obligation.tax_period, obligation.due_date)
             sanction = self._sanction_risk_score(obligation.risk_level)
             effort = self._user_effort_score(obligation)
             impact = self._compliance_impact_score(obligation)
@@ -73,14 +73,14 @@ class Planner:
                 + self.weights.compliance_impact * impact
             )
 
-            year = parse_fiscal_year(obligation.tax_period)
             action = ActionItem(
                 action_id=f"action_{obligation.obligation_id}",
                 title=f"Revisar obligación: {obligation.title}",
                 description=obligation.description,
                 priority=1,
                 risk_level=obligation.risk_level,
-                due_date=date(year, 12, 31) if year is not None else None,
+                # Only a deadline declared by the rule; the planner never guesses one.
+                due_date=obligation.due_date,
                 depends_on=[],
                 expected_outcome=f"Confirmar o descartar {obligation.obligation_id}",
                 confidence=obligation.confidence,
@@ -106,11 +106,10 @@ class Planner:
 
         ranked = sorted(actions, key=lambda item: item.score, reverse=True)
 
-        # Dependency strategy: each subsequent action depends on previous one.
+        # Priority is the rank. Actions are NOT chained: reviewing one obligation
+        # does not depend on having reviewed a higher-scored, unrelated one.
         for index, item in enumerate(ranked, start=1):
             item.action.priority = index
-            if index > 1:
-                item.action.depends_on = [ranked[index - 2].action.action_id]
 
         next_best = ranked[0] if ranked else None
 
@@ -143,7 +142,16 @@ class Planner:
             RiskLevel.CRITICAL: 1.0,
         }[risk_level]
 
-    def _urgency_score(self, tax_period: str) -> float:
+    def _urgency_score(self, tax_period: str, due_date: date | None = None) -> float:
+        if due_date is not None:
+            days_left = (due_date - datetime.now(UTC).date()).days
+            if days_left < 0:
+                return 1.0  # overdue: surcharges/penalties are already accruing
+            if days_left <= 30:
+                return 0.9
+            if days_left <= 90:
+                return 0.7
+            return 0.4
         now_year = datetime.now(UTC).year
         year = parse_fiscal_year(tax_period)
         delta = max(0, now_year - year) if year is not None else 0

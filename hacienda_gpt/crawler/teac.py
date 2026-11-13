@@ -31,8 +31,11 @@ from typing import Any
 from urllib.parse import urlencode
 
 import parsel
+from pydantic import BaseModel, ConfigDict, field_validator
 import scrapy
 from scrapy.http import Response
+
+from hacienda_gpt.ops import formatos
 
 DYCTEA_BASE_URL = "https://serviciostelematicosext.hacienda.gob.es/TEAC/DYCTEA"
 DYCTEA_NOT_FOUND_MARKER = "El criterio no existe"
@@ -53,30 +56,99 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
     "criterio": ("criterio",),
 }
 
+# Keys of the sidecar that are not read from the page.
+_NO_EXTRAIDO = frozenset({"source_authority", "criterio_id", "ingested_at"})
+
 _NUM_RESOLUCION_PATTERN = re.compile(r"\b\d{2}/\d{4,6}/\d{4}(?:/\d{2}/\d{2})?\b")
 _DATE_PATTERN = re.compile(r"\b(\d{2})/(\d{2})/(\d{4})\b")
 
+# How a labelled value is looked up, as XPath templates where ``{alias}`` is a lowercase label. Groups are
+# tried in order; inside a group the first template that matches anything wins, and the group's value is its
+# non-blank text joined by spaces (an all-blank value moves on to the next group). Version 1 of the spec.
+_MINUSCULAS = "translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú')"
+PLANTILLAS_V1: tuple[tuple[str, ...], ...] = (
+    # dt/dd pattern (definition list)
+    (f"//dt[normalize-space({_MINUSCULAS})='{{alias}}']/following-sibling::dd[1]//text()",),
+    # tr/td pattern
+    (
+        f"//th[normalize-space({_MINUSCULAS})='{{alias}}']/following-sibling::td[1]//text()",
+        f"//td[normalize-space({_MINUSCULAS})='{{alias}}']/following-sibling::td[1]//text()",
+        f"//td[normalize-space({_MINUSCULAS})='{{alias}}:']/following-sibling::td[1]//text()",
+    ),
+    # label + span/strong pattern
+    (f"//*[normalize-space({_MINUSCULAS})='{{alias}}:']/following-sibling::*[1]//text()",),
+)
 
-def parse_teac_criterio(html: str, *, criterio_id: int | None = None) -> dict[str, Any] | None:
-    """Parse a DYCTEA resolution detail page into a structured dict.
 
-    Returns None when the page is the "criterio no existe" error placeholder,
-    so callers can short-circuit storage.
+class ReglasTeac(BaseModel):
+    """What the parser knows about the DYCTEA page, as format-spec data (``teac_criterio``).
+
+    Version 1 of the spec holds ``DYCTEA_NOT_FOUND_MARKER``, ``_FIELD_ALIASES``,
+    the two patterns and the XPath templates above; a reviewed proposal may
+    replace them.
     """
-    if DYCTEA_NOT_FOUND_MARKER in html:
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    marcador_no_existe: str
+    # Canonical field → labels it may appear under (lower case).
+    alias: dict[str, tuple[str, ...]]
+    patron_numero: str
+    patron_fecha: str
+    # Groups of XPath templates with an ``{alias}`` placeholder (see ``PLANTILLAS_V1``).
+    plantillas: tuple[tuple[str, ...], ...] = PLANTILLAS_V1
+
+    @field_validator("plantillas")
+    @classmethod
+    def _plantillas(cls, value: tuple[tuple[str, ...], ...]) -> tuple[tuple[str, ...], ...]:
+        if not value or any(not grupo for grupo in value):
+            raise ValueError("hace falta al menos un grupo de plantillas, y ningún grupo vacío")
+        prueba = parsel.Selector(text="<html><body></body></html>")
+        for plantilla in (p for grupo in value for p in grupo):
+            if plantilla.count("{alias}") != 1 or len(plantilla) > formatos.MAX_PATRON:
+                raise ValueError("cada plantilla lleva «{alias}» exactamente una vez y es breve")
+            try:
+                prueba.xpath(plantilla.replace("{alias}", "x"))
+            except ValueError as exc:
+                raise ValueError(f"XPath no válido: {exc}") from exc
+        return value
+
+    @field_validator("patron_numero", "patron_fecha")
+    @classmethod
+    def _patron(cls, value: str) -> str:
+        return formatos.patron_seguro(value)
+
+    @field_validator("patron_fecha")
+    @classmethod
+    def _tres_grupos(cls, value: str) -> str:
+        if re.compile(value).groups != 3:
+            raise ValueError("el patrón de fecha debe tener tres grupos: día, mes y año")
+        return value
+
+    @field_validator("alias")
+    @classmethod
+    def _campos(cls, value: dict[str, tuple[str, ...]]) -> dict[str, tuple[str, ...]]:
+        if set(value) != set(_FIELD_ALIASES):
+            raise ValueError(f"los campos deben ser exactamente: {', '.join(sorted(_FIELD_ALIASES))}")
+        if any("'" in alias or not alias.strip() for aliases in value.values() for alias in aliases):
+            raise ValueError("una etiqueta no puede estar vacía ni contener comillas simples")
+        return value
+
+
+def extraer_criterio(reglas: ReglasTeac, html: str) -> dict[str, Any] | None:
+    """The fields of a DYCTEA page according to ``reglas``; None for the "no existe" placeholder."""
+    if reglas.marcador_no_existe in html:
         return None
 
     selector = parsel.Selector(text=html)
     fields: dict[str, str | None] = {}
-    for canonical, aliases in _FIELD_ALIASES.items():
-        fields[canonical] = _extract_field(selector, aliases)
+    for canonical, aliases in reglas.alias.items():
+        fields[canonical] = _extract_field(selector, aliases, reglas.plantillas)
 
-    numero = fields.get("numero_resolucion") or _first_match(_NUM_RESOLUCION_PATTERN, html)
-    fecha = _parse_date(fields.get("fecha_resolucion") or "")
+    numero = fields.get("numero_resolucion") or _first_match(re.compile(reglas.patron_numero), html)
+    fecha = _parse_date(fields.get("fecha_resolucion") or "", re.compile(reglas.patron_fecha))
 
     return {
-        "source_authority": "TEAC",
-        "criterio_id": criterio_id,
         "numero_resolucion": numero,
         "sala": fields.get("sala"),
         "fecha_resolucion": fecha.isoformat() if fecha else None,
@@ -87,45 +159,53 @@ def parse_teac_criterio(html: str, *, criterio_id: int | None = None) -> dict[st
         "norma": fields.get("norma"),
         "precepto": fields.get("precepto"),
         "criterio": fields.get("criterio"),
+    }
+
+
+def parse_teac_criterio(html: str, *, criterio_id: int | str | None = None) -> dict[str, Any] | None:
+    """Parse a DYCTEA resolution detail page into a structured dict.
+
+    Returns None when the page is the "criterio no existe" error placeholder,
+    so callers can short-circuit storage.
+    """
+    campos = extraer_criterio(formatos.reglas_de("teac_criterio", ReglasTeac), html)
+    if campos is None:
+        return None
+    numero = campos.pop("numero_resolucion")
+    return {
+        "source_authority": "TEAC",
+        "criterio_id": criterio_id,
+        "numero_resolucion": numero,
+        **campos,
         "ingested_at": datetime.now(UTC).isoformat(),
     }
 
 
-def _extract_field(selector: Any, aliases: tuple[str, ...]) -> str | None:
-    """Look up a labelled value tolerating dl/dt/dd, table tr/td and label/span layouts."""
+def observar_criterio(html: str, metadata: dict[str, Any], criterio_id: int | str) -> None:
+    """Format watch (never raises): a page whose labels changed still parses, with every field empty."""
+    formatos.observar(
+        "teac_criterio",
+        html,
+        extraccion={k: v for k, v in metadata.items() if k not in _NO_EXTRAIDO},
+        contexto=str(criterio_id),
+    )
+
+
+def _extract_field(
+    selector: Any, aliases: tuple[str, ...], plantillas: tuple[tuple[str, ...], ...] = PLANTILLAS_V1
+) -> str | None:
+    """Look up a labelled value tolerating dl/dt/dd, table tr/td and label/span layouts (``plantillas``)."""
     for alias in aliases:
-        # dt/dd pattern (definition list)
-        value = selector.xpath(
-            f"//dt[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}']/following-sibling::dd[1]//text()"
-        ).getall()
-        if value:
-            joined = " ".join(part.strip() for part in value if part.strip())
-            if joined:
-                return joined
-        # tr/td pattern
-        value = (
-            selector.xpath(
-                f"//th[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}']/following-sibling::td[1]//text()"
-            ).getall()
-            or selector.xpath(
-                f"//td[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}']/following-sibling::td[1]//text()"
-            ).getall()
-            or selector.xpath(
-                f"//td[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}:']/following-sibling::td[1]//text()"
-            ).getall()
-        )
-        if value:
-            joined = " ".join(part.strip() for part in value if part.strip())
-            if joined:
-                return joined
-        # label + span/strong pattern
-        value = selector.xpath(
-            f"//*[normalize-space(translate(text(), 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnñopqrstuvwxyzáéíóú'))='{alias}:']/following-sibling::*[1]//text()"
-        ).getall()
-        if value:
-            joined = " ".join(part.strip() for part in value if part.strip())
-            if joined:
-                return joined
+        for grupo in plantillas:
+            value: list[str] = []
+            for plantilla in grupo:
+                value = selector.xpath(plantilla.replace("{alias}", alias)).getall()
+                if value:
+                    break
+            if value:
+                joined = " ".join(part.strip() for part in value if part.strip())
+                if joined:
+                    return joined
     return None
 
 
@@ -159,8 +239,8 @@ def _normalise_vinculante(value: str | None) -> bool | None:
     return None
 
 
-def _parse_date(value: str) -> date | None:
-    match = _DATE_PATTERN.search(value)
+def _parse_date(value: str, pattern: re.Pattern[str] = _DATE_PATTERN) -> date | None:
+    match = pattern.search(value)
     if not match:
         return None
     day, month, year = (int(group) for group in match.groups())
@@ -229,6 +309,7 @@ class TEACCrawler(scrapy.Spider):
         if metadata is None:
             self.logger.debug("Criterio %s no existe; skipping.", criterio_id)
             return
+        observar_criterio(html, metadata, criterio_id)
         self._persist(criterio_id, html, metadata)
 
     def _persist(self, criterio_id: int, html: str, metadata: dict[str, Any]) -> None:

@@ -1,0 +1,60 @@
+{
+  "fuente": "calendario_boe",
+  "version": 1,
+  "descripcion": "Citas literales de los artículos del BOE que fijan los plazos de tax/data/calendario.json, leídas de los textos consolidados de www.boe.es el 12-11-2026 (art. 71.4 RIVA, art. 111.1 RIRPF, arts. 42 bis.5 y 42 ter.5 RD 1065/2007, art. 12.2 LIRPF, art. 30.5 Ley 39/2015).",
+  "origen": "incorporada",
+  "reglas": {
+    "contrastes": [
+      {
+        "id": "iva_trimestral",
+        "boe_id": "BOE-A-1992-28925",
+        "articulo": "Artículo 71.",
+        "citas": [
+          "presentarse durante los veinte primeros días naturales del mes siguiente al correspondiente período de liquidación trimestral.",
+          "Sin embargo, la declaración-liquidación correspondiente al último período del año deberá presentarse durante los treinta primeros días naturales del mes de enero."
+        ]
+      },
+      {
+        "id": "irpf_pago_fraccionado",
+        "boe_id": "BOE-A-2007-6820",
+        "articulo": "Artículo 111.",
+        "citas": [
+          "a) Los tres primeros trimestres, entre el día 1 y el 20 de los meses de abril, julio y octubre.",
+          "b) Cuarto trimestre, entre el día 1 y el 30 del mes de enero."
+        ]
+      },
+      {
+        "id": "modelo_720",
+        "boe_id": "BOE-A-2007-15984",
+        "articulo": "Artículo 42 bis.",
+        "citas": [
+          "Esta obligación deberá cumplirse entre el 1 de enero y el 31 de marzo del año siguiente a aquel al que se refiera la información a suministrar."
+        ]
+      },
+      {
+        "id": "modelo_720",
+        "boe_id": "BOE-A-2007-15984",
+        "articulo": "Artículo 42 ter.",
+        "citas": [
+          "Esta obligación deberá cumplirse entre el 1 de enero y el 31 de marzo del año siguiente a aquel al que se refiera la información a suministrar."
+        ]
+      },
+      {
+        "id": "irpf_cierre_ejercicio",
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "Artículo 12.",
+        "citas": [
+          "El Impuesto se devengará el 31 de diciembre de cada año"
+        ]
+      },
+      {
+        "id": "regla_dia_inhabil",
+        "boe_id": "BOE-A-2015-10565",
+        "articulo": "Artículo 30.",
+        "citas": [
+          "Cuando el último día del plazo sea inhábil, se entenderá prorrogado al primer día hábil siguiente."
+        ]
+      }
+    ]
+  }
+}

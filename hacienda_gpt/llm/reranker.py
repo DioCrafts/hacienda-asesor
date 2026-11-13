@@ -18,8 +18,8 @@ M-series; cheap enough to add to every ``/qa`` request.
 
 from __future__ import annotations
 
-import threading
 from collections.abc import Sequence
+import threading
 from typing import Any
 
 from langchain_core.callbacks import Callbacks
@@ -27,18 +27,15 @@ from langchain_core.documents import Document
 from langchain_core.documents.compressor import BaseDocumentCompressor
 from pydantic import ConfigDict
 
-
 # Qwen3-Reranker scoring protocol — verbatim from the model card.
 # https://huggingface.co/Qwen/Qwen3-Reranker-0.6B
 _SYSTEM_PROMPT = (
-    'Judge whether the Document meets the requirements based on the Query and '
+    "Judge whether the Document meets the requirements based on the Query and "
     'the Instruct provided. Note that the answer can only be "yes" or "no".'
 )
 _PREFIX = "<|im_start|>system\n" + _SYSTEM_PROMPT + "<|im_end|>\n<|im_start|>user\n"
 _SUFFIX = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
-_DEFAULT_INSTRUCTION = (
-    "Given a web search query, retrieve relevant passages that answer the query"
-)
+_DEFAULT_INSTRUCTION = "Given a web search query, retrieve relevant passages that answer the query"
 
 
 # Process-level cache so multiple MLXReranker instances share a single loaded
@@ -169,12 +166,9 @@ class MLXReranker(BaseDocumentCompressor):
 
         # Gather per-row logits at the row's own last-real-token position.
         # No mx.gather one-liner; the explicit list comp is cheap (B<=50).
-        yes_logits = mx.stack(
-            [logits[i, int(last_pos[i]), yes_id] for i in range(len(docs))]
-        )
-        no_logits = mx.stack(
-            [logits[i, int(last_pos[i]), no_id] for i in range(len(docs))]
-        )
+        yes_logits = mx.stack([logits[i, int(last_pos[i]), yes_id] for i in range(len(docs))])
+        no_logits = mx.stack([logits[i, int(last_pos[i]), no_id] for i in range(len(docs))])
         paired = mx.stack([no_logits, yes_logits], axis=1)  # (B, 2)
         probs = mx.softmax(paired, axis=1)  # (B, 2)
-        return probs[:, 1].tolist()
+        scores: list[float] = probs[:, 1].tolist()
+        return scores

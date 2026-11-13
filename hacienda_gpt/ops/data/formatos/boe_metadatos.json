@@ -1,0 +1,16 @@
+{
+  "fuente": "boe_metadatos",
+  "version": 1,
+  "descripcion": "Metadatos de una norma consolidada del BOE (API de datos abiertos, JSON). Comportamiento histórico del lector.",
+  "origen": "incorporada",
+  "reglas": {
+    "estado": [
+      "status",
+      "code"
+    ],
+    "estado_ok": "200",
+    "datos": "data",
+    "identificador": "identificador",
+    "fecha_actualizacion": "fecha_actualizacion"
+  }
+}

@@ -1,0 +1,214 @@
+# Extracto literal de https://www.boe.es/buscar/act.php?id=BOE-A-2007-6820 descargado el 2026-11-12. Texto consolidado: «Última actualización, publicada el 07/10/2026»
+# Solo los artículos de los que se leen los parámetros de autonomos_2026.json; generado, no editar a mano.
+
+Artículo 25. Rendimientos de actividades económicas obtenidos de forma notoriamente irregular en el tiempo.
+A efectos de la aplicación de la reducción prevista en el artículo 32.1 de la Ley del Impuesto, se consideran rendimientos de actividades económicas obtenidos de forma notoriamente irregular en el tiempo, exclusivamente, los siguientes, cuando se imputen en único período impositivo:
+a) Subvenciones de capital para la adquisición de elementos del inmovilizado no amortizables.
+b) Indemnizaciones y ayudas por cese de actividades económicas.
+c) Premios literarios, artísticos o científicos que no gocen de exención en este Impuesto. No se consideran premios, a estos efectos, las contraprestaciones económicas derivadas de la cesión de derechos de propiedad intelectual o industrial o que sustituyan a éstas.
+d) Las indemnizaciones percibidas en sustitución de derechos económicos de duración indefinida.
+Se modifica por el art. 1.8 del Real Decreto 633/2015, de 10 de julio. Ref. BOE-A-2015-7770.
+Esta modificación resulta aplicable a los periodos impositivos que se inicien a partir del 1 de enero de 2015, según establece la disposición final 2.2 del citado Real Decreto.
+Seleccionar redacción: Última actualización, publicada el 11/07/2015, en vigor a partir del 12/07/2015.
+Texto original, publicado el 31/03/2007, en vigor a partir del 01/04/2007.
+Subir
+
+Artículo 26. Reducciones aplicables a determinados rendimientos de actividades económicas.
+1. Para la aplicación de la reducción prevista en el artículo 32.2.1.º de la Ley del Impuesto, será necesario el cumplimiento de los requisitos señalados en el 32.2.2.º de la Ley del Impuesto y de las obligaciones formales previstas en el artículo 68 de este Reglamento.
+2. A efectos de la aplicación de la reducción prevista en el artículo 32.2.1.º de la Ley del Impuesto, cuando el contribuyente opte por la tributación conjunta, tendrá derecho a la misma cuando individualmente cumpla con los requisitos señalados en el artículo 32.2.2.º de la Ley del Impuesto. En este caso, la cuantía de la reducción a computar en la declaración conjunta será única, sin que su importe pueda ser superior al rendimiento neto de las actividades económicas de los miembros de la unidad familiar que cumplan individualmente los citados requisitos, y se calculará, al igual que la reducción prevista en el artículo 32.2.3.º de la Ley del Impuesto, teniendo en cuenta las rentas de la unidad familiar.
+Se modifica por el art. 1.9 del Real Decreto 633/2015, de 10 de julio. Ref. BOE-A-2015-7770.
+Esta modificación resulta aplicable a los periodos impositivos que se inicien a partir del 1 de enero de 2015, según establece la disposición final 2.2 del citado Real Decreto.
+Seleccionar redacción: Última actualización, publicada el 11/07/2015, en vigor a partir del 12/07/2015.
+Texto original, publicado el 31/03/2007, en vigor a partir del 01/04/2007.
+Subir
+
+Artículo 28. Ámbito de aplicación del método de estimación directa simplificada.
+1. Los contribuyentes que ejerzan actividades económicas determinarán el rendimiento neto de todas sus actividades por la modalidad simplificada del método de estimación directa, siempre que:
+a) No determinen el rendimiento neto de estas actividades por el método de estimación objetiva.
+b) El importe neto de la cifra de negocios del conjunto de estas actividades, definido de acuerdo al artículo 191 del texto refundido de la Ley de Sociedades Anónimas, aprobado por el Real Decreto Legislativo 1564/1989, de 22 de diciembre, no supere los 600.000 euros anuales en el año inmediato anterior.
+c) No renuncien a esta modalidad.
+2. El importe neto de la cifra de negocios que se establece como límite para la aplicación de la modalidad simplificada del método de estimación directa, tendrá como referencia el año inmediato anterior a aquél en que deba aplicarse esta modalidad.
+Cuando en el año inmediato anterior no se hubiese ejercido actividad alguna, se determinará el rendimiento neto por esta modalidad, salvo que se renuncie a la misma en los términos previstos en el artículo siguiente.
+Cuando en el año inmediato anterior se hubiese iniciado una actividad, el importe neto de la cifra de negocios se elevará al año.
+3. Los contribuyentes que determinen el rendimiento neto de alguna de sus actividades económicas por la modalidad normal del método de estimación directa, determinarán el rendimiento neto de todas sus actividades por la modalidad normal.
+No obstante, cuando se inicie durante el año alguna actividad económica por la que se renuncie a esta modalidad, la incompatibilidad a que se refiere el párrafo anterior no surtirá efectos para ese año respecto a las actividades que se venían realizando con anterioridad.
+Subir
+
+Artículo 30. Determinación del rendimiento neto en el método de estimación directa simplificada.
+El rendimiento neto de las actividades económicas, a las que sea de aplicación la modalidad simplificada del método de estimación directa, se determinará según las normas contenidas en los artículos 28 y 30 de la Ley del Impuesto, con las especialidades siguientes:
+1.ª Las amortizaciones del inmovilizado material se practicarán de forma lineal, en función de la tabla de amortizaciones simplificada que se apruebe por el Ministro de Hacienda y Administraciones Públicas. Sobre las cuantías de amortización que resulten de estas tablas serán de aplicación las normas del régimen especial de entidades de reducida dimensión previstas en la Ley del Impuesto sobre Sociedades que afecten a este concepto.
+2.ª El conjunto de las provisiones deducibles y los gastos de difícil justificación se cuantificará aplicando el porcentaje del 5 por ciento sobre el rendimiento neto, excluido este concepto, sin que la cuantía resultante pueda superar 2.000 euros anuales. No obstante, no resultará de aplicación dicho porcentaje de deducción cuando el contribuyente opte por la aplicación de la reducción prevista en el artículo 26.1 de este Reglamento.
+Se modifica por el art. 1.10 del Real Decreto 633/2015, de 10 de julio. Ref. BOE-A-2015-7770.
+Esta modificación resulta aplicable a los periodos impositivos que se inicien a partir del 1 de enero de 2015, según establece la disposición final 2.2 del citado Real Decreto.
+Seleccionar redacción: Última actualización, publicada el 11/07/2015, en vigor a partir del 12/07/2015.
+Texto original, publicado el 31/03/2007, en vigor a partir del 01/04/2007.
+Subir
+
+Artículo 95. Importe de las retenciones sobre rendimientos de actividades económicas.
+1. Cuando los rendimientos sean contraprestación de una actividad profesional, se aplicará el tipo de retención del 15 por ciento sobre los ingresos íntegros satisfechos.
+No obstante lo dispuesto en el párrafo anterior, en el caso de contribuyentes que inicien el ejercicio de actividades profesionales, el tipo de retención será del 7 por ciento en el período impositivo de inicio de actividades y en los dos siguientes, siempre y cuando no hubieran ejercido actividad profesional alguna en el año anterior a la fecha de inicio de las actividades
+Para la aplicación del tipo de retención previsto en el párrafo anterior, los contribuyentes deberán comunicar al pagador de los rendimientos la concurrencia de dicha circunstancia, quedando obligado el pagador a conservar la comunicación debidamente firmada.
+El tipo de retención será del 7 por ciento en el caso de rendimientos satisfechos a:
+a) Recaudadores municipales.
+b) Mediadores de seguros que utilicen los servicios de auxiliares externos.
+c) Delegados comerciales de la Sociedad Estatal Loterías y Apuestas del Estado.
+d) Contribuyentes que desarrollen actividades incluidas en los grupos 851, 852, 853, 861, 862, 864 y 869 de la sección segunda y en las agrupaciones 01, 02, 03 y 05 de la sección tercera, de las Tarifas del Impuesto sobre Actividades Económicas, aprobadas junto con la Instrucción para su aplicación por el Real Decreto Legislativo 1175/1990, de 28 de septiembre, o cuando la contraprestación de dicha actividad profesional derive de una prestación de servicios que por su naturaleza, si se realizase por cuenta ajena, quedaría incluida en el ámbito de aplicación de la relación laboral especial de las personas artistas que desarrollan su actividad en las artes escénicas, audiovisuales y musicales, así como de las personas que realizan actividades técnicas o auxiliares necesarias para el desarrollo de dicha actividad, siempre que, en cualquiera de los supuestos previstos en esta letra, el volumen de rendimientos íntegros del conjunto de tales actividades correspondiente al ejercicio inmediato anterior sea inferior a 15.000 euros y represente más del 75 por ciento de la suma de los rendimientos íntegros de actividades económicas y del trabajo obtenidos por el contribuyente en dicho ejercicio. Para la aplicación de este tipo de retención, los contribuyentes deberán comunicar al pagador de los rendimientos la concurrencia de dichas circunstancias, quedando obligado el pagador a conservar la comunicación debidamente firmada.
+Estos porcentajes se reducirán en un 60 por ciento cuando los rendimientos tengan derecho a la deducción en la cuota prevista en el artículo 68.4 de la Ley del Impuesto.
+2. A efectos de lo dispuesto en el apartado anterior, se considerarán comprendidos entre los rendimientos de actividades profesionales:
+a) En general, los derivados del ejercicio de las actividades incluidas en las Secciones Segunda y Tercera de las Tarifas del Impuesto sobre Actividades Económicas, aprobadas por el Real Decreto Legislativo 1175/1990, de 28 de septiembre.
+b) En particular, tendrán la consideración de rendimientos profesionales los obtenidos por:
+1.º Los autores o traductores de obras, provenientes de la propiedad intelectual o industrial. Cuando los autores o traductores editen directamente sus obras, sus rendimientos se comprenderán entre los correspondientes a las actividades empresariales.
+2.º Los comisionistas. Se entenderá que son comisionistas los que se limitan a acercar o a aproximar a las partes interesadas para la celebración de un contrato.
+Por el contrario, se entenderá que no se limitan a realizar operaciones propias de comisionistas cuando, además de la función descrita en el párrafo anterior, asuman el riesgo y ventura de tales operaciones mercantiles, en cuyo caso el rendimiento se comprenderá entre los correspondientes a las actividades empresariales.
+3.º Los profesores, cualquiera que sea la naturaleza de las enseñanzas, que ejerzan la actividad, bien en su domicilio, casas particulares o en academia o establecimiento abierto. La enseñanza en academias o establecimientos propios tendrá la consideración de actividad empresarial.
+3. No se considerarán rendimientos de actividades profesionales las cantidades que perciban las personas que, a sueldo de una empresa, por las funciones que realizan en la misma vienen obligadas a inscribirse en sus respectivos colegios profesionales ni, en general, las derivadas de una relación de carácter laboral o dependiente. Dichas cantidades se comprenderán entre los rendimientos del trabajo.
+4. Cuando los rendimientos sean contraprestación de una actividad agrícola o ganadera, se aplicarán los siguientes porcentajes de retención:
+1.º Actividades ganaderas de engorde de porcino y avicultura: 1 por ciento.
+2.º Restantes casos: 2 por ciento.
+Estos porcentajes se aplicarán sobre los ingresos íntegros satisfechos, con excepción de las subvenciones corrientes y de capital y de las indemnizaciones.
+A estos efectos se entenderán como actividades agrícolas o ganaderas aquellas mediante las cuales se obtengan directamente de las explotaciones productos naturales, vegetales o animales y no se sometan a procesos de transformación, elaboración o manufactura.
+Se considerará proceso de transformación, elaboración o manufactura toda actividad para cuyo ejercicio sea preceptiva el alta en un epígrafe correspondiente a actividades industriales en las tarifas del Impuesto sobre Actividades Económicas.
+Se entenderán incluidas entre las actividades agrícolas y ganaderas:
+a) La ganadería independiente.
+b) La prestación, por agricultores o ganaderos, de trabajos o servicios accesorios de naturaleza agrícola o ganadera, con los medios que ordinariamente son utilizados en sus explotaciones.
+c) Los servicios de cría, guarda y engorde de ganado.
+5. Cuando los rendimientos sean contraprestación de una actividad forestal, se aplicará el tipo de retención del 2 por ciento sobre los ingresos íntegros satisfechos, con excepción de las subvenciones corrientes y de capital y de las indemnizaciones.
+6. 1.º Cuando los rendimientos sean contraprestación de una de las actividades económicas previstas en el número 2.º de este apartado y se determine el rendimiento neto de la misma con arreglo al método de estimación objetiva, se aplicará el tipo de retención del 1 por ciento sobre los ingresos íntegros satisfechos.
+2.º Lo dispuesto en este apartado resultará de aplicación respecto de las actividades económicas clasificadas en los siguientes grupos y epígrafes de la Sección Primera de las Tarifas del Impuesto sobre Actividades Económicas:
+I.A.E.
+Actividad económica
+314 y 315
+Carpintería metálica y fabricación de estructuras metálicas y calderería.
+316.2, 3, 4 y 9
+Fabricación de artículos de ferretería, cerrajería, tornillería, derivados del alambre, menaje y otros artículos en metales N.C.O.P.
+453
+Confección en serie de prendas de vestir y sus complementos, excepto cuando su ejecución se efectúe mayoritariamente por encargo a terceros.
+453
+Confección en serie de prendas de vestir y sus complementos ejecutada directamente por la propia empresa, cuando se realice exclusivamente para terceros y por encargo.
+463
+Fabricación en serie de piezas de carpintería, parqué y estructuras de madera para la construcción.
+468
+Industria del mueble de madera.
+474.1
+Impresión de textos o imágenes.
+501.3
+Albañilería y pequeños trabajos de construcción en general.
+504.1
+Instalaciones y montajes (excepto fontanería, frío, calor y acondicionamiento de aire).
+504.2 y 3
+Instalaciones de fontanería, frío, calor y acondicionamiento de aire.
+504.4, 5, 6, 7 y 8
+Instalación de pararrayos y similares. Montaje e instalación de cocinas de todo tipo y clase, con todos sus accesorios. Montaje e instalación de aparatos elevadores de cualquier clase y tipo. Instalaciones telefónicas, telegráficas, telegráficas sin hilos y de televisión, en edificios y construcciones de cualquier clase. Montajes metálicos e instalaciones industriales completas, sin vender ni aportar la maquinaria ni los elementos objeto de instalación o montaje.
+505.1, 2, 3 y 4
+Revestimientos, solados y pavimentos y colocación de aislamientos.
+505.5
+Carpintería y cerrajería.
+505.6
+Pintura de cualquier tipo y clase y revestimientos con papel, tejido o plásticos y terminación y decoración de edificios y locales.
+505.7
+Trabajos en yeso y escayola y decoración de edificios y locales.
+722
+Transporte de mercancías por carretera.
+757
+Servicios de mudanzas.
+3.º No procederá la práctica de la retención prevista en este apartado cuando, de acuerdo con lo dispuesto en el apartado 10 del artículo 99 de la Ley del Impuesto, el contribuyente que ejerza la actividad económica comunique al pagador que determina el rendimiento neto de la misma con arreglo al método de estimación directa, en cualquiera de sus modalidades.
+En dichas comunicaciones se hará constar los siguientes datos:
+a) Nombre, apellidos, domicilio fiscal y número de identificación fiscal del comunicante. En el caso de que la actividad económica se desarrolle a través de una entidad en régimen de atribución de rentas deberá comunicar, además, la razón social o denominación y el número de identificación fiscal de la entidad, así como su condición de representante de la misma.
+b) Actividad económica que desarrolla de las previstas en el número 2.º anterior, con indicación del epígrafe del Impuesto sobre Actividades Económicas.
+c) Que determina el rendimiento neto de dicha actividad con arreglo al método de estimación directa en cualquiera de sus modalidades.
+d) Fecha y firma del comunicante.
+e) Identificación de la persona o entidad destinataria de dicha comunicación.
+Cuando con posterioridad el contribuyente volviera a determinar los rendimientos de dicha actividad con arreglo al método de estimación objetiva, deberá comunicar al pagador tal circunstancia, junto con los datos previstos en las letras a), b), d) y e) anteriores, antes del nacimiento de la obligación de retener.
+En todo caso, el pagador quedará obligado a conservar las comunicaciones de datos debidamente firmadas.
+4.º El incumplimiento de la obligación de comunicar correctamente los datos previstos en el número 3.º anterior tendrá las consecuencias tributarias derivadas de lo dispuesto en el artículo 107 de la Ley del Impuesto.
+5.º Cuando la renuncia al método de estimación objetiva se produzca en la forma prevista en el artículo 33.1 b) de este Reglamento o en el tercer párrafo del artículo 33.2 del Reglamento del Impuesto sobre el Valor Añadido, aprobado por el Real Decreto 1624/1992, de 29 de diciembre, se entenderá que el contribuyente determina el rendimiento neto de su actividad económica con arreglo al método de estimación directa a partir de la fecha en la que se presente el correspondiente pago fraccionado por este Impuesto o la declaración-liquidación del Impuesto sobre el Valor Añadido.
+Se modifica el apartado 1 por el art. único.2 del Real Decreto 31/2023, de 24 de enero. Ref. BOE-A-2023-2023
+Se modifica el apartado 1 por el art. único.11 del Real Decreto 1461/2018, de 21 de diciembre. Ref. BOE-A-2018-17601
+Se modifica el apartado 1 por el art. 1.27 del Real Decreto 633/2015, de 10 de julio. Ref. BOE-A-2015-7770.
+Esta modificación resulta aplicable a los periodos impositivos que se inicien a partir del 1 de enero de 2015, según establece la disposición final 2.2 del citado Real Decreto.
+Se modifica el apartado 1 por el art. único.16 del Real Decreto 1003/2014, de 5 de diciembre. Ref. BOE-A-2014-12730.
+Seleccionar redacción: Última actualización, publicada el 25/01/2023, en vigor a partir del 26/01/2023.
+Modificación publicada el 22/12/2018, en vigor a partir del 23/12/2018.
+Modificación publicada el 11/07/2015, en vigor a partir del 12/07/2015.
+Modificación publicada el 06/12/2014, en vigor a partir del 01/01/2015.
+Texto original, publicado el 31/03/2007, en vigor a partir del 01/04/2007.
+Subir
+
+Artículo 109. Obligados al pago fraccionado.
+1. Los contribuyentes que ejerzan actividades económicas estarán obligados a autoliquidar e ingresar en el Tesoro, en concepto de pago a cuenta del Impuesto sobre la Renta de las Personas Físicas, la cantidad que resulte de lo establecido en los artículos siguientes, sin perjuicio de las excepciones previstas en los apartados siguientes.
+2. Los contribuyentes que desarrollen actividades profesionales no estarán obligados a efectuar pago fraccionado en relación con las mismas si, en el año natural anterior, al menos el 70 por ciento de los ingresos de la actividad fueron objeto de retención o ingreso a cuenta.
+3. Los contribuyentes que desarrollen actividades agrícolas o ganaderas no estarán obligados a efectuar pago fraccionado en relación con las mismas si, en el año natural anterior, al menos el 70 por ciento de los ingresos procedentes de la explotación, con excepción de las subvenciones corrientes y de capital y de las indemnizaciones, fueron objeto de retención o ingreso a cuenta.
+4. Los contribuyentes que desarrollen actividades forestales no estarán obligados a efectuar pago fraccionado en relación con las mismas si, en el año natural anterior, al menos el 70 por ciento de los ingresos procedentes de la actividad, con excepción de las subvenciones corrientes y de capital y de las indemnizaciones, fueron objeto de retención o ingreso a cuenta.
+5. A efectos de lo dispuesto en los apartados 2, 3 y 4 anteriores, en caso de inicio de la actividad se tendrá en cuenta el porcentaje de ingresos que hayan sido objeto de retención o ingreso a cuenta durante el período a que se refiere el pago fraccionado.
+Subir
+
+Artículo 110. Importe del fraccionamiento.
+1. Los contribuyentes a que se refiere el artículo anterior ingresarán, en cada plazo, las cantidades siguientes:
+a) Por las actividades que estuvieran en el método de estimación directa, en cualquiera de sus modalidades, el 20 por ciento del rendimiento neto correspondiente al período de tiempo transcurrido desde el primer día del año hasta el último día del trimestre a que se refiere el pago fraccionado.
+De la cantidad resultante por aplicación de lo dispuesto en esta letra se deducirán los pagos fraccionados que, en relación con estas actividades, habría correspondido ingresar en los trimestres anteriores del mismo año si no se hubiera aplicado lo dispuesto en la letra c) del apartado 3 de este artículo.
+b) Por las actividades que estuvieran en el método de estimación objetiva, el 4 por ciento de los rendimientos netos resultantes de la aplicación de dicho método en función de los datos-base del primer día del año a que se refiere el pago fraccionado o, en caso de inicio de actividades, del día en que éstas hubiesen comenzado.
+No obstante, en el supuesto de actividades que tengan sólo una persona asalariada el porcentaje anterior será el 3 por ciento, y en el supuesto de que no disponga de personal asalariado dicho porcentaje será el 2 por ciento.
+Cuando alguno de los datos-base no pudiera determinarse el primer día del año, se tomará, a efectos del pago fraccionado, el correspondiente al año inmediato anterior. En el supuesto de que no pudiera determinarse ningún dato-base, el pago fraccionado consistirá en el 2 por ciento del volumen de ventas o ingresos del trimestre.
+c) Tratándose de actividades agrícolas, ganaderas, forestales o pesqueras, cualquiera que fuese el método de determinación del rendimiento neto, el 2 por ciento del volumen de ingresos del trimestre, excluidas las subvenciones de capital y las indemnizaciones.
+2. Los porcentajes señalados en el apartado anterior se reducirán en un 60 por ciento para las actividades económicas que tengan derecho a la deducción en la cuota prevista en el artículo 68.4 de la Ley del Impuesto.
+3. De la cantidad resultante por aplicación de lo dispuesto en los apartados anteriores, se podrán deducir, en su caso:
+a) Las retenciones practicadas y los ingresos a cuenta efectuados correspondientes al período de tiempo transcurrido desde el primer día del año hasta el último día del trimestre al que se refiere el pago fraccionado, cuando se trate de:
+1.º Actividades profesionales que determinen su rendimiento neto por el método de estimación directa, en cualquiera de sus modalidades.
+2.º Arrendamiento de inmuebles urbanos que constituya actividad económica.
+3.º Cesión del derecho a la explotación de la imagen o del consentimiento o autorización para su utilización que constituya actividad económica, y demás rentas previstas en el artículo 75.2 b) del presente Reglamento.
+b) Las retenciones practicadas y los ingresos a cuenta efectuados conforme a lo dispuesto en los artículos 95 y 104 de este Reglamento correspondientes al trimestre, cuando se trate de:
+1.º Actividades económicas que determinen su rendimiento neto por el método de estimación objetiva. No obstante, cuando el importe de las retenciones e ingresos a cuenta soportados en el trimestre sea superior a la cantidad resultante por aplicación de lo dispuesto en las letras b) y c) del apartado 1 anterior, así como, en su caso, de lo dispuesto en el apartado 2 anterior, podrá deducirse dicha diferencia en cualquiera de los siguientes pagos fraccionados correspondientes al mismo período impositivo cuyo importe positivo lo permita y hasta el límite máximo de dicho importe.
+2.º Actividades agrícolas, ganaderas o forestales no incluidas en el número 1.º anterior.
+c) Cuando la cuantía de los rendimientos netos de actividades económicas del ejercicio anterior sea igual o inferior a 12.000 euros, el importe que resulte del siguiente cuadro:
+Cuantía de los rendimientos netos del ejercicio anterior
+–
+Euros
+Importe de la minoración
+–
+Euros
+Igual o inferior a 9.000
+100
+Entre 9.000,01 y 10.000
+75
+Entre 10.000,01 y 11.000
+50
+Entre 11.000,01 y 12.000
+25
+Cuando el importe de la minoración prevista en esta letra sea superior a la cantidad resultante por aplicación de lo dispuesto en los apartados anteriores y en las letras a) y b) de este apartado, la diferencia podrá deducirse en cualquiera de los siguientes pagos fraccionados correspondientes al mismo período impositivo cuyo importe positivo lo permita y hasta el límite máximo de dicho importe.
+d) Cuando los contribuyentes destinen cantidades para la adquisición o rehabilitación de su vivienda habitual utilizando financiación ajena, por las que vayan a tener derecho a la deducción por inversión en vivienda habitual regulada en la disposición transitoria decimoctava de la Ley del Impuesto, las cuantías que se citan a continuación:
+1.º Tratándose de contribuyentes que ejerzan actividades que estuvieran en el método de estimación directa, en cualquiera de sus modalidades, cuyos rendimientos íntegros previsibles del período impositivo sean inferiores a 33.007,2 euros, se podrá deducir el 2 por ciento del rendimiento neto correspondiente al período de tiempo transcurrido desde el primer día del año hasta el último día del trimestre a que se refiere el pago fraccionado.
+A estos efectos se considerarán como rendimientos íntegros previsibles del período impositivo los que resulten de elevar al año los rendimientos íntegros correspondientes al primer trimestre.
+En ningún caso podrá practicarse una deducción por importe superior a 660,14 euros en cada trimestre.
+2.º Tratándose de contribuyentes que ejerzan actividades que estuvieran en el método de estimación objetiva cuyos rendimientos netos resultantes de la aplicación de dicho método en función de los datos-base del primer día del año a que se refiere el pago fraccionado o, en caso de inicio de actividades, del día en que éstas hubiesen comenzado, sean inferiores a 33.007,2 euros, se podrá deducir el 0,5 por ciento de los citados rendimientos netos. No obstante, cuando no pudiera determinarse ningún dato base se aplicará la deducción prevista en el número 3.º de esta letra sobre el volumen de ventas o ingresos del trimestre.
+3.º Tratándose de contribuyentes que ejerzan actividades agrícolas, ganaderas, forestales o pesqueras, cualquiera que fuese el método de determinación del rendimiento neto, cuyo volumen previsible de ingresos del período impositivo, excluidas las subvenciones de capital y las indemnizaciones sea inferior a 33.007,2 euros, se podrá deducir el 2 por ciento del volumen de ingresos del trimestre, excluidas las subvenciones de capital y las indemnizaciones.
+A estos efectos se considerará como volumen previsible de ingresos del período impositivo el resultado de elevar al año el volumen de ingresos del primer trimestre, excluidas las subvenciones de capital y las indemnizaciones.
+En ningún caso podrá practicarse una deducción por un importe acumulado en el período impositivo superior a 660,14 euros.
+Las deducciones previstas en esta letra d) no resultarán de aplicación cuando los contribuyentes ejerzan dos o más actividades comprendidas en ordinales distintos, ni cuando perciban rendimientos del trabajo y hubiesen efectuado a su pagador la comunicación a que se refiere el párrafo segundo del artículo 88.1 de este Reglamento, ni cuando las cantidades se destinen a la construcción o ampliación de la vivienda.
+4. Los contribuyentes podrán aplicar en cada uno de los pagos fraccionados porcentajes superiores a los indicados.
+Se modifica el apartado 2 por el art. único.13 del Real Decreto 1461/2018, de 21 de diciembre. Ref. BOE-A-2018-17601
+Se modifica la letra c) del apartado 3 y se suprime el apartado 5 por el art. único.19 y 20 del Real Decreto 1003/2014, de 5 de diciembre. Ref. BOE-A-2014-12730.
+Se modifica la letra d) del apartado 3, con efectos desde 1 de enero de 2013, por el art. 2.1.12 del Real Decreto 960/2013, de 5 de diciembre. Ref. BOE-A-2013-12771.
+Se modifica el apartado 3 por el art. 1.10 del Real Decreto 1788/2010, de 30 de diciembre. Ref. BOE-A-2010-20141.
+Se modifica por el art. 1.12 del Real Decreto 2004/2009, de 23 de diciembre. Ref. BOE-A-2009-21046
+Se modifica por el art. 8.7 del Real Decreto 1975/2008, de 28 de noviembre.Ref. 2008/19437
+Esta modificación tiene efectos desde el 1 de enero de 2009, según establece la disposición final única.2.b).
+Se modifica por el art. único.12 del Real Decreto 861/2008, de 23 de mayo.Ref. 2008/08997
+Seleccionar redacción: Última actualización, publicada el 22/12/2018, en vigor a partir del 23/12/2018.
+Modificación publicada el 06/12/2014, en vigor a partir del 01/01/2015.
+Modificación publicada el 06/12/2013, en vigor a partir del 07/12/2013.
+Modificación publicada el 31/12/2010, en vigor a partir del 01/01/2011.
+Modificación publicada el 29/12/2009, en vigor a partir del 01/01/2010.
+Modificación publicada el 02/12/2008, en vigor a partir del 03/12/2008.
+Modificación publicada el 24/05/2008, en vigor a partir del 01/06/2008.
+Texto original, publicado el 31/03/2007, en vigor a partir del 01/04/2007.
+Subir
+
+Artículo 111. Declaración e ingreso.
+1. Los empresarios y profesionales estarán obligados a declarar e ingresar trimestralmente en el Tesoro Público las cantidades determinadas conforme a lo dispuesto en el artículo anterior en los plazos siguientes:
+a) Los tres primeros trimestres, entre el día 1 y el 20 de los meses de abril, julio y octubre.
+b) Cuarto trimestre, entre el día 1 y el 30 del mes de enero.
+Cuando de la aplicación de lo dispuesto en el artículo anterior no resultasen cantidades a ingresar, los contribuyentes presentarán una declaración negativa.
+2. El Ministro de Economía y Hacienda podrá prorrogar los plazos a que hace referencia este artículo, así como establecer supuestos de ingreso semestral con las adaptaciones que procedan de los porcentajes determinados en el artículo anterior.
+3. Los contribuyentes presentarán las declaraciones ante el órgano competente de la Administración tributaria e ingresarán su importe en el Tesoro Público.
+La declaración se ajustará a las condiciones y requisitos y el ingreso se efectuará en la forma y lugar que determine el Ministro de Economía y Hacienda.
+Subir

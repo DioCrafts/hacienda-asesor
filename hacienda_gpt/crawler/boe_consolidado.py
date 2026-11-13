@@ -31,6 +31,9 @@ from typing import Any
 
 import scrapy
 from scrapy.http import Response
+from scrapy.spidermiddlewares.httperror import HttpError
+
+from hacienda_gpt.ops import formatos
 
 BOE_BASE_URL = "https://www.boe.es/biblioteca_juridica/codigos"
 
@@ -126,6 +129,11 @@ class BOECCAACrawler(scrapy.Spider):
         self.skip_unknown = _to_bool(skip_unknown)
         os.makedirs(self.folder, exist_ok=True)
         self._targets = _resolve_targets(ccaa, skip_unknown=self.skip_unknown)
+        # Format watch: what each requested code returned (reported once, when the spider closes).
+        self._guardados: list[str] = []
+        self._no_pdf: list[dict[str, Any]] = []
+        self._http: list[dict[str, Any]] = []
+        self._red = 0
 
     def start_requests(self) -> Generator[scrapy.Request]:
         for ccaa_key in self._targets:
@@ -151,6 +159,9 @@ class BOECCAACrawler(scrapy.Spider):
 
     def parse_pdf(self, response: Response, ccaa_key: str, catalog_url: str) -> None:
         if response.status != 200 or not response.body.startswith(_PDF_MAGIC):
+            self._no_pdf.append(
+                {"ccaa": ccaa_key, "status": response.status, "inicio": response.body[:60].decode("latin-1")}
+            )
             self.logger.warning(
                 "Unexpected response for %s: status=%s, first_bytes=%r",
                 ccaa_key,
@@ -180,11 +191,41 @@ class BOECCAACrawler(scrapy.Spider):
         }
         with open(os.path.join(ccaa_dir, "metadata.json"), "w", encoding="utf-8") as fj:
             json.dump(metadata, fj, ensure_ascii=False, indent=2)
+        self._guardados.append(ccaa_key)
 
     def handle_error(self, failure: Any) -> None:
         request = failure.request if hasattr(failure, "request") else None
         url = request.url if request else "unknown"
         self.logger.warning("Failed to fetch %s: %s", url, failure)
+        if failure.check(HttpError):
+            ccaa_key = (request.cb_kwargs or {}).get("ccaa_key") if request else None
+            self._http.append(
+                {
+                    "ccaa": ccaa_key,
+                    "status": failure.value.response.status,
+                    "conocido": bool(DEFAULT_CCAA_CODES.get(ccaa_key or "", {}).get("known")),
+                }
+            )
+        else:
+            self._red += 1
+
+    def resumen_lectura(self) -> dict[str, Any]:
+        """What this run obtained, for the format watch."""
+        return {
+            "pedidos": len(self._targets),
+            "guardados": list(self._guardados),
+            "no_pdf": list(self._no_pdf),
+            "http": list(self._http),
+            "red": self._red,
+        }
+
+    def closed(self, reason: str) -> None:
+        resumen = self.resumen_lectura()
+        # A run that could not reach the BOE at all says nothing about the format: not observed.
+        if resumen["guardados"] or resumen["no_pdf"] or resumen["http"]:
+            formatos.observar(
+                "boe_ccaa_pdf", json.dumps(resumen, ensure_ascii=False), extraccion=resumen, contexto=reason
+            )
 
 
 def _resolve_targets(ccaa: str | None, *, skip_unknown: bool) -> list[str]:

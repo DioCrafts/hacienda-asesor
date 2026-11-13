@@ -71,3 +71,24 @@ export default defineConfig([
   },
 ])
 ```
+
+
+## Qué hace la interfaz
+
+- **Una llamada por turno a `/agent/stream`** (NDJSON): mientras el agente trabaja se muestran en vivo sus
+  búsquedas, la verificación y las correcciones; el botón de enviar pasa a ser *Detener*.
+- **Citas navegables**: cada `[F#]` de la respuesta es un chip que salta a su tarjeta de fuente (autoridad,
+  referencia, fecha, carácter vinculante y pasaje literal).
+- **Veredicto y comprobación afirmación por afirmación**, con el motivo cuando algo no queda respaldado.
+- **Borrador en vivo**: la respuesta se ve escribirse token a token, marcada como *sin verificar* hasta que
+  pasa la comprobación; si el agente la reescribe, el borrador se reinicia.
+- **Tu expediente**: panel con los datos que el asesor ha anotado del usuario; cada uno se puede corregir en
+  el sitio (`PUT /cases/{id}/facts/{name}`) o eliminar con confirmación (`DELETE`).
+- **Historial real** en `localStorage` (`src/lib/storage.ts`): sobrevive a recargas y se puede borrar.
+- **Tema claro/oscuro** con tokens CSS (`src/index.css` + `tailwind.config.js`) y diseño adaptado a móvil.
+- **Simulador** (botón de la barra superior): calculadora determinista (`POST /simulate`, sin modelo) que
+  recalcula mientras se teclea, compara con el expediente guardado, lista las formas de pagar menos con su
+  ahorro y permite guardar las cifras en el expediente.
+- **Próximos plazos** en el expediente (`GET /cases/{id}/calendar`), según el perfil.
+- **Leer un documento** (`POST /cases/{id}/documents`): propone datos con el pasaje literal del que salen y solo
+  guarda los que el usuario confirma.

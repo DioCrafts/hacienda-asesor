@@ -48,9 +48,13 @@ import os
 from pathlib import Path
 import re
 import time
+from typing import Any
 
 import click
+from pydantic import BaseModel, ConfigDict, field_validator
 import requests
+
+from hacienda_gpt.ops import formatos
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +88,110 @@ _SEARCH_ROW_RE = re.compile(
     r"\b",  # word boundary — stops at extra text
     re.DOTALL,
 )
+
+
+# The query field the document endpoint needs, hidden in the search results.
+_QUERY_RE = re.compile(r'id="query"[^>]*value="([^"]*)"')
+
+
+def _seguro(value: str, grupos: int) -> str:
+    formatos.patron_seguro(value)
+    if re.compile(value).groups < grupos:
+        raise ValueError(f"el patrón debe tener al menos {grupos} grupo(s)")
+    return value
+
+
+class ReglasBusquedaDgt(BaseModel):
+    """What the crawler knows about a Knosys results page, as format-spec data (``dgt_busqueda``).
+
+    Version 1 holds ``_SEARCH_ROW_RE`` (flags inline), ``_DOC_ID_RE``,
+    ``_TOTAL_PAGES_RE`` and ``_QUERY_RE``; a reviewed proposal may replace them.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    # Groups 1 and 2: internal document id and consulta number of one row.
+    patron_fila: str
+    # Group 1: internal document id (fallback when no row pairs with a number).
+    patron_documento: str
+    # Group 1: number of result pages.
+    patron_paginas: str
+    # Group 1: the hidden Knosys query the document endpoint needs.
+    patron_query: str
+
+    @field_validator("patron_fila")
+    @classmethod
+    def _fila(cls, value: str) -> str:
+        return _seguro(value, 2)
+
+    @field_validator("patron_documento", "patron_paginas", "patron_query")
+    @classmethod
+    def _uno(cls, value: str) -> str:
+        return _seguro(value, 1)
+
+
+class ReglasDocumentoDgt(BaseModel):
+    """The consulta number inside a fetched document (``dgt_documento``).
+
+    Version 1 holds ``_NUM_CONSULTA_IN_DOC_RE`` and ``_CANONICAL_NUM_RE``.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    # Group 1: the raw number as printed (may carry an annotation).
+    patron_numero: str
+    # Group 1: the canonical token (V0058-25).
+    patron_canonico: str
+
+    @field_validator("patron_numero", "patron_canonico")
+    @classmethod
+    def _uno(cls, value: str) -> str:
+        return _seguro(value, 1)
+
+
+def extraer_busqueda(reglas: ReglasBusquedaDgt, html: str) -> dict[str, Any]:
+    """Rows ``[doc_id, num_consulta]``, ``total_paginas`` (None when absent) and ``query`` of a results page."""
+    rows = [[m.group(1), m.group(2)] for m in re.finditer(reglas.patron_fila, html)]
+    if not rows:
+        rows = [[m.group(1), ""] for m in re.finditer(reglas.patron_documento, html)]
+    paginas = re.search(reglas.patron_paginas, html)
+    query = re.search(reglas.patron_query, html)
+    return {
+        "filas": rows,
+        "total_paginas": int(paginas.group(1)) if paginas else None,
+        "query": query.group(1) if query else "",
+    }
+
+
+def numero_de_documento(reglas: ReglasDocumentoDgt, html: str) -> str | None:
+    """The consulta number printed in a document: the canonical token if there is one, else the raw text."""
+    m = re.search(reglas.patron_numero, html)
+    if not m:
+        return None
+    raw = m.group(1).strip()
+    canonical = re.search(reglas.patron_canonico, raw)
+    return canonical.group(1) if canonical else raw
+
+
+def _reglas_busqueda() -> ReglasBusquedaDgt:
+    try:
+        return formatos.reglas_de("dgt_busqueda", ReglasBusquedaDgt)
+    except formatos.FormatoError:
+        return ReglasBusquedaDgt(
+            patron_fila="(?s)" + _SEARCH_ROW_RE.pattern,
+            patron_documento=_DOC_ID_RE.pattern,
+            patron_paginas=_TOTAL_PAGES_RE.pattern,
+            patron_query=_QUERY_RE.pattern,
+        )
+
+
+def _reglas_documento() -> ReglasDocumentoDgt:
+    try:
+        return formatos.reglas_de("dgt_documento", ReglasDocumentoDgt)
+    except formatos.FormatoError:
+        return ReglasDocumentoDgt(
+            patron_numero=_NUM_CONSULTA_IN_DOC_RE.pattern, patron_canonico=_CANONICAL_NUM_RE.pattern
+        )
 
 
 @dataclass
@@ -202,19 +310,17 @@ def _search_month(
     # combined regex misses some rows (e.g. malformed HTML) fall back to
     # the standalone doc_id extractor so the run still progresses; rows
     # without a captured num_consulta are emitted with an empty string
-    # and the main loop handles them via a forced fetch.
-    rows = _SEARCH_ROW_RE.findall(html)
-    if not rows:
-        rows = [(doc_id, "") for doc_id in _DOC_ID_RE.findall(html)]
+    # and the main loop handles them via a forced fetch. The search result
+    # HTML also embeds a hidden input ``<input ... id="query" value="..."/>``
+    # whose value is the Knosys query syntax that ``/do/document`` expects.
+    # The expressions are the ``dgt_busqueda`` format spec.
+    resultado = extraer_busqueda(_reglas_busqueda(), html)
+    rows = [(str(doc_id), str(numero)) for doc_id, numero in resultado["filas"]]
+    total_pages = int(resultado["total_paginas"] or 1)
+    query = str(resultado["query"])
 
-    total_pages_match = _TOTAL_PAGES_RE.search(html)
-    total_pages = int(total_pages_match.group(1)) if total_pages_match else 1
-
-    # The search result HTML embeds a hidden input ``<input ... id="query"
-    # value="..."/>`` whose value is the Knosys query syntax that
-    # ``/do/document`` expects. Capture it.
-    query_match = re.search(r'id="query"[^>]*value="([^"]*)"', html)
-    query = query_match.group(1) if query_match else ""
+    # Format watch (never raises): a results page in another markup reads as "no consultas this month".
+    formatos.observar("dgt_busqueda", html, extraccion=resultado, contexto=f"{year}-{month:02d} p{page}")
 
     return rows, total_pages, query
 
@@ -246,15 +352,13 @@ _CANONICAL_NUM_RE = re.compile(r"\b([VN]\d{4}-\d{2})\b")
 
 def _parse_doc_num(html: str) -> str | None:
     """Extract the user-facing consulta number (e.g. ``V0058-25``) from
-    the document HTML. Used to name the output file."""
-    m = _NUM_CONSULTA_IN_DOC_RE.search(html)
-    if not m:
-        return None
-    raw = m.group(1).strip()
-    canonical = _CANONICAL_NUM_RE.search(raw)
-    # Prefer the canonical token; fall back to the raw value when nothing
-    # canonical-looking is present (DGT historic edge cases).
-    return canonical.group(1) if canonical else raw
+    the document HTML. Used to name the output file.
+
+    Prefers the canonical token; falls back to the raw value when nothing
+    canonical-looking is present (DGT historic edge cases). The expressions
+    are the ``dgt_documento`` format spec.
+    """
+    return numero_de_documento(_reglas_documento(), html)
 
 
 def _build_existing_nums(snapshot_root: Path) -> set[str]:
@@ -400,19 +504,19 @@ def cli(
         )
 
     # Counter of consecutive network failures across the *current* session.
-    # When it crosses ``_SESSION_REFRESH_THRESHOLD`` the cookie jar +
+    # When it crosses ``session_refresh_threshold`` the cookie jar +
     # connection pool are rebuilt from scratch. Tomcat (the backing
     # servlet container at petete) invalidates JSESSIONID after ~30 min
     # of inactivity, and urllib3's connection pool can hold half-closed
     # sockets that look fine on this end but are dead server-side — both
     # surface as runs of failures we can only recover from by rebuilding.
     consecutive_failures = 0
-    _SESSION_REFRESH_THRESHOLD = 3
+    session_refresh_threshold = 3
     # Exponential backoff after refresh-itself failures (petete returning
     # 502 / timing out on the bootstrap GET): 5min, 10, 20, 40, capped at
     # 60. Resets after a successful refresh.
     refresh_backoff_step = 0
-    _BACKOFF_SECONDS = (300, 600, 1200, 2400, 3600)
+    backoff_seconds = (300, 600, 1200, 2400, 3600)
 
     def _refresh_session() -> None:
         nonlocal session, consecutive_failures, refresh_backoff_step
@@ -427,7 +531,7 @@ def cli(
             refresh_backoff_step = 0
             logger.info("Session refreshed; resuming crawl.")
         except requests.RequestException as exc:
-            wait = _BACKOFF_SECONDS[min(refresh_backoff_step, len(_BACKOFF_SECONDS) - 1)]
+            wait = backoff_seconds[min(refresh_backoff_step, len(backoff_seconds) - 1)]
             logger.error(
                 "Session refresh itself failed (backoff step %d): %s — sleeping %ds",
                 refresh_backoff_step,
@@ -459,7 +563,7 @@ def cli(
                         e,
                         consecutive_failures,
                     )
-                    if consecutive_failures >= _SESSION_REFRESH_THRESHOLD:
+                    if consecutive_failures >= session_refresh_threshold:
                         _refresh_session()
                     else:
                         time.sleep(30)
@@ -474,6 +578,7 @@ def cli(
                 if not rows:
                     break
 
+                observado = False
                 for doc_id, num_consulta in rows:
                     if max_docs and stats.docs_fetched >= max_docs:
                         click.echo(f"\nReached --max-docs={max_docs}; stopping early.")
@@ -509,7 +614,7 @@ def cli(
                             e,
                             consecutive_failures,
                         )
-                        if consecutive_failures >= _SESSION_REFRESH_THRESHOLD:
+                        if consecutive_failures >= session_refresh_threshold:
                             _refresh_session()
                         else:
                             time.sleep(delay)
@@ -519,6 +624,11 @@ def cli(
                     # already stripped annotations). Prefer it; fall back
                     # to scraping the document HTML for the rare malformed
                     # search row that returned no num_consulta.
+                    if not observado:
+                        # Format watch, one document per results page: a document without its number is
+                        # saved as "unknown-<id>" and can never be deduplicated.
+                        observado = True
+                        formatos.observar("dgt_documento", html, contexto=f"{doc_id}:{num_consulta}")
                     num = num_consulta or _parse_doc_num(html) or f"unknown-{doc_id}"
                     out_path = _output_path(snapshot_root, num)
                     if out_path.exists():

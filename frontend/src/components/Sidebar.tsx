@@ -1,102 +1,114 @@
-// Sidebar = brand + new-consultation CTA + recents list + topic chips +
-// disclaimer. All copy lives in mock.ts so it's trivial to localise.
+// Sidebar = brand + new-consultation CTA + the user's real conversation
+// history + coverage + disclaimer. On small screens it is an off-canvas drawer.
 
-import { Info, MessageSquare, Plus } from "lucide-react";
+import { Info, MessageSquare, Plus, Trash2, X } from "lucide-react";
 import clsx from "clsx";
 
 import { BrandHeader } from "./Brand";
-import { MOCK_RECENT_CASES, TOPICS } from "../lib/mock";
+import { TOPICS } from "../lib/mock";
+import { relativeTime } from "../lib/presentation";
+import type { Conversation } from "../lib/storage";
 
 interface SidebarProps {
+  conversations: Conversation[];
+  activeId: string;
+  onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
   onNewConsultation: () => void;
+  open: boolean; // mobile drawer state; ignored on large screens
+  onClose: () => void;
 }
 
-export function Sidebar({ onNewConsultation }: SidebarProps) {
+export function Sidebar({ conversations, activeId, onSelect, onDelete, onNewConsultation, open, onClose }: SidebarProps) {
   return (
-    <aside className="flex h-full w-[300px] flex-shrink-0 flex-col gap-6 border-r border-line bg-paper px-5 py-5">
-      <BrandHeader />
-
-      <button
-        type="button"
-        onClick={onNewConsultation}
-        className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-[15px] font-semibold text-white shadow-card transition hover:bg-primary-dark"
+    <>
+      {open && <button type="button" aria-label="Cerrar el menú" className="fixed inset-0 z-20 bg-ink/40 lg:hidden" onClick={onClose} />}
+      <aside
+        className={clsx(
+          "fixed inset-y-0 left-0 z-30 flex w-[290px] flex-shrink-0 flex-col gap-5 border-r border-line bg-paper px-4 py-5 transition-transform duration-200 lg:static lg:translate-x-0",
+          open ? "translate-x-0 shadow-pop" : "-translate-x-full",
+        )}
       >
-        <Plus size={18} />
-        Nueva consulta
-      </button>
+        <div className="flex items-center justify-between">
+          <BrandHeader />
+          <button type="button" onClick={onClose} aria-label="Cerrar el menú" className="rounded-lg p-2 text-muted hover:bg-line/60 lg:hidden">
+            <X size={18} />
+          </button>
+        </div>
 
-      <RecentsList />
-
-      <div className="mt-auto" />
-
-      <TopicsBlock />
-
-      <SidebarDisclaimer />
-    </aside>
-  );
-}
-
-function RecentsList() {
-  return (
-    <nav className="flex flex-col gap-1">
-      <h2 className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
-        Recientes
-      </h2>
-      {MOCK_RECENT_CASES.map((c) => (
         <button
-          key={c.id}
           type="button"
-          className={clsx(
-            // The active state gets a vertical primary stripe on the
-            // left so the user can scan the recents column for "where
-            // am I" without reading every title.
-            "flex items-center gap-2 rounded-r-lg px-3 py-2 text-left text-[14px] transition border-l-[3px]",
-            c.active
-              ? "border-primary bg-primary-soft font-semibold text-primary-dark"
-              : "border-transparent text-ink-soft hover:bg-line/60",
-          )}
+          onClick={onNewConsultation}
+          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-[15px] font-semibold text-white shadow-card transition hover:bg-primary-hover"
         >
-          <MessageSquare
-            size={14}
-            className={c.active ? "text-primary" : "text-muted"}
-          />
-          <span className="truncate">{c.title}</span>
+          <Plus size={18} aria-hidden />
+          Nueva consulta
         </button>
-      ))}
-    </nav>
-  );
-}
 
-function TopicsBlock() {
-  return (
-    <div className="rounded-xl border border-line bg-surface px-4 py-3">
-      <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
-        Qué cubre hoy
-      </h3>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {TOPICS.map((t) => (
-          <span
-            key={t}
-            className="rounded-pill bg-primary-soft px-2.5 py-1 text-[12px] font-medium text-primary-dark"
-          >
-            {t}
+        <nav aria-label="Consultas recientes" className="flex min-h-0 flex-1 flex-col">
+          <h2 className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">Recientes</h2>
+          {conversations.length === 0 ? (
+            <p className="px-2 py-2 text-[13px] leading-relaxed text-muted">
+              Tus consultas aparecerán aquí y se conservan en este navegador.
+            </p>
+          ) : (
+            <ul className="-mr-2 flex-1 space-y-0.5 overflow-y-auto pr-2">
+              {conversations.map((c) => {
+                const active = c.id === activeId;
+                return (
+                  <li key={c.id} className="group relative">
+                    <button
+                      type="button"
+                      onClick={() => onSelect(c.id)}
+                      aria-current={active ? "page" : undefined}
+                      className={clsx(
+                        "flex w-full items-start gap-2 rounded-r-lg border-l-[3px] py-2 pl-3 pr-9 text-left transition",
+                        active ? "border-primary bg-primary-soft" : "border-transparent hover:bg-line/60",
+                      )}
+                    >
+                      <MessageSquare size={14} aria-hidden className={clsx("mt-1 flex-shrink-0", active ? "text-primary-dark" : "text-muted")} />
+                      <span className="min-w-0">
+                        <span className={clsx("block truncate text-[14px]", active ? "font-semibold text-primary-dark" : "text-ink-soft")}>
+                          {c.title}
+                        </span>
+                        <span className="block text-[11.5px] text-muted">{relativeTime(c.updatedAt)}</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDelete(c.id)}
+                      aria-label={`Eliminar la consulta «${c.title}»`}
+                      title="Eliminar consulta"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted opacity-0 transition hover:bg-risk-high-bg hover:text-risk-high-fg focus-visible:opacity-100 group-hover:opacity-100 max-lg:opacity-100"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </nav>
+
+        <div className="rounded-xl border border-line bg-surface px-4 py-3">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">Qué cubre</h3>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {TOPICS.map((t) => (
+              <span key={t} className="rounded-pill bg-primary-soft px-2.5 py-1 text-[12px] font-medium text-primary-dark">
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <p className="flex gap-2 text-[12px] leading-relaxed text-muted">
+          <Info size={14} aria-hidden className="mt-0.5 flex-shrink-0 text-grounding-uncited-fg" />
+          <span>
+            <strong className="font-semibold text-ink-soft">Herramienta de apoyo.</strong> No sustituye el asesoramiento
+            fiscal profesional ni el criterio oficial.
           </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SidebarDisclaimer() {
-  return (
-    <p className="flex gap-2 text-[12px] leading-relaxed text-muted">
-      <Info size={14} className="mt-0.5 flex-shrink-0 text-risk-medium-fg" />
-      <span>
-        <strong className="font-semibold text-ink-soft">
-          Herramienta de apoyo.
-        </strong>{" "}
-        No sustituye asesoramiento fiscal profesional ni criterio oficial.
-      </span>
-    </p>
+        </p>
+      </aside>
+    </>
   );
 }

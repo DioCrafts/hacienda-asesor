@@ -1,0 +1,9 @@
+{
+  "fuente": "teac_listado",
+  "version": 1,
+  "descripcion": "Listado de criterios del TEAC por fechas en DYCTEA (criterios.aspx, HTML): enlaces a cada criterio. Comportamiento histórico del lector.",
+  "origen": "incorporada",
+  "reglas": {
+    "patron_enlace": "(?i)href=['\"](criterio\\.aspx\\?id=([^'\"&]+))[^'\"]*['\"]"
+  }
+}

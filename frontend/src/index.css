@@ -2,29 +2,105 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Subtle global polish. Tailwind handles 99% of styling; only put here
-   what cannot be expressed as a utility class on a component. */
-html, body, #root {
+/* Design tokens as RGB triplets (consumed by tailwind.config.js). Text tokens
+   are chosen to keep ≥ 4.5:1 contrast on `paper` and `surface` in both themes. */
+:root {
+  color-scheme: light;
+  --paper: 246 244 239;
+  --surface: 255 255 255;
+  --ink: 27 35 48;
+  --ink-soft: 64 74 89;
+  --muted: 94 103 116;
+  --line: 228 222 211;
+  --primary: 20 99 94;
+  --primary-hover: 15 79 74;
+  --primary-dark: 15 79 74;
+  --primary-soft: 226 238 236;
+  --navy: 31 58 95;
+  --shadow: 27 35 48;
+  --cited-bg: 232 243 236;
+  --cited-fg: 24 106 70;
+  --cited-bd: 194 226 207;
+  --uncited-bg: 251 241 218;
+  --uncited-fg: 140 90 4;
+  --uncited-bd: 238 216 166;
+  --abstain-bg: 238 240 243;
+  --abstain-fg: 76 89 107;
+  --abstain-bd: 214 219 226;
+  --risk-high-bg: 250 232 228;
+  --risk-high-fg: 178 56 38;
+}
+
+.dark {
+  color-scheme: dark;
+  --paper: 16 20 26;
+  --surface: 25 31 40;
+  --ink: 233 237 242;
+  --ink-soft: 196 204 214;
+  --muted: 150 160 174;
+  --line: 46 54 66;
+  --primary: 26 122 115;
+  --primary-hover: 33 143 135;
+  --primary-dark: 134 214 204;
+  --primary-soft: 24 52 50;
+  --navy: 44 76 120;
+  --shadow: 0 0 0;
+  --cited-bg: 20 48 36;
+  --cited-fg: 118 208 160;
+  --cited-bd: 38 84 61;
+  --uncited-bg: 56 43 16;
+  --uncited-fg: 236 188 96;
+  --uncited-bd: 98 75 28;
+  --abstain-bg: 34 40 50;
+  --abstain-fg: 172 182 196;
+  --abstain-bd: 58 66 80;
+  --risk-high-bg: 60 27 23;
+  --risk-high-fg: 242 136 116;
+}
+
+html,
+body,
+#root {
   height: 100%;
   margin: 0;
-  background: #f6f4ef;
-  color: #1b2330;
-  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
-               Inter, sans-serif;
+  background: rgb(var(--paper));
+  color: rgb(var(--ink));
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Scrollbars: keep them present (asesor reads long answers) but make
-   them quieter than the OS default so they don't compete with the
-   colour-coded trust strip. */
+/* One consistent, clearly visible keyboard focus ring everywhere. */
+:focus-visible {
+  outline: 2px solid rgb(var(--primary));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.dark :focus-visible {
+  outline-color: rgb(var(--primary-dark));
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: #d6dbe2;
-  border-radius: 999px;
-  border: 2px solid #f6f4ef;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
-::-webkit-scrollbar-thumb:hover { background: #b8c0cb; }
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--line));
+  border-radius: 999px;
+  border: 2px solid rgb(var(--paper));
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--muted));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

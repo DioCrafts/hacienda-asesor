@@ -1,25 +1,95 @@
-// Top bar of the main column: the active case title centred-left and a
-// user-initials avatar pinned right. Identity-tinted (navy) so it reads
-// as the user's own marker, not another HaciendaGPT element.
+// Top bar: menu (mobile), the conversation title, and the two global actions —
+// open the user's case file and switch theme.
+
+import { Bell, BriefcaseBusiness, Calculator, ClipboardList, Menu, Moon, PiggyBank, Sun } from "lucide-react";
+
+import type { Theme } from "../lib/theme";
 
 interface TopBarProps {
-  caseTitle: string;
-  userInitials?: string;
+  title: string;
+  factCount: number;
+  onOpenCase: () => void;
+  onOpenSimulator: () => void;
+  onOpenAutonomos: () => void;
+  onOpenOptimizer: () => void;
+  onOpenNotifications: () => void;
+  unreadNotifications: number;
+  onOpenMenu: () => void;
+  theme: Theme;
+  onToggleTheme: () => void;
 }
 
-export function TopBar({ caseTitle, userInitials = "JD" }: TopBarProps) {
+export function TopBar({ title, factCount, onOpenCase, onOpenSimulator, onOpenAutonomos, onOpenOptimizer, onOpenNotifications, unreadNotifications, onOpenMenu, theme, onToggleTheme }: TopBarProps) {
   return (
-    <header className="flex items-center justify-between border-b border-line bg-paper px-8 py-4">
-      <h1 className="font-serif text-[20px] font-bold text-ink truncate">
-        {caseTitle}
-      </h1>
-      <div
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-navy text-[12px] font-bold uppercase tracking-wide text-white"
-        aria-label="Tu perfil"
-        title="Tu perfil"
+    <header className="flex items-center gap-1.5 border-b border-line bg-paper px-3 py-3 sm:gap-2 sm:px-6">
+      <button type="button" onClick={onOpenMenu} aria-label="Abrir el menú" className="rounded-lg p-2 text-ink-soft hover:bg-line/60 lg:hidden">
+        <Menu size={20} />
+      </button>
+      <h1 className="min-w-0 flex-1 truncate font-serif text-[18px] font-bold text-ink sm:text-[20px]">{title}</h1>
+      <button
+        type="button"
+        onClick={onOpenNotifications}
+        aria-label={unreadNotifications > 0 ? `Avisos: ${unreadNotifications} sin leer` : "Avisos"}
+        title="Avisos de tu asesor"
+        className="relative rounded-lg border border-line bg-surface p-2 text-ink-soft transition hover:border-primary hover:text-primary-dark"
       >
-        {userInitials}
-      </div>
+        <Bell size={17} aria-hidden />
+        {unreadNotifications > 0 && (
+          <span className="absolute -right-1.5 -top-1.5 min-w-[18px] rounded-pill bg-risk-high-fg px-1 text-center text-[11px] font-bold leading-[18px] text-white">
+            {unreadNotifications}
+          </span>
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={onOpenSimulator}
+        aria-label="Abrir el simulador de IRPF"
+        className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2 py-2 text-[13.5px] sm:px-3 font-semibold text-ink-soft transition hover:border-primary hover:text-primary-dark"
+      >
+        <Calculator size={16} aria-hidden />
+        <span className="hidden md:inline">Simulador</span>
+      </button>
+      <button
+        type="button"
+        onClick={onOpenAutonomos}
+        aria-label="Abrir los cálculos para autónomos"
+        className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2 py-2 text-[13.5px] sm:px-3 font-semibold text-ink-soft transition hover:border-primary hover:text-primary-dark"
+      >
+        <BriefcaseBusiness size={16} aria-hidden />
+        <span className="hidden md:inline">Autónomos</span>
+      </button>
+      <button
+        type="button"
+        onClick={onOpenOptimizer}
+        aria-label="Optimizar mis impuestos"
+        title="Optimizar mis impuestos"
+        className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2 py-2 text-[13.5px] sm:px-3 font-semibold text-ink-soft transition hover:border-primary hover:text-primary-dark"
+      >
+        <PiggyBank size={16} aria-hidden />
+        <span className="hidden md:inline">Optimizar</span>
+      </button>
+      <button
+        type="button"
+        onClick={onOpenCase}
+        className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2 py-2 text-[13.5px] sm:px-3 font-semibold text-ink-soft transition hover:border-primary hover:text-primary-dark"
+      >
+        <ClipboardList size={16} aria-hidden />
+        <span className="hidden sm:inline">Tu expediente</span>
+        {factCount > 0 && (
+          <span className="rounded-pill bg-primary px-1.5 text-[11px] font-bold leading-[18px] text-white" aria-label={`${factCount} datos`}>
+            {factCount}
+          </span>
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={onToggleTheme}
+        aria-label={theme === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+        title={theme === "dark" ? "Tema claro" : "Tema oscuro"}
+        className="rounded-lg p-2 text-ink-soft hover:bg-line/60"
+      >
+        {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
     </header>
   );
 }

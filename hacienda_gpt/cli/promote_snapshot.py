@@ -7,14 +7,16 @@ import click
 
 
 def _load_config(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
+    config: dict = json.loads(path.read_text(encoding="utf-8"))
+    return config
 
 
 def _load_eval_metrics(snapshot_dir: Path) -> dict:
     metrics_path = snapshot_dir / "eval_pipeline_results.json"
     if not metrics_path.exists():
         raise FileNotFoundError(f"Missing metrics file: {metrics_path}")
-    return json.loads(metrics_path.read_text(encoding="utf-8"))
+    metrics: dict = json.loads(metrics_path.read_text(encoding="utf-8"))
+    return metrics
 
 
 def _assert_quality(metrics: dict, gates: dict) -> None:

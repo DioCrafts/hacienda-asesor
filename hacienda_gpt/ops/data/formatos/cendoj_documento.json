@@ -1,0 +1,14 @@
+{
+  "fuente": "cendoj_documento",
+  "version": 1,
+  "descripcion": "Página de una resolución del CENDOJ (poderjudicial.es), leída como texto: ROJ, ECLI, primera fecha, ponente y sala. Comportamiento histórico del lector.",
+  "origen": "incorporada",
+  "reglas": {
+    "texto_xpath": "//body//text()",
+    "patron_roj": "(?i)\\bROJ\\s*:\\s*(STS\\s*\\d+/\\d{4})\\b",
+    "patron_ecli": "(?i)\\bECLI\\s*:\\s*([A-Z]{2}:[A-Z]+:\\d{4}:\\d+(?::[A-Z])?)\\b",
+    "patron_fecha": "\\b(\\d{2})[/-](\\d{2})[/-](\\d{4})\\b",
+    "etiqueta_ponente": "Ponente",
+    "patron_sala": "(?i)Sala\\s+(Tercera|3[ªa\\.]+|de\\s+lo\\s+Contencioso[\\w\\s\\-]*)"
+  }
+}

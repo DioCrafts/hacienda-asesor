@@ -1,0 +1,530 @@
+{
+  "ejercicio": 2026,
+  "ejercicios_cubiertos": [
+    2025,
+    2026,
+    2027,
+    2028
+  ],
+  "fuentes_principales": {
+    "BOE-A-2014-12328": {
+      "norma": "Ley 27/2014, de 27 de noviembre, del Impuesto sobre Sociedades (texto consolidado)",
+      "boe_id": "BOE-A-2014-12328",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2014-12328",
+      "consolidado_a": "2026-09-02",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "ff30b56ff0570aee290416db520f64f80536858e663ff1f25f60f637be51e903"
+    },
+    "BOE-A-2006-20764": {
+      "norma": "Ley 35/2006, de 28 de noviembre, del Impuesto sobre la Renta de las Personas Físicas (texto consolidado)",
+      "boe_id": "BOE-A-2006-20764",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764",
+      "consolidado_a": "2026-11-11",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "ed7d16a5fe93fd70e70e30f39f5c1a6b3987c5a158342f255267379a67cb9e63"
+    }
+  },
+  "fuentes_complementarias": {
+    "BOE-A-2025-5407": {
+      "norma": "Orden HAC/262/2025, de 12 de marzo, que sustituye los anexos del modelo 202 de la Orden HFP/227/2017 (texto publicado en el BOE de 19-3-2025; el anexo se lee del PDF oficial)",
+      "boe_id": "BOE-A-2025-5407",
+      "url": "https://www.boe.es/boe/dias/2025/03/19/pdfs/BOE-A-2025-5407.pdf",
+      "consolidado_a": "2025-03-19",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "f14e0b40478d5c0a6ec66d05d74bbbe7191de5978b4ef24cf35366721b48e517"
+    },
+    "BOE-A-2026-11583": {
+      "norma": "Orden HAC/529/2026, de 7 de mayo, que aprueba el modelo 200 de los períodos iniciados en 2025 (texto publicado en el BOE de 29-5-2026; el modelo se lee del PDF oficial)",
+      "boe_id": "BOE-A-2026-11583",
+      "url": "https://www.boe.es/boe/dias/2026/05/29/pdfs/BOE-A-2026-11583.pdf",
+      "consolidado_a": "2026-05-29",
+      "consultado_el": "2026-11-12",
+      "sha256_html": "63a56f49b548c6e5f1b464f3230c53a6c623bfed0ec0733c0e121a81cdc3c301"
+    }
+  },
+  "no_modelado": [
+    "Los ajustes al resultado contable (gastos no deducibles, amortizaciones, deterioros, operaciones vinculadas, exenciones...): se toman como totales que aporta el usuario.",
+    "Reserva de nivelación (art. 105 LIS) para las entidades de reducida dimensión que NO tributan por la escala de microempresas: el artículo la reserva a quien aplique «el tipo de gravamen previsto en el primer párrafo del apartado 1 del artículo 29» y, tras la Ley 7/2024, ese párrafo contiene el tipo general y la escala, pero no el tipo propio de reducida dimensión, mientras que los modelos 202 y 200 la presentan como propia de las entidades de reducida dimensión. Solo se aplica, a petición del usuario, a quien tributa por la escala. Tampoco se lleva la antigüedad de cada minoración (plazo de 5 años): las cantidades pendientes y las que vencen las declara el usuario.",
+    "Integración de activos por impuesto diferido del art. 11.12 LIS, que afecta al límite de la reserva de capitalización.",
+    "Tributación mínima del art. 30 bis LIS (cifra de negocios de al menos 20 millones de euros o grupos fiscales).",
+    "Bonificaciones y deducciones de la cuota: se aceptan como total aportado por el usuario, sin comprobar límites.",
+    "Tipos de los apartados 2 a 7 del art. 29 LIS (cooperativas, entidades sin fines lucrativos, instituciones de inversión colectiva, fondos de pensiones, entidades de crédito, hidrocarburos, Zona Especial Canaria) y regímenes especiales (consolidación fiscal, SOCIMI, entidades parcialmente exentas...).",
+    "Prórroga de los incentivos de reducida dimensión del art. 101.4 LIS en los 3 períodos siguientes a alcanzar los 10 millones de euros.",
+    "Compensación de bases negativas: rentas por quitas y esperas, extinción de la entidad y las exclusiones por adquisición de la entidad del art. 26.4 LIS.",
+    "Pagos fraccionados: especialidades de la disposición adicional 14.ª LIS (cifra de negocios de al menos 10 millones de euros), minoración por rentas de Ceuta o Melilla (disposiciones adicionales 5.ª y 20.ª). En la modalidad de base de las entidades que tributan por la escala, ninguna norma leída dice cómo se reparte la base acumulada entre los dos tramos: se reparte como la base anual del art. 29.1.",
+    "Normativa foral (País Vasco y Navarra) y especialidades de Canarias (Reserva para Inversiones, Zona Especial Canaria)."
+  ],
+  "tipos_gravamen": {
+    "general": "0.25",
+    "nueva_creacion": "0.15",
+    "limite_microempresa": "1000000",
+    "limite_primer_tramo": "50000",
+    "dias_ano": "365",
+    "limite_reducida_dimension": "10000000",
+    "por_ano": {
+      "2025": {
+        "micro_primer_tramo": "0.21",
+        "micro_resto": "0.22",
+        "reducida_dimension": "0.24"
+      },
+      "2026": {
+        "micro_primer_tramo": "0.19",
+        "micro_resto": "0.21",
+        "reducida_dimension": "0.23"
+      },
+      "2027": {
+        "micro_primer_tramo": "0.17",
+        "micro_resto": "0.20",
+        "reducida_dimension": "0.22"
+      },
+      "2028": {
+        "micro_primer_tramo": "0.17",
+        "micro_resto": "0.20",
+        "reducida_dimension": "0.21"
+      }
+    },
+    "avisos": [],
+    "fuente": {
+      "referencia": "art. 29.1 y disposición transitoria 44.ª LIS",
+      "en_vigor_desde": "2025-01-01",
+      "verificado": true,
+      "nota": "Redacción de la Ley 7/2024 (disposición final 8.ª), con efectos para los períodos iniciados desde el 1-1-2025. La disposición transitoria 44.ª fija los tipos de los períodos iniciados en 2025 y 2026 (microempresas y reducida dimensión) y en 2027 y 2028 (solo reducida dimensión: las microempresas aplican ya la escala del art. 29.1). El año es el de inicio del período impositivo."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 29.1 LIS",
+        "cita": "1. El tipo general de gravamen para los contribuyentes de este Impuesto será el 25 por ciento, excepto para las entidades cuyo importe neto de la cifra de negocios del período impositivo inmediato anterior sea inferior a 1 millón de euros que aplicarán los tipos que se indican en la siguiente escala, salvo que de acuerdo con lo previsto en este artículo deban tributar a un tipo diferente del general: a) Por la parte de base imponible comprendida entre 0 y 50.000 euros, al tipo del 17 por ciento. b) Por la parte de base imponible restante, al tipo del 20 por ciento. Cuando el período impositivo tenga una duración inferior al año, la parte de la base imponible que tributará al tipo del 17 por ciento será la resultante de aplicar a 50.000 euros la proporción en la que se hallen el número de días del período impositivo entre 365 días, o la base imponible del período impositivo cuando esta fuera inferior.",
+        "cifras": {
+          "general": "25 por ciento",
+          "limite_microempresa": "1 millón de euros",
+          "limite_primer_tramo": "50.000 euros",
+          "dias_ano": "365 días",
+          "por_ano.2027.micro_primer_tramo": "17 por ciento",
+          "por_ano.2027.micro_resto": "20 por ciento",
+          "por_ano.2028.micro_primer_tramo": "17 por ciento",
+          "por_ano.2028.micro_resto": "20 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 29.1 LIS (entidades de nueva creación)",
+        "cita": "Finalmente, las entidades de nueva creación que realicen actividades económicas tributarán, en el primer período impositivo en que la base imponible resulte positiva y en el siguiente, al tipo del 15 por ciento, excepto si, de acuerdo con lo previsto en este artículo, deban tributar a un tipo inferior.",
+        "cifras": {
+          "nueva_creacion": "15 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 101.1 LIS",
+        "cita": "1. Los incentivos fiscales establecidos en este capítulo se aplicarán siempre que el importe neto de la cifra de negocios habida en el período impositivo inmediato anterior sea inferior a 10 millones de euros.",
+        "cifras": {
+          "limite_reducida_dimension": "10 millones de euros"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "disposición transitoria 44.ª.1 LIS",
+        "cita": "1. Con efectos para los períodos impositivos que se inicien dentro del año 2025, a efectos de lo dispuesto en el artículo 29.1 de la LIS, se aplicarán las siguientes especialidades: a) Las entidades cuyo importe neto de la cifra de negocios del período impositivo inmediato anterior sea inferior a 1 millón de euros, aplicarán la siguiente escala, salvo que deban tributar a un tipo diferente del general: i) Por la parte de base imponible comprendida entre 0 y 50.000 euros, al tipo del 21 por ciento. ii) Por la parte de base imponible restante, al tipo del 22 por ciento.",
+        "cifras": {
+          "por_ano.2025.micro_primer_tramo": "21 por ciento",
+          "por_ano.2025.micro_resto": "22 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "disposición transitoria 44.ª.1.b) LIS",
+        "cita": "b) Las entidades que cumplan las previsiones previstas en el artículo 101 de esta ley tributarán al 24 %, salvo que deban tributar a un tipo diferente del general.",
+        "cifras": {
+          "por_ano.2025.reducida_dimension": "24 %"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "disposición transitoria 44.ª.2 LIS",
+        "cita": "2. Con efectos para los períodos impositivos que se inicien dentro del año 2026, a efectos de lo dispuesto en el artículo 29.1 de la LIS, se aplicarán las siguientes especialidades: a) Las entidades cuyo importe neto de la cifra de negocios del período impositivo inmediato anterior sea inferior a 1 millón de euros, aplicarán la siguiente escala, salvo que deban tributar a un tipo diferente del general: i) Por la parte de base imponible comprendida entre 0 y 50.000 euros, al tipo del 19 por ciento. ii) Por la parte de base imponible restante, al tipo del 21 por ciento.",
+        "cifras": {
+          "por_ano.2026.micro_primer_tramo": "19 por ciento",
+          "por_ano.2026.micro_resto": "21 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "disposición transitoria 44.ª.2.b) LIS",
+        "cita": "b) Las entidades que cumplan las previsiones previstas en el artículo 101 de esta ley tributarán al 23 %, salvo que deban tributar a un tipo diferente del general.",
+        "cifras": {
+          "por_ano.2026.reducida_dimension": "23 %"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "disposición transitoria 44.ª.3 LIS",
+        "cita": "3. Con efectos para los períodos impositivos que se inicien dentro del año 2027, a efectos de lo dispuesto en el artículo 29.1 de la LIS, las entidades que cumplan las previsiones previstas en el artículo 101 de esta ley tributarán al 22 %, salvo que deban tributar a un tipo diferente del general.",
+        "cifras": {
+          "por_ano.2027.reducida_dimension": "22 %"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "disposición transitoria 44.ª.4 LIS",
+        "cita": "4. Con efectos para los períodos impositivos que se inicien dentro del año 2028, a efectos de lo dispuesto en el artículo 29.1 de la LIS, las entidades que cumplan las previsiones previstas en el artículo 101 de esta ley tributarán al 21 %, salvo que deban tributar a un tipo diferente del general.",
+        "cifras": {
+          "por_ano.2028.reducida_dimension": "21 %"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 29.1 LIS (tipo de reducida dimensión)",
+        "cita": "No obstante, las entidades que cumplan las previsiones previstas en el artículo 101 de esta ley tributarán al tipo del 20 por ciento, excepto si de acuerdo con lo previsto en este artículo deban tributar a un tipo diferente del general.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 29.1 LIS (cuándo no hay actividad nueva)",
+        "cita": "A estos efectos, no se entenderá iniciada una actividad económica: a) Cuando la actividad económica hubiera sido realizada con carácter previo por otras personas o entidades vinculadas en el sentido del artículo 18 de esta ley y transmitida, por cualquier título jurídico, a la entidad de nueva creación. b) Cuando la actividad económica hubiera sido ejercida, durante el año anterior a la constitución de la entidad, por una persona física que ostente una participación, directa o indirecta, en el capital o en los fondos propios de la entidad de nueva creación superior al 50 por ciento. No tendrán la consideración de entidades de nueva creación aquellas que formen parte de un grupo en los términos establecidos en el artículo 42 del Código de Comercio, con independencia de la residencia y de la obligación de formular cuentas anuales consolidadas.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 29.1 LIS (entidades patrimoniales)",
+        "cita": "Los tipos de gravamen del 20 por ciento, 17 por ciento y del 15 por ciento previstos en este apartado no resultarán de aplicación a aquellas entidades que tengan la consideración de entidad patrimonial, en los términos establecidos en el apartado 2 del artículo 5 de esta ley.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 101.1 LIS (entidades patrimoniales)",
+        "cita": "No obstante, dichos incentivos no resultarán de aplicación cuando la entidad tenga la consideración de entidad patrimonial en los términos establecidos en el apartado 2 del artículo 5 de esta Ley.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 30 bis.1 LIS (microempresas y reducida dimensión)",
+        "cita": "Tratándose de entidades cuyo importe neto de la cifra de negocios del período impositivo inmediato anterior sea inferior a 1 millón de euros, a los efectos de determinar la cuota líquida mínima a la que se refiere el primer párrafo de este apartado, el porcentaje señalado en el mismo será el resultado de multiplicar la escala prevista en el apartado 1 del artículo 29 de esta ley por quince veinticincoavos, redondeado por exceso. Tratándose de entidades que cumplan las previsiones previstas en el artículo 101 de esta ley, el porcentaje señalado en el primer párrafo de este apartado será el resultado de multiplicar el tipo de gravamen previsto en el apartado 1 del artículo 29 de esta ley por quince veinticincoavos, redondeado por exceso.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2026-11583",
+        "articulo": "preámbulo de la Orden HAC/529/2026",
+        "cita": "En segundo lugar, para periodos impositivos que se inicien a partir del 1 de enero de 2025, el apartado tres de la disposición final octava de la Ley 7/2024, de 20 de diciembre, modifica los apartados primero y segundo del artículo 29 de la Ley 27/2014, de 27 de noviembre. En concreto, en el apartado primero se regulan cambios en el tipo de gravamen general, destacando una escala de tipo impositivo en función del importe de la base imponible para las entidades cuyo importe neto de la cifra de negocios del período impositivo inmediato anterior sea inferior a 1 millón de euros (microempresas), salvo que les sea aplicable un tipo distinto del general, y un nuevo tipo de gravamen para las entidades de reducida dimensión, aplicable salvo que, de acuerdo con lo previsto en el artículo 29 de la Ley 27/2014, de 27 de noviembre, deban tributar a un tipo inferior. En el apartado segundo, se introducen cambios en los tipos de gravamen aplicables a las cooperativas.",
+        "cifras": {}
+      }
+    ]
+  },
+  "reserva_capitalizacion": {
+    "porcentaje": "0.20",
+    "plantilla_umbral_minimo": "0.02",
+    "plantilla_umbral_medio": "0.05",
+    "plantilla_umbral_alto": "0.10",
+    "porcentaje_plantilla_minimo": "0.23",
+    "porcentaje_plantilla_medio": "0.265",
+    "porcentaje_plantilla_alto": "0.30",
+    "limite_base": "0.20",
+    "limite_base_micro": "0.25",
+    "limite_cifra_negocios_micro": "1000000",
+    "anos_mantenimiento": "3",
+    "anos_pendientes": "2",
+    "avisos": [
+      "Reserva de capitalización (art. 25 LIS): el incremento de fondos propios es la cifra que aportas, calculada según el art. 25.2 (sin aportaciones de socios, reservas legales o estatutarias, etc.). La reducción exige mantener el incremento durante 3 años y dotar una reserva indisponible por su importe; si se incumple, hay que regularizar con intereses de demora. No se tiene en cuenta la integración del art. 11.12 LIS ni la incompatibilidad con el factor de agotamiento."
+    ],
+    "fuente": {
+      "referencia": "art. 25 LIS",
+      "en_vigor_desde": "2025-01-01",
+      "verificado": true,
+      "nota": "Redacción de la Ley 7/2024, con efectos para los períodos iniciados desde el 1-1-2025. Tramos de plantilla tal como se leen: del 2 % al 5 % inclusive, 23 %; más del 5 % hasta el 10 % inclusive, 26,5 %; más del 10 %, 30 %."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 25.1 LIS",
+        "cita": "1. Los contribuyentes que tributen al tipo de gravamen previsto en los apartados 1 o 6 del artículo 29 de esta ley tendrán derecho a una reducción en la base imponible del 20 por ciento del importe del incremento de sus fondos propios, siempre que se cumplan los siguientes requisitos: a) Que el importe del incremento de los fondos propios de la entidad se mantenga durante un plazo de 3 años desde el cierre del período impositivo al que corresponda esta reducción, salvo por la existencia de pérdidas contables en la entidad.",
+        "cifras": {
+          "porcentaje": "20 por ciento",
+          "anos_mantenimiento": "3 años"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 25.1 LIS (incremento de plantilla)",
+        "cita": "Sin perjuicio de lo anterior, el contribuyente tendrá derecho a una reducción en la base imponible, en los términos previstos en este apartado, del 23 por ciento del importe del incremento de los fondos propios, siempre que la plantilla media total del contribuyente, en el período impositivo, se haya incrementado, respecto de la plantilla media total del período impositivo inmediato anterior en un mínimo de un 2 por ciento sin superar un 5 por ciento. En el supuesto de que el incremento de la plantilla media total del contribuyente, en el período impositivo, respecto de la plantilla media total del período impositivo inmediato anterior, se encuentre entre un 5 y un 10 por ciento, el contribuyente tendrá derecho a una reducción en la base imponible del 26,5 por ciento del importe del incremento de los fondos propios. Cuando el referido incremento resulte superior a un 10 por ciento, la reducción a la que tendrá derecho el contribuyente será del 30 por ciento.",
+        "cifras": {
+          "plantilla_umbral_minimo": "2 por ciento",
+          "plantilla_umbral_medio": "5 por ciento",
+          "plantilla_umbral_alto": "10 por ciento",
+          "porcentaje_plantilla_minimo": "23 por ciento",
+          "porcentaje_plantilla_medio": "26,5 por ciento",
+          "porcentaje_plantilla_alto": "30 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 25.1 LIS (límites)",
+        "cita": "En ningún caso, el derecho a la reducción prevista en este apartado podrá superar el siguiente importe: i) El 20 por ciento de la base imponible positiva del período impositivo previa a esta reducción, a la integración a que se refiere el apartado 12 del artículo 11 de esta ley y a la compensación de bases imponibles negativas. ii) El 25 por ciento de la base imponible positiva del período impositivo previa a esta reducción, a la integración a que se refiere el apartado 12 del artículo 11 de esta ley y a la compensación de bases imponibles negativas, tratándose de contribuyentes cuyo importe neto de la cifra de negocios sea inferior a 1 millón de euros durante los 12 meses anteriores a la fecha en que se inicie el período impositivo al que corresponda esta reducción. No obstante, en caso de insuficiente base imponible para aplicar la reducción, las cantidades pendientes podrán ser objeto de aplicación en los períodos impositivos que finalicen en los 2 años inmediatos y sucesivos al cierre del período impositivo en que se haya generado el derecho a la reducción, conjuntamente con la reducción que pudiera corresponder, en su caso, por aplicación de lo dispuesto en este artículo en el período impositivo correspondiente, y con el límite previsto en las letras i) e ii) anteriores.",
+        "cifras": {
+          "limite_base": "20 por ciento",
+          "limite_base_micro": "25 por ciento",
+          "limite_cifra_negocios_micro": "1 millón de euros",
+          "anos_pendientes": "2 años"
+        }
+      }
+    ]
+  },
+  "compensacion_bases_negativas": {
+    "limite_porcentaje": "0.70",
+    "minimo_compensable": "1000000",
+    "umbral_gran_empresa": "20000000",
+    "limite_gran_empresa": "0.50",
+    "umbral_gran_empresa_superior": "60000000",
+    "limite_gran_empresa_superior": "0.25",
+    "avisos": [],
+    "fuente": {
+      "referencia": "art. 26 y disposición adicional 15.ª LIS",
+      "en_vigor_desde": "2024-01-01",
+      "verificado": true,
+      "nota": "El 70 % y el millón de euros son del art. 26.1 (redacción original, en vigor desde el 1-1-2015); los límites del 50 % y del 25 % para cifras de negocios de al menos 20 y 60 millones de euros son de la disposición adicional 15.ª, añadida de nuevo por la Ley 7/2024 para los períodos iniciados desde el 1-1-2024."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 26.1 LIS",
+        "cita": "1. Las bases imponibles negativas que hayan sido objeto de liquidación o autoliquidación podrán ser compensadas con las rentas positivas de los períodos impositivos siguientes con el límite del 70 por ciento de la base imponible previa a la aplicación de la reserva de capitalización establecida en el artículo 25 de esta Ley y a su compensación. En todo caso, se podrán compensar en el período impositivo bases imponibles negativas hasta el importe de 1 millón de euros.",
+        "cifras": {
+          "limite_porcentaje": "70 por ciento",
+          "minimo_compensable": "1 millón de euros"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "disposición adicional 15.ª LIS",
+        "cita": "Los contribuyentes cuyo importe neto de la cifra de negocios sea al menos de 20 millones de euros durante los 12 meses anteriores a la fecha en que se inicie el período impositivo, aplicarán las siguientes especialidades: 1. Los límites establecidos en el apartado 12 del artículo 11, en el primer párrafo del apartado 1 del artículo 26, en la letra e) del apartado 1 del artículo 62 y en las letras d) y e) del artículo 67 de esta ley, se sustituirán por los siguientes: – El 50 por ciento, cuando en los referidos 12 meses el importe neto de la cifra de negocios sea al menos de 20 millones de euros, pero inferior a 60 millones de euros. – El 25 por ciento, cuando en los referidos 12 meses el importe neto de la cifra de negocios sea al menos de 60 millones de euros.",
+        "cifras": {
+          "umbral_gran_empresa": "20 millones de euros",
+          "limite_gran_empresa": "50 por ciento",
+          "umbral_gran_empresa_superior": "60 millones de euros",
+          "limite_gran_empresa_superior": "25 por ciento"
+        }
+      }
+    ]
+  },
+  "reserva_nivelacion": {
+    "porcentaje": "0.10",
+    "limite": "1000000",
+    "anos_adicion": "5",
+    "incremento_incumplimiento": "0.05",
+    "avisos": [
+      "Reserva de nivelación (art. 105 LIS): la minoración no es un ahorro definitivo sino un diferimiento. Lo minorado se suma a la base imponible de los períodos que concluyan en los 5 años siguientes en que la base sea negativa, hasta su importe, y lo que quede se suma en el período en que termina ese plazo (art. 105.2). Exige dotar con cargo al resultado positivo del ejercicio una reserva indisponible por el importe minorado (art. 105.3); esas cantidades no pueden servir a la vez para la reserva de capitalización (art. 105.5); la minoración se tiene en cuenta en los pagos fraccionados de la modalidad de base (art. 105.4), y el incumplimiento obliga a ingresar la cuota correspondiente a lo minorado incrementada en un 5 % más intereses de demora (art. 105.6)."
+    ],
+    "fuente": {
+      "referencia": "art. 105 LIS",
+      "en_vigor_desde": "2015-01-01",
+      "verificado": true,
+      "nota": "El art. 105 no ha sido modificado desde 2015 y remite al «primer párrafo del apartado 1 del artículo 29». En la redacción de la Ley 7/2024 ese primer párrafo contiene el tipo general del 25 % y la escala de las entidades con cifra de negocios inferior a 1 millón de euros (cuyos tipos sustituye la disposición transitoria 44.ª en 2025 y 2026); el tipo de las entidades de reducida dimensión está en otro párrafo («No obstante, las entidades que cumplan las previsiones previstas en el artículo 101...») y el de nueva creación en otro. Leído literalmente, pueden aplicarla las entidades que tributan por la escala (cumplen el art. 101 por tener menos de 10 millones) y no las que tributan al tipo propio de reducida dimensión ni al 15 %. El anexo del modelo 202 (Orden HAC/262/2025) la reserva en cambio a las entidades de reducida dimensión que «apliquen el tipo de gravamen específico previsto para estas entidades» y el modelo 200 de 2025 (Orden HAC/529/2026) la rotula «Sólo entidades de reducida dimensión», sin distinguir tipos. Por eso solo se calcula para la escala, que cabe en las dos lecturas de la ley y en el modelo 200. La base que se minora es la base imponible ya reducida por la reserva de capitalización y la compensación de bases negativas (casilla 00552 del modelo 200), y el tipo se aplica a la base minorada o incrementada (art. 30.1)."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 105.1 LIS",
+        "cita": "1. Las entidades que cumplan las condiciones establecidas en el artículo 101 de esta Ley en el período impositivo y apliquen el tipo de gravamen previsto en el primer párrafo del apartado 1 del artículo 29 de esta Ley, podrán minorar su base imponible positiva hasta el 10 por ciento de su importe. En todo caso, la minoración no podrá superar el importe de 1 millón de euros. Si el período impositivo tuviera una duración inferior a un año, el importe de la minoración no podrá superar el resultado de multiplicar 1 millón de euros por la proporción existente entre la duración del período impositivo respecto del año.",
+        "cifras": {
+          "porcentaje": "10 por ciento",
+          "limite": "1 millón de euros"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 105.2 LIS",
+        "cita": "2. Las cantidades a que se refiere el apartado anterior se adicionarán a la base imponible de los períodos impositivos que concluyan en los 5 años inmediatos y sucesivos a la finalización del período impositivo en que se realice dicha minoración, siempre que el contribuyente tenga una base imponible negativa, y hasta el importe de la misma. El importe restante se adicionará a la base imponible del período impositivo correspondiente a la fecha de conclusión del referido plazo.",
+        "cifras": {
+          "anos_adicion": "5 años"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 105.6 LIS",
+        "cita": "6. El incumplimiento de lo dispuesto en este artículo determinará la integración en la cuota íntegra del período impositivo en que tenga lugar el incumplimiento, la cuota íntegra correspondiente a las cantidades que han sido objeto de minoración, incrementadas en un 5 por ciento, además de los intereses de demora.",
+        "cifras": {
+          "incremento_incumplimiento": "5 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 105.3 LIS",
+        "cita": "3. El contribuyente deberá dotar una reserva por el importe de la minoración a que se refiere el apartado 1 de este artículo, que será indisponible hasta el período impositivo en que se produzca la adición a la base imponible de la entidad de las cantidades a que se refiere el apartado anterior. La reserva deberá dotarse con cargo a los resultados positivos del ejercicio en que se realice la minoración en base imponible. En caso de no poderse dotar esta reserva, la minoración estará condicionada a que la misma se dote con cargo a los primeros resultados positivos de ejercicios siguientes respecto de los que resulte posible realizar esa dotación.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 105.4 y 105.5 LIS",
+        "cita": "4. La minoración prevista en este artículo se tendrá en cuenta a los efectos de determinar los pagos fraccionados a que se refiere el apartado 3 del artículo 40 de esta Ley. 5. Las cantidades destinadas a la dotación de la reserva prevista en este artículo no podrán aplicarse, simultáneamente, al cumplimiento de la reserva de capitalización establecida en el artículo 25 de esta Ley ni de la Reserva para Inversiones en Canarias prevista en el artículo 27 de la Ley 19/1994, de 6 de julio, de modificación del Régimen Económico y Fiscal de Canarias.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 30.1 LIS",
+        "cita": "En el supuesto de entidades que apliquen lo dispuesto en el artículo 105 de esta Ley, la cuota íntegra vendrá determinada por el resultado de aplicar el tipo de gravamen a la base imponible minorada o incrementada, según corresponda, por las cantidades derivadas del citado artículo 105.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2025-5407",
+        "articulo": "anexo I de la Orden HAC/262/2025 (modelo 202, datos adicionales)",
+        "cita": "Entidad que cumpla los requisitos para la aplicación de los incentivos de empresa de reducida dimensión (art. 101 LIS) y aplique el tipo de gravamen específico previsto para estas entidades",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2026-11583",
+        "articulo": "modelo 200 de la Orden HAC/529/2026 (página 14)",
+        "cita": "Base imponible .................................................................................................................................................................................................. 00552 Sólo entidades de reducida dimensión Aumentos Disminuciones Reserva de nivelación (desglose en página 20 bis) ................................................................ 01033 01034 Base imponible después de la reserva de nivelación ................................................................................................................................... 01330",
+        "cifras": {}
+      }
+    ]
+  },
+  "pago_fraccionado": {
+    "porcentaje_cuota": "0.18",
+    "base_numerador": "5",
+    "base_denominador": "7",
+    "limite_modalidad_base_obligatoria": "6000000",
+    "umbral_especialidades": "10000000",
+    "avisos": [
+      "Los pagos fraccionados se presentan con el modelo 202 en los primeros 20 días naturales de abril, octubre y diciembre (art. 40.1 LIS). No se modela la minoración por rentas obtenidas en Ceuta o Melilla."
+    ],
+    "fuente": {
+      "referencia": "art. 40 y disposición adicional 14.ª LIS",
+      "en_vigor_desde": "2015-01-01",
+      "verificado": true,
+      "nota": "El art. 40.4 permite que la Ley de Presupuestos modifique los porcentajes; el texto consolidado a 2-9-2026 no recoge ninguna modificación para 2026. Ni la ley ni la orden del modelo 202 dicen a qué unidad se redondea «por defecto» el porcentaje de la modalidad de base: se redondea al entero inferior. Para las entidades con más de un tipo, el anexo I de la Orden HAC/262/2025 hace liquidar cada parte de la base («Base a tipo 1», «Base a tipo 2») con su propio porcentaje; no dice cómo se reparte la base acumulada entre los tramos de la escala."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 40.2 LIS",
+        "cita": "La cuantía del pago fraccionado previsto en este apartado será el resultado de aplicar a la base el porcentaje del 18 por ciento.",
+        "cifras": {
+          "porcentaje_cuota": "18 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 40.3 LIS",
+        "cita": "No obstante, estarán obligados a aplicar la modalidad a que se refiere este apartado los contribuyentes cuyo importe neto de la cifra de negocios haya superado la cantidad de 6 millones de euros durante los 12 meses anteriores a la fecha en que se inicie el período impositivo al que corresponda el pago fraccionado. La cuantía del pago fraccionado previsto en este apartado será el resultado de aplicar a la base el porcentaje que resulte de multiplicar por cinco séptimos el tipo de gravamen redondeado por defecto. De la cuota resultante se deducirán las bonificaciones del Capítulo III del presente título, otras bonificaciones que le fueren de aplicación al contribuyente, las retenciones e ingresos a cuenta practicados sobre los ingresos del contribuyente, y los pagos fraccionados efectuados correspondientes al período impositivo.",
+        "cifras": {
+          "base_numerador": "cinco",
+          "base_denominador": "séptimos",
+          "limite_modalidad_base_obligatoria": "6 millones de euros"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "disposición adicional 14.ª.1 LIS",
+        "cita": "1. Los contribuyentes cuyo importe neto de la cifra de negocios en los 12 meses anteriores a la fecha en que se inicie el período impositivo, sea al menos 10 millones de euros, deberán tener en cuenta, en relación con los pagos fraccionados que se realicen en la modalidad prevista en el apartado 3 del artículo 40 de esta Ley, las siguientes especialidades:",
+        "cifras": {
+          "umbral_especialidades": "10 millones de euros"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2025-5407",
+        "articulo": "preámbulo de la Orden HAC/262/2025",
+        "cita": "Se incluye una nueva redacción para los apartados 1 y 2 del artículo 29 de la Ley 27/2024, de 27 de noviembre, que regulan los tipos de gravamen aplicables y que resultan aplicables a los periodos impositivos que se inicien a partir del 1 de enero de 2025. No obstante, debe tenerse en cuenta que estos porcentajes se ven alterados por lo previsto en la disposición transitoria cuadragésima cuarta de la Ley 27/2014, de 27 de noviembre. La posibilidad de que existan varios tipos impositivos aplicables implica cambios en los modelos modificados en esta orden.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2025-5407",
+        "articulo": "anexo I de la Orden HAC/262/2025 (modelo 202, datos adicionales)",
+        "cita": "Entidad con importe neto de la cifra de negocios del periodo impositivo inmediato anterior inferior a 1 millón de euros Otras entidades con posibilidad de aplicar más de un tipo impositivo",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2025-5407",
+        "articulo": "anexo I de la Orden HAC/262/2025 (modelo 202, liquidación B.2)",
+        "cita": "B.2) Casos específicos (entidades con más de un porcentaje) Base del pago fraccionado ...... 19 Importe del pago fraccionado Base a tipo 1 ........... 20 Porcentaje ......... 21 22 Base a tipo 2 ........... 23 Porcentaje ......... 24 25",
+        "cifras": {}
+      }
+    ]
+  },
+  "comparacion_irpf": {
+    "retencion_capital_mobiliario": "0.19",
+    "avisos": [],
+    "fuente": {
+      "referencia": "arts. 17, 19, 25, 27, 28, 41, 46 y 101 LIRPF",
+      "en_vigor_desde": "2016-01-01",
+      "verificado": true,
+      "nota": "Solo se usa en la comparación autónomo/sociedad: referencias de las líneas del salario y del dividendo, cita del art. 27.1 sobre los socios profesionales y retención del 19 % sobre dividendos (pago a cuenta que no altera la cuota). La ley vigente no contiene deducción por doble imposición de dividendos ni exención para ellos."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 17.1 LIRPF",
+        "cita": "1. Se considerarán rendimientos íntegros del trabajo todas las contraprestaciones o utilidades, cualquiera que sea su denominación o naturaleza, dinerarias o en especie, que deriven, directa o indirectamente, del trabajo personal o de la relación laboral o estatutaria y no tengan el carácter de rendimientos de actividades económicas. Se incluirán, en particular: a) Los sueldos y salarios.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 19.2.a) LIRPF",
+        "cita": "2. Tendrán la consideración de gastos deducibles exclusivamente los siguientes: a) Las cotizaciones a la Seguridad Social o a mutualidades generales obligatorias de funcionarios.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 25.1.a) LIRPF",
+        "cita": "1. Rendimientos obtenidos por la participación en los fondos propios de cualquier tipo de entidad. Quedan incluidos dentro de esta categoría los siguientes rendimientos, dinerarios o en especie: a) Los dividendos, primas de asistencia a juntas y participaciones en los beneficios de cualquier tipo de entidad.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 27.1 LIRPF",
+        "cita": "No obstante, tratándose de rendimientos obtenidos por el contribuyente procedentes de una entidad en cuyo capital participe derivados de la realización de actividades incluidas en la Sección Segunda de las Tarifas del Impuesto sobre Actividades Económicas, aprobadas por el Real Decreto Legislativo 1175/1990, de 28 de septiembre, tendrán esta consideración cuando el contribuyente esté incluido, a tal efecto, en el régimen especial de la Seguridad Social de los trabajadores por cuenta propia o autónomos, o en una mutualidad de previsión social que actúe como alternativa al citado régimen especial conforme a lo previsto en la disposición adicional decimoquinta de la Ley 30/1995, de 8 de noviembre, de ordenación y supervisión de los seguros privados.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 28.1 LIRPF",
+        "cita": "1. El rendimiento neto de las actividades económicas se determinará según las normas del Impuesto sobre Sociedades, sin perjuicio de las reglas especiales contenidas en este artículo, en el artículo 30 de esta Ley para la estimación directa, y en el artículo 31 de esta Ley para la estimación objetiva.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 41 LIRPF",
+        "cita": "La valoración de las operaciones entre personas o entidades vinculadas se realizará por su valor normal de mercado, en los términos previstos en el artículo 16 del texto refundido de la Ley del Impuesto sobre Sociedades.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 46.a) LIRPF",
+        "cita": "Constituyen la renta del ahorro: a) Los rendimientos del capital mobiliario previstos en los apartados 1, 2 y 3 del artículo 25 de esta Ley.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "art. 101.4 LIRPF",
+        "cita": "4. El porcentaje de retención e ingreso a cuenta sobre los rendimientos del capital mobiliario será del 19 por ciento. Dicho porcentaje será el 15 por ciento para los rendimientos del capital mobiliario procedentes de la propiedad intelectual cuando el contribuyente no sea el autor.",
+        "cifras": {
+          "retencion_capital_mobiliario": "19 por ciento"
+        }
+      },
+      {
+        "boe_id": "BOE-A-2006-20764",
+        "articulo": "preámbulo LIRPF",
+        "cita": "El Título VIII regula la obtención de la cuota diferencial del impuesto, manteniendo una regulación similar a la actual con la única excepción de la desaparición de la deducción por doble imposición de dividendos, paralela a la supresión de la norma de integración en la base imponible referida con anterioridad.",
+        "cifras": {}
+      }
+    ]
+  },
+  "tributacion_minima": {
+    "umbral_cifra_negocios": "20000000",
+    "avisos": [],
+    "fuente": {
+      "referencia": "art. 30 bis LIS",
+      "en_vigor_desde": "2025-01-01",
+      "verificado": true,
+      "nota": "Solo se usa para avisar de que la tributación mínima no se calcula."
+    },
+    "evidencia": [
+      {
+        "boe_id": "BOE-A-2014-12328",
+        "articulo": "art. 30 bis.1 LIS",
+        "cita": "1. En el caso de contribuyentes cuyo importe neto de la cifra de negocios sea al menos de 20 millones de euros durante los 12 meses anteriores a la fecha en que se inicie el período impositivo o que tributen en el régimen de consolidación fiscal regulado en el capítulo VI del título VII de esta ley, con independencia de su importe neto de la cifra de negocios",
+        "cifras": {
+          "umbral_cifra_negocios": "20 millones de euros"
+        }
+      }
+    ]
+  }
+}

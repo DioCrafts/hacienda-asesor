@@ -120,3 +120,28 @@ def test_cli_exits_zero_when_drift_detected_but_flag_disabled(tmp_path: Path) ->
     assert result.exit_code == 0
     report = json.loads(output.read_text(encoding="utf-8"))
     assert report["summary"]["changed"] == 1
+
+
+def test_cli_record_unverified_links_placeholder_hashes_only(tmp_path: Path) -> None:
+    content = b"contenido normativo"
+    snapshot_root = tmp_path / "snapshots"
+    (snapshot_root / "boe").mkdir(parents=True)
+    (snapshot_root / "boe" / "BOE-X.html").write_bytes(content)
+    rules_dir = tmp_path / "rules"
+    args = ["--rules-dir", str(rules_dir), "--snapshot-root", str(snapshot_root), "--output", str(tmp_path / "d.json")]
+
+    # Placeholder hash → recorded, and the re-run report is clean.
+    _write_rule_with_source(rules_dir, hash_value="0" * 64)
+    result = CliRunner().invoke(cli, [*args, "--record-unverified"])
+    assert result.exit_code == 0, result.output
+    ref = json.loads((rules_dir / "cli_rules.json").read_text(encoding="utf-8"))[0]["source_refs"][0]
+    assert ref["content_hash"] == _sha(content)
+    assert ref["last_reviewed_at"] != "2024-12-01"
+    assert json.loads((tmp_path / "d.json").read_text(encoding="utf-8"))["summary"]["ok"] == 1
+
+    # A CHANGED source is never auto-accepted: that needs a human re-validation.
+    stale = _sha(b"texto antiguo")
+    _write_rule_with_source(rules_dir, hash_value=stale)
+    CliRunner().invoke(cli, [*args, "--record-unverified"])
+    ref = json.loads((rules_dir / "cli_rules.json").read_text(encoding="utf-8"))[0]["source_refs"][0]
+    assert ref["content_hash"] == stale

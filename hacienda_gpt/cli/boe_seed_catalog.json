@@ -139,6 +139,154 @@
       "label": "Real Decreto 1629/1991 — Reglamento del Impuesto sobre Sucesiones y Donaciones (RISD) — texto consolidado",
       "subdir": "boe-reglamentos-desarrollo",
       "track": true
+    },
+    {
+      "id": "BOCM-m-2010-90068",
+      "topic": "irpf_autonomico",
+      "label": "Comunidad de Madrid — Decreto Legislativo 1/2010, de 21 de octubre, texto refundido de las disposiciones legales de la Comunidad de Madrid en materia de tributos cedidos por el Estado",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "madrid"
+    },
+    {
+      "id": "BOE-A-2021-17915",
+      "topic": "irpf_autonomico",
+      "label": "Andalucía — Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "andalucia"
+    },
+    {
+      "id": "BOA-d-2005-90006",
+      "topic": "irpf_autonomico",
+      "label": "Aragón — Decreto Legislativo 1/2005, de 26 de septiembre, del Gobierno de Aragón, por el que se aprueba el texto refundido de las disposiciones dictadas por la Comunidad Autónoma de Aragón en materia de tributos cedidos",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "aragon"
+    },
+    {
+      "id": "BOE-A-2015-945",
+      "topic": "irpf_autonomico",
+      "label": "Principado de Asturias — Decreto Legislativo 2/2014, de 22 de octubre, por el que se aprueba el texto refundido de las disposiciones legales del Principado de Asturias en materia de tributos cedidos por el Estado",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "asturias"
+    },
+    {
+      "id": "BOE-A-2014-6925",
+      "topic": "irpf_autonomico",
+      "label": "Illes Balears — Decreto Legislativo 1/2014, de 6 de junio, por el que se aprueba el Texto Refundido de las disposiciones legales de la Comunidad Autónoma de las Illes Balears en materia de tributos cedidos por el Estado",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "baleares"
+    },
+    {
+      "id": "BOC-j-2009-90008",
+      "topic": "irpf_autonomico",
+      "label": "Canarias — Decreto-Legislativo 1/2009, de 21 de abril, por el que se aprueba el Texto Refundido de las disposiciones legales vigentes dictadas por la Comunidad Autónoma de Canarias en materia de tributos cedidos",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "canarias"
+    },
+    {
+      "id": "BOCT-c-2008-90028",
+      "topic": "irpf_autonomico",
+      "label": "Cantabria — Decreto Legislativo 62/2008, de 19 de junio, por el que se aprueba el texto refundido de la Ley de Medidas Fiscales en materia de Tributos cedidos por el Estado",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "cantabria"
+    },
+    {
+      "id": "BOE-A-2014-1368",
+      "topic": "irpf_autonomico",
+      "label": "Castilla-La Mancha — Ley 8/2013, de 21 de noviembre, de Medidas Tributarias de Castilla-La Mancha",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "castilla_la_mancha"
+    },
+    {
+      "id": "BOCL-h-2013-90254",
+      "topic": "irpf_autonomico",
+      "label": "Castilla y León — Decreto Legislativo 1/2013, de 12 de septiembre, por el que se aprueba el texto refundido de las disposiciones legales de la Comunidad de Castilla y León en materia de tributos propios y cedidos",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "castilla_y_leon"
+    },
+    {
+      "id": "BOE-A-2024-6951",
+      "topic": "irpf_autonomico",
+      "label": "Cataluña — Decreto Legislativo 1/2024, de 12 de marzo, por el que se aprueba el libro sexto del Código tributario de Catalunya, que integra el texto refundido de los preceptos legales vigentes en Catalunya en materia de tributos cedidos",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "cataluna"
+    },
+    {
+      "id": "BOE-A-1998-8202",
+      "topic": "irpf_autonomico",
+      "label": "Comunitat Valenciana — Ley 13/1997, de 23 de diciembre, por la que se regula el tramo autonómico del Impuesto sobre la Renta de las Personas Físicas y restantes tributos cedidos",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "comunidad_valenciana"
+    },
+    {
+      "id": "BOE-A-2018-8159",
+      "topic": "irpf_autonomico",
+      "label": "Extremadura — Decreto Legislativo 1/2018, de 10 de abril, por el que se aprueba el texto refundido de las disposiciones legales de la Comunidad Autónoma de Extremadura en materia de tributos cedidos por el Estado",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "extremadura"
+    },
+    {
+      "id": "BOE-A-2011-18161",
+      "topic": "irpf_autonomico",
+      "label": "Galicia — Decreto Legislativo 1/2011, de 28 de julio, por el que se aprueba el texto refundido de las disposiciones legales de la Comunidad Autónoma de Galicia en materia de tributos cedidos por el Estado",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "galicia"
+    },
+    {
+      "id": "BOE-A-2017-13750",
+      "topic": "irpf_autonomico",
+      "label": "La Rioja — Ley 10/2017, de 27 de octubre, por la que se consolidan las disposiciones legales de la Comunidad Autónoma de La Rioja en materia de impuestos propios y tributos cedidos",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "la_rioja"
+    },
+    {
+      "id": "BOE-A-2011-10542",
+      "topic": "irpf_autonomico",
+      "label": "Región de Murcia — Decreto Legislativo 1/2010, de 5 de noviembre, por el que se aprueba el Texto Refundido de las disposiciones legales vigentes en la Región de Murcia en materia de tributos cedidos",
+      "subdir": "boe-autonomico",
+      "track": true,
+      "comunidad": "murcia"
+    },
+    {
+      "id": "BOE-A-1991-14392",
+      "topic": "patrimonio",
+      "label": "Ley 19/1991 — Impuesto sobre el Patrimonio",
+      "subdir": "boe-seed",
+      "track": true
+    },
+    {
+      "id": "BOE-A-2022-22684",
+      "topic": "patrimonio",
+      "label": "Ley 38/2022 — Impuesto Temporal de Solidaridad de las Grandes Fortunas",
+      "subdir": "boe-seed",
+      "track": true
+    },
+    {
+      "id": "BOE-A-2023-26452",
+      "topic": "patrimonio",
+      "label": "Real Decreto-ley 8/2023 — prórroga del ITSGF",
+      "subdir": "boe-seed",
+      "track": true
+    },
+    {
+      "id": "BOE-A-2009-20375",
+      "topic": "sucesiones",
+      "label": "Ley 22/2009 — sistema de financiación de las comunidades autónomas (puntos de conexión)",
+      "subdir": "boe-seed",
+      "track": true
     }
   ]
 }

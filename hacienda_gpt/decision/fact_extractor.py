@@ -43,7 +43,22 @@ EXPECTED_FACT_TYPE: dict[str, FactValueType] = {
     "tema_tributario": FactValueType.STRING,
 }
 
+# Fiscal-profile facts (family, income breakdown, deductions) that feed the IRPF
+# calculator. Declared next to the calculator input they map onto.
+from hacienda_gpt.tax.profile import ACTIVIDAD_FACT_TYPES, DETALLE_FACT_TYPES, PROFILE_FACT_TYPES  # noqa: E402
+
+EXPECTED_FACT_TYPE.update({name: FactValueType(kind) for name, kind in PROFILE_FACT_TYPES.items()})
+# Income and expenses of a self-employed activity (the profile bridge computes the net income from them).
+EXPECTED_FACT_TYPE.update({name: FactValueType(kind) for name, kind in ACTIVIDAD_FACT_TYPES.items()})
+
+# Structured facts (JSON text): accepted in the case, never asked from an extractor (see below).
+EXPECTED_FACT_TYPE.update({name: FactValueType(kind) for name, kind in DETALLE_FACT_TYPES.items()})
+
 KNOWN_FACT_NAMES: tuple[str, ...] = tuple(EXPECTED_FACT_TYPE.keys())
+# What the extractors may emit: every known fact except the structured ones, whose value is a
+# JSON document that free text from a model would not respect. Those are written by the
+# simulator and by the agent's ``registrar_hechos``, which validate them.
+EXTRACTOR_FACT_NAMES: tuple[str, ...] = tuple(name for name in KNOWN_FACT_NAMES if name not in DETALLE_FACT_TYPES)
 
 
 KNOWN_INTENTS = (
@@ -196,6 +211,147 @@ y el resto deben ir a `null`. Si te equivocas de slot el hecho se descarta.
     menciona_ingresos           → true si el usuario menciona ingresos/rendimientos
     alta_actividad_economica    → true si el usuario está dado de alta en actividad económica
 
+PERFIL FISCAL (mismos slots; emítelos solo si el usuario da el dato):
+
+  value_string:
+    comunidad_autonoma                  → nombre de la comunidad ("Madrid", "Cataluña", "Andalucía"…)
+    estado_civil                        → "soltero" | "casado" | "pareja_de_hecho" | "separado" | "divorciado" | "viudo"
+
+  value_number (importes anuales en euros; recuentos como enteros):
+    edad                                → años cumplidos
+    grado_discapacidad                  → porcentaje reconocido (33, 65…)
+    num_descendientes                   → hijos a cargo (0 si dice que no tiene)
+    num_descendientes_menores_3         → de ellos, menores de tres años
+    num_ascendientes_mayores_65         → padres/abuelos mayores de 65 que conviven y dependen de él
+    num_ascendientes_mayores_75         → de ellos, mayores de 75
+    num_descendientes_discapacidad      → hijos a cargo con discapacidad reconocida del 33 % o más (a cualquier edad)
+    num_descendientes_discapacidad_65   → de ellos, con discapacidad del 65 % o más o con incapacidad declarada judicialmente
+    num_descendientes_asistencia        → hijos con discapacidad del 33 % al 64 % que necesitan ayuda de terceras personas o tienen movilidad reducida
+    num_ascendientes_discapacidad       → padres/abuelos con discapacidad del 33 % o más que conviven y dependen de él (de cualquier edad)
+    num_ascendientes_discapacidad_65    → de ellos, con discapacidad del 65 % o más o con incapacidad declarada judicialmente
+    num_ascendientes_asistencia         → padres/abuelos con discapacidad del 33 % al 64 % que necesitan ayuda de terceras personas o tienen movilidad reducida
+    num_ascendientes_discapacidad_hasta_65 → de los padres/abuelos con discapacidad, los que tienen 65 años o menos
+    num_declaraciones_mismos_ascendientes → declaraciones (incluida la suya) que aplican el mínimo por los mismos padres/abuelos (p. ej. 2 si un hermano también convive con ellos)
+    rendimiento_trabajo_bruto           → salario bruto anual
+    cotizaciones_seguridad_social       → cotizaciones a la Seguridad Social pagadas por el trabajador
+    retenciones                         → IRPF retenido en el año
+    rendimiento_actividad_neto          → beneficio neto anual de la actividad económica
+    rendimiento_alquiler_neto           → rendimiento neto de inmuebles alquilados, YA con la reducción aplicada
+    rendimiento_alquiler_vivienda_sin_reducir → alquiler de vivienda cobrado menos gastos, ANTES de la reducción
+    arrendamiento_fecha_contrato        → fecha de firma del contrato de alquiler (AAAA-MM-DD)
+    arrendamiento_gran_tenedor          → el arrendador es gran tenedor
+    arrendamiento_primer_alquiler       → es la primera vez que alquila esa vivienda
+    arrendamiento_variacion_renta       → % de variación de la renta respecto del contrato anterior (-6 = la bajó un 6 %)
+    arrendamiento_mismo_inquilino       → nuevo contrato con el mismo inquilino al acabar el plazo
+    arrendamiento_renta_bajo_indice     → la renta queda por debajo del índice de precios de referencia
+    arrendamiento_zona_tensionada       → la vivienda está en zona de mercado residencial tensionado
+    arrendamiento_inquilino_joven       → el inquilino tiene entre 18 y 35 años
+    arrendamiento_alquiler_social       → alquilada a una Administración o entidad sin fines lucrativos para alquiler social, o con renta limitada
+    arrendamiento_vivienda_rehabilitada → rehabilitada en los dos años anteriores al contrato
+    arrendamiento_prorroga_tacita       → el contrato está en prórroga tácita
+    rendimiento_capital_mobiliario      → intereses y dividendos
+    rendimientos_negativos_pendientes   → rendimientos del ahorro negativos de años anteriores aún sin compensar
+    perdidas_patrimoniales_pendientes   → pérdidas patrimoniales de años anteriores aún sin compensar
+    ganancias_patrimoniales             → ganancias (o pérdidas, en negativo) por ventas de acciones, fondos, inmuebles…
+    aportacion_plan_pensiones           → aportado por él a planes de pensiones en el año
+    contribucion_empresa_plan_pensiones → aportado por su empresa
+    donativos                           → donado a ONG/fundaciones en el año
+    pagos_vivienda_habitual_pre2013     → pagado en el año por la hipoteca de una vivienda habitual comprada antes de 2013
+    gastos_guarderia                    → pagado a guarderías en el año
+
+    alquiler_vivienda_habitual          → alquiler pagado en el año por su vivienda habitual
+    gastos_escolaridad                  → pagado por escolaridad de los hijos (colegio privado no concertado, guardería)
+    gastos_ensenanza_idiomas            → pagado por clases de idiomas de los hijos
+    gastos_uniformes_escolares          → pagado por uniformes escolares
+    cotizaciones_empleada_hogar         → cotizaciones a la Seguridad Social pagadas por una empleada de hogar
+    hijos_nacidos_ultimos_3_ejercicios  → hijos nacidos o adoptados este año o en los dos anteriores
+    base_imponible_resto_unidad_familiar → base imponible (rentas netas) del cónyuge y demás miembros de la unidad familiar
+    miembros_unidad_familiar            → número de miembros de la unidad familiar
+    num_hijos_gastos_educativos         → hijos escolarizados por los que paga libros, clases o colegio
+    num_hijos_primer_ciclo_infantil     → hijos en el primer ciclo de educación infantil (0-3 años)
+    edad_conyuge                        → edad del cónyuge
+    grado_discapacidad_conyuge          → porcentaje de discapacidad reconocido al cónyuge
+    num_familiares_discapacidad_65_a_cargo → TOTAL de ascendientes y descendientes a su cargo con discapacidad del 65 % o más
+    num_personas_acogidas_mayores_o_discapacidad → mayores de 65 o personas con discapacidad, sin parentesco cercano, que acoge sin cobrar
+    habitantes_municipio                → número de habitantes del municipio donde vive
+    dias_alquiler_vivienda_habitual     → días del año con el contrato de alquiler de su vivienda en vigor
+    dias_acogimiento                    → días del año de convivencia con los menores acogidos
+    dias_desempleo                      → días del año inscrito como demandante de empleo
+    num_declaraciones_mismo_alquiler    → declaraciones (incluida la suya) con derecho a deducir por el mismo alquiler
+    num_declaraciones_misma_vivienda    → declaraciones (incluida la suya) con derecho a deducir por la compra u obras de la misma vivienda
+    ejercicio_viudedad                  → año en que enviudó
+    ejercicio_adquisicion_vivienda      → año en que compró su vivienda habitual
+    ejercicio_traslado_residencia       → año en que trasladó su residencia al municipio o a la comunidad
+    gastos_instalaciones_renovables     → de los gastos de eficiencia energética, lo pagado en instalaciones de energía renovable o autoconsumo
+    gastos_deporte                      → cuotas de gimnasio, clubes o federaciones deportivas
+    gastos_cultura                      → entradas, abonos o cuotas de actividades culturales
+    gastos_honorarios_sanitarios        → honorarios de médicos y otros profesionales sanitarios, SIN dentista ni salud mental
+    gastos_salud_bucodental             → dentista y ortodoncia
+    gastos_salud_mental                 → psicólogo o psiquiatra
+    gastos_optica                       → gafas graduadas, lentillas, prótesis y aparatos similares
+    gastos_enfermedades_raras           → gastos por una enfermedad rara
+    gastos_ela                          → gastos por esclerosis lateral amiotrófica (ELA)
+    pagos_adquisicion_vivienda          → pagado en el año por la compra de su vivienda habitual (capital y gastos, SIN intereses)
+    pagos_rehabilitacion_vivienda       → pagado en el año por rehabilitar su vivienda habitual (SIN intereses)
+    intereses_prestamo_vivienda         → intereses pagados en el año por el préstamo de su vivienda habitual
+    donativos_medio_ambiente            → donado a entidades de defensa del medio ambiente
+    donativos_cultura_patrimonio        → donado a cultura o patrimonio histórico
+    donativos_investigacion             → donado a investigación, desarrollo, innovación o universidades
+    donativos_cooperacion_fines_sociales → donado a cooperación al desarrollo, lucha contra la pobreza o discapacidad
+    donativos_lengua_propia             → donado al fomento de la lengua propia de la comunidad
+    donativos_fundaciones_autonomicas   → donado a fundaciones inscritas en el registro de la comunidad
+    gastos_veterinarios                 → gastos veterinarios de sus animales de compañía
+    adquisicion_vehiculo_electrico      → pagado en el año por comprar un vehículo eléctrico
+    inversion_economia_social           → invertido en cooperativas, sociedades laborales u otras entidades de economía social
+    actividad_ingresos_integros         → autónomos: ingresos anuales de la actividad, sin IVA
+    actividad_seguridad_social_autonomo → autónomos: cuotas de autónomos (RETA) pagadas en el año
+    actividad_suministros               → autónomos: gasto anual de la actividad en luz, agua, gas, teléfono e internet, sin IVA
+    actividad_alquileres                → autónomos: alquiler anual del local u oficina de la actividad, sin IVA
+    actividad_servicios_profesionales   → autónomos: pagado en el año a gestoría, asesoría y otros profesionales, sin IVA
+    actividad_otros_gastos              → autónomos: resto de gastos anuales de la actividad, sin IVA
+    actividad_amortizaciones            → autónomos: amortización anual de equipos, vehículos y otros bienes de la actividad
+    actividad_rendimientos_irregulares  → autónomos: parte del beneficio del año generada en más de dos años o por indemnización por cese, subvención de capital o premio (solo si el usuario lo dice así)
+
+  value_boolean:
+    necesita_asistencia                 → true si el usuario, con discapacidad reconocida, necesita ayuda de terceras personas o tiene movilidad reducida
+    necesita_asistencia_conyuge         → true si su cónyuge, con discapacidad reconocida, necesita ayuda de terceras personas o tiene movilidad reducida
+    familia_numerosa                    → true si tiene título de familia numerosa
+    familia_numerosa_especial           → true si el título es de categoría especial
+    familia_monoparental                → true si es familia monoparental
+    hijos_nacidos_en_el_ejercicio       → hijos nacidos o adoptados en el año
+    gastos_libros_texto                 → pagado en el año en libros de texto y material escolar
+    gastos_cuidado_familiares           → pagado a cuidadores, guarderías o centros por cuidar hijos, mayores o personas con discapacidad
+    num_familiares_discapacidad_a_cargo → TOTAL de ascendientes y descendientes con discapacidad que dependen de él; si dice cuáles son hijos y cuáles padres o abuelos, emite además num_descendientes_discapacidad y num_ascendientes_discapacidad
+    menores_acogidos                    → menores en acogimiento familiar
+    hijos_adoptados_en_el_ejercicio     → hijos adoptados en el año
+    donativos_autonomicos               → TOTAL donado en el año a las entidades que incentiva su comunidad autónoma
+    inversion_vivienda_habitual         → TOTAL pagado en el año por comprar o rehabilitar su vivienda habitual, intereses incluidos
+    inversion_empresas_nueva_creacion   → invertido en acciones o participaciones de empresas nuevas
+    gastos_eficiencia_energetica        → TOTAL pagado en obras de mejora energética de su vivienda habitual (aislamiento, ventanas, calderas, renovables…)
+    gastos_salud                        → TOTAL de gastos sanitarios no cubiertos por un seguro (honorarios médicos, dentista, gafas…); si detalla el tipo, emite además la parte (gastos_salud_bucodental, gastos_optica…)
+    gastos_deporte_cultura              → TOTAL de gastos de deporte y de cultura; si los distingue, emite además gastos_deporte o gastos_cultura
+    viudedad                            → true si es viudo o viuda
+    vivienda_en_municipio_rural         → true si la vivienda que compra está en un municipio rural o en riesgo de despoblación
+    municipio_rural_o_despoblacion      → true si vive en un municipio pequeño, rural o en riesgo de despoblación
+    progenitores_trabajan               → true si él y, si lo hay, el otro progenitor o cónyuge trabajan (por cuenta ajena o propia) de alta en la Seguridad Social o mutualidad
+    victima_violencia_genero            → true si tiene reconocida la condición de víctima de violencia de género
+    victima_terrorismo                  → true si tiene reconocida la condición de víctima del terrorismo
+    vivienda_protegida                  → true si su vivienda habitual es de protección pública
+    vivienda_nueva_construccion         → true si la vivienda que compra es de nueva construcción
+    primera_vivienda                    → true si es la primera vivienda que tiene en propiedad
+    bienes_en_el_extranjero             → true si tiene cuentas, valores o inmuebles fuera de España
+    es_autonomo                         → true si trabaja por cuenta propia (autónomo)
+    actividad_profesional               → true si su actividad es profesional (abogado, médico, programador, diseñador…); false si es empresarial (comercio, hostelería, taller…)
+    actividad_cumple_requisitos_dependiente → true SOLO si el usuario afirma que factura todo a un único cliente no vinculado (o es TRADE), sin sueldo aparte y con retención en casi todos sus ingresos
+    actividad_reduccion_inicio          → true SOLO si el usuario afirma que empezó la actividad sin haber ejercido ninguna el año anterior y este es su primer año con beneficio o el siguiente
+
+  value_string:
+    actividad_ceuta_melilla             → "ceuta" o "melilla" si desarrolla su actividad en una de esas ciudades
+
+  "gano 38.000 brutos al año, vivo en Valencia, tengo dos hijos, uno de 2 años"
+    → rendimiento_trabajo_bruto value_number=38000 · comunidad_autonoma value_string="Comunidad Valenciana"
+    → residencia_fiscal value_string="ES" · num_descendientes value_number=2 · num_descendientes_menores_3 value_number=1
+
 EJEMPLOS de mapeo concreto (sigue el mismo patrón):
 
   Usuario: "soy autónomo y facturo 45.000€ haciendo consultoría informática"
@@ -238,7 +394,7 @@ _RESPONSE_SCHEMA: dict[str, Any] = {
                     "type": "object",
                     "additionalProperties": False,
                     "properties": {
-                        "name": {"type": "string", "enum": list(KNOWN_FACT_NAMES)},
+                        "name": {"type": "string", "enum": list(EXTRACTOR_FACT_NAMES)},
                         "value_string": {"type": ["string", "null"]},
                         "value_number": {"type": ["number", "null"]},
                         "value_boolean": {"type": ["boolean", "null"]},
@@ -372,7 +528,7 @@ class OpenAIFactExtractor:
         facts: list[Fact] = []
         for raw in raw_facts:
             name = raw.get("name")
-            if name not in EXPECTED_FACT_TYPE:
+            if name not in EXPECTED_FACT_TYPE or name in DETALLE_FACT_TYPES:
                 continue
 
             expected = EXPECTED_FACT_TYPE[name]
@@ -414,6 +570,107 @@ class OpenAIFactExtractor:
             if existing is None or fact.confidence > existing.confidence:
                 by_name[fact.name] = fact
         return list(by_name.values())
+
+
+# --------------------------------------------------------------------------- #
+# Provider-neutral extractor (Claude by default; OpenAI / local via LLM_PROVIDER)
+# --------------------------------------------------------------------------- #
+
+# Kept as an alias so callers can catch one error type regardless of backend.
+FactExtractionError = OpenAIExtractionError
+
+_PROVIDER_PROMPT_SUFFIX = """
+
+FORMATO DE SALIDA (sustituye a la regla de slots anterior): cada hecho lleva un único campo `value`, siempre como
+TEXTO: los importes en euros solo con dígitos ("45000"), los booleanos como "true" o "false", y el resto tal como se
+describe arriba para `value_string`."""
+
+# One string-typed `value` per fact, coerced client-side. This avoids nullable
+# unions and numeric bounds, which not every provider's structured-output
+# implementation (nor most local servers) accepts.
+_PROVIDER_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "intent": {"type": "string", "enum": list(KNOWN_INTENTS)},
+        "intent_confidence": {"type": "number"},
+        "facts": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "name": {"type": "string", "enum": list(EXTRACTOR_FACT_NAMES)},
+                    "value": {"type": "string"},
+                    "confidence": {"type": "number"},
+                },
+                "required": ["name", "value", "confidence"],
+            },
+        },
+    },
+    "required": ["intent", "intent_confidence", "facts"],
+}
+
+
+class ProviderFactExtractor:
+    """Fact extractor on top of the agent's provider layer.
+
+    Runs on whatever ``LLM_PROVIDER`` selects (Claude, OpenAI or a local
+    OpenAI-compatible server) through ``LLMProvider.complete_json``, reusing the
+    same prompt vocabulary and the same client-side coercion/validation as
+    :class:`OpenAIFactExtractor`.
+    """
+
+    def __init__(self, provider: Any) -> None:
+        self._provider = provider
+
+    def extract(
+        self,
+        user_input: str,
+        chat_history: list[dict[str, str]] | list[str],
+        current_case_state: CaseState | None,
+    ) -> ExtractionPayload:
+        from hacienda_gpt.agent.providers.base import ProviderError
+
+        messages = OpenAIFactExtractor._build_messages(user_input, chat_history, current_case_state)
+        try:
+            data = self._provider.complete_json(
+                system=_SYSTEM_PROMPT + _PROVIDER_PROMPT_SUFFIX,
+                user=messages[1]["content"],
+                schema=_PROVIDER_SCHEMA,
+                schema_name="ExtractedFacts",
+            )
+        except ProviderError as exc:
+            raise FactExtractionError(f"Fact extraction failed: {exc}") from exc
+
+        intent = data.get("intent", "unknown")
+        if intent not in KNOWN_INTENTS:
+            intent = "unknown"
+        try:
+            confidence = float(data.get("intent_confidence", 0.0))
+        except (TypeError, ValueError):
+            confidence = 0.0
+        confidence = max(0.0, min(1.0, confidence))
+
+        raw_facts = [
+            {
+                "name": item.get("name"),
+                # A model that ignores "always text" and emits 45000 / true is
+                # still usable: route the value to the slot of its real type.
+                "value_string": item.get("value") if isinstance(item.get("value"), str) else None,
+                "value_number": (
+                    item.get("value")
+                    if isinstance(item.get("value"), int | float) and not isinstance(item.get("value"), bool)
+                    else None
+                ),
+                "value_boolean": item.get("value") if isinstance(item.get("value"), bool) else None,
+                "confidence": item.get("confidence", 0.5),
+            }
+            for item in data.get("facts") or []
+            if isinstance(item, dict)
+        ]
+        facts = OpenAIFactExtractor._materialize_facts(raw_facts)
+        return ExtractionPayload(intent=intent, intent_confidence=confidence, extracted_facts=facts)
 
 
 # --------------------------------------------------------------------------- #
@@ -550,12 +807,41 @@ def _coerce_value(
 # --------------------------------------------------------------------------- #
 
 
+def _provider_extractor() -> FactExtractor:
+    from hacienda_gpt import settings
+    from hacienda_gpt.agent.providers import create_provider
+
+    return ProviderFactExtractor(
+        create_provider(
+            model=os.environ.get("DECISION_EXTRACTOR_MODEL") or None,
+            # Extraction is a constrained, low-ambiguity task: it does not need
+            # the reasoning depth the advisor runs at.
+            effort=settings.DECISION_EXTRACTOR_EFFORT,
+        )
+    )
+
+
+def _provider_credentials_available() -> bool:
+    from hacienda_gpt import settings
+
+    provider = settings.LLM_PROVIDER.strip().lower()
+    if provider in ("anthropic", "claude"):
+        return bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"))
+    if provider == "local":
+        return bool(settings.LOCAL_LLM_MODEL)
+    return False  # "openai" keeps using the dedicated OpenAIFactExtractor below
+
+
 def default_fact_extractor() -> FactExtractor:
     """Pick the production default extractor based on environment.
 
-    `DECISION_EXTRACTOR=regex` forces the legacy regex behaviour. Otherwise
-    we use the OpenAI extractor if `OPENAI_API_KEY` is available; otherwise
-    fall back to the regex extractor with a log line.
+    ``DECISION_EXTRACTOR`` forces a backend: ``regex`` (offline heuristic),
+    ``openai`` (OpenAI structured output) or ``provider`` (whatever
+    ``LLM_PROVIDER`` selects: Claude, OpenAI or a local model).
+
+    Unset, the extractor follows ``LLM_PROVIDER`` when that provider is
+    configured (Claude key present, or a local model named), else uses OpenAI
+    if ``OPENAI_API_KEY`` is set, else falls back to regex with a log line.
     """
 
     choice = os.environ.get("DECISION_EXTRACTOR", "").strip().lower()
@@ -563,12 +849,16 @@ def default_fact_extractor() -> FactExtractor:
         return RegexFactExtractor()
     if choice in ("openai", "llm"):
         return OpenAIFactExtractor()
+    if choice == "provider":
+        return _provider_extractor()
 
+    if _provider_credentials_available():
+        return _provider_extractor()
     if os.environ.get("OPENAI_API_KEY"):
         return OpenAIFactExtractor()
 
     logger.warning(
-        "OPENAI_API_KEY missing — falling back to RegexFactExtractor. "
-        "Set DECISION_EXTRACTOR=openai with a valid key for full extraction."
+        "No LLM credentials found (ANTHROPIC_API_KEY / OPENAI_API_KEY / LOCAL_LLM_MODEL) — falling back to "
+        "RegexFactExtractor, which only detects a handful of facts."
     )
     return RegexFactExtractor()

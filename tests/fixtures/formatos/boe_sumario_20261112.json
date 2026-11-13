@@ -1,0 +1,318 @@
+{
+ "status": {
+  "code": "200",
+  "text": "ok"
+ },
+ "data": {
+  "sumario": {
+   "metadatos": {
+    "publicacion": "BOE",
+    "fecha_publicacion": "20261112"
+   },
+   "diario": [
+    {
+     "numero": "282",
+     "sumario_diario": {
+      "identificador": "BOE-S-2026-282",
+      "url_pdf": {
+       "szBytes": "418936",
+       "szKBytes": "409",
+       "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-S-2026-282.pdf"
+      }
+     },
+     "seccion": [
+      {
+       "codigo": "1",
+       "nombre": "I. Disposiciones generales",
+       "departamento": [
+        {
+         "codigo": "1410",
+         "nombre": "TRIBUNAL CONSTITUCIONAL",
+         "epigrafe": [
+          {
+           "nombre": "Conflictos constitucionales",
+           "item": {
+            "identificador": "BOE-A-2026-23662",
+            "control": "2026/17514",
+            "titulo": "Conflicto positivo de competencia n.º 6108-2026, contra determinados preceptos del Real Decreto 326/2026, de 22 de abril, por el que se regula el Plan Estatal de Vivienda 2026-2030.",
+            "url_pdf": {
+             "szBytes": "189750",
+             "szKBytes": "185",
+             "pagina_inicial": "152477",
+             "pagina_final": "152477",
+             "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-A-2026-23662.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23662",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23662"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9562",
+         "nombre": "MINISTERIO DE ASUNTOS EXTERIORES, UNIÓN EUROPEA Y COOPERACIÓN",
+         "epigrafe": [
+          {
+           "nombre": "Subvenciones",
+           "item": {
+            "identificador": "BOE-A-2026-23663",
+            "control": "2026/17660",
+            "titulo": "Real Decreto 976/2026, de 11 de noviembre, por el que se regula la concesión directa de subvenciones para la cooperación internacional al desarrollo sostenible por la Secretaría de Estado de Cooperación Internacional del Ministerio de Asuntos Exteriores, Unión Europea y Cooperación.",
+            "url_pdf": {
+             "szBytes": "342691",
+             "szKBytes": "335",
+             "pagina_inicial": "152478",
+             "pagina_final": "152499",
+             "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-A-2026-23663.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23663",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23663"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9591",
+         "nombre": "MINISTERIO DE INDUSTRIA Y TURISMO",
+         "epigrafe": [
+          {
+           "nombre": "Subvenciones",
+           "item": {
+            "identificador": "BOE-A-2026-23664",
+            "control": "2026/17666",
+            "titulo": "Real Decreto 982/2026, de 11 de noviembre, por el que se modifica el Real Decreto 1009/2022, de 5 de diciembre, por el que se establecen las normas reguladoras de la concesión directa de un préstamo a la empresa Airbus Helicopters España, S.A.U., para el programa de los helicópteros Tigre MKIII.",
+            "url_pdf": {
+             "szBytes": "234307",
+             "szKBytes": "229",
+             "pagina_inicial": "152500",
+             "pagina_final": "152505",
+             "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-A-2026-23664.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23664",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23664"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "codigo": "2A",
+       "nombre": "II. Autoridades y personal. - A. Nombramientos, situaciones e incidencias",
+       "departamento": [
+        {
+         "codigo": "1820",
+         "nombre": "CONSEJO GENERAL DEL PODER JUDICIAL",
+         "epigrafe": [
+          {
+           "nombre": "Destinos",
+           "item": {
+            "identificador": "BOE-A-2026-23670",
+            "control": "2026/17517",
+            "titulo": "Orden de 3 de noviembre de 2026, por la que se destina a los Jueces y Juezas que se relacionan, como consecuencia del concurso resuelto por Acuerdo de la Comisión Permanente del Consejo General del Poder Judicial.",
+            "url_pdf": {
+             "szBytes": "196985",
+             "szKBytes": "192",
+             "pagina_inicial": "152569",
+             "pagina_final": "152570",
+             "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-A-2026-23670.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23670",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23670"
+           }
+          },
+          {
+           "nombre": "Situaciones",
+           "item": {
+            "identificador": "BOE-A-2026-23671",
+            "control": "2026/14246",
+            "titulo": "Acuerdo de 28 de julio de 2026, de la Comisión Permanente del Consejo General del Poder Judicial, por el que se declara la jubilación forzosa de la Magistrada doña María Carmen Zubimendi Alcorta.",
+            "url_pdf": {
+             "szBytes": "191489",
+             "szKBytes": "187",
+             "pagina_inicial": "152571",
+             "pagina_final": "152571",
+             "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-A-2026-23671.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23671",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23671"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9585",
+         "nombre": "MINISTERIO DE LA PRESIDENCIA, JUSTICIA Y RELACIONES CON LAS CORTES",
+         "epigrafe": [
+          {
+           "nombre": "Destinos",
+           "item": {
+            "identificador": "BOE-A-2026-23672",
+            "control": "2026/17519",
+            "titulo": "Resolución de 5 de noviembre de 2026, de la Subsecretaría, por la que se resuelve el concurso específico, convocado por Resolución de 24 de agosto de 2026.",
+            "url_pdf": {
+             "szBytes": "271381",
+             "szKBytes": "265",
+             "pagina_inicial": "152572",
+             "pagina_final": "152574",
+             "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-A-2026-23672.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23672",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23672"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "310",
+         "nombre": "UNIVERSIDADES",
+         "epigrafe": [
+          {
+           "nombre": "Nombramientos",
+           "item": [
+            {
+             "identificador": "BOE-A-2026-23673",
+             "control": "2026/17387",
+             "titulo": "Resolución de 30 de octubre de 2026, de la Universidad de Alicante, por la que se nombra Profesor Titular de Universidad a don Javier Martínez Falcó.",
+             "url_pdf": {
+              "szBytes": "191410",
+              "szKBytes": "187",
+              "pagina_inicial": "152575",
+              "pagina_final": "152575",
+              "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-A-2026-23673.pdf"
+             },
+             "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23673",
+             "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23673"
+            },
+            {
+             "identificador": "BOE-A-2026-23674",
+             "control": "2026/17388",
+             "titulo": "Resolución de 30 de octubre de 2026, de la Universidad de Alicante, por la que se nombra Profesora Titular de Universidad a doña Elena Gutiérrez Pérez.",
+             "url_pdf": {
+              "szBytes": "191676",
+              "szKBytes": "187",
+              "pagina_inicial": "152576",
+              "pagina_final": "152576",
+              "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-A-2026-23674.pdf"
+             },
+             "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23674",
+             "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23674"
+            },
+            {
+             "identificador": "BOE-A-2026-23675",
+             "control": "2026/17389",
+             "titulo": "Resolución de 30 de octubre de 2026, de la Universitat Politècnica de València, por la que se nombran Catedráticas y Catedráticos de Universidad.",
+             "url_pdf": {
+              "szBytes": "194323",
+              "szKBytes": "190",
+              "pagina_inicial": "152577",
+              "pagina_final": "152577",
+              "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-A-2026-23675.pdf"
+             },
+             "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23675",
+             "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23675"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "codigo": "2B",
+       "nombre": "II. Autoridades y personal. - B. Oposiciones y concursos",
+       "departamento": [
+        {
+         "codigo": "1820",
+         "nombre": "CONSEJO GENERAL DEL PODER JUDICIAL",
+         "epigrafe": [
+          {
+           "nombre": "Carrera Judicial",
+           "item": {
+            "identificador": "BOE-A-2026-23689",
+            "control": "2026/17540",
+            "titulo": "Acuerdo de 3 de noviembre de 2026, de la Comisión Permanente del Consejo General del Poder Judicial, por el que se convoca concurso para la provisión de cargos judiciales entre miembros de la Carrera Judicial, con categoría de Juez/a.",
+            "url_pdf": {
+             "szBytes": "221703",
+             "szKBytes": "217",
+             "pagina_inicial": "152595",
+             "pagina_final": "152600",
+             "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-A-2026-23689.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23689",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23689"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "9585",
+         "nombre": "MINISTERIO DE LA PRESIDENCIA, JUSTICIA Y RELACIONES CON LAS CORTES",
+         "epigrafe": [
+          {
+           "nombre": "Procedimientos de libre designación",
+           "item": {
+            "identificador": "BOE-A-2026-23690",
+            "control": "2026/17542",
+            "titulo": "Resolución de 5 de noviembre de 2026, de la Subsecretaría, por la que se convoca la provisión de puesto de trabajo por el sistema de libre designación.",
+            "url_pdf": {
+             "szBytes": "275154",
+             "szKBytes": "269",
+             "pagina_inicial": "152601",
+             "pagina_final": "152603",
+             "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-A-2026-23690.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23690",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23690"
+           }
+          }
+         ]
+        },
+        {
+         "codigo": "5140",
+         "nombre": "MINISTERIO DE HACIENDA",
+         "epigrafe": [
+          {
+           "nombre": "Personal laboral",
+           "item": {
+            "identificador": "BOE-A-2026-23691",
+            "control": "2026/17543",
+            "titulo": "Resolución de 4 de noviembre de 2026, de la Presidencia de la Autoridad Independiente de Responsabilidad Fiscal, AAI, por la que se convoca proceso selectivo para la provisión de plaza de personal laboral fijo, fuera de convenio, con la categoría de Titulado Superior.",
+            "url_pdf": {
+             "szBytes": "303823",
+             "szKBytes": "297",
+             "pagina_inicial": "152604",
+             "pagina_final": "152617",
+             "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-A-2026-23691.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23691",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23691"
+           }
+          },
+          {
+           "nombre": "Procedimientos de libre designación",
+           "item": {
+            "identificador": "BOE-A-2026-23692",
+            "control": "2026/17611",
+            "titulo": "Resolución de 8 de noviembre de 2026, de la Subsecretaría, por la que se corrigen errores en la de 28 de octubre de 2026, por la que se convoca la provisión de puestos de trabajo por el sistema de libre designación.",
+            "url_pdf": {
+             "szBytes": "194904",
+             "szKBytes": "190",
+             "pagina_inicial": "152618",
+             "pagina_final": "152619",
+             "texto": "https://www.boe.es/boe/dias/2026/11/12/pdfs/BOE-A-2026-23692.pdf"
+            },
+            "url_html": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23692",
+            "url_xml": "https://www.boe.es/diario_boe/xml.php?id=BOE-A-2026-23692"
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

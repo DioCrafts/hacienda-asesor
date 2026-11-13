@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 from statistics import mean
+from typing import TypedDict
 
 import click
 from langchain_core.messages import AIMessage, HumanMessage
@@ -10,7 +11,13 @@ from langchain_core.messages import AIMessage, HumanMessage
 from hacienda_gpt.llm.chain import create_openai_chain
 from hacienda_gpt.utils import get_openai_api_key
 
-GOLDEN_SET: list[dict[str, str | list[str]]] = [
+
+class GoldenItem(TypedDict):
+    question: str
+    must_include: list[str]
+
+
+GOLDEN_SET: list[GoldenItem] = [
     {
         "question": "¿Dónde puedo consultar el calendario del contribuyente?",
         "must_include": ["calendario", "contribuyente"],

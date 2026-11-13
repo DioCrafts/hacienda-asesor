@@ -53,7 +53,6 @@ jobs:
     runs-on: ubuntu-latest
     # mypy is not enforced yet (never run in CI before); keep it informational
     # so it surfaces type issues without blocking until the backlog is cleared.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -62,3 +61,21 @@ jobs:
           enable-cache: true
       - run: uv sync
       - run: uv run mypy hacienda_gpt
+
+  # React frontend: type-check, lint and production build.
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx tsc -b
+      - run: npm run lint
+      - run: npm run build

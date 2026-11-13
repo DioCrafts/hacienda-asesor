@@ -1,0 +1,12 @@
+{
+  "fuente": "boletin_madrid_bocm",
+  "version": 1,
+  "descripcion": "Listado de resultados del buscador: Boletín Oficial de la Comunidad de Madrid (HTML). Selectores históricos del rastreador.",
+  "origen": "incorporada",
+  "reglas": {
+    "item_xpath": "//div[contains(@class, 'resultado')]",
+    "title_xpath": ".//h3//text()",
+    "date_xpath": ".//span[contains(@class, 'fecha')]//text()",
+    "link_xpath": ".//a/@href"
+  }
+}

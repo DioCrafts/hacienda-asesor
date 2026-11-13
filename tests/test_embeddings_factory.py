@@ -9,9 +9,9 @@ the integration suite that runs only on Apple Silicon.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import sys
 import types
-from pathlib import Path
 from typing import Any
 
 import pytest

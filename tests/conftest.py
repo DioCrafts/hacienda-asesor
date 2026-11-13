@@ -1,5 +1,16 @@
+import os
 import sys
+import tempfile
 import types
+
+import pytest
+
+# The format watch (hacienda_gpt/ops/formatos.py) records every real read under ./data by default.
+# Switched off through the environment, before ``settings`` is first imported, so that it also holds
+# for module- and session-scoped fixtures and survives the tests that reload ``settings``.
+os.environ["FORMAT_WATCH"] = "false"
+os.environ["FORMAT_STATE_PATH"] = os.path.join(tempfile.gettempdir(), "hacienda-tests-formatos", "_estado.json")
+os.environ["FORMAT_DIR"] = os.path.join(tempfile.gettempdir(), "hacienda-tests-formatos", "formatos")
 
 
 def _ensure_module(name: str) -> types.ModuleType:
@@ -208,3 +219,13 @@ def pytest_sessionstart(session):
 
     lc_emb = _ensure_module("langchain_core.embeddings")
     lc_emb.Embeddings = object
+
+
+@pytest.fixture(autouse=True)
+def _formatos_sin_rastro(monkeypatch, tmp_path):
+    """The format watch writes state and samples on every real read: keep tests from touching ./data."""
+    from hacienda_gpt import settings
+
+    monkeypatch.setattr(settings, "FORMAT_WATCH", False, raising=False)
+    monkeypatch.setattr(settings, "FORMAT_STATE_PATH", str(tmp_path / "_formatos_state.json"), raising=False)
+    monkeypatch.setattr(settings, "FORMAT_DIR", str(tmp_path / "formatos"), raising=False)

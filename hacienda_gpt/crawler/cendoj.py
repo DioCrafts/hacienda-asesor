@@ -29,8 +29,11 @@ import re
 from typing import Any
 
 import parsel
+from pydantic import BaseModel, ConfigDict, field_validator
 import scrapy
 from scrapy.http import Response
+
+from hacienda_gpt.ops import formatos
 
 CENDOJ_BASE_URL = "https://www.poderjudicial.es"
 CENDOJ_DEFAULT_USER_AGENT = "hacienda-asesor/0.1 (research; contacto@hacienda-asesor.local)"
@@ -71,24 +74,91 @@ _PONENTE_PATTERN = re.compile(r"Ponente\s*:?\s*([^\n<]+)", re.IGNORECASE)
 _SALA_PATTERN = re.compile(r"Sala\s+(Tercera|3[ªa\.]+|de\s+lo\s+Contencioso[\w\s\-]*)", re.IGNORECASE)
 
 
-def parse_cendoj_document(html: str, *, source_url: str | None = None) -> dict[str, Any]:
-    """Parse a CENDOJ document HTML into a structured metadata dict.
+# Below this many words of visible text (scripts and styles aside) the page is not a ruling (the portal's
+# JavaScript shell or an error page): the format watch flags it. Counted in words, not characters, so that
+# it reads the same on the structural skeleton the watch keeps instead of the ruling (see formatos_esqueleto).
+MIN_PALABRAS_DOCUMENTO = 30
 
-    Unlike DYCTEA there is no negative marker — even unknown URLs return
-    structured pages — so the caller decides whether to keep the result
-    based on the ``is_tributario`` flag.
+
+_TEXTO_VISIBLE = "//body//text()[not(ancestor::script) and not(ancestor::style)]"
+
+
+class ReglasCendoj(BaseModel):
+    """What the parser knows about a CENDOJ document page, as format-spec data (``cendoj_documento``).
+
+    Version 1 of the spec holds the body XPath, ``_ROJ_PATTERN``, ``_ECLI_PATTERN``,
+    ``_DATE_PATTERN``, the "Ponente" label and ``_SALA_PATTERN`` above (flags
+    inline); a reviewed proposal may replace them. The tax-keyword lists are
+    classification, not format, and stay in the code.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    # Where the visible text of the ruling is.
+    texto_xpath: str
+    # Group 1: "STS n/aaaa".
+    patron_roj: str
+    # Group 1: the ECLI without its prefix.
+    patron_ecli: str
+    # Groups 1-3: day, month, year of the first date in the text.
+    patron_fecha: str
+    # The label the reporting judge is introduced with (matched literally, case-insensitive).
+    etiqueta_ponente: str
+    patron_sala: str
+
+    @field_validator("patron_roj", "patron_ecli", "patron_fecha", "patron_sala")
+    @classmethod
+    def _patron(cls, value: str) -> str:
+        return formatos.patron_seguro(value)
+
+    @field_validator("patron_roj", "patron_ecli")
+    @classmethod
+    def _un_grupo(cls, value: str) -> str:
+        if re.compile(value).groups < 1:
+            raise ValueError("el patrón debe capturar el identificador en el grupo 1")
+        return value
+
+    @field_validator("patron_fecha")
+    @classmethod
+    def _tres_grupos(cls, value: str) -> str:
+        if re.compile(value).groups != 3:
+            raise ValueError("el patrón de fecha debe tener tres grupos: día, mes y año")
+        return value
+
+    @field_validator("etiqueta_ponente")
+    @classmethod
+    def _etiqueta(cls, value: str) -> str:
+        if not value.strip() or len(value) > 40 or "\n" in value:
+            raise ValueError("la etiqueta del ponente debe ser una palabra o frase corta")
+        return value
+
+    @field_validator("texto_xpath")
+    @classmethod
+    def _xpath(cls, value: str) -> str:
+        try:
+            parsel.Selector(text="<html><body></body></html>").xpath(value)
+        except ValueError as exc:
+            raise ValueError(f"XPath no válido: {exc}") from exc
+        return value
+
+
+def extraer_documento(reglas: ReglasCendoj, html: str) -> dict[str, Any]:
+    """The metadata of a ruling according to ``reglas`` (pure: no clock, no URL), plus ``palabras``.
+
+    ``palabras`` (words of visible text, scripts and styles aside) is only for
+    the format watch; :func:`parse_cendoj_document` leaves it out.
     """
     selector = parsel.Selector(text=html)
-    body_text = " ".join(selector.xpath("//body//text()").getall())
+    body_text = " ".join(selector.xpath(reglas.texto_xpath).getall())
     cleaned = re.sub(r"\s+", " ", body_text).strip()
 
-    roj = _first_match(_ROJ_PATTERN, cleaned)
+    roj = _first_match(re.compile(reglas.patron_roj), cleaned)
     if roj:
         roj = re.sub(r"\s+", " ", roj).strip()
-    ecli = _first_match(_ECLI_PATTERN, cleaned)
-    fecha = _extract_first_date(cleaned)
-    ponente = _extract_after_label(cleaned, "Ponente")
-    sala = _normalise_sala(cleaned)
+    ecli = _first_match(re.compile(reglas.patron_ecli), cleaned)
+    fecha = _extract_first_date(cleaned, re.compile(reglas.patron_fecha))
+    ponente = _extract_after_label(cleaned, reglas.etiqueta_ponente)
+    sala = _normalise_sala(cleaned, re.compile(reglas.patron_sala))
 
     return {
         "source_authority": (
@@ -103,11 +173,39 @@ def parse_cendoj_document(html: str, *, source_url: str | None = None) -> dict[s
         "ecli": ecli,
         "fecha_resolucion": fecha.isoformat() if fecha else None,
         "ponente": ponente,
-        "source_url": source_url,
         "is_tributario": _classify_tributario(cleaned),
         "tributos_detectados": _detect_tributos(cleaned),
+        "palabras": len(" ".join(selector.xpath(_TEXTO_VISIBLE).getall()).split()),
+    }
+
+
+def parse_cendoj_document(html: str, *, source_url: str | None = None) -> dict[str, Any]:
+    """Parse a CENDOJ document HTML into a structured metadata dict.
+
+    Unlike DYCTEA there is no negative marker — even unknown URLs return
+    structured pages — so the caller decides whether to keep the result
+    based on the ``is_tributario`` flag.
+    """
+    campos = extraer_documento(formatos.reglas_de("cendoj_documento", ReglasCendoj), html)
+    return {
+        "source_authority": campos["source_authority"],
+        "source_hierarchy_rank": campos["source_hierarchy_rank"],
+        "tribunal": campos["tribunal"],
+        "sala": campos["sala"],
+        "roj": campos["roj"],
+        "ecli": campos["ecli"],
+        "fecha_resolucion": campos["fecha_resolucion"],
+        "ponente": campos["ponente"],
+        "source_url": source_url,
+        "is_tributario": campos["is_tributario"],
+        "tributos_detectados": campos["tributos_detectados"],
         "ingested_at": datetime.now(UTC).isoformat(),
     }
+
+
+def observar_documento(html: str, *, contexto: str = "") -> None:
+    """Report one ruling read to the format watch (never raises, never changes what was parsed)."""
+    formatos.observar("cendoj_documento", html, contexto=contexto)
 
 
 def _classify_tributario(text: str) -> bool:
@@ -149,8 +247,8 @@ def _detect_tributos(text: str) -> list[str]:
     return detected
 
 
-def _normalise_sala(text: str) -> str | None:
-    match = _SALA_PATTERN.search(text)
+def _normalise_sala(text: str, pattern: re.Pattern[str] = _SALA_PATTERN) -> str | None:
+    match = pattern.search(text)
     if not match:
         return None
     raw = match.group(0)
@@ -161,8 +259,8 @@ def _normalise_sala(text: str) -> str | None:
     return raw.strip()
 
 
-def _extract_first_date(text: str) -> date | None:
-    match = _DATE_PATTERN.search(text)
+def _extract_first_date(text: str, pattern: re.Pattern[str] = _DATE_PATTERN) -> date | None:
+    match = pattern.search(text)
     if not match:
         return None
     day, month, year = (int(group) for group in match.groups())
@@ -234,6 +332,8 @@ class CENDOJCrawler(scrapy.Spider):
     def parse_document(self, response: Response, slot: int) -> None:
         html = response.text
         metadata = parse_cendoj_document(html, source_url=response.url)
+        # Format watch: a page in another layout parses without ROJ, ECLI or date, as if it were a minor ruling.
+        observar_documento(html, contexto=response.url)
         if self.only_tributario and not metadata["is_tributario"]:
             self.logger.debug("Skipping non-tributario resolution at %s", response.url)
             return

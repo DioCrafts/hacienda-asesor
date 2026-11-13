@@ -1,82 +1,90 @@
-// Composer = suggested chips + rounded input pill with circular send.
-//
-// Suggested chips share state with the input through the parent (App)
-// so clicking a chip drives the same submit pathway as typing.
+// Composer: an auto-growing text box. Enter sends, Shift+Enter adds a line;
+// while a turn is running the send button becomes a stop button.
 
-import { ArrowUp, Sparkles } from "lucide-react";
-import { useState } from "react";
-
-import { SUGGESTED_QUESTIONS } from "../lib/mock";
+import { ArrowUp, Square } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 interface ComposerProps {
   onSubmit: (text: string) => void;
-  disabled?: boolean;
-  placeholder?: string;
+  onStop: () => void;
+  busy: boolean;
+  // Text to start with (e.g. the question restored after the user pressed stop).
+  // The parent remounts the composer (via `key`) to apply a new one.
+  initialValue?: string;
 }
 
-export function Composer({
-  onSubmit,
-  disabled = false,
-  placeholder = "Pregúntame sobre IRPF, IVA, autónomos…",
-}: ComposerProps) {
-  const [value, setValue] = useState("");
+const MAX_HEIGHT_PX = 180;
 
-  function submit(text: string) {
-    const trimmed = text.trim();
-    if (!trimmed || disabled) return;
+export function Composer({ onSubmit, onStop, busy, initialValue = "" }: ComposerProps) {
+  const [value, setValue] = useState(initialValue);
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, MAX_HEIGHT_PX)}px`;
+  }, [value]);
+
+  useEffect(() => {
+    if (!busy) ref.current?.focus();
+  }, [busy]);
+
+  function submit() {
+    const trimmed = value.trim();
+    if (!trimmed || busy) return;
     onSubmit(trimmed);
     setValue("");
   }
 
   return (
-    <div className="mt-4 space-y-3">
-      <div className="flex flex-wrap gap-2">
-        {SUGGESTED_QUESTIONS.map((q) => (
-          <button
-            key={q}
-            type="button"
-            onClick={() => submit(q)}
-            disabled={disabled}
-            className="group flex items-center gap-1.5 rounded-pill border border-line bg-surface px-3 py-1.5 text-[13px] font-medium text-ink-soft transition hover:border-primary hover:bg-primary-soft hover:text-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Sparkles
-              size={13}
-              className="text-primary group-hover:text-primary-dark"
-            />
-            {q}
-          </button>
-        ))}
-      </div>
-
+    <div>
       <form
-        className="flex items-center gap-2 rounded-2xl border border-line bg-surface px-5 py-2.5 shadow-card"
+        className="flex items-end gap-2 rounded-2xl border border-line bg-surface py-2 pl-4 pr-2 shadow-card transition focus-within:border-primary"
         onSubmit={(e) => {
           e.preventDefault();
-          submit(value);
+          submit();
         }}
       >
-        <input
-          type="text"
+        <textarea
+          ref={ref}
+          rows={1}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          disabled={disabled}
-          placeholder={placeholder}
-          className="flex-1 bg-transparent text-[15px] text-ink placeholder:text-muted focus:outline-none disabled:opacity-60"
-          aria-label={placeholder}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+          placeholder="Escribe tu consulta fiscal…"
+          aria-label="Escribe tu consulta"
+          className="max-h-[180px] flex-1 resize-none self-center bg-transparent py-1.5 text-[16px] leading-snug sm:text-[15px] text-ink placeholder:text-muted focus:outline-none"
         />
-        <button
-          type="submit"
-          disabled={disabled || !value.trim()}
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Enviar"
-        >
-          <ArrowUp size={18} />
-        </button>
+        {busy ? (
+          <button
+            type="button"
+            onClick={onStop}
+            aria-label="Detener la respuesta"
+            title="Detener"
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-ink text-paper transition hover:opacity-80"
+          >
+            <Square size={13} fill="currentColor" />
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={!value.trim()}
+            aria-label="Enviar"
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ArrowUp size={18} />
+          </button>
+        )}
       </form>
-
-      <p className="text-center text-[12px] text-muted">
-        HaciendaGPT puede equivocarse y se abstiene si no encuentra base
-        normativa. Verifica siempre con un profesional.
+      <p className="mt-2 text-center text-[11.5px] text-muted">
+        <span className="hidden sm:inline">Intro para enviar · Mayús + Intro para salto de línea · </span>
+        Puede equivocarse: contrasta lo importante con un profesional.
       </p>
     </div>
   );
