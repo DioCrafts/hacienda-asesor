@@ -157,7 +157,11 @@ def run_daily(db_path: str | None, hoy: date | None) -> None:
     caso. No usa ningún LLM."""
     path = db_path or settings.DECISION_STATE_DB_PATH
     summary = ejecutar_para_todos(
-        SQLiteCaseStateStore(path), NotificationStore(path), hoy=hoy or hoy_en_espana(), auth=_auth_de(path)
+        SQLiteCaseStateStore(path),
+        NotificationStore(path),
+        hoy=hoy or hoy_en_espana(),
+        auth=_auth_de(path),
+        preparar_modulos=True,
     )
     click.echo(json.dumps(summary, ensure_ascii=False))
 

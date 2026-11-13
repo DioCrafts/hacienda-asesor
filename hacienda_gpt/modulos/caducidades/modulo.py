@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from hacienda_gpt.modulos.caducidades.agenda import avisos_de_agenda
 from hacienda_gpt.modulos.caducidades.hechos import (
@@ -111,8 +112,18 @@ localices y su fragmento literal, confirma con él y después caducidades_regist
 
 @dataclass
 class ModuloCaducidades(ModuloBase):
+    # The core's document hook: an uploaded receipt proposes a purchase, which the user confirms and then
+    # registers with this tool.
+    herramienta_de_documento = "caducidades_registrar_compra"
+
     def avisos(self, contexto: ContextoModulo) -> list[AvisoModulo]:
         return avisos_de_agenda(contexto.perfil, contexto.hoy)
+
+    def leer_documento(self, provider: Any, *, filename: str, data: bytes) -> Any:
+        """Propose a purchase from an uploaded receipt (see :func:`ticket.leer_ticket`)."""
+        from hacienda_gpt.modulos.caducidades.ticket import leer_ticket
+
+        return leer_ticket(provider, filename=filename, data=data)
 
 
 def _fuentes() -> tuple[FuenteModulo, ...]:

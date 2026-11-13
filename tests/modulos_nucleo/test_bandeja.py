@@ -218,3 +218,27 @@ def test_the_same_renewal_from_two_modules_is_grouped_in_the_digest(store) -> No
         "  (probablemente lo mismo, avisado también por otro módulo) [Suscripciones] Cargo anual"
     )
     assert lineas[2].startswith("- [Luz] Factura de la luz")
+
+
+def test_daily_tasks_run_once_before_the_notices_and_never_raise(tmp_path, store) -> None:
+    cases = SQLiteCaseStateStore(str(tmp_path / "c.db"))
+    cases.save_case(make_case("a"))
+    cases.save_case(make_case("b"))
+    orden: list[str] = []
+    llamadas = Llamadas()
+    modulo = agua(llamadas, avisos_fijos=[aviso("x")])
+    roto = seguros(llamadas)
+    modulo.tarea_diaria = lambda hoy: orden.append(f"tarea {hoy}")  # type: ignore[attr-defined]
+
+    def falla(hoy):
+        raise RuntimeError("sin red")
+
+    roto.tarea_diaria = falla  # type: ignore[attr-defined]
+    original = modulo.avisos
+    modulo.avisos = lambda ctx: (orden.append("avisos"), original(ctx))[1]  # type: ignore[method-assign]
+    summary = ejecutar_para_todos(
+        cases, store, hoy=HOY, modulos_de=lambda c: [FISCAL, modulo, roto], preparar_modulos=True
+    )
+    assert orden == [f"tarea {HOY}", "avisos", "avisos"]
+    assert summary["tareas_modulos"] == {"agua": "ok", "seguros": "error: RuntimeError"}
+    assert summary["modulos"] == {"agua": 2, "seguros": 0}

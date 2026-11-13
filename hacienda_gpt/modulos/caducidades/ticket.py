@@ -27,8 +27,8 @@ from hacienda_gpt.agent.providers.base import Attachment
 from hacienda_gpt.tax.documentos import (
     DocumentoEscaneadoError,
     DocumentoNoLegibleError,
-    _normalize,
     extract_text,
+    normalizar_pasaje,
     tipo_de_imagen,
 )
 
@@ -136,7 +136,7 @@ def _valor_en_evidencia(campo: str, valor: str, evidencia: str) -> str | None:
         importe = leidos[0]
         return str(importe.quantize(Decimal("0.01"))) if importe in importes_en(evidencia) else None
     limpio = " ".join(valor.split())
-    if len(_normalize(limpio)) < 2 or _normalize(limpio) not in _normalize(evidencia):
+    if len(normalizar_pasaje(limpio)) < 2 or normalizar_pasaje(limpio) not in normalizar_pasaje(evidencia):
         return None
     return limpio[:120]
 
@@ -157,7 +157,11 @@ def _validar(
         if not isinstance(valor, str | int | float) or isinstance(valor, bool):
             descartados.append(str(campo))
             continue
-        if not isinstance(evidencia, str) or len(_normalize(evidencia)) < 4 or _normalize(evidencia) not in haystack:
+        if (
+            not isinstance(evidencia, str)
+            or len(normalizar_pasaje(evidencia)) < 4
+            or normalizar_pasaje(evidencia) not in haystack
+        ):
             descartados.append(str(campo))
             continue
         canonico = _valor_en_evidencia(str(campo), str(valor), evidencia)
@@ -194,7 +198,7 @@ def verificar_propuesta(texto: str, propuesta: list[dict[str, Any]] | None = Non
     """Check ``propuesta`` (items {campo, valor, evidencia}) against ``texto`` and add what reads without a model."""
     if len(texto) > MAX_TEXTO:
         texto = texto[:MAX_TEXTO]
-    haystack = _normalize(texto)
+    haystack = normalizar_pasaje(texto)
     aceptados, descartados = _validar(propuesta or [], haystack, "texto")
     automaticos = extraer_sin_modelo(texto)
     avisos: list[str] = []
@@ -278,7 +282,9 @@ def _leer_imagen(provider: Any, adjunto: Attachment, filename: str) -> Propuesta
         )
         transcripcion = raw.get("transcripcion") if isinstance(raw, dict) else ""
         campos = raw.get("campos") if isinstance(raw, dict) else []
-        lecturas.append(_validar(campos, _normalize(transcripcion if isinstance(transcripcion, str) else ""), "imagen"))
+        lecturas.append(
+            _validar(campos, normalizar_pasaje(transcripcion if isinstance(transcripcion, str) else ""), "imagen")
+        )
     (primera, desc_1), (segunda, desc_2) = lecturas
     coinciden = {c: v for c, v in primera.items() if c in segunda and segunda[c].valor == v.valor}
     discrepan = sorted((set(primera) | set(segunda)) - set(coinciden))

@@ -887,3 +887,37 @@ Los módulos (`hacienda_gpt/modulos/<clave>/`) se descubren al arrancar; no hay 
   `fuera_del_boe`: su formato lo vigila el adaptador de cada módulo.
 - Acciones pendientes (`acciones_pendientes`, mismo fichero SQLite): las crea un especialista cuando llama a
   una herramienta `actua`; solo se ejecutan con `POST /acciones/{id}/confirmar` del dueño del caso.
+- **Tarea diaria de cada módulo.** `run-daily` ejecuta, una vez y **antes** de los avisos por caso, la tarea
+  diaria de cada módulo activado para algún caso (hoy: `ayudas` → `actualizar_convocatorias(hoy)`, que lee
+  del BOE las convocatorias nuevas de los días aún no leídos y nunca lanza excepciones; un día que falla se
+  reintenta al siguiente). El resultado aparece en `tareas_modulos` del resumen. Si nadie tiene el módulo
+  activado, no se ejecuta (ni se hace ninguna petición).
+- **Datos que el usuario sube a un módulo** (un extracto bancario para `suscripciones`) van por
+  `POST /modulos/{clave}/herramientas/{nombre}` directamente a la herramienta: no pasan por el modelo de
+  lenguaje, ni por los registros, ni por la auditoría (solo se audita el nombre de los argumentos); lo que
+  se guarda es lo que la herramienta deduce (sus hechos).
+- **Resumen semanal y avisos repetidos.** Dos avisos de módulos distintos con fecha de vencimiento a 3 días
+  o menos y una palabra significativa común en el título (p. ej. la renovación de un seguro que avisan
+  `caducidades` y `suscripciones`) se muestran juntos en el resumen («probablemente lo mismo»). No se borra
+  ninguno: cada módulo conserva su aviso en la bandeja.
+- **Propuestas para la declaración** (`GET /propuestas?case_id=`): cifras que un módulo conoce y que un
+  dato fiscal necesita. Hoy: `hipoteca` → `pagos_vivienda_habitual_pre2013` (capital + intereses +
+  amortizaciones anticipadas del ejercicio según el cuadro), solo si el préstamo es de la vivienda habitual
+  comprada antes de 2013 y el dato falta. Nunca se escribe sola: el usuario la acepta en «Módulos».
+
+### Variables de entorno de los módulos
+
+Todas opcionales; los detalles, en `docs/modulos/<clave>.md`.
+
+| Variable | Por defecto | Módulo | Para qué |
+|---|---|---|---|
+| `AYUDAS_DATA_DIR` | `./data/modulos/ayudas` | ayudas | Almacén de convocatorias leídas del BOE (fuera de git). |
+| `AYUDAS_BOE_AUTOMATICO` | desactivada | ayudas | `1`: el propio `avisos` lanza la revisión diaria del BOE (innecesario con `run-daily`, que ya la lanza antes). |
+| `AYUDAS_BDNS` | desactivada | ayudas | `1`: consulta la BDNS para el plazo exacto (adaptador probado solo con datos de ejemplo). |
+| `AYUDAS_CLASIFICADOR_LLM` | desactivada | ayudas | `1`: clasificador LLM en los casos dudosos, si el núcleo registra uno (hoy no lo registra). |
+| `LUZ_ESIOS_TOKEN` | — | luz | Token de la API de REE (ESIOS) para los precios; sin él, el módulo trabaja con lo que el usuario aporta. |
+| `LUZ_UMBRAL_AHORRO_EUR` | (ver doc del módulo) | luz | Ahorro anual mínimo para avisar de un cambio de tarifa. |
+| `SUSCRIPCIONES_DIAS_AVISO_RENOVACION` | `30` | suscripciones | Días de antelación del aviso de renovación (1 a 120). |
+| `SUSCRIPCIONES_ETIQUETADOR_LLM` | apagado | suscripciones | `1`: etiquetador LLM de comercios, si el núcleo registra la función (hoy no la registra). |
+| `HIPOTECA_DIAS_AVISO_REVISION` | `45` | hipoteca | Días de antelación del aviso de revisión del tipo. |
+| `HIPOTECA_UMBRAL_AVISO_EUR` | `20` | hipoteca | Cambio de cuota mínimo para avisar de un índice nuevo. |

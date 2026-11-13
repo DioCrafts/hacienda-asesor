@@ -405,13 +405,15 @@ def ejecutar_para_todos(
     hoy: date,
     modulos_de: Callable[[CaseState], Sequence[Any]] | None = None,
     auth: Any | None = None,
+    preparar_modulos: bool = False,
 ) -> dict[str, Any]:
     """Run both jobs over every case that is not closed. One failing case never stops the batch.
 
     Then the household modules switched on for each case's owner (``modulos_de``; by default the owner's
     choices in ``auth``, or the defaults) write their notices (see :mod:`hacienda_gpt.proactive.bandeja`). The
     summary gains ``modulos`` (notices per module) and ``errores_modulos`` only when some module beyond the
-    tax one is on, so a tax-only deployment reports exactly what it always did.
+    tax one is on, so a tax-only deployment reports exactly what it always did. ``preparar_modulos`` (the
+    ``run-daily`` command) first runs each such module's daily task once (e.g. reading the day's calls for aid).
     """
     summary: dict[str, Any] = {"hoy": hoy.isoformat(), "cases": 0, "plazo": 0, "fin_de_ejercicio": 0, "errors": 0}
     for case in case_store.list_all_cases():
@@ -435,7 +437,9 @@ def ejecutar_para_todos(
         return modulos_activos_para_caso(case.case_id, auth)
 
     try:
-        modulos = avisos_de_modulos_para_todos(case_store, store, hoy=hoy, modulos_de=modulos_de or por_defecto)
+        modulos = avisos_de_modulos_para_todos(
+            case_store, store, hoy=hoy, modulos_de=modulos_de or por_defecto, preparar=preparar_modulos
+        )
     except Exception:  # the household modules never take the tax jobs down with them
         logger.exception("Household module notices failed")
         modulos = {"modulos": {}, "errores_modulos": 1}

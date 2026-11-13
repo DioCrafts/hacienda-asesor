@@ -118,16 +118,57 @@ def avisos_de_modulos(
     return creados, fallidos
 
 
+# Daily preparation a module needs before its per-case notices (e.g. reading the day's BOE for new calls
+# for aid). Generic hook: ``MODULO.tarea_diaria(hoy)``; the names below are the modules' own entry points,
+# looked up in their package (proposed for the contract as ``tarea_diaria``).
+TAREAS_DIARIAS: dict[str, str] = {"ayudas": "actualizar_convocatorias"}
+
+
+def tarea_diaria_de(modulo: Modulo) -> Callable[[date], Any] | None:
+    tarea = getattr(modulo, "tarea_diaria", None)
+    if callable(tarea):
+        return tarea  # type: ignore[no-any-return]
+    nombre = TAREAS_DIARIAS.get(modulo.clave)
+    if nombre is None:
+        return None
+    import importlib
+
+    funcion = getattr(importlib.import_module(f"hacienda_gpt.modulos.{modulo.clave}"), nombre, None)
+    return funcion if callable(funcion) else None
+
+
+def preparar_modulos(modulos: Sequence[Modulo], *, hoy: date) -> dict[str, Any]:
+    """Run each module's daily task once (before the notices). A failing task is logged, never raised."""
+    hechas: dict[str, Any] = {}
+    for modulo in modulos:
+        try:
+            tarea = tarea_diaria_de(modulo)
+            if tarea is None:
+                continue
+            resultado = tarea(hoy)
+            hechas[modulo.clave] = "ok" if resultado is None else str(getattr(resultado, "resumen", resultado))[:300]
+        except Exception as exc:
+            logger.exception("Daily task of module %s failed", modulo.clave)
+            hechas[modulo.clave] = f"error: {type(exc).__name__}"
+    return hechas
+
+
 def avisos_de_modulos_para_todos(
     case_store: SQLiteCaseStateStore,
     store: NotificationStore,
     *,
     hoy: date,
     modulos_de: Callable[[CaseState], Sequence[Modulo]],
+    preparar: bool = False,
 ) -> dict[str, Any]:
-    """The module notices over every open case: ``{"modulos": {clave: creados}, "errores_modulos": n}``."""
+    """The module notices over every open case: ``{"modulos": {clave: creados}, "errores_modulos": n}``.
+
+    With ``preparar`` (the daily runner), the daily task of every module that is on for at least one case
+    runs once first (see :data:`TAREAS_DIARIAS`); its outcome is under ``tareas_modulos``.
+    """
     por_modulo: dict[str, int] = {}
     errores = 0
+    por_caso: list[tuple[CaseState, list[Modulo]]] = []
     for case in case_store.list_all_cases():
         if case.status == CaseStatus.CLOSED:
             continue
@@ -137,13 +178,20 @@ def avisos_de_modulos_para_todos(
             logger.exception("Could not tell which modules are on for case %s", case.case_id)
             errores += 1
             continue
-        if not modulos:
-            continue
+        if modulos:
+            por_caso.append((case, modulos))
+    resumen: dict[str, Any] = {}
+    if preparar:
+        usados = {m.clave: m for _case, modulos in por_caso for m in modulos}
+        tareas = preparar_modulos(list(usados.values()), hoy=hoy)
+        if tareas:
+            resumen["tareas_modulos"] = tareas
+    for case, modulos in por_caso:
         creados, fallidos = avisos_de_modulos(case, hoy=hoy, store=store, modulos=modulos)
         for clave, n in creados.items():
             por_modulo[clave] = por_modulo.get(clave, 0) + n
         errores += len(fallidos)
-    return {"modulos": por_modulo, "errores_modulos": errores}
+    return {"modulos": por_modulo, "errores_modulos": errores, **resumen}
 
 
 # --------------------------------------------------------------------------- #
