@@ -6,6 +6,12 @@
 // Two tabs: «Tus datos» (figures — from the case or typed —, the spouse's figures and the user's
 // constraints) and «Tu plan». A plan computed from other inputs than the ones on screen is marked
 // as outdated until it is recalculated.
+//
+// Everything on «Tus datos» starts from the case: the user's own facts, the spouse's figures
+// (fact `datos_conyuge`) and the constraints (fact `preferencias_optimizacion`); what the user types
+// is layered over them until «Guardar en mi expediente» writes it. The request always carries the
+// screen's spouse figures and constraints in full, so the server's stored defaults never add
+// something the screen does not show.
 
 import {
   ArrowRight,
@@ -32,6 +38,7 @@ import type { Fact } from "../api";
 import { ApiError } from "../api";
 import type { Declaracion, OptimizeRequest, PalancaElegida, PalancaNoDisponible, PlanOptimo, PosicionLatente, Restricciones, ResultadoHogar, TipoActivo, Titular } from "../apiOptimizador";
 import { optimizar } from "../apiOptimizador";
+import { DATOS_CONYUGE, PREFERENCIAS_OPTIMIZACION, type StoredPosition, type StoredPreferences, parseStoredObject, storedNumber, storedPositions } from "../lib/expediente";
 import { newId } from "../lib/id";
 import {
   CAUSA_LABEL,
@@ -196,6 +203,44 @@ interface Position {
 
 type Iliquidez = "" | "si" | "no";
 type Tab = "datos" | "plan";
+type TributacionPrevista = "individual" | "conjunta_biparental";
+
+// The money constraints of the form (fields of `preferencias_optimizacion` too).
+const LIMIT_NAMES = [
+  "aportacion_maxima_pensiones",
+  "aportacion_maxima_pensiones_conyuge",
+  "donativo_previsto",
+  "presupuesto_donativos",
+  "donativo_recurrente_importe_anterior",
+] as const;
+type LimitName = (typeof LIMIT_NAMES)[number];
+// The case's own facts the plan does NOT depend on through `perfil`: the screen sends their content in full.
+const PLAN_INPUT_FACTS = new Set([DATOS_CONYUGE, PREFERENCIAS_OPTIMIZACION]);
+const TIPOS = new Set<string>(TIPO_ACTIVO.map((t) => t.value));
+
+/** A stored latent position as a row of the form (rows stored without an id get a stable one). */
+function storedRow(p: StoredPosition, clase: Position["clase"], index: number): Position {
+  return {
+    id: p.id ?? `guardada-${clase}-${index + 1}`,
+    clase,
+    descripcion: p.descripcion ?? "",
+    importe: amountText(storedNumber(p.importe) ?? 0),
+    tipo: p.tipo && TIPOS.has(p.tipo) ? (p.tipo as TipoActivo) : "valores_cotizados",
+    titular: p.titular === "conyuge" ? "conyuge" : "contribuyente",
+  };
+}
+
+/** A typed box as what it states ("" = nothing), so «1.500» and «1500,00» are the same figure. */
+function stated(kind: Kind, raw: string | undefined): string {
+  if (kind === "flag") return raw === "true" ? "true" : "";
+  const n = parseAmount(raw);
+  return n === null ? "" : String(n);
+}
+
+/** The rows as what would be stored (same order, trimmed description, parsed amount). */
+function rowsKey(rows: Position[]): string {
+  return JSON.stringify(rows.map((p) => [p.id, p.clase, p.descripcion.trim(), parseAmount(p.importe), p.tipo, p.titular]));
+}
 
 interface Computed {
   plan: PlanOptimo;
@@ -426,11 +471,12 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   const [comunidadEdit, setComunidadEdit] = useState<string | null>(null);
   const [estadoEdit, setEstadoEdit] = useState<string | null>(null);
   const [extraFields, setExtraFields] = useState<string[]>([]);
-  const [spouse, setSpouse] = useState<Record<string, string>>({});
-  const [tributacionActual, setTributacionActual] = useState<"individual" | "conjunta_biparental">("individual");
-  const [limits, setLimits] = useState<Record<string, string>>({});
-  const [iliquidez, setIliquidez] = useState<Iliquidez>("");
-  const [positions, setPositions] = useState<Position[]>([]);
+  // The spouse's figures and the constraints typed over what the case keeps (absent / null = what it says).
+  const [spouseEdits, setSpouseEdits] = useState<Record<string, string>>({});
+  const [tributacionEdit, setTributacionEdit] = useState<TributacionPrevista | null>(null);
+  const [limitEdits, setLimitEdits] = useState<Partial<Record<LimitName, string>>>({});
+  const [iliquidezEdit, setIliquidezEdit] = useState<Iliquidez | null>(null);
+  const [positionsEdit, setPositionsEdit] = useState<Position[] | null>(null);
   const [fechaEdit, setFechaEdit] = useState<string | null>(null);
   const [cifrasOpen, setCifrasOpen] = useState<boolean | null>(null);
   const [sections, setSections] = useState<Record<string, boolean>>({});
@@ -465,11 +511,49 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   const savedComunidad = useMemo(() => comunidadDeExpediente(facts.find((f) => f.name === "comunidad_autonoma")?.value), [facts]);
   const savedEstado = useMemo(() => estadoDeExpediente(facts.find((f) => f.name === "estado_civil")?.value), [facts]);
   const caseChildren = useMemo(() => childrenInCase(facts), [facts]);
+  const storedSpouse = useMemo(() => parseStoredObject(facts.find((f) => f.name === DATOS_CONYUGE)?.value), [facts]);
+  const storedPrefs = useMemo(
+    () => parseStoredObject(facts.find((f) => f.name === PREFERENCIAS_OPTIMIZACION)?.value) as StoredPreferences | null,
+    [facts],
+  );
+  const spouseBaseline = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const def of SPOUSE) {
+      const v = storedSpouse?.[def.name];
+      if (typeof v === "boolean") map[def.name] = String(v);
+      else if (storedNumber(v) !== null) map[def.name] = amountText(storedNumber(v) ?? 0);
+    }
+    return map;
+  }, [storedSpouse]);
+  const limitsBaseline = useMemo(() => {
+    const map: Partial<Record<LimitName, string>> = {};
+    for (const name of LIMIT_NAMES) {
+      const n = storedNumber(storedPrefs?.[name]);
+      if (n !== null) map[name] = amountText(n);
+    }
+    return map;
+  }, [storedPrefs]);
+  const positionsBaseline = useMemo(
+    () => [
+      ...storedPositions(storedPrefs?.perdidas_latentes).map((p, i) => storedRow(p, "perdida", i)),
+      ...storedPositions(storedPrefs?.ganancias_latentes).map((p, i) => storedRow(p, "ganancia", i)),
+    ],
+    [storedPrefs],
+  );
+  const iliquidezBaseline: Iliquidez = storedPrefs?.acepta_iliquidez === true ? "si" : storedPrefs?.acepta_iliquidez === false ? "no" : "";
+  const tributacionBaseline: TributacionPrevista = storedPrefs?.tributacion_prevista === "conjunta_biparental" ? "conjunta_biparental" : "individual";
   const conExpediente = Boolean(caseId);
   const caseHasIncome = ["rendimiento_trabajo_bruto", "rendimiento_actividad_neto"].some((name) => name in baseline);
   const showCifras = cifrasOpen ?? !(conExpediente && caseHasIncome);
 
   const value = (name: string) => edits[name] ?? baseline[name] ?? "";
+  const spouseValue = (name: string) => spouseEdits[name] ?? spouseBaseline[name] ?? "";
+  const limitValue = (name: LimitName) => limitEdits[name] ?? limitsBaseline[name] ?? "";
+  const iliquidez = iliquidezEdit ?? iliquidezBaseline;
+  const positions = positionsEdit ?? positionsBaseline;
+  const tributacionActual = tributacionEdit ?? tributacionBaseline;
+  /** Edit the rows (the first edit starts from the stored ones). */
+  const setPositions = (update: (prev: Position[]) => Position[]) => setPositionsEdit((prev) => update(prev ?? positionsBaseline));
   const comunidad = comunidadEdit ?? savedComunidad;
   const estado = estadoEdit ?? savedEstado;
   const married = estado === "casado";
@@ -510,25 +594,29 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   }
   if (estadoEdit !== null && estadoEdit !== savedEstado && estadoEdit) datos.estado_civil = estadoEdit;
 
-  const conyuge: Record<string, number | boolean> = {};
+  // Every field of the spouse's section, null when empty: it replaces what the case keeps, field by field.
+  const conyuge: Record<string, number | boolean | null> = {};
+  let spouseGiven = false;
   if (married) {
     for (const def of SPOUSE) {
+      const raw = spouseValue(def.name);
+      conyuge[def.name] = null;
       if (def.kind === "flag") {
-        if (spouse[def.name] === "true") conyuge[def.name] = true;
-        continue;
+        if (raw === "true") conyuge[def.name] = true;
+      } else {
+        const problem = fieldProblem(def.kind, raw);
+        if (problem) problems[`opt-conyuge-${def.name}`] = problem;
+        const n = parseAmount(raw);
+        if (!problem && n !== null) conyuge[def.name] = n;
       }
-      const problem = fieldProblem(def.kind, spouse[def.name]);
-      if (problem) problems[`opt-conyuge-${def.name}`] = problem;
-      const n = parseAmount(spouse[def.name]);
-      if (!problem && n !== null) conyuge[def.name] = n;
+      if (conyuge[def.name] !== null) spouseGiven = true;
     }
   }
-  const spouseGiven = Object.keys(conyuge).length > 0;
-  if (spouseGiven && tributacionActual === "conjunta_biparental") datos.tributacion = "conjunta_biparental";
+  // Sent either way: a stored «conjunta» must not stay the starting point when the screen says «individual».
+  if (spouseGiven) datos.tributacion = tributacionActual;
 
-  const restricciones: Restricciones = {};
-  const limit = (name: keyof Restricciones, positive = false): number | undefined => {
-    const raw = limits[name];
+  const limit = (name: LimitName, positive = false): number | undefined => {
+    const raw = limitValue(name);
     if (!raw || !raw.trim()) return undefined;
     const n = parseAmount(raw);
     if (n === null) problems[`opt-${name}`] = "Escribe una cifra, por ejemplo 1.500,50.";
@@ -537,19 +625,14 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
     return undefined;
   };
   const pensionMax = limit("aportacion_maxima_pensiones");
-  if (pensionMax !== undefined) restricciones.aportacion_maxima_pensiones = pensionMax;
   const pensionMaxConyuge = married ? limit("aportacion_maxima_pensiones_conyuge") : undefined;
-  if (pensionMaxConyuge !== undefined && spouseGiven) restricciones.aportacion_maxima_pensiones_conyuge = pensionMaxConyuge;
-  if (iliquidez) restricciones.acepta_iliquidez = iliquidez === "si";
   const previsto = limit("donativo_previsto");
-  if (previsto) restricciones.donativo_previsto = previsto;
-  const presupuesto = limit("presupuesto_donativos");
-  if (presupuesto !== undefined) {
-    if (presupuesto < (previsto ?? 0)) problems["opt-presupuesto_donativos"] = "No puede ser menor que el donativo que ya vas a hacer.";
-    else restricciones.presupuesto_donativos = presupuesto;
+  let presupuesto = limit("presupuesto_donativos");
+  if (presupuesto !== undefined && presupuesto < (previsto ?? 0)) {
+    problems["opt-presupuesto_donativos"] = "No puede ser menor que el donativo que ya vas a hacer.";
+    presupuesto = undefined;
   }
   const recurrente = limit("donativo_recurrente_importe_anterior", true);
-  if (recurrente !== undefined) restricciones.donativo_recurrente_importe_anterior = recurrente;
   const perdidas: PosicionLatente[] = [];
   const ganancias: PosicionLatente[] = [];
   for (const pos of positions) {
@@ -564,8 +647,17 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
     if (pos.descripcion.trim()) item.descripcion = pos.descripcion.trim();
     (pos.clase === "perdida" ? perdidas : ganancias).push(item);
   }
-  if (perdidas.length) restricciones.perdidas_latentes = perdidas;
-  if (ganancias.length) restricciones.ganancias_latentes = ganancias;
+  // Every constraint, null / 0 / [] when not stated: the screen, not the case's stored preferences, decides the run.
+  const restricciones: Restricciones = {
+    aportacion_maxima_pensiones: pensionMax ?? null,
+    aportacion_maxima_pensiones_conyuge: (spouseGiven ? pensionMaxConyuge : undefined) ?? null,
+    acepta_iliquidez: iliquidez ? iliquidez === "si" : null,
+    donativo_previsto: previsto ?? 0,
+    presupuesto_donativos: presupuesto ?? null,
+    donativo_recurrente_importe_anterior: recurrente ?? null,
+    perdidas_latentes: perdidas,
+    ganancias_latentes: ganancias,
+  };
   if (fechaEdit !== null && !/^\d{4}-\d{2}-\d{2}$/.test(fechaEdit)) problems["opt-fecha"] = "Elige una fecha.";
 
   const problemIds = Object.keys(problems);
@@ -573,16 +665,18 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   const body: OptimizeRequest = { datos, restricciones };
   if (caseId) body.case_id = caseId;
   else if (taxYear !== null) body.ejercicio = taxYear;
-  if (spouseGiven) body.conyuge = conyuge;
+  // Married: the spouse's figures on screen, or explicitly none (the case's stored ones are not used).
+  if (married) body.conyuge = spouseGiven ? conyuge : null;
   if (fechaEdit !== null && fechaEdit !== today) body.fecha = fechaEdit;
   // What the plan depends on: the case's facts and the figures typed over them, the spouse, the
-  // constraints and the date. Saving typed figures to the case leaves it unchanged.
+  // constraints and the date. Saving what is on screen to the case leaves it unchanged (the spouse's
+  // figures and the constraints count through the request, which carries them in full).
   const perfil: Record<string, unknown> = {};
-  for (const fact of facts) perfil[fact.name] = fact.value;
+  for (const fact of facts) if (!PLAN_INPUT_FACTS.has(fact.name)) perfil[fact.name] = fact.value;
   Object.assign(perfil, datos);
   const key = JSON.stringify({
     perfil: Object.fromEntries(Object.entries(perfil).sort(([a], [b]) => a.localeCompare(b))),
-    conyuge: body.conyuge ?? null,
+    conyuge: body.conyuge === undefined ? "sin cónyuge" : body.conyuge,
     restricciones,
     fecha: body.fecha ?? null,
     ejercicio: body.ejercicio ?? null,
@@ -590,11 +684,70 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   });
   const stale = computed !== null && computed.key !== key;
 
-  // What «Guardar en mi expediente» would write: [fact, value | null to delete].
+  // What «Guardar en mi expediente» would write: [fact, value | null to delete], and how many changes that is.
   const pendientes: Array<[string, string | number | boolean | null]> = [];
   for (const [name, v] of Object.entries(datos)) {
     if (name === "tributacion") continue;
     pendientes.push([name, name in baseline && v === 0 && !(edits[name] ?? "").trim() ? null : (v as string | number | boolean)]);
+  }
+  let cambios = pendientes.length;
+
+  // The spouse's figures: one fact, written whole (figures this screen does not show are kept), only
+  // when none of its boxes has a problem. Each changed box is one change.
+  const spouseOk = married && !SPOUSE.some((def) => problems[`opt-conyuge-${def.name}`]);
+  const spouseChanges = spouseOk ? SPOUSE.filter((def) => stated(def.kind, spouseValue(def.name)) !== stated(def.kind, spouseBaseline[def.name])).length : 0;
+  if (spouseChanges > 0) {
+    const next: Record<string, unknown> = { ...(storedSpouse ?? {}) };
+    for (const def of SPOUSE) {
+      const now = stated(def.kind, spouseValue(def.name));
+      if (!now) delete next[def.name];
+      else next[def.name] = def.kind === "flag" ? true : Number(now);
+    }
+    // No box of the section left: the spouse's figures are removed (hidden ones alone would describe nobody).
+    pendientes.push([DATOS_CONYUGE, SPOUSE.some((def) => def.name in next) ? JSON.stringify(next) : null]);
+    cambios += spouseChanges;
+  }
+
+  // The constraints: one fact, written whole, only when none of them has a problem. What is hidden
+  // (the spouse's limit and filing plan of a user who is not married) keeps its stored value.
+  const prefProblem = Object.keys(problems).some(
+    (id) => LIMIT_NAMES.some((name) => id === `opt-${name}`) || id.startsWith("opt-pos-"),
+  );
+  let prefChanges = 0;
+  if (!prefProblem) {
+    for (const name of LIMIT_NAMES) {
+      if (name === "aportacion_maxima_pensiones_conyuge" && !married) continue;
+      const zeroIsNone = name === "donativo_previsto";
+      const now = stated("money", limitValue(name));
+      const before = stated("money", limitsBaseline[name]);
+      if ((zeroIsNone && now === "0" ? "" : now) !== (zeroIsNone && before === "0" ? "" : before)) prefChanges += 1;
+    }
+    if (iliquidez !== iliquidezBaseline) prefChanges += 1;
+    if (rowsKey(positions) !== rowsKey(positionsBaseline)) prefChanges += 1;
+    if (married && tributacionActual !== tributacionBaseline) prefChanges += 1;
+  }
+  if (prefChanges > 0) {
+    const next: StoredPreferences = {};
+    for (const name of LIMIT_NAMES) {
+      const raw = name === "aportacion_maxima_pensiones_conyuge" && !married ? limitsBaseline[name] : limitValue(name);
+      const n = parseAmount(raw);
+      if (n !== null && !(name === "donativo_previsto" && n === 0)) next[name] = n;
+    }
+    if (iliquidez) next.acepta_iliquidez = iliquidez === "si";
+    const row = (p: Position): StoredPosition => {
+      const item: StoredPosition = { id: p.id, importe: parseAmount(p.importe) ?? 0, tipo: p.tipo, titular: p.titular };
+      if (p.descripcion.trim()) item.descripcion = p.descripcion.trim();
+      return item;
+    };
+    const perdidasGuardar = positions.filter((p) => p.clase === "perdida").map(row);
+    const gananciasGuardar = positions.filter((p) => p.clase === "ganancia").map(row);
+    if (perdidasGuardar.length) next.perdidas_latentes = perdidasGuardar;
+    if (gananciasGuardar.length) next.ganancias_latentes = gananciasGuardar;
+    // The filing plan only once the user chose it (the screen's «individual» is a default, not a statement).
+    const tributacion = married ? (tributacionEdit ?? storedPrefs?.tributacion_prevista) : storedPrefs?.tributacion_prevista;
+    if (tributacion) next.tributacion_prevista = tributacion;
+    pendientes.push([PREFERENCIAS_OPTIMIZACION, Object.keys(next).length ? JSON.stringify(next) : null]);
+    cambios += prefChanges;
   }
 
   if (!open) return null;
@@ -691,10 +844,29 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
         });
         if (name === "comunidad_autonoma") setComunidadEdit(null);
         if (name === "estado_civil") setEstadoEdit(null);
+        if (name === DATOS_CONYUGE) setSpouseEdits({});
+        if (name === PREFERENCIAS_OPTIMIZACION) {
+          setLimitEdits({});
+          setIliquidezEdit(null);
+          setPositionsEdit(null);
+          setTributacionEdit(null);
+        }
       }
     } finally {
       setSaving(false);
     }
+  }
+
+  /** Back to what the case says, everywhere on «Tus datos» (the date of the plan is not in the case). */
+  function undoChanges() {
+    setEdits({});
+    setComunidadEdit(null);
+    setEstadoEdit(null);
+    setSpouseEdits({});
+    setTributacionEdit(null);
+    setLimitEdits({});
+    setIliquidezEdit(null);
+    setPositionsEdit(null);
   }
 
   function sendToSimulator() {
@@ -722,6 +894,7 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
   }
 
   const setEdit = (name: string, raw: string) => setEdits((prev) => ({ ...prev, [name]: raw }));
+  const limitDirty = (name: LimitName) => conExpediente && stated("money", limitValue(name)) !== stated("money", limitsBaseline[name]);
   const toggle = (name: string) => setSections((prev) => ({ ...prev, [name]: !prev[name] }));
 
   // ---- Form ---------------------------------------------------------------------------------
@@ -856,36 +1029,6 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
                 </div>
               )}
             </Group>
-            {conExpediente && onSaveFact && pendientes.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => void saveToCase()}
-                  disabled={saving || busy}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-[13px] font-semibold text-primary-dark transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Save size={14} aria-hidden />
-                  {saving ? "Guardando…" : `Guardar ${pendientes.length === 1 ? "este cambio" : `estos ${pendientes.length} cambios`} en mi expediente`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEdits({});
-                    setComunidadEdit(null);
-                    setEstadoEdit(null);
-                  }}
-                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-soft hover:bg-line/60"
-                >
-                  <RotateCcw size={14} aria-hidden />
-                  Deshacer cambios
-                </button>
-                {saveError && (
-                  <p role="alert" className="w-full text-[12.5px] font-semibold text-risk-high-fg">
-                    {saveError}
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         </Collapsible>
 
@@ -893,16 +1036,20 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
           <div className="rounded-xl border border-line bg-surface px-4 py-3.5">
           <Group
             title="Tu cónyuge"
-            note="Para comparar la declaración conjunta con las individuales hacen falta sus cifras por separado. Sin ellas, el plan no puede valorar la conjunta."
+            note={
+              "Para comparar la declaración conjunta con las individuales hacen falta sus cifras por separado. Sin ellas, el plan no puede valorar la conjunta." +
+              (storedSpouse ? " Las que ya tienes guardadas en tu expediente aparecen rellenas." : "")
+            }
           >
             {SPOUSE.map((def) => (
               <Field
                 key={def.name}
                 id={`opt-conyuge-${def.name}`}
                 def={def}
-                value={spouse[def.name] ?? ""}
-                onChange={(raw) => setSpouse((prev) => ({ ...prev, [def.name]: raw }))}
+                value={spouseValue(def.name)}
+                onChange={(raw) => setSpouseEdits((prev) => ({ ...prev, [def.name]: raw }))}
                 problem={problems[`opt-conyuge-${def.name}`]}
+                dirty={conExpediente && stated(def.kind, spouseValue(def.name)) !== stated(def.kind, spouseBaseline[def.name])}
               />
             ))}
             <div className="sm:col-span-2">
@@ -912,9 +1059,9 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
               <select
                 id="opt-tributacion-actual"
                 value={tributacionActual}
-                onChange={(e) => setTributacionActual(e.target.value === "conjunta_biparental" ? "conjunta_biparental" : "individual")}
+                onChange={(e) => setTributacionEdit(e.target.value === "conjunta_biparental" ? "conjunta_biparental" : "individual")}
                 aria-describedby="opt-tributacion-actual-hint"
-                className={clsx(INPUT, "mt-1 border-line focus:border-primary")}
+                className={clsx(INPUT, "mt-1", conExpediente && tributacionActual !== tributacionBaseline ? "border-primary" : "border-line focus:border-primary")}
               >
                 <option value="individual">Cada uno su declaración (individual)</option>
                 <option value="conjunta_biparental">Una declaración conjunta</option>
@@ -929,7 +1076,10 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
 
         <div className="border-t border-line pt-4">
           <h3 className="font-serif text-[16px] font-bold text-ink">Lo que puedes hacer antes de fin de año</h3>
-          <p className="mt-0.5 text-[12.5px] leading-snug text-ink-soft">El plan solo propone lo que aceptes aquí, y nunca por encima de los importes que indiques.</p>
+          <p className="mt-0.5 text-[12.5px] leading-snug text-ink-soft">
+            El plan solo propone lo que aceptes aquí, y nunca por encima de los importes que indiques.
+            {storedPrefs && " Lo que guardaste en tu expediente aparece ya rellenado."}
+          </p>
         </div>
 
         <Group title="Planes de pensiones">
@@ -941,17 +1091,19 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
               kind: "money",
               hint: "Este año, además de lo ya aportado. Vacío si no lo sabes: el plan supone que puedes llegar al máximo que reduce tu impuesto, y te lo dice.",
             }}
-            value={limits.aportacion_maxima_pensiones ?? ""}
-            onChange={(raw) => setLimits((prev) => ({ ...prev, aportacion_maxima_pensiones: raw }))}
+            value={limitValue("aportacion_maxima_pensiones")}
+            onChange={(raw) => setLimitEdits((prev) => ({ ...prev, aportacion_maxima_pensiones: raw }))}
             problem={problems["opt-aportacion_maxima_pensiones"]}
+            dirty={limitDirty("aportacion_maxima_pensiones")}
           />
           {married && (
             <Field
               id="opt-aportacion_maxima_pensiones_conyuge"
               def={{ name: "aportacion_maxima_pensiones_conyuge", label: "Y al plan de tu cónyuge", kind: "money", hint: "Igual: vacío si no lo sabes." }}
-              value={limits.aportacion_maxima_pensiones_conyuge ?? ""}
-              onChange={(raw) => setLimits((prev) => ({ ...prev, aportacion_maxima_pensiones_conyuge: raw }))}
+              value={limitValue("aportacion_maxima_pensiones_conyuge")}
+              onChange={(raw) => setLimitEdits((prev) => ({ ...prev, aportacion_maxima_pensiones_conyuge: raw }))}
               problem={problems["opt-aportacion_maxima_pensiones_conyuge"]}
+              dirty={limitDirty("aportacion_maxima_pensiones_conyuge")}
             />
           )}
           <fieldset className="sm:col-span-2" aria-describedby="opt-iliquidez-hint">
@@ -973,7 +1125,7 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
                     name="opt-iliquidez"
                     id={v === "si" ? "opt-acepta_iliquidez" : undefined}
                     checked={iliquidez === v}
-                    onChange={() => setIliquidez(v)}
+                    onChange={() => setIliquidezEdit(v)}
                     className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[rgb(var(--primary))]"
                   />
                   {label}
@@ -992,9 +1144,10 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
               kind: "money",
               hint: "El plan elige a qué tipo de entidad conviene hacerlo (y, si sois matrimonio, quién lo hace); no te propone donar más.",
             }}
-            value={limits.donativo_previsto ?? ""}
-            onChange={(raw) => setLimits((prev) => ({ ...prev, donativo_previsto: raw }))}
+            value={limitValue("donativo_previsto")}
+            onChange={(raw) => setLimitEdits((prev) => ({ ...prev, donativo_previsto: raw }))}
             problem={problems["opt-donativo_previsto"]}
+            dirty={limitDirty("donativo_previsto")}
           />
           <Field
             id="opt-presupuesto_donativos"
@@ -1004,9 +1157,10 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
               kind: "money",
               hint: "Si lo indicas, el plan puede proponerte donar algo más, nunca por encima de este importe. Donar siempre cuesta dinero: verás su coste neto.",
             }}
-            value={limits.presupuesto_donativos ?? ""}
-            onChange={(raw) => setLimits((prev) => ({ ...prev, presupuesto_donativos: raw }))}
+            value={limitValue("presupuesto_donativos")}
+            onChange={(raw) => setLimitEdits((prev) => ({ ...prev, presupuesto_donativos: raw }))}
             problem={problems["opt-presupuesto_donativos"]}
+            dirty={limitDirty("presupuesto_donativos")}
           />
           <div className="sm:col-span-2">
           <Field
@@ -1017,9 +1171,10 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
               kind: "money",
               hint: "Solo si le donas desde hace al menos dos años y el año pasado no le diste menos que el anterior: parte del donativo deduce más (art. 19.1 Ley 49/2002).",
             }}
-            value={limits.donativo_recurrente_importe_anterior ?? ""}
-            onChange={(raw) => setLimits((prev) => ({ ...prev, donativo_recurrente_importe_anterior: raw }))}
+            value={limitValue("donativo_recurrente_importe_anterior")}
+            onChange={(raw) => setLimitEdits((prev) => ({ ...prev, donativo_recurrente_importe_anterior: raw }))}
             problem={problems["opt-donativo_recurrente_importe_anterior"]}
+            dirty={limitDirty("donativo_recurrente_importe_anterior")}
           />
           </div>
         </Group>
@@ -1105,6 +1260,28 @@ export function OptimizerPanel({ open, onClose, caseId, facts, taxPeriod, onSave
                 Has cambiado datos: el plan calculado ya no corresponde a lo que has escrito.
               </p>
             )
+          )}
+          {conExpediente && onSaveFact && cambios > 0 && (
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void saveToCase()}
+                disabled={saving || busy}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2 text-[13px] font-semibold text-primary-dark transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Save size={14} aria-hidden />
+                {saving ? "Guardando…" : `Guardar ${cambios === 1 ? "este cambio" : `estos ${cambios} cambios`} en mi expediente`}
+              </button>
+              <button type="button" onClick={undoChanges} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-soft hover:bg-line/60">
+                <RotateCcw size={14} aria-hidden />
+                Deshacer cambios
+              </button>
+              {saveError && (
+                <p role="alert" className="w-full text-[12.5px] font-semibold text-risk-high-fg">
+                  {saveError}
+                </p>
+              )}
+            </div>
           )}
           <div className="flex flex-wrap items-center gap-2">
             <button

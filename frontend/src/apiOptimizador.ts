@@ -15,19 +15,25 @@ export type Titular = "contribuyente" | "conyuge";
 export type Tributacion = "individual" | "conjunta_biparental" | "conjunta_monoparental";
 
 export interface PosicionLatente {
+  /** The screen's row id; kept with the stored preferences, ignored by the optimiser. */
+  id?: string;
   descripcion?: string;
   importe: number;
   tipo?: TipoActivo;
   titular?: Titular;
 }
 
+/**
+ * With a case, every field NOT sent is taken from the preferences the case keeps
+ * (`preferencias_optimizacion`); `null` says «not stated» and overrides a stored value.
+ */
 export interface Restricciones {
-  aportacion_maxima_pensiones?: number;
-  aportacion_maxima_pensiones_conyuge?: number;
-  acepta_iliquidez?: boolean;
+  aportacion_maxima_pensiones?: number | null;
+  aportacion_maxima_pensiones_conyuge?: number | null;
+  acepta_iliquidez?: boolean | null;
   donativo_previsto?: number;
-  presupuesto_donativos?: number;
-  donativo_recurrente_importe_anterior?: number;
+  presupuesto_donativos?: number | null;
+  donativo_recurrente_importe_anterior?: number | null;
   perdidas_latentes?: PosicionLatente[];
   ganancias_latentes?: PosicionLatente[];
 }
@@ -36,7 +42,11 @@ export interface OptimizeRequest {
   case_id?: string;
   ejercicio?: number;
   datos: Record<string, unknown>;
-  conyuge?: Record<string, unknown>;
+  /**
+   * The spouse's figures. With a case they replace the stored ones (`datos_conyuge`) field by field
+   * (`null` removes one); omitted, a married user's stored figures are used; `null`, no spouse in this run.
+   */
+  conyuge?: Record<string, unknown> | null;
   restricciones: Restricciones;
   fecha?: string;
 }

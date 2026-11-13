@@ -2,6 +2,7 @@
 // Kept separate from components so they can be unit-tested in isolation.
 
 import type { AnswerMode, Citation, ClaimCheck, ClaimVerdict, Fact, ProgressEvent, RiskLevel } from "../api";
+import { DATOS_CONYUGE, PREFERENCIAS_OPTIMIZACION, preferencesSummary, spouseSummary } from "./expediente";
 
 export type SourceKind = "boe" | "manual" | "dgt" | "court" | "calc" | "other";
 
@@ -247,6 +248,8 @@ const FACT_LABEL: Record<string, string> = {
   num_hijos_gastos_educativos: "Hijos escolarizados con gastos educativos",
   num_hijos_primer_ciclo_infantil: "Hijos en primer ciclo de infantil (0-3)",
   descendientes: "Detalle de cada hijo",
+  datos_conyuge: "Cifras de tu cónyuge",
+  preferencias_optimizacion: "Preferencias del optimizador",
   edad_conyuge: "Edad de tu cónyuge",
   grado_discapacidad_conyuge: "Grado de discapacidad de tu cónyuge (%)",
   necesita_asistencia_conyuge: "Tu cónyuge necesita ayuda de terceras personas o tiene movilidad reducida",
@@ -402,6 +405,8 @@ export function factValue(fact: Pick<Fact, "name" | "value">): string {
   if (typeof value === "boolean") return value ? "Sí" : "No";
   if (typeof value === "number") return MONEY_FACTS.has(name) ? EUR.format(value) : String(value);
   if (name === "descendientes") return childrenSummary(value);
+  if (name === DATOS_CONYUGE) return spouseSummary(value);
+  if (name === PREFERENCIAS_OPTIMIZACION) return preferencesSummary(value);
   if (typeof value === "string") {
     if (name === "residencia_fiscal") return value === "ES" ? "España" : value === "OTHER" ? "Fuera de España" : value;
     const known = VALUE_LABEL[value];

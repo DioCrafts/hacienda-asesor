@@ -635,7 +635,13 @@ ha comprobado en cada ley y se dice como requisito.
 
 Petición (todo opcional salvo lo que necesite el cálculo; con `case_id`, los hechos
 del expediente son las cifras del usuario y `datos` las corrige; `fecha` por defecto
-es hoy en España):
+es hoy en España). Con `case_id`, lo que la petición no envía se toma también de dos
+datos del expediente que guarda la pantalla del optimizador: `datos_conyuge` (las
+cifras del cónyuge, solo si el usuario está casado) y `preferencias_optimizacion`
+(dinero para planes, donativo, inversiones con pérdidas o ganancias latentes, cómo
+pensabais declarar); lo enviado manda campo a campo, `"conyuge": null` deja fuera al
+cónyuge en esa ejecución, y el primer supuesto del plan dice qué se tomó del
+expediente:
 
 ```json
 {

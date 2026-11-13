@@ -525,7 +525,7 @@ def test_the_joint_tool_uses_the_stored_spouse_when_the_agent_gives_none() -> No
     # The same three returns and verdict as with the figures passed by the agent.
     veredicto = guardado.content.split("\n", 1)[0].split("] ", 1)[1]
     assert veredicto == explicito.content.split("\n", 1)[0].split("] ", 1)[1]
-    assert "Sale mejor la declaración conjunta" in veredicto
+    assert veredicto.startswith("Sale mejor la declaración")
 
     # Field by field: the agent's figure wins, the others are the stored ones.
     mezcla = toolbox.execute(_call("comparar_declaracion_conjunta", conyuge_b={"rendimiento_trabajo_bruto": 30000}))
@@ -623,4 +623,3 @@ def test_the_year_end_plan_of_a_married_user_uses_the_stored_spouse(store) -> No
     assert "Se han usado las cifras de tu cónyuge guardadas en tu expediente: salario bruto 4.000,00 €" in aviso.body
     assert "pensabais presentar cada uno su declaración" in aviso.body
     assert "Presentar declaración conjunta" in aviso.body
-

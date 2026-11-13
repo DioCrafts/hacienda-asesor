@@ -50,6 +50,27 @@ Todo lo persistente está en **un único fichero SQLite** (`DECISION_STATE_DB_PA
 | `notifications` | Avisos generados para cada expediente (plazos, plan de fin de año, cambios normativos), con importes estimados | |
 | `notification_deliveries` | Qué aviso se envió por qué canal y cuándo | Solo existe si se ha usado la entrega fuera de la aplicación. |
 
+### Lo que guarda el optimizador fiscal
+
+La pantalla «Optimizar mis impuestos» (y el asesor, con `registrar_hechos`) guarda en el
+expediente, como dos hechos más de `case_states`, lo que el usuario escribe en ella para no
+tener que repetirlo en cada consulta:
+
+| Hecho | Contenido | Para qué |
+|---|---|---|
+| `datos_conyuge` | Cifras propias del cónyuge: salario, cotizaciones, retenciones, rendimientos, ganancias, aportaciones a planes de pensiones, donativos, **edad, grado de discapacidad y si necesita ayuda de terceros** (lista cerrada en `DatosConyuge`, `hacienda_gpt/tax/profile.py`). | Comparar la declaración conjunta con las individuales. Se usan solo si el expediente dice que el usuario está casado (o si una consulta trae cifras del cónyuge). |
+| `preferencias_optimizacion` | Lo que el usuario puede y quiere hacer antes del 31 de diciembre: dinero disponible para planes de pensiones (suyo y del cónyuge), si acepta inmovilizarlo, donativo previsto y presupuesto, donativo del año anterior a la misma entidad, inversiones con pérdidas o ganancias latentes (importe, descripción libre de hasta 200 caracteres, tipo, titular) y cómo pensaba declarar la pareja (lista cerrada en `PreferenciasOptimizacion`, `hacienda_gpt/tax/optimizador.py`). | Que el optimizador, el asesor y el plan de fin de año respeten esos límites en vez de suponer los máximos legales. |
+
+Son **datos de un tercero** (el cónyuge, que no ha aceptado nada) y, si se indica su
+discapacidad, **datos de salud** del art. 9 RGPD; el operador debe contemplarlos (puntos 1 y 11
+de «Lo que el operador tiene que hacer»). Solo se guardan cuando el usuario pulsa «Guardar en mi
+expediente» (o se lo dice al asesor); se validan antes de guardarse y no se guarda nada derivado
+de ellos ni la fecha del plan. Las cifras del cónyuge también aparecen en los supuestos del plan
+de fin de año (tabla `notifications`) y, como cualquier hecho editado, en el rastro de auditoría.
+Se exportan y se borran exactamente como el resto del expediente (ver más abajo; lo comprueba
+`tests/auth/test_datos_optimizador_privacidad.py`). No van al proveedor del modelo salvo en una
+pregunta al asesor, cuando sus herramientas leen el expediente (como cualquier otro hecho).
+
 Además:
 
 - **Navegador del usuario** (`localStorage`): el texto de las conversaciones, el token de sesión y
@@ -171,6 +192,9 @@ completo de consentimientos y, por cada expediente, su estado con todos los hech
 auditoría, sus avisos y los registros de entrega de esos avisos. La aplicación web añade al fichero
 descargado las conversaciones guardadas en ese navegador.
 
+Las cifras del cónyuge y las preferencias del optimizador (`datos_conyuge`,
+`preferencias_optimizacion`) van entre los hechos de cada expediente, como texto JSON.
+
 No incluye lo que el servidor no tiene (los documentos subidos) ni lo que haya quedado en poder de
 terceros (proveedor del modelo, correo ya enviado).
 
@@ -180,6 +204,10 @@ terceros (proveedor del modelo, correo ya enviado).
 este orden, los avisos y registros de entrega de cada expediente, cada expediente con su rastro de
 auditoría y, al final, la cuenta con sus sesiones, consentimientos y relaciones de propiedad. Es
 irreversible. Si el proceso falla a medias, la cuenta sigue existiendo y basta repetirlo.
+
+Quitar un solo dato del expediente (la papelera de «Tu expediente», `DELETE /cases/{id}/facts/{nombre}`,
+por ejemplo las cifras del cónyuge) lo saca del expediente y de los cálculos, pero el valor que tuvo
+sigue en el rastro de auditoría de ese expediente hasta que se elimina la cuenta.
 
 Lo que **no** alcanza ese borrado:
 
@@ -266,7 +294,8 @@ Nada de esto lo resuelve el código. Sin ello, el despliegue no debería recibir
 9. **Plazos de conservación** y su aplicación (cuentas inactivas, expedientes sin dueño heredados
    del modo `off`, registros).
 10. **Menores**: el software no pregunta la edad de quien se registra (art. 7 LOPDGDD).
-11. **Datos de terceros**: el expediente incluye datos de familiares que no han aceptado nada.
+11. **Datos de terceros**: el expediente incluye datos de familiares que no han aceptado nada
+    (hijos, ascendientes y, con el optimizador, las cifras, la edad y la discapacidad del cónyuge).
     El aviso de privacidad y la base jurídica tienen que contemplarlo.
 
 ## Dónde está cada cosa en el código

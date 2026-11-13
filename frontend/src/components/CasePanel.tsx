@@ -6,6 +6,7 @@ import { CalendarClock, Check, Pencil, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import type { Fact, ObligationCandidate } from "../api";
+import { STRUCTURED_FACTS } from "../lib/expediente";
 import { factInput, factLabel, factValue, formatDate } from "../lib/presentation";
 import { DeadlinesSection, DocumentSection } from "./CaseExtras";
 
@@ -196,13 +197,18 @@ export function CasePanel({ open, onClose, facts, taxPeriod, obligations, caseId
                       </li>
                     );
                   }
+                  // The children's detail, the spouse's figures and the optimiser's preferences are
+                  // edited in their own screen: here only their summary (in full) and the bin.
+                  const structured = STRUCTURED_FACTS.has(row.name);
                   return (
                     <li key={row.name} className="flex items-center gap-1 py-2.5 pl-3.5 pr-2">
                       <div className="min-w-0 flex-1">
                         <p className="text-[12px] text-muted">{label}</p>
-                        <p className="truncate text-[14px] font-medium text-ink">{factValue(row)}</p>
+                        <p className={structured ? "text-[14px] font-medium leading-snug text-ink [overflow-wrap:anywhere]" : "truncate text-[14px] font-medium text-ink"}>
+                          {factValue(row)}
+                        </p>
                       </div>
-{row.name !== "descendientes" && (
+                      {!structured && (
                         <button
                           type="button"
                           onClick={() => {
