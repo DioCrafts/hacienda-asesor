@@ -363,3 +363,50 @@ def test_an_uploaded_file_goes_straight_to_the_tool_and_never_to_the_audit(env: 
     assert nombre == "agua_consumo" and argumentos == {"contenido": secreto}
     events = env.cases.list_audit_events(case_id)
     assert events[-1]["argumentos_recibidos"] == ["contenido"] and secreto not in str(events)
+
+
+def test_a_module_proposes_a_tax_fact_and_only_the_user_writes_it(env: Env, monkeypatch) -> None:
+    from decimal import Decimal
+    from types import SimpleNamespace
+
+    from hacienda_gpt.modulos import puentes
+    from hacienda_gpt.modulos.contrato import HechoModulo
+    from .fakes import ModuloFalso
+
+    hipoteca = ModuloFalso(
+        clave="hipoteca",
+        nombre="Hipoteca",
+        descripcion="Préstamo.",
+        instrucciones="Préstamo.",
+        hechos=(HechoModulo("hipoteca_prestamo", "json", "Préstamo", "Datos del préstamo"),),
+    )
+    instalar(hipoteca)
+    vistos: list = []
+
+    def pagos(contexto, ejercicio):
+        vistos.append((contexto.perfil["hipoteca_prestamo"], ejercicio))
+        return {"capital": Decimal("4000"), "intereses": Decimal("1500.5"), "amortizaciones_anticipadas": Decimal("0")}
+
+    monkeypatch.setattr(puentes.importlib, "import_module", lambda name: SimpleNamespace(pagos_del_ejercicio=pagos))
+    ana = env.register("ana@example.com")
+    case_id = env.new_case(ana)
+
+    def get() -> list:
+        return env.client.get("/propuestas", params={"case_id": case_id}, headers=ana).json()["propuestas"]
+
+    def put(name: str, value):
+        return env.client.put(f"/cases/{case_id}/facts/{name}", json={"value": value}, headers=ana)
+
+    env.client.put("/me/modulos/hipoteca", json={"activo": True}, headers=ana)
+    put("hipoteca_prestamo", '{"adquisicion_antes_2013": false, "vivienda_habitual": true}')
+    assert get() == []  # bought in 2013 or later: nothing to offer
+    put("hipoteca_prestamo", '{"adquisicion_antes_2013": true, "vivienda_habitual": true}')
+    (propuesta,) = get()
+    assert propuesta["nombre"] == "pagos_vivienda_habitual_pre2013" and propuesta["valor"] == 5500.5
+    assert propuesta["desglose"]["intereses"] == "1.500,50 €" and vistos[-1][1] == 2026
+    facts = {f["name"] for f in env.client.get(f"/cases/{case_id}", headers=ana).json()["facts"]}
+    assert "pagos_vivienda_habitual_pre2013" not in facts  # a proposal never writes
+    assert put("pagos_vivienda_habitual_pre2013", propuesta["valor"]).status_code == 200
+    assert get() == []  # the fact exists now
+    other = env.register("luis@example.com")
+    assert env.client.get("/propuestas", params={"case_id": case_id}, headers=other).status_code == 404

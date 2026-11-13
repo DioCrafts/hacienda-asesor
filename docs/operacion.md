@@ -47,6 +47,12 @@ SHELL=/bin/bash
 # Recordatorios de plazos, plan de fin de ejercicio y avisos de los módulos del hogar activados.
 0 7 * * *   cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.ops run run-daily -- uv run python -m hacienda_gpt.cli.proactive run-daily >> logs/proactive.log 2>&1
 
+# Índices de referencia de los préstamos hipotecarios (módulo hipoteca): resoluciones del Banco de España
+# publicadas en el BOE, los días 4 y 19 de cada mes. Escribe en hacienda_gpt/modulos/hipoteca/data/
+# (revísalo y súbelo al repositorio). Para que doctor lo vigile: «--max-horas hipoteca-indices=400».
+# En GitHub lo hace el workflow .github/workflows/modulos-indices.yml (deja la serie como artefacto).
+20 6 4,19 * *  cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.ops run hipoteca-indices -- uv run python -m hacienda_gpt.modulos.hipoteca.indices actualizar >> logs/proactive.log 2>&1
+
 # Resumen semanal de cada caso (lo que vence, importes, acciones por decidir), los lunes.
 # Para que doctor lo vigile: «ops doctor --max-horas run-weekly=192».
 30 7 * * 1  cd /srv/hacienda-asesor && uv run python -m hacienda_gpt.cli.ops run run-weekly -- uv run python -m hacienda_gpt.cli.proactive run-weekly >> logs/proactive.log 2>&1

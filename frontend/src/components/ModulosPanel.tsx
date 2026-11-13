@@ -9,8 +9,8 @@ import { useEffect, useId, useState } from "react";
 
 import type { CaseState, Fact } from "../api";
 import { ApiError, deleteCaseFact, getCase, updateCaseFact } from "../api";
-import type { AccionPendiente, CampoPropuesto, HechoInfo, HerramientaInfo, ModuloInfo, ModulosResponse } from "../apiModulos";
-import { readModuleDocument, runModuleTool } from "../apiModulos";
+import type { AccionPendiente, CampoPropuesto, HechoInfo, HerramientaInfo, ModuloInfo, ModulosResponse, PropuestaHecho } from "../apiModulos";
+import { getPropuestas, readModuleDocument, runModuleTool } from "../apiModulos";
 import { fileToBase64, relativeTime } from "../lib/presentation";
 
 const FIELD_CLASS =
@@ -97,6 +97,10 @@ export function ModulosPanel(props: ModulosPanelProps) {
             </section>
           )}
 
+          {props.caseId && (
+            <Propuestas caseId={props.caseId} facts={props.facts} onCaseUpdated={props.onCaseUpdated} disabled={props.disabled} nombres={nombres} />
+          )}
+
           {modulos && !modulos.configurable && (
             <p className="rounded-lg bg-line/50 px-3 py-2 text-[13px] leading-snug text-ink-soft">
               Sin cuentas de usuario, los módulos los activa el operador del servicio.
@@ -127,6 +131,87 @@ export function ModulosPanel(props: ModulosPanelProps) {
         </footer>
       </aside>
     </div>
+  );
+}
+
+const DESGLOSE: Record<string, string> = {
+  capital: "Capital",
+  intereses: "Intereses",
+  amortizaciones_anticipadas: "Amortizaciones anticipadas",
+};
+
+/** Tax facts a module can fill in (e.g. the mortgage payments for the pre-2013 home deduction). */
+function Propuestas({
+  caseId,
+  facts,
+  onCaseUpdated,
+  disabled,
+  nombres,
+}: {
+  caseId: string;
+  facts: Fact[];
+  onCaseUpdated: (updated: CaseState) => void;
+  disabled: boolean;
+  nombres: Record<string, string>;
+}) {
+  const [items, setItems] = useState<PropuestaHecho[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const factsKey = facts.map((f) => `${f.name}=${String(f.value)}`).join("&");
+  useEffect(() => {
+    const controller = new AbortController();
+    getPropuestas(caseId, controller.signal).then(setItems, () => setItems([]));
+    return () => controller.abort();
+  }, [caseId, factsKey]);
+
+  if (items.length === 0) return null;
+  async function accept(p: PropuestaHecho) {
+    setBusy(p.nombre);
+    setError(null);
+    try {
+      onCaseUpdated(await updateCaseFact({ caseId, factName: p.nombre, value: p.valor }));
+    } catch (err) {
+      setError(message(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+  return (
+    <section aria-labelledby="propuestas-fiscales" className="rounded-xl border border-primary/50 bg-surface px-4 py-3.5 shadow-card">
+      <h3 id="propuestas-fiscales" className="text-[15px] font-bold text-ink">
+        Para tu declaración de la renta
+      </h3>
+      {error && (
+        <p role="alert" className="mt-1 text-[12.5px] text-risk-high-fg">
+          {error}
+        </p>
+      )}
+      <ul className="mt-2 space-y-3">
+        {items.map((p) => (
+          <li key={p.nombre} className="rounded-lg border border-line bg-paper px-3 py-2.5">
+            <p className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted">Desde {nombres[p.modulo] ?? p.modulo}</p>
+            <p className="mt-1 text-[14px] font-bold text-ink">{p.titulo}</p>
+            <p className="mt-1 text-[13px] leading-snug text-ink-soft">{p.explicacion}</p>
+            {Object.keys(p.desglose).length > 0 && (
+              <dl className="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 text-[12.5px] text-ink-soft">
+                {Object.entries(p.desglose).map(([k, v]) => (
+                  <div key={k} className="contents">
+                    <dt>{DESGLOSE[k] ?? k.replace(/_/g, " ")}</dt>
+                    <dd className="text-right font-semibold text-ink">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" className={BUTTON_PRIMARY} disabled={disabled || busy !== null} onClick={() => void accept(p)}>
+                <Check size={14} aria-hidden />
+                {busy === p.nombre ? "Guardando…" : "Usar esta cifra"}
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

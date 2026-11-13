@@ -6,6 +6,7 @@
   its specialist and its notices at once, removes its notices and rejects its pending actions; with
   ``borrar_datos`` its facts also leave every case of the user (and the audit trail).
 * ``GET /acciones?case_id=…`` — the actions the specialists prepared for a case.
+* ``GET /propuestas?case_id=…`` — tax facts a module can fill in (``modulos/puentes.py``), for the user to accept.
 * ``POST /acciones/{id}/confirmar`` / ``/rechazar`` — only the owner of the case decides; an action runs at
   most once, and only while its module is still on.
 * ``POST /modulos/{clave}/herramientas/{nombre}`` — the user runs one of an active module's tools from the UI
@@ -154,6 +155,24 @@ class DocumentoModuloResponse(BaseModel):
     propuesta: dict[str, Any]
 
 
+class PropuestaInfo(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    nombre: str
+    valor: float
+    titulo: str
+    explicacion: str
+    modulo: str
+    desglose: dict[str, str] = Field(default_factory=dict)
+
+
+class PropuestasResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str
+    propuestas: list[PropuestaInfo]
+
+
 class AccionesResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -274,6 +293,21 @@ def build_router(
         if cases.get_case(case_id) is None:
             raise HTTPException(status_code=404, detail="case not found")
         return AccionesResponse(case_id=case_id, acciones=acciones.list(case_id))
+
+    @router.get("/propuestas", response_model=PropuestasResponse, dependencies=[Depends(require_api_key)])
+    def get_propuestas(case_id: str, cases: case_store_dep, access: access_dep) -> PropuestasResponse:
+        """Tax facts the active modules can fill in (``?case_id=``). Nothing is written: the user accepts one
+        through ``PUT /cases/{id}/facts/{nombre}``."""
+        from dataclasses import asdict
+
+        from hacienda_gpt.modulos.puentes import propuestas_para
+
+        access.check(case_id)
+        case = cases.get_case(case_id)
+        if case is None:
+            raise HTTPException(status_code=404, detail="case not found")
+        propuestas = propuestas_para(case, modulos_activos_para_caso(case_id, access.store), hoy=hoy_en_espana())
+        return PropuestasResponse(case_id=case_id, propuestas=[PropuestaInfo(**asdict(p)) for p in propuestas])
 
     def _accion_del_usuario(accion_id: str, acciones: AccionStore, access: CaseAccess) -> AccionPendiente:
         accion = acciones.get(accion_id)

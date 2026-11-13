@@ -1,0 +1,38 @@
+name: modulos-indices
+
+# Twice a month (the Bank of Spain's reference rates are published in the BOE early in the month and
+# around mid-month), the mortgage module reads the new resolutions from www.boe.es and adds them to its
+# versioned series (hacienda_gpt/modulos/hipoteca/data/). Nothing is written to the repository: the
+# updated series is uploaded as an artifact for a person to review and commit, like the parameters'
+# readings. A red run means the resolutions could not be read cleanly (the log lists each problem).
+#
+# Needs network access to www.boe.es only (no LLM, no secrets).
+
+on:
+  schedule:
+    - cron: "23 6 4,19 * *" # 4th and 19th of each month, 06:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hipoteca-indices:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync
+      - name: Read the new reference-rate resolutions from the BOE
+        run: uv run python -m hacienda_gpt.modulos.hipoteca.indices actualizar
+      - name: Show what changed
+        if: always()
+        run: git diff --stat -- hacienda_gpt/modulos/hipoteca/data/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hipoteca-indices
+          path: hacienda_gpt/modulos/hipoteca/data/

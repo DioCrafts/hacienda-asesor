@@ -175,3 +175,23 @@ export function moduloDeKind(kind: string): string | null {
   if (kind.startsWith("modulo:")) return kind.slice("modulo:".length);
   return kind === "resumen_semanal" ? null : "fiscal";
 }
+
+/** A tax fact a module can fill in; nothing is written until the user accepts it. */
+export interface PropuestaHecho {
+  nombre: string;
+  valor: number;
+  titulo: string;
+  explicacion: string;
+  modulo: string;
+  desglose: Record<string, string>;
+}
+
+function isPropuestas(value: unknown): value is { case_id: string; propuestas: PropuestaHecho[] } {
+  return isRecord(value) && Array.isArray(value.propuestas);
+}
+
+export function getPropuestas(caseId: string, signal?: AbortSignal): Promise<PropuestaHecho[]> {
+  return request(`/propuestas?case_id=${encodeURIComponent(caseId)}`, undefined, isPropuestas, { signal, method: "GET" }).then(
+    (resp) => resp.propuestas,
+  );
+}
