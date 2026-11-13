@@ -1,0 +1,50 @@
+Extracto de Real Decreto 920/2017, de 23 de octubre, por el que se regula la inspección técnica de vehículos (texto consolidado), https://www.boe.es/buscar/act.php?id=BOE-A-2017-12841 (consultado el 2026-11-13). Solo las líneas citadas.
+2. El titular o arrendatario a largo plazo del vehículo deberá someterlo a las inspecciones técnicas que le sean exigibles según lo establecido en el artículo 5.
+[…]
+L1e: Ciclomotores: vehículos de dos ruedas con una velocidad máxima por construcción no superior a 45 km/h, de cilindrada inferior a igual a 50 cm3(combustión interna) o potencia continua nominal máxima inferior o igual a 4 kW (motores eléctricos).
+Hasta 3 años: Exento.
+De más de 3 años: Bienal.
+Resto L: Vehículos de motor de dos o tres ruedas, gemelas o no, y cuadriciclos, destinados a circular por carretera, así como sus componentes o unidades técnicas.
+Hasta 4 años: Exento.
+De más de 4 años: Bienal.
+[…]
+M1: vehículos de motor concebidos y fabricados principalmente para el transporte de personas y de sus equipajes, con un máximo de ocho plazas, excluida la del conductor.
+Hasta 4 años: Exento.
+De más de 4 años: Bienal.
+De más de 10 años: Anual.
+M2, M3: Vehículos de motor concebidos y fabricados principalmente para el transporte de personas y su equipaje con más de ocho plazas, excluida la del conductor.
+Hasta 5 años: Anual.
+De más de 5 años: Semestral.
+[…]
+N1: Vehículos de motor concebidos y fabricados principalmente para el transporte de mercancías y cuya masa máxima no sea superior a 3,5 toneladas.
+Hasta 2 años: Exento.
+De 2 a 6 años: Bienal.
+De 6 a 10 años: Anual.
+De más de 10 años: Semestral.
+N2,N3: Vehículos de motor concebidos y fabricados principalmente para el transporte de mercancías y cuya masa máxima sea superior a 3,5 toneladas
+O2 (excepto caravanas remolcadas de esta categoría),O3,O4: Remolques concebidos y fabricados para el transporte demercancías o de personas, así como para alojar personas.
+Hasta 10 años: Anual.
+De más de 10 años: Semestral.
+O2 caravanas remolcadas.
+Hasta seis años: Exento.
+De más de 6 años: Bienal.
+[…]
+A efectos de la determinación de frecuencia, la antigüedad del vehículo deberá ser computada a partir de la fecha de primera matriculación o puesta en servicio que conste en el Registro de Vehículos del organismo autónomo Jefatura Central de Tráfico y que podrá ser consignada en el permiso de circulación o documento equivalente.
+[…]
+a) Vehículos de escuela de conductores de las categorías M1 y L:
+Antigüedad:
+Hasta dos años: Exento.
+De dos a cinco años: Anual.
+De más de cinco años: Semestral.
+b) Vehículos de la categoría M1 utilizados como ambulancias y taxis, y de transporte escolar y de menores.
+Antigüedad:
+Hasta cinco años: Anual.
+De más de cinco años: Semestral.
+[…]
+3. En el caso de vehículos mixtos, la frecuencia de inspección aplicable será la correspondiente a la categoría N en la que el vehículo pueda catalogarse.
+4. Los vehículos quad se equipararán a los de la categoría L (resto de L, por no corresponder con L1e), de la tabla anterior.
+5. El plazo de validez de las inspecciones técnicas periódicas se obtendrá adicionando a la fecha en la que el resultado de la inspección haya sido favorable la frecuencia indicada en este artículo. No obstante, si dicha fecha está comprendida en los 30 días naturales precedentes a la expiración del plazo de validez de la inspección anterior, el plazo de validez se obtendrá adicionando la frecuencia correspondiente a la citada fecha de expiración.
+[…]
+Todo usuario de un vehículo matriculado en España o que vaya ser matriculado en España elegirá libremente la estación ITV del territorio nacional donde desee realizar la inspección técnica de vehículos, cualquiera que sea el tipo de inspección.
+[…]
+1. El resultado de la inspección técnica, así como la fecha en que haya tenido lugar, número de informe de inspección y fecha hasta la que es válida dicha inspección, serán anotados en el apartado correspondiente de la tarjeta ITV, o certificado de características. En el caso de tarjetas ITV en soporte papel, esta anotación será validada mediante la firma del director técnico de la estación ITV o por la persona en quien haya delegado, previa autorización del órgano competente de la comunidad autónoma tal como se establece en el artículo 10.1, añadiéndose en los campos reservados al efecto:

@@ -100,6 +100,18 @@
         "articulo": "art. 7.1 RD 1553/2005",
         "cita": "1. Transcurrido el período de validez que para cada supuesto se contempla en el artículo anterior, el Documento Nacional de Identidad se considerará caducado y quedarán sin efecto las atribuciones y efectos que le reconoce el ordenamiento jurídico, estando su titular obligado a proceder a la renovación del mismo. Dicha renovación se llevará a cabo mediante la presencia física del titular del Documento, que deberá abonar la tasa correspondiente y aportar una fotografía con las características señaladas en el artículo 5.1.b). También se le recogerán las impresiones dactilares que se refieren en el apartado tercero del mismo artículo.",
         "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2005-21163",
+        "articulo": "art. 7.2 RD 1553/2005",
+        "cita": "2. Independientemente de los supuestos del apartado anterior se deberá proceder a la renovación del Documento Nacional de Identidad en los supuestos de variación de los datos que se recogen en el mismo, en cuyo caso será preciso aportar, además de lo establecido en el apartado anterior, los documentos justificativos que acrediten dicha variación.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2005-21163",
+        "articulo": "art. 5.1.b) RD 1553/2005",
+        "cita": "b) Una fotografía reciente en color del rostro del solicitante, tamaño 32 por 26 milímetros, con fondo uniforme blanco y liso, tomada de frente con la cabeza totalmente descubierta y sin gafas de cristales oscuros o cualquier otra prenda que pueda impedir o dificultar la identificación de la persona.",
+        "cifras": {}
       }
     ],
     "avisos": [
@@ -455,6 +467,12 @@
         "boe_id": "BOE-A-2017-12841",
         "articulo": "art. 17 RD 920/2017",
         "cita": "Todo usuario de un vehículo matriculado en España o que vaya ser matriculado en España elegirá libremente la estación ITV del territorio nacional donde desee realizar la inspección técnica de vehículos, cualquiera que sea el tipo de inspección.",
+        "cifras": {}
+      },
+      {
+        "boe_id": "BOE-A-2017-12841",
+        "articulo": "art. 18.1 RD 920/2017",
+        "cita": "1. El resultado de la inspección técnica, así como la fecha en que haya tenido lugar, número de informe de inspección y fecha hasta la que es válida dicha inspección, serán anotados en el apartado correspondiente de la tarjeta ITV, o certificado de características. En el caso de tarjetas ITV en soporte papel, esta anotación será validada mediante la firma del director técnico de la estación ITV o por la persona en quien haya delegado, previa autorización del órgano competente de la comunidad autónoma tal como se establece en el artículo 10.1, añadiéndose en los campos reservados al efecto:",
         "cifras": {}
       }
     ],
