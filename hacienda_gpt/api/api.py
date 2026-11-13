@@ -161,6 +161,17 @@ def get_case_store() -> SQLiteCaseStateStore:
 
 
 @_thread_safe_singleton
+def _build_notification_store() -> NotificationStore:
+    # Same SQLite file as the cases, so one backup covers both.
+    return NotificationStore(DECISION_STATE_DB_PATH)
+
+
+def get_notification_store() -> NotificationStore:
+    # Thin wrapper so tests can override it via app.dependency_overrides.
+    return _build_notification_store()
+
+
+@_thread_safe_singleton
 def _build_fact_extractor() -> FactExtractor:
     # Built once and reused, mirroring _build_qa_chain / _build_case_store. The
     # previous per-request construction spun up a fresh OpenAI() client on every
@@ -702,17 +713,35 @@ def delete_case_fact(
     case_id: str,
     fact_name: str,
     store: Annotated[SQLiteCaseStateStore, Depends(get_case_store)],
+    notifications: Annotated[NotificationStore, Depends(get_notification_store)],
 ) -> CaseState:
-    """Remove one fact from a case. Obligations are re-evaluated without it."""
+    """Remove one fact from a case. Obligations are re-evaluated without it.
+
+    The value also leaves the case's audit trail (every structured place it was written to: edits, the
+    facts a recommendation rested on, the advisor's tool calls) and the year-end plan built from it is
+    dropped (the next run rebuilds it from what is left). The removal itself is recorded, without the value.
+    """
     case = store.get_case(case_id)
     if case is None:
         raise HTTPException(status_code=404, detail="case not found")
     remaining = [fact for fact in case.facts if fact.name != fact_name]
     if len(remaining) == len(case.facts):
         raise HTTPException(status_code=404, detail="fact not found")
-    return _save_case_after_user_edit(
+    updated = _save_case_after_user_edit(
         case, remaining, store, {"event_type": "fact_removed_by_user", "fact_name": fact_name}
     )
+    anonimizados = store.redact_fact_in_audit(case_id, fact_name)
+    planes = notifications.remove_superseded(case_id, key_prefix="fin_de_ejercicio:", keep_key="")
+    store.append_audit_event(
+        case_id,
+        {
+            "event_type": "fact_value_erased",
+            "fact_name": fact_name,
+            "audit_events_redacted": anonimizados,
+            "year_end_plans_removed": planes,
+        },
+    )
+    return updated
 
 
 class SimulateRequest(BaseModel):
@@ -912,17 +941,6 @@ def post_case_document(
         },
     )
     return analysis
-
-
-@_thread_safe_singleton
-def _build_notification_store() -> NotificationStore:
-    # Same SQLite file as the cases, so one backup covers both.
-    return NotificationStore(DECISION_STATE_DB_PATH)
-
-
-def get_notification_store() -> NotificationStore:
-    # Thin wrapper so tests can override it via app.dependency_overrides.
-    return _build_notification_store()
 
 
 class NotificationsResponse(BaseModel):

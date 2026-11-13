@@ -41,6 +41,9 @@ class SQLiteCaseStateStore(CaseStateStore):
             conn.row_factory = sqlite3.Row
             conn.execute("PRAGMA journal_mode=WAL;")
             conn.execute("PRAGMA foreign_keys=ON;")
+            # Overwrite deleted content instead of leaving it in free pages: erasing a case, or a fact from
+            # its audit trail, should not leave the old bytes readable in the file.
+            conn.execute("PRAGMA secure_delete=ON;")
             self._conn = conn
         return self._conn
 
@@ -199,6 +202,30 @@ class SQLiteCaseStateStore(CaseStateStore):
                 "SELECT event_json FROM audit_events WHERE case_id = ? ORDER BY id ASC", (case_id,)
             ).fetchall()
         return [json.loads(row["event_json"]) for row in rows]
+
+    def redact_fact_in_audit(self, case_id: str, fact_name: str) -> int:
+        """Remove every stored value of one fact from a case's audit trail; returns the events rewritten.
+
+        Used when the user deletes that fact from the case (see ``audit.redactar_hecho`` for what is covered).
+        The write-ahead log is checkpointed afterwards so the old values do not linger there either.
+        """
+        from hacienda_gpt.decision.audit import redactar_hecho
+
+        cambiados = 0
+        with self._lock, self._connect() as conn:
+            rows = conn.execute("SELECT id, event_json FROM audit_events WHERE case_id = ?", (case_id,)).fetchall()
+            for row in rows:
+                evento, cambiado = redactar_hecho(json.loads(row["event_json"]), fact_name)
+                if cambiado:
+                    conn.execute(
+                        "UPDATE audit_events SET event_json = ? WHERE id = ?",
+                        (json.dumps(evento, ensure_ascii=False), row["id"]),
+                    )
+                    cambiados += 1
+        if cambiados:
+            with self._lock:
+                self._get_conn().execute("PRAGMA wal_checkpoint(TRUNCATE);")
+        return cambiados
 
     def delete_case(self, case_id: str) -> bool:
         """Erase a case and its audit trail (right to erasure). False when it did not exist."""

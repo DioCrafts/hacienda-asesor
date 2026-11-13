@@ -111,3 +111,80 @@ def test_removing_the_facts_takes_them_out_of_the_case(env: Env) -> None:
     luis = env.register("luis@example.com")
     ajeno = env.client.put(f"/cases/{case_id}/facts/{DATOS_CONYUGE}", json={"value": "{}"}, headers=luis)
     assert ajeno.status_code == 404
+
+
+def _volcado(env: Env) -> str:
+    """Every row of every table, after folding the write-ahead log into the file."""
+    with sqlite3.connect(env.db_path) as conn:
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        tables = [row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")]
+        return "\n".join(
+            str(row) for table in tables if table != "sqlite_sequence" for row in conn.execute(f"SELECT * FROM {table}")
+        )
+
+
+def test_removing_a_fact_also_erases_its_value_from_the_audit_trail(env: Env) -> None:
+    ana = env.register("ana@example.com")
+    case_id = _caso_con_datos_del_optimizador(env, ana)
+    # The advisor also wrote the values in the shapes its trail keeps: the facts a recommendation rested on,
+    # the facts it recorded and a tool call with the spouse's figures.
+    env.cases.append_audit_event(
+        case_id,
+        {
+            "event_type": "recommendation_audit",
+            "facts_used": [
+                {"name": DATOS_CONYUGE, "value": json.dumps(CONYUGE)},
+                {"name": "estado_civil", "value": "casado"},
+            ],
+        },
+    )
+    env.cases.append_audit_event(
+        case_id,
+        {
+            "event_type": "agent_answer",
+            "input": "¿Cómo pagamos menos?",
+            "tool_trace": [
+                {
+                    "tool": "registrar_hechos",
+                    "arguments": {"hechos": [{"nombre": DATOS_CONYUGE, "valor": json.dumps(CONYUGE)}]},
+                },
+                {"tool": "optimizar_impuestos", "arguments": {"conyuge": CONYUGE, "restricciones": PREFERENCIAS}},
+            ],
+        },
+    )
+    assert SALARIO_CONYUGE in _volcado(env) and DESCRIPCION in _volcado(env)
+
+    for nombre in (DATOS_CONYUGE, PREFERENCIAS_OPTIMIZACION):
+        assert env.client.delete(f"/cases/{case_id}/facts/{nombre}", headers=ana).status_code == 200
+
+    volcado = _volcado(env)
+    for needle in (SALARIO_CONYUGE, "23456.78", "23.456,78", DESCRIPCION):
+        assert needle not in volcado, needle
+    # The rest of the trail is intact: other facts, what the user typed, and the record of each removal.
+    eventos = env.cases.list_audit_events(case_id)
+    assert any(e.get("fact_name") == "estado_civil" and e.get("value") == "casado" for e in eventos)
+    assert any(e.get("input") == "¿Cómo pagamos menos?" for e in eventos)
+    borrados = [e for e in eventos if e["event_type"] == "fact_value_erased"]
+    assert [e["fact_name"] for e in borrados] == [DATOS_CONYUGE, PREFERENCIAS_OPTIMIZACION]
+    assert borrados[0]["audit_events_redacted"] >= 3 and borrados[0]["year_end_plans_removed"] == 1
+    # The year-end plan quoted them: it is gone until the next run rebuilds it from what is left.
+    assert env.notifications.list(case_id) == []
+
+
+def test_redacting_one_fact_leaves_other_facts_untouched() -> None:
+    from hacienda_gpt.decision.audit import ELIMINADO, redactar_hecho
+
+    evento = {
+        "event_type": "agent_answer",
+        "facts_used": [{"name": "edad", "value": 52}, {"name": "rendimiento_trabajo_bruto", "value": 30000}],
+        "tool_trace": [{"arguments": {"datos": {"edad": 52, "rendimiento_trabajo_bruto": 30000}}}],
+    }
+    redactado, cambiado = redactar_hecho(evento, "rendimiento_trabajo_bruto")
+    assert cambiado
+    assert redactado["facts_used"] == [
+        {"name": "edad", "value": 52},
+        {"name": "rendimiento_trabajo_bruto", "value": ELIMINADO},
+    ]
+    assert redactado["tool_trace"][0]["arguments"]["datos"] == {"edad": 52, "rendimiento_trabajo_bruto": ELIMINADO}
+    # Nothing to redact: unchanged and reported as such.
+    assert redactar_hecho(evento, "retenciones") == (evento, False)

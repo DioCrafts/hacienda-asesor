@@ -63,3 +63,48 @@ def build_recommendation_audit_event(
             "ruleset": rules_result.ruleset_version or RULES_VERSION_FALLBACK,
         },
     }
+
+
+# --------------------------------------------------------------------------- #
+# Removing one fact from the audit trail (the user deleted it from their case)
+# --------------------------------------------------------------------------- #
+
+ELIMINADO = "[eliminado por el usuario]"
+
+# Names under which a fact's value travels in tool arguments when they differ from the fact's own name.
+ALIAS_EN_HERRAMIENTAS: dict[str, tuple[str, ...]] = {
+    "datos_conyuge": ("conyuge", "conyuge_b"),
+    "preferencias_optimizacion": ("restricciones",),
+}
+
+
+def redactar_hecho(evento: Any, nombre: str) -> tuple[Any, bool]:
+    """``evento`` with every stored value of the fact ``nombre`` replaced by :data:`ELIMINADO`.
+
+    Covers the structured places a fact's value is written to: a user edit (``fact_name``/``value``), the
+    facts a recommendation rested on (``name``/``value``), the facts the advisor recorded (``nombre``/``valor``)
+    and any argument of a tool keyed by the fact's name or by one of its aliases (``ALIAS_EN_HERRAMIENTAS``),
+    at any depth. Free text — what the user typed, what the advisor answered, a tool's one-line summary — is
+    left as it is: it is the record of the conversation, not a stored fact. Returns (event, whether it changed).
+    """
+    claves = {nombre, *ALIAS_EN_HERRAMIENTAS.get(nombre, ())}
+    cambiado = False
+
+    def recorrer(nodo: Any) -> Any:
+        nonlocal cambiado
+        if isinstance(nodo, dict):
+            salida: dict[str, Any] = {}
+            emparejado = nodo.get("fact_name") == nombre or nodo.get("name") == nombre or nodo.get("nombre") == nombre
+            for clave, valor in nodo.items():
+                if (emparejado and clave in ("value", "valor")) or clave in claves:
+                    if valor != ELIMINADO and valor is not None:
+                        cambiado = True
+                    salida[clave] = ELIMINADO if valor is not None else None
+                else:
+                    salida[clave] = recorrer(valor)
+            return salida
+        if isinstance(nodo, list):
+            return [recorrer(v) for v in nodo]
+        return nodo
+
+    return recorrer(evento), cambiado

@@ -206,8 +206,20 @@ auditoría y, al final, la cuenta con sus sesiones, consentimientos y relaciones
 irreversible. Si el proceso falla a medias, la cuenta sigue existiendo y basta repetirlo.
 
 Quitar un solo dato del expediente (la papelera de «Tu expediente», `DELETE /cases/{id}/facts/{nombre}`,
-por ejemplo las cifras del cónyuge) lo saca del expediente y de los cálculos, pero el valor que tuvo
-sigue en el rastro de auditoría de ese expediente hasta que se elimina la cuenta.
+por ejemplo las cifras del cónyuge) lo saca del expediente y de los cálculos y **borra su valor del
+rastro de auditoría**: en cada sitio estructurado donde quedó escrito (las ediciones del usuario, los
+hechos en que se apoyó una recomendación, los hechos que registró el asesor y los argumentos de sus
+herramientas, también con los nombres con que viajan allí, como `conyuge` o `restricciones`) el valor
+pasa a ser «[eliminado por el usuario]». También se quita el plan de fin de año que se calculó con él
+(la siguiente ejecución lo rehace con lo que queda). Queda constancia del borrado, sin el valor: el
+evento `fact_value_erased` dice qué dato se quitó y cuántos registros se anonimizaron. La base de datos
+tiene `secure_delete` activado y el registro de escritura anticipada (WAL) se vuelca al terminar, para
+que los bytes antiguos no queden legibles en el fichero.
+
+Lo que ese borrado **no** toca: el texto libre de la conversación (lo que el usuario escribió y lo que
+respondió el asesor, también los resúmenes de una línea de cada herramienta), que es el registro de la
+conversación y no un dato guardado. Si en una pregunta se escribió la cifra, sigue ahí hasta que se
+borra el expediente o la cuenta. Lo comprueba `tests/auth/test_datos_optimizador_privacidad.py`.
 
 Lo que **no** alcanza ese borrado:
 
