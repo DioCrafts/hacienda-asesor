@@ -190,3 +190,31 @@ def test_a_module_fact_does_not_rewrite_the_year_end_plan(store) -> None:
     assert plan_fin_de_ejercicio(make_case("c1", **SALARIED), hoy=date(2026, 11, 12), store=store) == 1
     con_agua = make_case("c1", agua_personas=4, **SALARIED)
     assert plan_fin_de_ejercicio(con_agua, hoy=date(2026, 11, 12), store=store) == 0
+
+
+def test_the_same_renewal_from_two_modules_is_grouped_in_the_digest(store) -> None:
+    _n(
+        store,
+        "modulo:caducidades:seguro",
+        kind="modulo:caducidades",
+        title="Renovación del seguro del coche",
+        due_date=date(2026, 11, 30),
+    )
+    _n(
+        store,
+        "modulo:suscripciones:seguro",
+        kind="modulo:suscripciones",
+        title="Cargo anual: Seguro Coche Mutua",
+        due_date=date(2026, 12, 2),
+        amount=Decimal("310"),
+    )
+    _n(store, "modulo:luz:factura", kind="modulo:luz", title="Factura de la luz", due_date=date(2026, 12, 1))
+    nombres = {"caducidades": "Caducidades", "suscripciones": "Suscripciones", "luz": "Luz"}
+    assert resumen_semanal(make_case("c1"), hoy=HOY, store=store, nombres=nombres) == 1
+    (digest,) = [n for n in store.list("c1") if n.kind == "resumen_semanal"]
+    lineas = digest.body.split("**Lo que vence**\n")[1].split("\n")
+    assert lineas[0].startswith("- [Caducidades] Renovación del seguro del coche")
+    assert lineas[1].startswith(
+        "  (probablemente lo mismo, avisado también por otro módulo) [Suscripciones] Cargo anual"
+    )
+    assert lineas[2].startswith("- [Luz] Factura de la luz")

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
-from decimal import Decimal as D
+from decimal import Decimal
 import json
 import os
 from pathlib import Path
@@ -49,20 +49,23 @@ def test_quotes_against_the_full_downloaded_pages_when_available() -> None:
 
 def test_the_figures_read_from_the_boe() -> None:
     p = load_prestaciones(2026)
-    assert p.iprem.mensual == D(600) and p.iprem.anual_14_pagas == D(8400)
-    assert p.imv.pension_no_contributiva_anual == D("8803.20")
-    assert p.imv.renta_garantizada_individual == D("733.60")
-    assert p.imv.escala(2, 2) == D("1.9") and p.imv.escala(4, 4) == D("2.2")
-    assert p.imv.factor_patrimonio(1, 0) == 1 and p.imv.factor_patrimonio(2, 5) == D("2.6")
-    assert p.imv.factor_patrimonio(5, 0) == D("2.6")  # "Otros"
-    assert (p.hijo_discapacidad.importe_menor, p.hijo_discapacidad.importe_mayor_65) == (D(1000), D("5962.80"))
-    assert p.nacimiento.limite(1, False) == D("15356.00")
-    assert p.nacimiento.limite(2, False) == D("17659.40")
-    assert p.nacimiento.limite(3, True) == D("23109.00")
-    assert p.nacimiento.limite(5, True) == D("23109.00") + 2 * D("3745.00")
+    assert p.iprem.mensual == Decimal(600) and p.iprem.anual_14_pagas == Decimal(8400)
+    assert p.imv.pension_no_contributiva_anual == Decimal("8803.20")
+    assert p.imv.renta_garantizada_individual == Decimal("733.60")
+    assert p.imv.escala(2, 2) == Decimal("1.9") and p.imv.escala(4, 4) == Decimal("2.2")
+    assert p.imv.factor_patrimonio(1, 0) == 1 and p.imv.factor_patrimonio(2, 5) == Decimal("2.6")
+    assert p.imv.factor_patrimonio(5, 0) == Decimal("2.6")  # "Otros"
+    assert (p.hijo_discapacidad.importe_menor, p.hijo_discapacidad.importe_mayor_65) == (
+        Decimal(1000),
+        Decimal("5962.80"),
+    )
+    assert p.nacimiento.limite(1, False) == Decimal("15356.00")
+    assert p.nacimiento.limite(2, False) == Decimal("17659.40")
+    assert p.nacimiento.limite(3, True) == Decimal("23109.00")
+    assert p.nacimiento.limite(5, True) == Decimal("23109.00") + 2 * Decimal("3745.00")
     assert (p.bono_social_electrico.descuento_vulnerable, p.bono_social_electrico.descuento_severo) == (
-        D("0.425"),
-        D("0.575"),
+        Decimal("0.425"),
+        Decimal("0.575"),
     )
     assert p.bono_social_electrico.descuentos_hasta == date(2026, 12, 31)
     assert p.titulo_monoparental.solicitable_desde == date(2027, 1, 1)
@@ -97,21 +100,21 @@ def test_a_wrong_date_and_a_figure_without_quote_are_caught() -> None:
 @pytest.mark.parametrize(
     ("literal", "valor"),
     [
-        ("8.803,20 euros", D("8803.20")),
-        ("42,5 por ciento", D("0.425")),
-        ("sesenta y cinco por ciento", D("0.65")),
-        ("ciento cincuenta por ciento", D("1.5")),
-        ("33%", D("0.33")),
-        ("50 %", D("0.5")),
-        ("una vez", D(1)),
-        ("tres veces", D(3)),
-        ("doce", D(12)),
-        ("veintiún años", D(21)),
-        ("14 pagas", D(14)),
-        ("0,3", D("0.3")),
+        ("8.803,20 euros", Decimal("8803.20")),
+        ("42,5 por ciento", Decimal("0.425")),
+        ("sesenta y cinco por ciento", Decimal("0.65")),
+        ("ciento cincuenta por ciento", Decimal("1.5")),
+        ("33%", Decimal("0.33")),
+        ("50 %", Decimal("0.5")),
+        ("una vez", Decimal(1)),
+        ("tres veces", Decimal(3)),
+        ("doce", Decimal(12)),
+        ("veintiún años", Decimal(21)),
+        ("14 pagas", Decimal(14)),
+        ("0,3", Decimal("0.3")),
     ],
 )
-def test_figures_spelled_in_spanish(literal: str, valor: D) -> None:
+def test_figures_spelled_in_spanish(literal: str, valor: Decimal) -> None:
     assert cifra_a_decimal(literal) == valor
 
 

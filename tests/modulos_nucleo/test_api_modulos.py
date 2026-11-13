@@ -346,3 +346,20 @@ def test_the_user_runs_a_module_tool_and_reads_a_document(env: Env) -> None:
         assert env.client.post("/modulos/seguros/documento", json=upload, headers=ana).status_code == 409
     finally:
         app.dependency_overrides.pop(get_document_provider, None)
+
+
+def test_an_uploaded_file_goes_straight_to_the_tool_and_never_to_the_audit(env: Env) -> None:
+    ana = env.register("ana@example.com")
+    case_id = env.new_case(ana)
+    env.client.put("/me/modulos/agua", json={"activo": True}, headers=ana)
+    secreto = "ES12 3456 7890 CARGO NETFLIX 12,99"
+    done = env.client.post(
+        "/modulos/agua/herramientas/agua_consumo",
+        json={"case_id": case_id, "argumentos": {"contenido": secreto}},
+        headers=ana,
+    )
+    assert done.status_code == 200
+    nombre, argumentos, _contexto = env.llamadas.registro[-1]
+    assert nombre == "agua_consumo" and argumentos == {"contenido": secreto}
+    events = env.cases.list_audit_events(case_id)
+    assert events[-1]["argumentos_recibidos"] == ["contenido"] and secreto not in str(events)

@@ -63,6 +63,9 @@ class HerramientaInfo(BaseModel):
     nombre: str
     efecto: str
     descripcion: str
+    # The tool takes a whole file (``contenido`` text or ``contenido_base64``): the UI offers an upload that
+    # goes straight to the tool, never through the model.
+    acepta_fichero: bool = False
 
 
 class FuenteInfo(BaseModel):
@@ -173,7 +176,12 @@ def _info(estado: EstadoModulo) -> ModuloInfo:
             for h in modulo.hechos
         ],
         herramientas=[
-            HerramientaInfo(nombre=h.spec.name, efecto=h.efecto, descripcion=h.spec.description)
+            HerramientaInfo(
+                nombre=h.spec.name,
+                efecto=h.efecto,
+                descripcion=h.spec.description,
+                acepta_fichero=_acepta_fichero(h.spec.input_schema),
+            )
             for h in modulo.herramientas
         ],
         fuentes=[
@@ -182,6 +190,11 @@ def _info(estado: EstadoModulo) -> ModuloInfo:
         lee_documentos=callable(getattr(modulo, "leer_documento", None)),
         herramienta_de_documento=_herramienta_de_documento(modulo),
     )
+
+
+def _acepta_fichero(schema: Any) -> bool:
+    propiedades = schema.get("properties") if isinstance(schema, dict) else None
+    return isinstance(propiedades, dict) and bool({"contenido", "contenido_base64"} & set(propiedades))
 
 
 def _herramienta_de_documento(modulo: Modulo) -> str | None:
@@ -387,7 +400,12 @@ def build_router(
         acciones: accion_store_dep,
         access: access_dep,
     ) -> EjecucionResponse:
-        """The user runs a module tool from the UI. Its facts are written (validated); acting tools only queue."""
+        """The user runs a module tool from the UI. Its facts are written (validated); acting tools only queue.
+
+        This is also the upload path for files a module analyses (a bank statement as ``contenido`` or
+        ``contenido_base64``): the file goes straight to the tool, never to the model, and only the names of
+        the arguments are audited. What the tool derives is stored as its facts through ``registrar``.
+        """
         modulo = _modulo_activo(clave, payload.case_id, access, cases)
         herramienta = next((h for h in modulo.herramientas if h.spec.name == nombre), None)
         if herramienta is None or clave == FISCAL:
@@ -426,13 +444,14 @@ def build_router(
         guardado = bool(escrito["cambiado"]) and not resultado.es_error
         if guardado:
             cases.save_case(escrito["case"])
+        # Only the argument NAMES: an uploaded file (a bank statement) must not be copied into the audit trail.
         cases.append_audit_event(
             payload.case_id,
             {
                 "event_type": "module_tool_run_by_user",
                 "modulo": clave,
                 "herramienta": nombre,
-                "argumentos": payload.argumentos,
+                "argumentos_recibidos": sorted(payload.argumentos),
                 "es_error": resultado.es_error,
             },
         )

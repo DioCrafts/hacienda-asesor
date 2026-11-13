@@ -21,6 +21,8 @@ export interface HerramientaInfo {
   nombre: string;
   efecto: Efecto;
   descripcion: string;
+  // Takes a whole file (`contenido` / `contenido_base64`), uploaded straight to the tool.
+  acepta_fichero?: boolean;
 }
 
 export interface FuenteInfo {

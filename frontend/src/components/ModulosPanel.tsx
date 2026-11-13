@@ -9,7 +9,7 @@ import { useEffect, useId, useState } from "react";
 
 import type { CaseState, Fact } from "../api";
 import { ApiError, deleteCaseFact, getCase, updateCaseFact } from "../api";
-import type { AccionPendiente, CampoPropuesto, HechoInfo, ModuloInfo, ModulosResponse } from "../apiModulos";
+import type { AccionPendiente, CampoPropuesto, HechoInfo, HerramientaInfo, ModuloInfo, ModulosResponse } from "../apiModulos";
 import { readModuleDocument, runModuleTool } from "../apiModulos";
 import { fileToBase64, relativeTime } from "../lib/presentation";
 
@@ -284,6 +284,12 @@ function ModuloCard({
         </details>
       )}
 
+      {modulo.activo &&
+        caseId &&
+        modulo.herramientas
+          .filter((h) => h.acepta_fichero && h.efecto !== "actua")
+          .map((h) => <FileTool key={h.nombre} modulo={modulo} herramienta={h} caseId={caseId} onCaseUpdated={onCaseUpdated} disabled={disabled} />)}
+
       {modulo.activo && modulo.lee_documentos && caseId && (
         <DocumentReader modulo={modulo} caseId={caseId} onCaseUpdated={onCaseUpdated} disabled={disabled} />
       )}
@@ -448,6 +454,80 @@ function HechoField({
         {saved && <span role="status" className="text-[12.5px] text-grounding-cited-fg">Guardado</span>}
       </div>
     </form>
+  );
+}
+
+// Binary formats travel as base64; everything else as text.
+const BINARY_FILE = /\.(xlsx|xls|ods|zip)$/i;
+
+/** Upload a file straight to a module tool (a bank statement): it never goes to the model or the audit trail. */
+function FileTool({
+  modulo,
+  herramienta,
+  caseId,
+  onCaseUpdated,
+  disabled,
+}: {
+  modulo: ModuloInfo;
+  herramienta: HerramientaInfo;
+  caseId: string;
+  onCaseUpdated: (updated: CaseState) => void;
+  disabled: boolean;
+}) {
+  const id = useId();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [resultado, setResultado] = useState<string | null>(null);
+
+  async function send(file: File) {
+    setError(null);
+    setResultado(null);
+    setBusy(true);
+    try {
+      const argumentos = BINARY_FILE.test(file.name) ? { contenido_base64: await fileToBase64(file) } : { contenido: await file.text() };
+      const resp = await runModuleTool({ clave: modulo.clave, herramienta: herramienta.nombre, caseId, argumentos });
+      if (resp.resultado?.es_error) setError(resp.resultado.contenido);
+      else setResultado(resp.resultado?.contenido ?? null);
+      if (resp.case_updated) onCaseUpdated(await getCase({ caseId }));
+    } catch (err) {
+      setError(message(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-3 rounded-lg border border-dashed border-line px-3 py-2.5">
+      <label htmlFor={id} className="flex cursor-pointer items-center gap-2 text-[13.5px] font-semibold text-primary-dark">
+        <FileUp size={15} aria-hidden />
+        {busy ? "Analizando el fichero…" : "Analizar un fichero"}
+      </label>
+      <input
+        id={id}
+        type="file"
+        className="sr-only"
+        disabled={busy || disabled}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) void send(file);
+        }}
+      />
+      <p className="mt-1 text-[12px] leading-snug text-muted">
+        {herramienta.descripcion.split(". ")[0]}. El fichero se analiza en el servidor sin pasar por el modelo de lenguaje y no se
+        guarda: solo lo que se deduce de él.
+      </p>
+      {error && (
+        <p role="alert" className="mt-1.5 whitespace-pre-line text-[12.5px] text-risk-high-fg">
+          {error}
+        </p>
+      )}
+      {resultado && (
+        <p role="status" className="mt-2 max-h-64 overflow-y-auto whitespace-pre-line text-[13px] leading-snug text-ink">
+          {resultado}
+        </p>
+      )}
+    </div>
   );
 }
 

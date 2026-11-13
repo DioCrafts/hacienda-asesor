@@ -21,7 +21,9 @@ from collections.abc import Callable, Mapping, Sequence
 from datetime import date, timedelta
 from decimal import Decimal
 import logging
+import re
 from typing import Any
+import unicodedata
 
 from pydantic import ValidationError
 
@@ -195,6 +197,71 @@ def _linea(n: Notification, nombres: Mapping[str, str], *, hoy: date) -> str:
     return " — ".join(partes)
 
 
+# Two notices from DIFFERENT modules are shown together in the digest ("probably the same matter") when
+# both have a due date at most this many days apart and their titles share a distinctive word (e.g. an
+# insurance renewal entered in «caducidades» and the yearly charge detected in «suscripciones»).
+DIAS_MISMO_ASUNTO = 3
+_PALABRAS_GENERICAS = frozenset(
+    {
+        "renovacion",
+        "renueva",
+        "vence",
+        "vencimiento",
+        "caduca",
+        "caducidad",
+        "aviso",
+        "plazo",
+        "cargo",
+        "cobro",
+        "anual",
+        "mensual",
+        "proximo",
+        "proxima",
+        "fecha",
+        "antes",
+        "dias",
+        "pago",
+        "importe",
+        "factura",
+        "revisa",
+        "revisar",
+        "queda",
+        "quedan",
+        "desde",
+        "hasta",
+        "tienes",
+        "puedes",
+    }
+)
+
+
+def _palabras(titulo: str) -> set[str]:
+    sin_acentos = "".join(c for c in unicodedata.normalize("NFKD", titulo.lower()) if not unicodedata.combining(c))
+    palabras = {p.rstrip("s") for p in re.findall(r"[a-z]{5,}", sin_acentos)}
+    return {p for p in palabras if p not in _PALABRAS_GENERICAS and p.rstrip("s") not in _PALABRAS_GENERICAS}
+
+
+def mismo_asunto(a: Notification, b: Notification) -> bool:
+    """Whether two notices of different modules likely announce the same thing (see :data:`DIAS_MISMO_ASUNTO`)."""
+    if a.kind == b.kind or a.due_date is None or b.due_date is None:
+        return False
+    if abs((a.due_date - b.due_date).days) > DIAS_MISMO_ASUNTO:
+        return False
+    return bool(_palabras(a.title) & _palabras(b.title))
+
+
+def agrupar(notificaciones: Sequence[Notification]) -> list[list[Notification]]:
+    """Notices in order, each with the later ones that announce the same matter folded under it."""
+    grupos: list[list[Notification]] = []
+    for n in notificaciones:
+        destino = next((g for g in grupos if any(mismo_asunto(n, otro) for otro in g)), None)
+        if destino is None:
+            grupos.append([n])
+        else:
+            destino.append(n)
+    return grupos
+
+
 def resumen_semanal(
     case: CaseState,
     *,
@@ -225,7 +292,14 @@ def resumen_semanal(
             + "\n".join(f"- [{nombres.get(a.modulo, a.modulo)}] {a.resumen}" for a in pendientes)
         )
     if con_fecha:
-        secciones.append("**Lo que vence**\n" + "\n".join(_linea(n, nombres, hoy=hoy) for n in con_fecha))
+        lineas: list[str] = []
+        for grupo in agrupar(con_fecha):
+            lineas.append(_linea(grupo[0], nombres, hoy=hoy))
+            for otro in grupo[1:]:
+                lineas.append(
+                    "  (probablemente lo mismo, avisado también por otro módulo) " + _linea(otro, nombres, hoy=hoy)[2:]
+                )
+        secciones.append("**Lo que vence**\n" + "\n".join(lineas))
     if importes:
         secciones.append(
             "**Importes previstos** (cargos y otras cifras que señalan los avisos)\n"
